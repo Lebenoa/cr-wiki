@@ -19,6 +19,7 @@ pub struct App {
 
 pub fn initialize(conn sqlite.DB) !&App {
 	mut new_app := &App{}
+	new_app.static_mime_types['.avif'] = "image/avif"
 	new_app.handle_static("static", true)!
 	return new_app
 }
