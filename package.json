@@ -1,0 +1,9 @@
+{
+  "scripts": {
+    "dev": "unocss --watch"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "unocss": "^66.7.5"
+  }
+}

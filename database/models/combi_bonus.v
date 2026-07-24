@@ -1,5 +1,6 @@
 module models
 
+@[table: 'combi_bonus']
 pub struct CombiBonus {
 	id ?int @[primary; serial]
 	cookie_id int @[required; references: 'cookie']

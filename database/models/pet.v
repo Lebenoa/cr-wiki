@@ -4,9 +4,19 @@ import time
 
 pub struct Pet {
 	id ?int @[primary; serial]
-	name_key string @[required]
-	abilities_key string @[required]
-	description_key string @[required]
 	image ?string
 	release_date time.Time
+}
+
+@[table: 'pet_translation']
+@[unique_key: 'pet_id, lang']
+pub struct PetTranslation {
+    id ?int @[primary; serial]
+
+    pet_id int @[required; references: 'pet'; index]
+    lang string @[required; index]
+
+    name string @[required]
+    abilities string @[required]
+    description string
 }

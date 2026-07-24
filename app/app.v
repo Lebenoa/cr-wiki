@@ -34,3 +34,17 @@ pub fn (mut ctx Context) not_found() veb.Result {
 	ctx.page_title = "Why are you here? Just to suffer?"
 	return $veb.html()
 }
+
+pub fn (ctx &Context) nav_link(href string, tr_key ?string) veb.RawHtml {
+	active := ctx.req.url == "/${href}" || ctx.req.url.starts_with('/' + href + '/')
+
+	class := if active {
+		'font-semibold text-primary border-b-2 border-primary pb-1'
+	} else {
+		'font-medium text-foreground-muted hover:text-primary transition-all'
+	}
+
+	abs_tr_key := tr_key or { href }
+
+	return '<a class="${class}" href="/${href}">${veb.tr(ctx.lang, abs_tr_key)}</a>'	
+}

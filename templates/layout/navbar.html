@@ -1,1 +1,52 @@
-<nav><a href="/">Home</a> | <a href="/about">About</a></nav>
+<nav
+    class="sticky top-0 w-full z-50 bg-background/80 backdrop-blur-md border-b border-outline-variant/30 shadow-xl px-2">
+    <div class="flex items-center justify-between px-margin-desktop h-20 max-w-container-max mx-auto">
+        <div class="flex items-center gap-12">
+            <a class="font-bold text-2xl tracking-tight text-primary flex items-center gap-2 headline-font" href="/">
+                <img class="size-10" src="/favicon.avif" alt="home icon">
+                <span class="hidden md:block">
+                    COOKIE//ARCHIVE
+                </span>
+            </a>
+            <div class="hidden lg:flex gap-8 items-center">
+                @{ctx.nav_link('cookies')}
+                @{ctx.nav_link('pets')}
+                @{ctx.nav_link('treasures')}
+                @{ctx.nav_link('builds')}
+                <!-- <a class="font-semibold text-primary border-b-2 border-primary pb-1" href="/cookies">Database</a>
+                <a class="font-medium text-foreground-muted hover:text-primary transition-all" href="/pets">Lore</a>
+                <a class="font-medium text-foreground-muted hover:text-primary transition-all" href="/treasures">Cookies</a>
+                <a class="font-medium text-foreground-muted hover:text-primary transition-all" href="/builds">Treasure</a>
+                <a class="@ctx.nav_class(ctx.req.url, '/builds')" href="@ctx.req.url">@ctx.req.url</a> -->
+            </div>
+        </div>
+        <div class="flex items-center gap-6">
+            <div class="relative hidden md:block">
+                <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="m21 21-4.34-4.34" />
+                        <circle cx="11" cy="11" r="8" />
+                    </svg>
+                </span>
+                <input
+                    class="bg-surface border-2 border-outline-variant/30 focus:border-primary focus:ring-0 rounded-full py-2 pl-12 pr-6 w-72 transition-all outline-none text-sm text-foreground"
+                    placeholder="%navbar_search_placeholder" type="text" />
+            </div>
+            <button class="btn-primary size-12" popovertarget="account-dropdown">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                    >
+                    <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+                    <circle cx="12" cy="7" r="4" />
+                </svg>
+            </button>
+            <div id="account-dropdown"
+                class="p-4 m-bs-1 inline-64 bg-background text-foreground rounded border border-accent transition-discrete transition-all duration-300 flex flex-col gap-1"
+                popover>
+                <button>Logout</button>
+                <!-- <button class="btn-warning" popovertarget="account-dropdown" popovertargetaction="close">Close</button> -->
+            </div>
+        </div>
+    </div>
+</nav>
