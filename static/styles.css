@@ -191,6 +191,7 @@
 .border-accent\/30{border-color:color-mix(in srgb, oklch(var(--accent, 0.70 0.18 330)) 30%, transparent);}
 .border-primary{border-color:color-mix(in srgb, oklch(var(--primary, 0.62 0.22 260)) var(--un-border-opacity), transparent);}
 .border-primary\/50{border-color:color-mix(in srgb, oklch(var(--primary, 0.62 0.22 260)) 50%, transparent);}
+.border-secondary\/50{border-color:color-mix(in srgb, oklch(var(--secondary, 0.72 0.12 220)) 50%, transparent);}
 .hover\:border-primary:hover{border-color:color-mix(in srgb, oklch(var(--primary, 0.62 0.22 260)) var(--un-border-opacity), transparent);}
 .focus\:border-primary:focus{border-color:color-mix(in srgb, oklch(var(--primary, 0.62 0.22 260)) var(--un-border-opacity), transparent);}
 .rounded{border-radius:var(--radius-DEFAULT);}
