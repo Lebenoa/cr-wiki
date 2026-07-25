@@ -1,14 +1,14 @@
-<nav
-    class="sticky top-0 w-full z-50 bg-background/80 backdrop-blur-md border-b border-secondary/50 shadow-xl px-2">
+<nav class="sticky top-0 w-full z-50 bg-background/80 backdrop-blur-md border-b border-secondary/50 shadow-xl px-2">
     <div class="flex items-center justify-between h-20 mx-auto">
         <div class="flex items-center gap-12">
-            <a class="font-bold text-2xl tracking-tight text-primary flex items-center gap-2 font-headline" href="/">
+            <a class="font-bold text-2xl tracking-tight text-primary flex items-center gap-2 font-headline" href="/"
+                hx-boost="true">
                 <img class="size-10" src="/favicon.avif" alt="home icon">
                 <span class="hidden md:block">
                     COOKIE//ARCHIVE
                 </span>
             </a>
-            <div class="hidden lg:flex gap-8 items-center">
+            <div class="hidden lg:flex gap-8 items-center" hx-boost:inherited="true">
                 @{ctx.nav_link('cookies')}
                 @{ctx.nav_link('pets')}
                 @{ctx.nav_link('treasures')}
@@ -35,8 +35,7 @@
             </div>
             <button class="btn-primary size-12" popovertarget="account-dropdown">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
-                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                    >
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
                     <circle cx="12" cy="7" r="4" />
                 </svg>
@@ -44,9 +43,19 @@
             <div id="account-dropdown"
                 class="p-4 m-bs-1 inline-64 bg-background text-foreground rounded border border-accent transition-discrete transition-all duration-300 flex flex-col gap-1"
                 popover>
+                <button command="show-modal" commandfor="language-dropdown">@ctx.lang</button>
                 <button>Logout</button>
                 <!-- <button class="btn-warning" popovertarget="account-dropdown" popovertargetaction="close">Close</button> -->
             </div>
+            <dialog
+                class="flex flex-col items-center gap-4 border-secondary/70 border rounded p-8 w-[min(90vw,40rem)] max-h-[90vh] overflow-auto shadow-2xl bg-black text-foreground m-auto transition-discrete transition-all opacity-0 open:starting:opacity-0 open:opacity-100 duration-300"
+                backdrop:transition-all backdrop:transition-discrete backdrop:opacity-0 backdrop:bg-black
+                backdrop:open:opacity-40 backdrop:open:backdrop-blur-sm backdrop:open:blur-sm
+                backdrop:open:starting:opacity-0 closedby="any" id="language-dropdown">
+                <div hx-trigger="revealed" hx-get="/api/available-langs" hx-target="this" hx-swap="outerHTML">Loading...
+                </div>
+                <button class="btn-warning mx-auto" command="close" commandfor="language-dropdown">Close</button>
+            </dialog>
         </div>
     </div>
 </nav>

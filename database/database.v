@@ -4,13 +4,9 @@ import db.sqlite
 import strings
 import models
 
-$if sqlite_fts5 ? {
-	#flag -DSQLITE_ENABLE_FTS5
-}
-
 pub fn initialize(path string) !sqlite.DB {
 	conn := sqlite.connect(path)!
-	
+
 	sql conn {
 		create table models.User
 		create table models.Pet
@@ -24,11 +20,11 @@ pub fn initialize(path string) !sqlite.DB {
 		create table models.EffectTranslation
 		create table models.TreasureEffect
 	}!
-	
+
 	$if sqlite_fts5 ? {
 		conn.exec("PRAGMA foreign_keys = ON; PRAGMA journal_mode = WAL; PRAGMA synchoronous = FULL;")!
 		create_fts(conn)
-	}	
+	}
 	return conn
 }
 struct FtsTable {

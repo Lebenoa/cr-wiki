@@ -1,17 +1,17 @@
-import { defineConfig, presetWind4 } from "unocss";
+import { defineConfig, presetAttributify, presetWind4 } from "unocss";
 
 export default defineConfig({
-  cli: {
-    entry: {
-      patterns: ["./**/*.html", "./app/app.v"],
-      outFile: "./static/styles.css",
-      rewrite: true,
+    cli: {
+        entry: {
+            patterns: ["./**/*.html", "./app/app.v"],
+            outFile: "./static/styles.css",
+            rewrite: true,
+        },
     },
-  },
-  presets: [presetWind4()],
-  preflights: [
-    {
-      getCSS: () => `:root {
+    presets: [presetWind4(), presetAttributify()],
+    preflights: [
+        {
+            getCSS: () => `:root {
 					--font-headline:
 						"Sora",
 						"Noto Sans",
@@ -80,52 +80,52 @@ export default defineConfig({
 						}
 					}
 				}`,
+        },
+    ],
+    shortcuts: {
+        btn: "inline-flex items-center justify-center px-4 py-2 rounded transition-colors duration-300",
+        "btn-primary": "btn bg-primary text-foreground hover:bg-primary/90",
+        "btn-secondary": "btn bg-secondary text-foreground hover:bg-secondary/90",
+        "btn-success": "btn bg-success text-foreground hover:bg-success/90",
+        "btn-warning": "btn bg-warning text-background hover:bg-warning/90",
+        "btn-error": "btn bg-error text-foreground hover:bg-error/90",
+        "index-card":
+            "p-6 rounded-xl flex flex-col gap-4 cursor-pointer h-full bg-surface/25 backdrop-blur-md hover:-translate-y-1 hover:border-primary transition-all border border-accent/30",
     },
-  ],
-  shortcuts: {
-    btn: "inline-flex items-center justify-center px-4 py-2 rounded transition-colors duration-300",
-    "btn-primary": "btn bg-primary text-foreground hover:bg-primary/90",
-    "btn-secondary": "btn bg-secondary text-foreground hover:bg-secondary/90",
-    "btn-success": "btn bg-success text-foreground hover:bg-success/90",
-    "btn-warning": "btn bg-warning text-background hover:bg-warning/90",
-    "btn-error": "btn bg-error text-foreground hover:bg-error/90",
-    "index-card":
-      "p-6 rounded-xl flex flex-col gap-4 cursor-pointer h-full bg-surface/25 backdrop-blur-md hover:-translate-y-1 hover:border-primary transition-all border border-accent/30",
-  },
-  theme: {
-    colors: {
-      // Semantic colors
-      background: "oklch(var(--background, 0.99 0 0))",
-      surface: "oklch(var(--surface, 0.97 0 0))",
-      border: "oklch(var(--border, 0.88 0.01 260))",
+    theme: {
+        colors: {
+            // Semantic colors
+            background: "oklch(var(--background, 0.99 0 0))",
+            surface: "oklch(var(--surface, 0.97 0 0))",
+            border: "oklch(var(--border, 0.88 0.01 260))",
 
-      // Brand colors
-      primary: "oklch(var(--primary, 0.62 0.22 260))",
-      secondary: "oklch(var(--secondary, 0.72 0.12 220))",
-      accent: "oklch(var(--accent, 0.70 0.18 330))",
-      muted: "oklch(var(--muted, 0.92 0.01 260))",
+            // Brand colors
+            primary: "oklch(var(--primary, 0.62 0.22 260))",
+            secondary: "oklch(var(--secondary, 0.72 0.12 220))",
+            accent: "oklch(var(--accent, 0.70 0.18 330))",
+            muted: "oklch(var(--muted, 0.92 0.01 260))",
 
-      foreground: "oklch(var(--foreground, 0.15 0 0))",
-      "foreground-muted": "oklch(var(--foreground-muted, 0.4 0 0))",
+            foreground: "oklch(var(--foreground, 0.15 0 0))",
+            "foreground-muted": "oklch(var(--foreground-muted, 0.4 0 0))",
 
-      // Status colors
-      success: "oklch(var(--success, 0.72 0.18 145))",
-      warning: "oklch(var(--warning, 0.82 0.17 85))",
-      error: "oklch(var(--error, 0.62 0.24 25))",
+            // Status colors
+            success: "oklch(var(--success, 0.72 0.18 145))",
+            warning: "oklch(var(--warning, 0.82 0.17 85))",
+            error: "oklch(var(--error, 0.62 0.24 25))",
+        },
+        radius: {
+            none: "0",
+            sm: "0.25rem",
+            DEFAULT: "0.5rem",
+            md: "0.75rem",
+            lg: "1rem",
+            xl: "1.25rem",
+            full: "9999px",
+        },
+        font: {
+            headline: "var(--font-headline)",
+            body: "var(--font-body)",
+            label: "var(--font-label)",
+        },
     },
-    radius: {
-      none: "0",
-      sm: "0.25rem",
-      DEFAULT: "0.5rem",
-      md: "0.75rem",
-      lg: "1rem",
-      xl: "1.25rem",
-      full: "9999px",
-    },
-    font: {
-      headline: "var(--font-headline)",
-      body: "var(--font-body)",
-      label: "var(--font-label)",
-    },
-  },
 });

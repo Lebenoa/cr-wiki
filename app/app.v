@@ -9,11 +9,13 @@ pub struct Context {
 pub mut:
 	lang       string = 'en'
 	page_title string
+	is_htmx_request bool
 }
 
 pub struct App {
 	veb.StaticHandler
 	veb.Middleware[Context]
+
 	db sqlite.DB
 }
 
@@ -40,9 +42,9 @@ pub fn (ctx &Context) nav_link(href string, tr_key ?string) veb.RawHtml {
 	active := ctx.req.url == '/${href}' || ctx.req.url.starts_with('/' + href + '/')
 
 	class := if active {
-		'font-semibold text-primary border-b-2 border-primary pb-1'
+		'font-semibold text-primary border-b-2 border-primary pb-1 transition-all duration-1000'
 	} else {
-		'font-medium text-foreground-muted hover:text-primary transition-all'
+		'font-medium text-foreground-muted hover:text-primary transition-all duration-1000'
 	}
 
 	abs_tr_key := tr_key or { href }
@@ -54,12 +56,18 @@ pub fn before_request(mut ctx Context) bool {
 	ctx.lang = if lang_cookie := ctx.req.cookie('wikilang') {
 		lang_cookie.value
 	} else {
-		ctx.res.header.add(.set_cookie, http.Cookie{
-			name: "wikilang"
-			value: "en"
-			path: '/'
-		}.str())
+		ctx.set_cookie(http.Cookie{
+			name:  'wikilang'
+			value: 'en'
+			path:  '/'
+		})
 		'en'
 	}
+	ctx.is_htmx_request = if _ := ctx.get_custom_header("HX-Request") {
+		true
+	} else {
+		false
+	}
+
 	return true
 }
