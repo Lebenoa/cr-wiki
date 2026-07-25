@@ -70,7 +70,6 @@ export default defineConfig({
 					position-area: bottom center;
 					opacity: 0;
 					translate: 0 -10px;
-					z-index: -999;
 					&:popover-open {
 						opacity: 1;
 						translate: 0 0;
