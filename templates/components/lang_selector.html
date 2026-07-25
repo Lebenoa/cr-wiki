@@ -1,0 +1,15 @@
+<h2 class="font-bold text-center text-xl">%choose_language</h2>
+<div class="flex items-center gap-2 w-full justify-center flex-row flex-wrap">
+    <form action="/api/set-lang" method="post">
+        <input type="hidden" value="@current_url" name="url">
+        @for lang in languages
+        @if lang == ctx.lang
+        <button class="px-4 py-2 rounded bg-primary text-foreground" name="lang"
+            value="@lang">@{ctx.lang_map(lang)}</button>
+        @else
+        <button class="px-4 py-2 rounded bg-secondary/30 text-foreground" name="lang"
+            value="@lang">@{ctx.lang_map(lang)}</button>
+        @endif
+        @endfor
+    </form>
+</div>
