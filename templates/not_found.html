@@ -1,11 +1,18 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     @include 'layout/head.html'
 </head>
+
 <body>
     @include 'layout/navbar.html'
 
-    <h1>404 NOT FOUND :(</h1>
+    <div class="w-full h-full flex flex-col items-center justify-center">
+        <h1 class="text-error text-5xl font-bold mb-2">404</h1>
+        <h2 class="text-error text-3xl">NOT FOUND :(</h2>
+        <a href="/" class="btn-success mt-8 text-black">Go back home</a>
+    </div>
 </body>
+
 </html>
