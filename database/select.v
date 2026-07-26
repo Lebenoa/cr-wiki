@@ -17,6 +17,45 @@ pub struct CookieView {
 		description string
 }
 
+struct BackupTranslationParam {
+	owner_id ?int
+	limit int = -1
+}
+
+fn backup_translations[T](conn sqlite.DB, lang string, params ?BackupTranslationParam) !map[int]T {
+	abs_params := params or { BackupTranslationParam{} }
+
+	translations := if ow_id := abs_params.owner_id {
+		sql conn {
+			select name, owner_id, lang from T
+			where (lang == lang || lang == 'en') && owner_id == ow_id
+		}!
+	} else {
+		sql conn {
+			select name, owner_id, lang from T
+			where lang == lang || lang == 'en'
+		}!
+	}
+
+	mut translation_map := map[int]models.CookieTranslation{}
+
+	// Requested language first
+	for tr in translations {
+		if tr.lang == lang {
+			translation_map[tr.owner_id] = tr
+		}
+	}
+
+	// English fallback
+	for tr in translations {
+		if tr.owner_id !in translation_map {
+			translation_map[tr.owner_id] = tr
+		}
+	}
+
+	return translation_map
+}
+
 pub fn select_cookies(conn sqlite.DB, lang string) ![]CookieView {
 	cookies := sql conn {
 		select from models.Cookie
@@ -37,23 +76,8 @@ pub fn select_cookies(conn sqlite.DB, lang string) ![]CookieView {
 		select name, owner_id, lang from models.CookieTranslation
 		where owner_id in ids && (lang == lang || lang == 'en')
 	}!
-	println(translations)
 
-	mut translation_map := map[int]models.CookieTranslation{}
-
-	// Requested language first
-	for tr in translations {
-		if tr.lang == lang {
-			translation_map[tr.owner_id] = tr
-		}
-	}
-
-	// English fallback
-	for tr in translations {
-		if tr.owner_id !in translation_map {
-			translation_map[tr.owner_id] = tr
-		}
-	}
+	translation_map := backup_translations[models.CookieTranslation](conn, lang)!
 
 	mut result := []CookieView{}
 
@@ -72,4 +96,20 @@ pub fn select_cookies(conn sqlite.DB, lang string) ![]CookieView {
 	}
 
 	return result
+}
+
+pub fn get_cookie(conn sqlite.DB, lang string, id int) !CookieView {
+	cookie := sql conn {
+		select from models.Cookie
+		where cookie_id == id
+	}!
+
+	if cookie.len == 0 {
+		return error('cookie not found')
+	}
+
+	translations := backup_translations[models.CookieTranslation](conn, lang, owner_id: id)!
+
+	println(translations[id])
+	return CookieView{}
 }

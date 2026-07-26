@@ -167,8 +167,9 @@ fn create_fts_table(conn sqlite.DB, table FtsTable) ! {
 }
 
 @[inline]
-fn exec(conn sqlite.DB, query string) ! {
-	println("Executing ${query}")
+fn exec(conn sqlite.DB, nq string) ! {
+	query := nq.trim_space()
+	println("Executing: `${query}`")
 	result := conn.exec_none(query)
 	if !sqlite_success(result) {
 		return conn.error_message(result, query)
