@@ -28,6 +28,11 @@ export default defineConfig({
 						"JetBrains Mono",
 						"Noto Sans Mono",
 						monospace;
+
+					--global-font: "Noto Sans Thai", sans-serif;
+				}
+				* {
+					font-family: var(--global-font)
 				}
 				@view-transition {
 					navigation: auto;

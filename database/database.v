@@ -22,7 +22,9 @@ pub fn initialize(path string) !sqlite.DB {
 	}!
 
 	$if sqlite_fts5 ? {
-		conn.exec("PRAGMA foreign_keys = ON; PRAGMA journal_mode = WAL; PRAGMA synchoronous = FULL;")!
+		conn.exec("PRAGMA journal_mode = WAL; PRAGMA synchoronous = FULL;")!
+		jnm := conn.exec("PRAGMA journal_mode;")!
+		println(jnm)
 		create_fts(conn)
 	}
 	return conn
@@ -85,7 +87,7 @@ fn create_fts_table(conn sqlite.DB, table FtsTable) ! {
 		USING fts5(
 			${cols},
 			content='${table.table}',
-			content_rowid='id'
+			content_rowid='${table.table}_id'
 		);
 	")!
 
@@ -98,7 +100,7 @@ fn create_fts_table(conn sqlite.DB, table FtsTable) ! {
 				${insert_cols_str}
 			)
 			VALUES (
-				new.id,
+				new.${table.table}_id,
 				${new_cols_str}
 			);
 		END;
@@ -115,7 +117,7 @@ fn create_fts_table(conn sqlite.DB, table FtsTable) ! {
 			)
 			VALUES (
 				'delete',
-				old.id,
+				old.${table.table}_id,
 				${old_cols_str}
 			);
 		END;
@@ -132,7 +134,7 @@ fn create_fts_table(conn sqlite.DB, table FtsTable) ! {
 			)
 			VALUES (
 				'delete',
-				old.id,
+				old.${table.table}_id,
 				${old_cols_str}
 			);
 
@@ -141,7 +143,7 @@ fn create_fts_table(conn sqlite.DB, table FtsTable) ! {
 				${insert_cols_str}
 			)
 			VALUES (
-				new.id,
+				new.${table.table}_id,
 				${new_cols_str}
 			);
 		END;
@@ -153,7 +155,7 @@ fn create_fts_table(conn sqlite.DB, table FtsTable) ! {
 			${insert_cols_str}
 		)
 		SELECT
-			id,
+			${table.table}_id,
 			${insert_cols_str}
 		FROM ${table.table}
 		WHERE NOT EXISTS (

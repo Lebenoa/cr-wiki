@@ -8,8 +8,17 @@
 <body>
     @include 'layout/navbar.html'
 
-    Cookies
-    @cookies
+    <h1 class="text-4xl font-bold my-4 text-center">%cookie_page_header</h1>
+
+    <div class="flex flex-row flex-wrap p-8">
+        @for cookie in cookies
+        <a href="/cookie/@cookie.cookie_id"
+            class="border border-secondary px-4 py-2 rounded flex flex-col items-center justify-center hover:border-primary transition-colors group">
+            <img src="/img/cookies/@{cookie.image or { 'https://placehold.co/600x400' }}" alt="@cookie.name">
+            <h2 class="text-xl group-hover:text-primary text-secondary">@cookie.name</h2>
+        </a>
+        @endfor
+    </div>
 </body>
 
 </html>

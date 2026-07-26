@@ -3,17 +3,20 @@ module models
 import time
 
 pub struct Cookie {
-	id ?int @[primary; serial]
+	pub:
+	cookie_id ?int @[primary; serial]
 	image ?string
 	release_date time.Time
 }
 
 @[table: 'cookie_translation']
-@[unique_key: 'cookie_id, lang']
+@[unique_key: 'owner_id, lang']
+@[index: 'owner_id, lang']
 pub struct CookieTranslation {
-    id ?int @[primary; serial]
+	pub:
+    cookie_translation_id ?int @[primary; serial]
 
-    cookie_id int @[required; references: 'cookie'; index]
+    owner_id int @[required; references: 'cookie(cookie_id)'; index]
     lang string @[required; index]
 
     name string @[required]
