@@ -23,8 +23,6 @@ pub fn initialize(path string) !sqlite.DB {
 
 	$if sqlite_fts5 ? {
 		conn.exec("PRAGMA journal_mode = WAL; PRAGMA synchoronous = FULL;")!
-		jnm := conn.exec("PRAGMA journal_mode;")!
-		println(jnm)
 		create_fts(conn)
 	}
 	return conn

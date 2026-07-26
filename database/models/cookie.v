@@ -2,10 +2,13 @@ module models
 
 import time
 
+
 pub struct Cookie {
 	pub:
 	cookie_id ?int @[primary; serial]
+	grade Grade
 	image ?string
+	tip_for_player ?string
 	release_date time.Time
 }
 

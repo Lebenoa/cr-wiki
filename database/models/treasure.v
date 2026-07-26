@@ -4,7 +4,9 @@ import time
 
 pub struct Treasure {
 	treasure_id ?int @[primary; serial]
+	image ?string
 	is_evolved bool
+	is_blessed bool
 	release_date time.Time
 }
 

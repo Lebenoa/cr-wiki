@@ -12,7 +12,7 @@
 
     <div class="flex flex-row flex-wrap p-8">
         @for cookie in cookies
-        <a href="/cookie/@cookie.cookie_id"
+        <a href="/cookies/@cookie.cookie_id"
             class="border border-secondary px-4 py-2 rounded flex flex-col items-center justify-center hover:border-primary transition-colors group">
             <img src="/img/cookies/@{cookie.image or { 'https://placehold.co/600x400' }}" alt="@cookie.name">
             <h2 class="text-xl group-hover:text-primary text-secondary">@cookie.name</h2>

@@ -9,6 +9,8 @@ pub struct CookieView {
 	pub:
 		cookie_id int
 		image ?string
+		grade models.Grade
+		tip_for_player ?string
 		release_date time.Time
 
 		lang string
@@ -22,26 +24,28 @@ struct BackupTranslationParam {
 	limit int = -1
 }
 
-fn backup_translations[T](conn sqlite.DB, lang string, params ?BackupTranslationParam) !map[int]T {
+fn backup_translations[T](conn sqlite.DB, user_lang string, params ?BackupTranslationParam) !map[int]T {
 	abs_params := params or { BackupTranslationParam{} }
 
 	translations := if ow_id := abs_params.owner_id {
 		sql conn {
-			select name, owner_id, lang from T
-			where (lang == lang || lang == 'en') && owner_id == ow_id
+			select from T
+			where (lang == user_lang || lang == 'en') && owner_id == ow_id
+			limit abs_params.limit
 		}!
 	} else {
 		sql conn {
-			select name, owner_id, lang from T
-			where lang == lang || lang == 'en'
+			select from T
+			where lang == user_lang || lang == 'en'
+			limit abs_params.limit
 		}!
 	}
 
-	mut translation_map := map[int]models.CookieTranslation{}
+	mut translation_map := map[int]T{}
 
 	// Requested language first
 	for tr in translations {
-		if tr.lang == lang {
+		if tr.lang == user_lang {
 			translation_map[tr.owner_id] = tr
 		}
 	}
@@ -59,7 +63,7 @@ fn backup_translations[T](conn sqlite.DB, lang string, params ?BackupTranslation
 pub fn select_cookies(conn sqlite.DB, lang string) ![]CookieView {
 	cookies := sql conn {
 		select from models.Cookie
-		order by cookie_id desc
+		order by release_date desc
 		limit 30
 	}!
 
@@ -71,11 +75,6 @@ pub fn select_cookies(conn sqlite.DB, lang string) ![]CookieView {
 	for cookie in cookies {
 		ids << cookie.cookie_id or { continue }
 	}
-
-	translations := sql conn {
-		select name, owner_id, lang from models.CookieTranslation
-		where owner_id in ids && (lang == lang || lang == 'en')
-	}!
 
 	translation_map := backup_translations[models.CookieTranslation](conn, lang)!
 
@@ -99,17 +98,29 @@ pub fn select_cookies(conn sqlite.DB, lang string) ![]CookieView {
 }
 
 pub fn get_cookie(conn sqlite.DB, lang string, id int) !CookieView {
-	cookie := sql conn {
+	if id <= 0 {
+		return error('invalid cookie id')
+	}
+
+	cookies := sql conn {
 		select from models.Cookie
 		where cookie_id == id
 	}!
 
-	if cookie.len == 0 {
-		return error('cookie not found')
+	if cookies.len == 0 {
+		return error('cookie (${id}) not found')
 	}
+	cookie := cookies.first()
 
 	translations := backup_translations[models.CookieTranslation](conn, lang, owner_id: id)!
 
-	println(translations[id])
-	return CookieView{}
+	return CookieView{
+		cookie_id: cookie.cookie_id or { 0 }
+		image: cookie.image
+		release_date: cookie.release_date
+		lang: translations[id].lang
+		name: translations[id].name
+		abilities: translations[id].abilities
+		description: translations[id].description
+	}
 }

@@ -5,6 +5,8 @@ import time
 pub struct Pet {
 	pet_id ?int @[primary; serial]
 	image ?string
+	grade Grade
+	tip_for_player ?string
 	release_date time.Time
 }
 

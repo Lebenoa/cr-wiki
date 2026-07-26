@@ -12,3 +12,10 @@ pub fn (wapp &App) cookies(mut ctx Context) veb.Result {
 
 	return $veb.html()
 }
+
+@['/cookies/:id']
+pub fn (wapp &App) cookie_info(mut ctx Context, id int) veb.Result {
+	cookie := database.get_cookie(wapp.db, ctx.lang, id) or { return ctx.not_found() }
+	ctx.page_title = '${cookie.name} | Classic FanWiki'
+	return $veb.html("./templates/views/cookie.html")
+}
