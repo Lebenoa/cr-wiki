@@ -13,11 +13,6 @@
                 @{ctx.nav_link('pets')}
                 @{ctx.nav_link('treasures')}
                 @{ctx.nav_link('builds')}
-                <!-- <a class="font-semibold text-primary border-b-2 border-primary pb-1" href="/cookies">Database</a>
-                <a class="font-medium text-foreground-muted hover:text-primary transition-all" href="/pets">Lore</a>
-                <a class="font-medium text-foreground-muted hover:text-primary transition-all" href="/treasures">Cookies</a>
-                <a class="font-medium text-foreground-muted hover:text-primary transition-all" href="/builds">Treasure</a>
-                <a class="@ctx.nav_class(ctx.req.url, '/builds')" href="@ctx.req.url">@ctx.req.url</a> -->
             </div>
         </div>
         <div class="flex items-center gap-6">
@@ -41,25 +36,36 @@
                 </svg>
             </button>
             <div id="account-dropdown"
-                class="p-4 m-bs-1 inline-64 bg-background text-foreground rounded border border-accent transition-discrete transition-all duration-300 flex-col gap-1 hidden popover-open:flex"
+                class="p-4 m-bs-1 inline-64 bg-background text-foreground rounded border border-accent transition-discrete transition-all duration-300 flex-col gap-2 hidden popover-open:flex"
                 popover>
+                @if user := ctx.user
+                <a href="/me" class="btn hover:bg-primary/30">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+                        <circle cx="12" cy="7" r="4" />
+                    </svg>
+                    <p>@{user.username}</p>
+                </a>
+                @else
                 <div class="grid grid-cols-2 gap-2 items-center justify-center">
                     <a href="/login" class="btn-primary">%login</a>
                     <a href="/register" class="btn-secondary">%register</a>
                 </div>
-                <button command="show-modal" commandfor="language-dropdown">%language: <span
-                        class="font-bold uppercase">@ctx.lang</span></button>
-                <button>Logout</button>
+                @endif
+                <button class="btn hover:bg-secondary/20" command="show-modal" commandfor="language-dropdown">%language:
+                    <span class="font-bold uppercase">@ctx.lang</span></button>
                 <!-- <button class="btn-warning" popovertarget="account-dropdown" popovertargetaction="close">Close</button> -->
             </div>
             <dialog
-                class="flex flex-col items-center gap-4 border-secondary/70 border rounded p-8 w-[min(90vw,40rem)] max-h-[90vh] overflow-auto shadow-2xl bg-black text-foreground m-auto transition-discrete transition-all opacity-0 open:starting:opacity-0 open:opacity-100 duration-300"
+                class="hidden open:flex flex-col items-center gap-4 border-secondary/70 border rounded p-8 w-[min(90vw,40rem)] max-h-[90vh] overflow-auto shadow-2xl bg-black text-foreground m-auto transition-discrete transition-all opacity-0 open:starting:opacity-0 open:opacity-100 duration-300"
                 backdrop:transition-all backdrop:transition-discrete backdrop:opacity-0 backdrop:bg-black
                 backdrop:open:opacity-40 backdrop:open:backdrop-blur-sm backdrop:open:blur-sm
                 backdrop:open:starting:opacity-0 closedby="any" id="language-dropdown">
-                <div hx-trigger="revealed" hx-get="/api/available-langs" hx-target="this" hx-swap="outerHTML">Loading...
+                <div hx-trigger="revealed" hx-get="/api/available-langs" hx-target="this" hx-swap="outerHTML">
+                    Loading...
                 </div>
-                <button class="btn-warning mx-auto" command="close" commandfor="language-dropdown">Close</button>
+                <button class="btn-warning mx-auto" command="close" commandfor="language-dropdown">%close</button>
             </dialog>
         </div>
     </div>

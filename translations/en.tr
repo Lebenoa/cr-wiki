@@ -1,6 +1,12 @@
 index_page_title
 CookieRun: Classic/FanWiki
 -----
+login_page_title
+Login | Classic/FanWiki
+-----
+register_page_title
+Register | Classic/FanWiki
+-----
 cookies_page_title
 Cookies | Classic/FanWiki
 -----
@@ -48,4 +54,37 @@ Login
 -----
 register
 Register
+-----
+share_build_message
+Want to share your build?
+-----
+lets_register_message
+Fill out the form below to get started!
+-----
+username
+Username
+-----
+email
+Email
+-----
+password
+Password
+-----
+confirm_password
+Confirm Password
+-----
+login_button_text
+Login
+-----
+register_button_text
+Register Now!
+-----
+already_have_account
+Already have an account?
+-----
+dont_have_account
+Don't have an account?
+-----
+close
+Close
 -----

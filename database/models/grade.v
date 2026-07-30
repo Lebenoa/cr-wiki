@@ -1,9 +1,10 @@
 module models
 
-pub enum Grade {
+pub enum Grade as u8 {
 	c
 	b
 	a
 	s
 	s_plus
+	l
 }

@@ -15,7 +15,7 @@ pub struct Treasure {
 pub struct TreasureTranslation {
     treasure_translation_id ?int @[primary; serial]
 
-    treasure_id int @[required; references: 'treasure'; index]
+    treasure_id int @[required; references: 'treasure(treasure_id)'; index]
     lang string @[required; index]
 
     name string @[required]

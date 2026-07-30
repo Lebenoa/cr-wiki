@@ -3,7 +3,7 @@ import { defineConfig, presetAttributify, presetWind4 } from "unocss";
 export default defineConfig({
     cli: {
         entry: {
-            patterns: ["./**/*.html", "./app/app.v"],
+            patterns: ["./**/*.html", "./app/*.v"],
             outFile: "./static/styles.css",
             rewrite: true,
         },
@@ -41,7 +41,8 @@ export default defineConfig({
 					width: 100%;
 					height: 100%;
 					display: table;
-					scrollbar-gutter: stable both-edges;
+					overflow-y: auto;
+					scrollbar-gutter: stable;
 
 					--background: 0.1874 0.0124 300.42;
 					--surface: var(--background);
@@ -59,6 +60,7 @@ export default defineConfig({
 				body {
 					width: 100%;
 					display: table-cell;
+					max-height: 100vh;
 					background-color: oklch(var(--background, 0.99 0 0));
 					color: oklch(var(--foreground, 0.15 0 0));
 					transition: background-color 0.3s ease, color 0.3s ease;

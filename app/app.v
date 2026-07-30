@@ -2,14 +2,17 @@ module app
 
 import veb
 import db.sqlite
-import net.http
+import database.models
+
+const lang_cookie_key = 'wikilang'
+const session_cookie_key = 'CRSESSID'
 
 pub struct Context {
 	veb.Context
 pub mut:
 	lang       string = 'en'
 	page_title string
-	is_htmx_request bool
+	user ?models.User
 }
 
 pub struct App {
@@ -17,6 +20,8 @@ pub struct App {
 	veb.Middleware[Context]
 
 	db sqlite.DB
+mut:
+	sessions map[string]models.User
 }
 
 pub fn initialize(conn sqlite.DB) !&App {
@@ -25,7 +30,8 @@ pub fn initialize(conn sqlite.DB) !&App {
 	}
 	new_app.static_mime_types['.avif'] = 'image/avif'
 	new_app.handle_static('static', true)!
-	new_app.use(handler: before_request)
+	new_app.use(handler: new_app.before_request)
+	// new_app.use(handler: after_request, after: true)
 	return new_app
 }
 
@@ -54,22 +60,44 @@ pub fn (ctx &Context) nav_link(href string, tr_key ?string) veb.RawHtml {
 	return '<a class="${class}" href="/${href}">${veb.tr(ctx.lang, abs_tr_key)}</a>'
 }
 
-pub fn before_request(mut ctx Context) bool {
-	ctx.lang = if lang_cookie := ctx.req.cookie('wikilang') {
-		lang_cookie.value
-	} else {
-		ctx.set_cookie(http.Cookie{
-			name:  'wikilang'
-			value: 'en'
-			path:  '/'
-		})
-		'en'
-	}
-	ctx.is_htmx_request = if _ := ctx.get_custom_header("HX-Request") {
+pub fn (ctx &Context) is_htmx_request() bool {
+	return if _ := ctx.get_custom_header("HX-Request") {
 		true
 	} else {
 		false
 	}
+}
 
+pub fn (mut wapp App) before_request(mut ctx Context) bool {
+	ctx.lang = if lang_cookie := ctx.req.cookie('wikilang') {
+		lang_cookie.value
+	} else {
+		ctx.set_cookie(
+			name:  lang_cookie_key
+			value: 'en'
+			path:  '/'
+		)
+		'en'
+	}
+
+	ctx.user = if user_cookie := ctx.req.cookie(session_cookie_key) {
+		println("Found cookie: ${user_cookie}")
+		if user := wapp.sessions[user_cookie.value] {
+			println("Found user: ${user}")
+			user
+		} else {
+			println("No user found for cookie: ${user_cookie.value}")
+			none
+		}
+	} else {
+		println("No cookie found")
+		none
+	}
+
+	return true
+}
+
+pub fn after_request(mut ctx Context) bool {
+	println('${ctx.req.method} ${ctx.req.url} ${ctx.res.status()}')
 	return true
 }

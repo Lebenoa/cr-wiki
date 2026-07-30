@@ -15,7 +15,7 @@ pub struct Pet {
 pub struct PetTranslation {
     pet_translation_id ?int @[primary; serial]
 
-    pet_id int @[required; references: 'pet'; index]
+    pet_id int @[required; references: 'pet(pet_id)'; index]
     lang string @[required; index]
 
     name string @[required]

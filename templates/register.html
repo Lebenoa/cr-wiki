@@ -8,7 +8,104 @@
 <body>
     @include 'layout/navbar.html'
 
-    Register
+    <div class="w-full flex flex-col justify-center items-center py-12 relative">
+        <div class="text-center lg:text-left mb-10">
+            <h1 class="font-headline font-bold text-2xl text-accent mb-2">%share_build_message</h1>
+            <p class="font-body text-lg text-secondary">%lets_register_message</p>
+        </div>
+        <form class="space-y-5" method="post" hx-boost="true">
+            <div class="space-y-2">
+                <label class="font-label text-secondary uppercase">%username</label>
+                <div class="relative group input-glow">
+                    <span
+                        class="absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant/50 group-focus-within:text-primary transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+                            <circle cx="12" cy="7" r="4" />
+                        </svg>
+                    </span>
+                    <input
+                        class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 pl-12 pr-4 text-foreground placeholder:text-foreground/30 focus:border-primary focus:ring-0 transition-all outline-none"
+                        placeholder="GingerBrave" type="text" name="username" required />
+                </div>
+            </div>
+            <div class="space-y-2">
+                <label class="font-label text-secondary uppercase">%email</label>
+                <div class="relative group input-glow">
+                    <span
+                        class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant/50 group-focus-within:text-primary transition-colors"><svg
+                            xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="m22 7-8.991 5.727a2 2 0 0 1-2.009 0L2 7" />
+                            <rect x="2" y="4" width="20" height="16" rx="2" />
+                        </svg></span>
+                    <input
+                        class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 pl-12 pr-4 text-foreground placeholder:text-foreground/30 focus:border-primary focus:ring-0 transition-all outline-none"
+                        placeholder="gingerbrave@@cookie.run" type="email" name="email" />
+                </div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div class="space-y-2">
+                    <label class="font-label text-secondary uppercase">%password</label>
+                    <div class="relative group input-glow">
+                        <span
+                            class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant/50 group-focus-within:text-primary transition-colors"><svg
+                                xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <circle cx="12" cy="16" r="1" />
+                                <rect width="18" height="12" x="3" y="10" rx="2" />
+                                <path d="M7 10V7a5 5 0 0 1 9.33-2.5" />
+                            </svg></span>
+                        <input
+                            class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 pl-12 pr-4 text-foreground placeholder:text-foreground/30 focus:border-primary focus:ring-0 transition-all outline-none"
+                            placeholder="••••••••" type="password" name="password" required />
+                    </div>
+                </div>
+                <div class="space-y-2">
+                    <label class="font-label text-secondary uppercase">%confirm_password</label>
+                    <div class="relative group input-glow">
+                        <span
+                            class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant/50 group-focus-within:text-primary transition-colors"><svg
+                                xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <path
+                                    d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z" />
+                                <path d="M12 8v4" />
+                                <path d="M12 16h.01" />
+                            </svg></span>
+                        <input
+                            class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 pl-12 pr-4 text-foreground placeholder:text-foreground/30 focus:border-primary focus:ring-0 transition-all outline-none"
+                            placeholder="••••••••" type="password" name="confirm_password" required />
+                    </div>
+                </div>
+            </div>
+            <div class="flex items-center gap-3 py-2">
+                <input class="w-5 h-5 accent-primary" id="terms" type="checkbox" />
+                <label class="font-body-md text-on-surface-variant text-sm cursor-pointer" for="terms">I accept
+                    the <a class="text-primary hover:underline" href="#">Protocols of Service</a></label>
+            </div>
+            <button
+                class="w-full bg-primary hover:bg-primary/90 text-foreground font-headline py-4 rounded-xl shadow-lg transition-all active:scale-[0.98] neon-glow flex items-center justify-center gap-2 group">
+                %register_button_text
+                <span class="group-hover:translate-x-1 transition-transform"><svg xmlns="http://www.w3.org/2000/svg"
+                        width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path
+                            d="M13.207 19.793a.707.707 0 0 1-1.207-.5V16a1 1 0 0 0-1-1H5a1 1 0 0 1-1-1v-4a1 1 0 0 1 1-1h6a1 1 0 0 0 1-1V4.707a.707.707 0 0 1 1.207-.5l6.94 6.94a1.207 1.207 0 0 1 0 1.707z" />
+                    </svg></span>
+            </button>
+        </form>
+        <div class="mt-8 pt-8 border-t border-secondary/30 flex flex-row gap-2 items-center justify-center">
+            <p class="font-body text-accent">%already_have_account</p>
+            <a class="inline-block font-headline text-secondary hover:text-accent hover:underline transition-colors underline flex items-center justify-center gap-1 group"
+                href="/login">
+                %login!
+            </a>
+        </div>
+    </div>
 </body>
 
 </html>

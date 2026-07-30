@@ -10,7 +10,7 @@ pub fn (ctx &Context) lang_map(lang string) string {
 
 @['/api/available-langs']
 pub fn (wapp &App) available_lang(mut ctx Context) veb.Result {
-	if !ctx.is_htmx_request {
+	if !ctx.is_htmx_request() {
 		return ctx.json(api.available_lang())
 	}
 
@@ -22,7 +22,10 @@ pub fn (wapp &App) available_lang(mut ctx Context) veb.Result {
 @['/api/set-lang'; post]
 pub fn (wapp &App) set_lang(mut ctx Context) veb.Result {
 	og_url := ctx.form['url'] or { '/' }
-	lang := ctx.form['lang'] or { 'en' }
+	mut lang := ctx.form['lang'] or { 'en' }
+	if lang == "lang_map" {
+		lang = 'en'
+	}
 	if os.exists('./translations/${lang}.tr') {
 		ctx.set_cookie(
 			name: 'wikilang'
