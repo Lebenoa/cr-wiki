@@ -43,10 +43,15 @@ pub fn initialize(path string) !sqlite.DB {
 // SeedFixture mirrors the committed scripts/seed_data.json dump: the roster
 // tables only. Users are never seeded (auth data stays local).
 pub struct SeedFixture {
-	cookie             []models.Cookie
-	cookie_translation []models.CookieTranslation
-	pet                []models.Pet
-	pet_translation    []models.PetTranslation
+	cookie               []models.Cookie
+	cookie_translation   []models.CookieTranslation
+	pet                  []models.Pet
+	pet_translation      []models.PetTranslation
+	treasure             []models.Treasure
+	treasure_translation []models.TreasureTranslation
+	effect               []models.Effect
+	effect_translation   []models.EffectTranslation
+	treasure_effect      []models.TreasureEffect
 }
 
 // seed_if_empty loads scripts/seed_data.json into a database that has no
@@ -80,6 +85,33 @@ fn seed_if_empty(conn sqlite.DB) ! {
 	for tr in fixture.pet_translation {
 		sql conn {
 			insert tr into models.PetTranslation
+		}!
+	}
+	// treasure/effect rows in FK order; explicit ids preserved so the
+	// treasure_effect links stay valid
+	for t in fixture.treasure {
+		sql conn {
+			insert t into models.Treasure
+		}!
+	}
+	for tr in fixture.treasure_translation {
+		sql conn {
+			insert tr into models.TreasureTranslation
+		}!
+	}
+	for e in fixture.effect {
+		sql conn {
+			insert e into models.Effect
+		}!
+	}
+	for tr in fixture.effect_translation {
+		sql conn {
+			insert tr into models.EffectTranslation
+		}!
+	}
+	for te in fixture.treasure_effect {
+		sql conn {
+			insert te into models.TreasureEffect
 		}!
 	}
 }
@@ -233,6 +265,17 @@ fn migrate(conn sqlite.DB) ! {
 			if !sqlite_success(result) {
 				return conn.error_message(result, query)
 			}
+		}
+	}
+
+	// treasure_effect.sort_order existed in an early model revision and was
+	// later removed; the NOT NULL column blocks inserts from the current model.
+	treasure_effect_cols := conn.columns('treasure_effect') or { return }
+	if 'sort_order' in treasure_effect_cols {
+		query := 'ALTER TABLE treasure_effect DROP COLUMN sort_order'
+		result := conn.exec_none(query)
+		if !sqlite_success(result) {
+			return conn.error_message(result, query)
 		}
 	}
 }

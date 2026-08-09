@@ -15,6 +15,14 @@ pub fn (wapp &App) treasures(mut ctx Context) veb.Result {
 	return $veb.html()
 }
 
+@['/treasures/:id']
+pub fn (wapp &App) treasure_info(mut ctx Context, id int) veb.Result {
+	treasure := database.get_treasure(wapp.db, ctx.lang, id) or { return ctx.not_found() }
+	effects := database.get_treasure_effects(wapp.db, ctx.lang, id) or { [] }
+	ctx.page_title = '${treasure.name} | Classic Fan/Wiki'
+	return $veb.html("./templates/views/treasure.html")
+}
+
 @['/treasures/new'; get; post]
 pub fn (wapp &App) new_treasure(mut ctx Context) veb.Result {
 	cur_user := ctx.user or { return ctx.not_found() }

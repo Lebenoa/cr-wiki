@@ -25,12 +25,14 @@ pub:
 }
 
 pub struct Effect {
+pub:
 	effect_id ?int @[primary; serial]
 }
 
 @[table: 'effect_translation']
 @[unique_key: 'effect_id, lang']
 pub struct EffectTranslation {
+pub:
     effect_translation_id ?int @[primary; serial]
 
     effect_id int @[required; references: 'effect'; index]
@@ -49,6 +51,7 @@ pub enum EffectUnit {
 @[table: 'treasure_effect']
 @[unique_key: 'treasure_id, effect_id']
 pub struct TreasureEffect {
+pub:
 	treasure_effect_id ?int @[primary; serial]
 
 	treasure_id int @[required; references: 'treasure'; index]

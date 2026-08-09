@@ -241,6 +241,132 @@ fn compare_treasures(a &TreasureView, b &TreasureView) int {
 	return 0
 }
 
+@[table: 'effect']
+pub struct EffectView {
+	pub:
+		effect_id     int
+		name          string
+		value_display string
+}
+
+// format_effect_value renders the extracted numeric value with its unit
+// suffix ("12%", "3s", "5000"); empty when the text carried no single value
+// (e.g. ranges like "5-6%").
+fn format_effect_value(value ?f32, unit models.EffectUnit) string {
+	val := value or { return '' }
+	mut s := val.str()
+	if s.contains('.') {
+		s = s.trim_right('0').trim_right('.')
+	}
+	return match unit {
+		.percent { '${s}%' }
+		.second { '${s}s' }
+		.flat { s }
+	}
+}
+
+pub fn get_treasure(conn sqlite.DB, lang string, id int) !TreasureView {
+	if id <= 0 {
+		return error('invalid treasure id')
+	}
+
+	treasures := sql conn {
+		select from models.Treasure
+		where treasure_id == id
+	}!
+
+	if treasures.len == 0 {
+		return error('treasure (${id}) not found')
+	}
+	treasure := treasures.first()
+
+	user_lang := lang
+	translations := sql conn {
+		select from models.TreasureTranslation
+		where treasure_id == id && (lang == user_lang || lang == 'en')
+	}!
+
+	if translations.len == 0 {
+		return error('treasure (${id}) has no translation')
+	}
+	mut tr := translations.first()
+	for t in translations {
+		if t.lang == user_lang {
+			tr = t
+			break
+		}
+	}
+
+	return TreasureView{
+		treasure_id: treasure.treasure_id or { 0 }
+		image: treasure.image
+		is_evolved: treasure.is_evolved
+		is_blessed: treasure.is_blessed
+		release_date: treasure.release_date
+		lang: tr.lang
+		name: tr.name
+		description: tr.description
+	}
+}
+
+// get_treasure_effects returns one row per distinct effect of the treasure,
+// in the order the wiki listed them (treasure_effect_id order).
+pub fn get_treasure_effects(conn sqlite.DB, lang string, id int) ![]EffectView {
+	links := sql conn {
+		select from models.TreasureEffect
+		where treasure_id == id
+		order by treasure_effect_id
+	}!
+
+	if links.len == 0 {
+		return []
+	}
+
+	mut effect_ids := []int{}
+	mut seen := map[int]bool{}
+	for link in links {
+		if link.effect_id !in seen {
+			effect_ids << link.effect_id
+			seen[link.effect_id] = true
+		}
+	}
+
+	user_lang := lang
+	translations := sql conn {
+		select from models.EffectTranslation
+		where effect_id in effect_ids && (lang == user_lang || lang == 'en')
+	}!
+
+	mut translation_map := map[int]models.EffectTranslation{}
+	for tr in translations {
+		if tr.lang == lang {
+			translation_map[tr.effect_id] = tr
+		}
+	}
+	for tr in translations {
+		if tr.effect_id !in translation_map {
+			translation_map[tr.effect_id] = tr
+		}
+	}
+
+	mut emitted := map[int]bool{}
+	mut result := []EffectView{}
+	for link in links {
+		if link.effect_id in emitted {
+			continue
+		}
+		emitted[link.effect_id] = true
+		if tr := translation_map[link.effect_id] {
+			result << EffectView{
+				effect_id:     link.effect_id
+				name:          tr.name
+				value_display: format_effect_value(link.value, link.unit)
+			}
+		}
+	}
+	return result
+}
+
 pub fn select_treasures(conn sqlite.DB, lang string) ![]TreasureView {
 	treasures := sql conn {
 		select from models.Treasure
