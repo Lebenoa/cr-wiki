@@ -418,6 +418,74 @@ pub fn select_treasures(conn sqlite.DB, lang string) ![]TreasureView {
 	return result
 }
 
+pub struct SearchResults {
+	pub mut:
+		cookies   []CookieView
+		pets      []PetView
+		treasures []TreasureView
+}
+
+// fts_match_query turns free-text input into an FTS5 MATCH expression: each
+// whitespace-separated token becomes a double-quoted phrase with a prefix
+// wildcard, so "sea fairy" matches "Sea Fairy" and partial words.
+fn fts_match_query(q string) string {
+	mut terms := []string{}
+	for tok in q.split(' ') {
+		t := tok.trim_space()
+		if t != '' {
+			terms << '"${t.replace('"', '""')}"*'
+		}
+	}
+	return terms.join(' ')
+}
+
+// fts_owner_ids returns the entity ids whose translations (in fts_table)
+// match `q`. Rowids of the FTS table are translation ids, which are mapped
+// back to entity ids via the translation table.
+fn fts_owner_ids(conn sqlite.DB, fts_table string, translation_table string, translation_id_col string, owner_col string, q string, limit int) ![]int {
+	match_expr := fts_match_query(q)
+	if match_expr == '' {
+		return []
+	}
+	query := "SELECT rowid FROM ${fts_table} WHERE ${fts_table} MATCH '${match_expr.replace("'", "''")}' ORDER BY rank LIMIT ${limit}"
+	rows := conn.exec(query) or { return [] }
+	if rows.len == 0 {
+		return []
+	}
+	mut in_list := []string{}
+	for r in rows {
+		in_list << r.get_int('rowid').str()
+	}
+	owner_rows := conn.exec('SELECT ${owner_col} AS owner_id FROM ${translation_table} WHERE ${translation_id_col} IN (${in_list.join(', ')})') or {
+		return []
+	}
+	mut ids := []int{}
+	mut seen := map[int]bool{}
+	for r in owner_rows {
+		id := r.get_int('owner_id')
+		if id !in seen {
+			ids << id
+			seen[id] = true
+		}
+	}
+	return ids
+}
+
+// search_all returns up to `limit` matches per entity type, ranked by FTS5.
+pub fn search_all(conn sqlite.DB, lang string, q string, limit int) !SearchResults {
+	mut results := SearchResults{}
+	for id in fts_owner_ids(conn, 'cookie_translation_fts', 'cookie_translation', 'cookie_translation_id', 'owner_id', q, limit)! {
+		results.cookies << get_cookie(conn, lang, id) or { continue }
+	}
+	for id in fts_owner_ids(conn, 'pet_translation_fts', 'pet_translation', 'pet_translation_id', 'pet_id', q, limit)! {
+		results.pets << get_pet(conn, lang, id) or { continue }
+	}
+	for id in fts_owner_ids(conn, 'treasure_translation_fts', 'treasure_translation', 'treasure_translation_id', 'treasure_id', q, limit)! {
+		results.treasures << get_treasure(conn, lang, id) or { continue }
+	}
+	return results
+}
+
 pub fn get_cookie(conn sqlite.DB, lang string, id int) !CookieView {
 	if id <= 0 {
 		return error('invalid cookie id')

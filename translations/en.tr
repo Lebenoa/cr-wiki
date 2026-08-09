@@ -154,6 +154,21 @@ Blessed
 treasure_effects
 Effects
 -----
+search_page_title
+Search | Classic/FanWiki
+-----
+search_hint
+Type in the search box to find cookies, pets, and treasures
+-----
+search_results_for
+Search results for
+-----
+search_no_results
+No results found.
+-----
+search_see_all
+See all results
+-----
 create_cookie_button
 Create Cookie
 -----

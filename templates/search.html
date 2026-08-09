@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="@ctx.lang">
+
+<head>
+    @include 'layout/head.html'
+</head>
+
+<body>
+    @include 'layout/navbar.html'
+
+    <h1 class="text-4xl font-bold my-4 text-center">%search_page_title</h1>
+
+    @if q == ""
+    <p class="text-center text-foreground-muted my-12">%search_hint</p>
+    @else
+    @if cookies.len == 0 && pets.len == 0 && treasures.len == 0
+    <p class="text-center text-foreground-muted my-12">%search_no_results</p>
+    @else
+    <p class="text-center text-foreground-muted mb-2">
+        %search_results_for "<span class="text-primary">@q</span>"
+    </p>
+    @if cookies.len > 0
+    <h2 class="text-2xl font-bold px-8 mt-8">%cookies</h2>
+    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 p-8">
+        @include 'partials/cookie_cards.html'
+    </div>
+    @endif
+    @if pets.len > 0
+    <h2 class="text-2xl font-bold px-8 mt-8">%pets</h2>
+    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 p-8">
+        @include 'partials/pet_cards.html'
+    </div>
+    @endif
+    @if treasures.len > 0
+    <h2 class="text-2xl font-bold px-8 mt-8">%treasures</h2>
+    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 p-8">
+        @for treasure in treasures
+        <a href="/treasures/@treasure.treasure_id"
+            class="border border-secondary px-4 py-2 rounded flex flex-col items-center justify-start hover:border-primary transition-colors group gap-2">
+            <img src="@{ctx.img_src('treasures', treasure.image)}" alt="@treasure.name"
+                class="h-28 w-full object-contain">
+            <h3 class="text-xl text-secondary text-center group-hover:text-primary">@treasure.name</h3>
+        </a>
+        @endfor
+    </div>
+    @endif
+    @endif
+    @endif
+</body>
+
+</html>

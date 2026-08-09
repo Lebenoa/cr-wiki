@@ -1,0 +1,35 @@
+@if cookies.len == 0 && pets.len == 0 && treasures.len == 0
+<div class="px-2 py-2 text-sm text-foreground-muted">%search_no_results</div>
+@else
+@if cookies.len > 0
+<div class="px-2 mt-2 text-xs font-label uppercase text-foreground-muted">%cookies</div>
+@for cookie in cookies
+<a href="/cookies/@cookie.cookie_id"
+    class="flex items-center gap-2 px-2 py-1 rounded text-sm text-foreground hover:bg-secondary/20">
+    <img src="/img/grades/@{cookie.grade}.png" alt="" class="w-5 h-5">
+    <span>@cookie.name</span>
+</a>
+@endfor
+@endif
+@if pets.len > 0
+<div class="px-2 mt-2 text-xs font-label uppercase text-foreground-muted">%pets</div>
+@for pet in pets
+<a href="/pets/@pet.pet_id"
+    class="flex items-center gap-2 px-2 py-1 rounded text-sm text-foreground hover:bg-secondary/20">
+    <img src="/img/grades/@{pet.grade}.png" alt="" class="w-5 h-5">
+    <span>@pet.name</span>
+</a>
+@endfor
+@endif
+@if treasures.len > 0
+<div class="px-2 mt-2 text-xs font-label uppercase text-foreground-muted">%treasures</div>
+@for treasure in treasures
+<a href="/treasures/@treasure.treasure_id"
+    class="flex items-center gap-2 px-2 py-1 rounded text-sm text-foreground hover:bg-secondary/20">
+    <span>@treasure.name</span>
+</a>
+@endfor
+@endif
+<a href="/search?q=@q_url"
+    class="mt-1 px-2 py-2 text-center text-xs font-label text-primary rounded hover:bg-secondary/20">%search_see_all</a>
+@endif
