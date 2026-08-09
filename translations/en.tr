@@ -67,14 +67,8 @@ Describe the Power+ effect
 power_plus_requirement
 Power+ Requirement
 -----
-power_plus_requirement_placeholder
-What must be met before Power+ can be used?
------
 unlock_goal
 Unlock Goal
------
-unlock_goal_placeholder
-How is this cookie unlocked?
 -----
 login
 Login

@@ -172,28 +172,16 @@ fn create_fts_table(conn sqlite.DB, table FtsTable) ! {
 
 // migrate applies schema changes that `create table` cannot handle on existing databases.
 fn migrate(conn sqlite.DB) ! {
-	// power_plus lives on cookie_translation; ensure these columns exist for
-	// databases created before they were introduced.
+	// cookie_translation columns added after the table first shipped; ensure they
+	// exist for databases created before their introduction.
 	translation_cols := conn.columns('cookie_translation') or { return }
-	if 'power_plus' !in translation_cols {
-		query := 'ALTER TABLE cookie_translation ADD COLUMN power_plus TEXT NOT NULL DEFAULT ""'
-		result := conn.exec_none(query)
-		if !sqlite_success(result) {
-			return conn.error_message(result, query)
-		}
-	}
-	if 'power_plus_requirement' !in translation_cols {
-		query := 'ALTER TABLE cookie_translation ADD COLUMN power_plus_requirement TEXT NOT NULL DEFAULT ""'
-		result := conn.exec_none(query)
-		if !sqlite_success(result) {
-			return conn.error_message(result, query)
-		}
-	}
-	if 'unlock_goal' !in translation_cols {
-		query := 'ALTER TABLE cookie_translation ADD COLUMN unlock_goal TEXT NOT NULL DEFAULT ""'
-		result := conn.exec_none(query)
-		if !sqlite_success(result) {
-			return conn.error_message(result, query)
+	for col in ['power_plus', 'power_plus_requirement', 'unlock_goal'] {
+		if col !in translation_cols {
+			query := 'ALTER TABLE cookie_translation ADD COLUMN ${col} TEXT NOT NULL DEFAULT ""'
+			result := conn.exec_none(query)
+			if !sqlite_success(result) {
+				return conn.error_message(result, query)
+			}
 		}
 	}
 }

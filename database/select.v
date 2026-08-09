@@ -85,19 +85,19 @@ pub fn select_cookies(conn sqlite.DB, lang string, limit int, offset int) ![]Coo
 
 	for cookie in cookies {
 		if tr := translation_map[cookie.cookie_id or { continue }] {
-		result << CookieView{
-			cookie_id: cookie.cookie_id or { 0 }
-			image: cookie.image
-			grade: cookie.grade
-			release_date: cookie.release_date
-			lang: tr.lang
-			name: tr.name
-			abilities: tr.abilities
-			description: tr.description
-			power_plus: tr.power_plus
-			power_plus_requirement: tr.power_plus_requirement
-			unlock_goal: tr.unlock_goal
-		}
+			result << CookieView{
+				cookie_id: cookie.cookie_id or { 0 }
+				image: cookie.image
+				grade: cookie.grade
+				release_date: cookie.release_date
+				lang: tr.lang
+				name: tr.name
+				abilities: tr.abilities
+				description: tr.description
+				power_plus: tr.power_plus
+				power_plus_requirement: tr.power_plus_requirement
+				unlock_goal: tr.unlock_goal
+			}
 		}
 	}
 
@@ -312,8 +312,9 @@ pub fn get_cookie(conn sqlite.DB, lang string, id int) !CookieView {
 	return CookieView{
 		cookie_id: cookie.cookie_id or { 0 }
 		image: cookie.image
-		grade: cookie.grade			release_date: cookie.release_date
-			lang: translations[id].lang
+		grade: cookie.grade
+		release_date: cookie.release_date
+		lang: translations[id].lang
 		name: translations[id].name
 		abilities: translations[id].abilities
 		description: translations[id].description

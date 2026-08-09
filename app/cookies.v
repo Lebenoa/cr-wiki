@@ -78,10 +78,8 @@ pub fn (wapp &App) new_cookie(mut ctx Context) veb.Result {
 			} else {
 				image
 			}
-			power_plus:              ctx.form['power_plus']
-			power_plus_requirement:  ctx.form['power_plus_requirement']
-			unlock_goal:             ctx.form['unlock_goal']
-			release_date:            release_date
+			power_plus:   ctx.form['power_plus']
+			release_date: release_date
 		}) or {
 			ctx.res.set_status(.bad_request)
 			return ctx.text('Failed to create cookie: ${err}')

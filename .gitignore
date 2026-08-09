@@ -33,3 +33,4 @@ node_modules/
 Config.toml
 *.db-shm
 *.db-wal
+*.def
