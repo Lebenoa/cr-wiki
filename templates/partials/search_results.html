@@ -5,9 +5,9 @@
 <div class="px-2 mt-2 text-xs font-label uppercase text-foreground-muted">%cookies</div>
 @for cookie in cookies
 <a href="/cookies/@cookie.cookie_id"
-    class="flex items-center gap-2 px-2 py-1 rounded text-sm text-foreground hover:bg-secondary/20">
-    <img src="/img/grades/@{cookie.grade}.png" alt="" class="w-5 h-5">
-    <span>@cookie.name</span>
+    class="flex items-center gap-2 px-2 py-1.5 rounded text-sm text-foreground hover:bg-secondary/20">
+    <img src="/img/grades/@{cookie.grade}.png" alt="" class="size-5 shrink-0">
+    <span class="truncate">@cookie.name</span>
 </a>
 @endfor
 @endif
@@ -15,9 +15,9 @@
 <div class="px-2 mt-2 text-xs font-label uppercase text-foreground-muted">%pets</div>
 @for pet in pets
 <a href="/pets/@pet.pet_id"
-    class="flex items-center gap-2 px-2 py-1 rounded text-sm text-foreground hover:bg-secondary/20">
-    <img src="/img/grades/@{pet.grade}.png" alt="" class="w-5 h-5">
-    <span>@pet.name</span>
+    class="flex items-center gap-2 px-2 py-1.5 rounded text-sm text-foreground hover:bg-secondary/20">
+    <img src="/img/grades/@{pet.grade}.png" alt="" class="size-5 shrink-0">
+    <span class="truncate">@pet.name</span>
 </a>
 @endfor
 @endif
@@ -25,8 +25,8 @@
 <div class="px-2 mt-2 text-xs font-label uppercase text-foreground-muted">%treasures</div>
 @for treasure in treasures
 <a href="/treasures/@treasure.treasure_id"
-    class="flex items-center gap-2 px-2 py-1 rounded text-sm text-foreground hover:bg-secondary/20">
-    <span>@treasure.name</span>
+    class="flex items-center gap-2 px-2 py-1.5 rounded text-sm text-foreground hover:bg-secondary/20">
+    <span class="truncate">@treasure.name</span>
 </a>
 @endfor
 @endif

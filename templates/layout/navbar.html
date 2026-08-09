@@ -16,8 +16,8 @@
             </div>
         </div>
         <div class="flex items-center gap-6">
-            <div id="search-wrap" class="relative">
-                <form class="relative" action="/search" method="get" hx-boost="true">
+            <div class="relative">
+                <form class="peer relative" action="/search" method="get" hx-boost="true">
                     <span class="absolute left-4 top-1/2 -translate-y-1/2 text-foreground-muted">
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
                             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -31,23 +31,9 @@
                         placeholder="%navbar_search_placeholder" type="text" />
                 </form>
                 <div id="search-results"
-                    class="absolute w-72 rounded-xl border border-secondary bg-background shadow-2xl z-50 flex-col p-4 gap-1">
+                    class="absolute top-full left-0 mt-2 w-72 max-h-96 overflow-y-auto rounded-xl border border-secondary/70 bg-background shadow-2xl z-50 hidden peer-focus-within:flex flex-col p-2 gap-1">
                 </div>
             </div>
-            <style>
-                #search-results {
-                    display: none;
-                    top: 100%;
-                    left: 0;
-                    margin-top: 0.5rem;
-                    max-height: 24rem;
-                    overflow-y: auto;
-                }
-
-                #search-wrap:focus-within #search-results {
-                    display: flex;
-                }
-            </style>
             <button class="btn-primary size-12" popovertarget="account-dropdown">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
                     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
