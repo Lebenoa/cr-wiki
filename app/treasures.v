@@ -1,7 +1,68 @@
 module app
 
 import veb
+import time
+import api
+import database
 
 pub fn (wapp &App) treasures(mut ctx Context) veb.Result {
+	ctx.set_translate_title("treasures_page_title")
+	treasures := database.select_treasures(wapp.db, ctx.lang) or {
+		println(err)
+		return ctx.html("Something went wrong")
+	}
+
 	return $veb.html()
+}
+
+@['/treasures/new'; get; post]
+pub fn (wapp &App) new_treasure(mut ctx Context) veb.Result {
+	cur_user := ctx.user or { return ctx.not_found() }
+	if !cur_user.is_admin {
+		return ctx.not_found()
+	}
+
+	if ctx.req.method == .get {
+		ctx.page_title = 'New Treasure | Classic/FanWiki'
+		languages := api.available_lang()
+		return $veb.html("./templates/admin/new_treasure.html")
+
+	} else if ctx.req.method == .post {
+		image := upload_image(mut ctx, 'treasures') or {
+			ctx.res.set_status(.bad_request)
+			return ctx.text(err.msg())
+		}
+
+		date_str := ctx.form['release_date']
+		release_date := if date_str != '' {
+			time.parse('${date_str} 00:00:00') or {
+				ctx.res.set_status(.bad_request)
+				return ctx.text('Invalid release date, expected YYYY-MM-DD')
+			}
+		} else {
+			time.now()
+		}
+
+		lang_str := ctx.form['lang'] or { ctx.lang }
+		database.create_treasure(wapp.db, database.CreateTreasureParams{
+			lang:         lang_str
+			name:         ctx.form['name']
+			description:  ctx.form['description']
+			image:        if image == '' {
+				none
+			} else {
+				image
+			}
+			is_evolved:   ctx.form['is_evolved'] == 'true'
+			is_blessed:   ctx.form['is_blessed'] == 'true'
+			release_date: release_date
+		}) or {
+			ctx.res.set_status(.bad_request)
+			return ctx.text('Failed to create treasure: ${err}')
+		}
+
+		return ctx.redirect('/treasures')
+	}
+
+	return ctx.not_found()
 }

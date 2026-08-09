@@ -15,42 +15,51 @@
             </div>
             <img alt="@cookie.name"
                 class="relative z-10 w-full h-auto object-contain drop-shadow-[0_20px_50px_rgba(0,0,0,0.5)]"
-                src="/img/cookies/@{cookie.image or { 'https://placehold.co/400x400' }}" />
+                src="@{ctx.cookie_img_src(cookie.image)}" />
         </div>
         <div class="md:col-span-7 flex flex-col items-start gap-4 z-10 p-8">
-            <div class="flex flex-wrap gap-3 mb-2">
+            <div class="flex flex-wrap gap-3 mb-2 items-center">
                 <img src="/img/grades/@{cookie.grade}.png" alt="@cookie.grade" class="size-12">
+                @if cookie.power_plus != ""
+                <span class="font-bold text-accent uppercase border border-accent/50 rounded-full px-3 py-1">%power_plus</span>
+                @endif
             </div>
             <h1 class="font-headline text-accent text-4xl leading-tight">@cookie.name</h1>
-            <p class="font-body text-foreground max-w-xl">
+            <p class="font-body text-foreground max-w-xl whitespace-pre-line">
                 @if cookie.description != ""
                 @cookie.description
                 @else
                 %missing_description
                 @endif
             </p>
+            @if cookie.power_plus != ""
+            <div class="p-4 rounded-xl flex flex-col gap-1 border-l-4 border-accent w-full">
+                <span class="text-xs font-label text-foreground-muted uppercase">%power_plus</span>
+                <span class="text-on-surface font-bold">@cookie.power_plus</span>
+                @if cookie.power_plus_requirement != ""
+                <span class="text-xs font-label text-foreground-muted uppercase mt-2">%power_plus_requirement</span>
+                <span class="text-on-surface">@cookie.power_plus_requirement</span>
+                @endif
+            </div>
+            @endif
             <!-- Quick Info Panel -->
             <div class="mt-8 grid grid-cols-2 sm:grid-cols-3 gap-4 w-full">
                 <div class="p-4 rounded-xl flex flex-col gap-1 border-l-4 border-primary">
                     <span class="text-xs font-label text-foreground-muted uppercase">%abilities</span>
                     <span class="text-on-surface font-bold">@cookie.abilities</span>
                 </div>
+                @if cookie.unlock_goal != ""
+                <div class="p-4 rounded-xl flex flex-col gap-1 border-l-4 border-secondary">
+                    <span class="text-xs font-label text-foreground-muted uppercase">%unlock_goal</span>
+                    <span class="text-on-surface font-bold">@cookie.unlock_goal</span>
+                </div>
+                @endif
                 <div class="p-4 rounded-xl flex flex-col gap-1 border-l-4 border-tertiary">
                     <span class="text-xs font-label text-foreground-muted uppercase">%release_date</span>
                     <span id="releaseDate" class="text-on-surface font-bold">
                         %formatting
                     </span>
                 </div>
-            </div>
-            <div class="mt-8 px-8 py-6 border border-secondary rounded-lg w-full">
-                <h2 class="font-headline text-accent text-2xl leading-tight mb-2">Tips</h2>
-                <p class="font-body text-foreground">
-                    @if tip := cookie.tip_for_player
-                    @tip
-                    @else
-                    %missing_tip_for_player
-                    @endif
-                </p>
             </div>
         </div>
     </section>

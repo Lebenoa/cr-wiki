@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="@ctx.lang">
+
+<head>
+    @include 'layout/head.html'
+</head>
+
+<body>
+    @include 'layout/navbar.html'
+
+    <div class="w-full flex flex-col justify-center items-center py-12 relative">
+        <div class="text-center mb-10">
+            <h1 class="font-headline font-bold text-2xl text-accent mb-2">%new_treasure_page_header</h1>
+            <p class="font-body text-lg text-secondary">%new_treasure_subtitle</p>
+        </div>
+        <form class="space-y-5 w-full max-w-2xl" method="post" action="/treasures/new" enctype="multipart/form-data">
+            <div class="space-y-2">
+                <label class="font-label text-secondary uppercase" for="lang">%language</label>
+                <select id="lang" name="lang"
+                    class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground focus:border-primary focus:ring-0 transition-all outline-none">
+                    @for lang in languages
+                    @if lang == ctx.lang
+                    <option value="@lang" selected>@{ctx.lang_map(lang)}</option>
+                    @else
+                    <option value="@lang">@{ctx.lang_map(lang)}</option>
+                    @endif
+                    @endfor
+                </select>
+            </div>
+            <div class="space-y-2">
+                <label class="font-label text-secondary uppercase" for="name">%treasure_name</label>
+                <input id="name"
+                    class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground placeholder:text-foreground/30 focus:border-primary focus:ring-0 transition-all outline-none"
+                    type="text" name="name" placeholder="Pilgrim's Scroll" required />
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div class="space-y-2">
+                    <label class="font-label text-secondary uppercase" for="release_date">%release_date</label>
+                    <input id="release_date"
+                        class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground focus:border-primary focus:ring-0 transition-all outline-none"
+                        type="date" name="release_date" />
+                </div>
+                <div class="space-y-2">
+                    <label class="font-label text-secondary uppercase" for="is_evolved">%evolved</label>
+                    <select id="is_evolved" name="is_evolved"
+                        class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground focus:border-primary focus:ring-0 transition-all outline-none">
+                        <option value="false">No</option>
+                        <option value="true">Yes</option>
+                    </select>
+                </div>
+                <div class="space-y-2">
+                    <label class="font-label text-secondary uppercase" for="is_blessed">%blessed</label>
+                    <select id="is_blessed" name="is_blessed"
+                        class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground focus:border-primary focus:ring-0 transition-all outline-none">
+                        <option value="false">No</option>
+                        <option value="true">Yes</option>
+                    </select>
+                </div>
+            </div>
+            <div class="space-y-2">
+                <label class="font-label text-secondary uppercase" for="description">%description</label>
+                <textarea id="description" name="description" rows="4"
+                    class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground placeholder:text-foreground/30 focus:border-primary focus:ring-0 transition-all outline-none resize-y"></textarea>
+            </div>
+            <div class="space-y-2">
+                <label class="font-label text-secondary uppercase" for="image">%image</label>
+                <input id="image"
+                    class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground focus:border-primary focus:ring-0 transition-all outline-none file:mr-4 file:rounded-lg file:border-0 file:bg-primary/20 file:px-4 file:py-2 file:font-semibold file:text-foreground"
+                    type="file" name="image" accept="image/*" />
+            </div>
+            <button type="submit"
+                class="w-full bg-primary hover:bg-primary/90 text-foreground font-headline py-4 rounded-xl shadow-lg transition-all active:scale-[0.98]">
+                %create_treasure_button
+            </button>
+        </form>
+    </div>
+</body>
+
+</html>

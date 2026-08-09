@@ -7,6 +7,10 @@ import database.models
 const lang_cookie_key = 'wikilang'
 const session_cookie_key = 'CRSESSID'
 
+__global (
+	sessions shared map[string]models.User
+)
+
 pub struct Context {
 	veb.Context
 pub mut:
@@ -21,7 +25,6 @@ pub struct App {
 
 	db sqlite.DB
 mut:
-	sessions map[string]models.User
 }
 
 pub fn initialize(conn sqlite.DB) !&App {
@@ -46,6 +49,18 @@ pub fn (mut ctx Context) not_found() veb.Result {
 	return $veb.html()
 }
 
+// img_src returns the local image path for an entity, or a placeholder URL when missing.
+pub fn (ctx &Context) img_src(dir string, image ?string) string {
+	if img := image {
+		return '/img/${dir}/${img}'
+	}
+	return 'https://placehold.co/600x400'
+}
+
+pub fn (ctx &Context) cookie_img_src(image ?string) string {
+	return ctx.img_src('cookies', image)
+}
+
 pub fn (ctx &Context) nav_link(href string, tr_key ?string) veb.RawHtml {
 	active := ctx.req.url == '/${href}' || ctx.req.url.starts_with('/' + href + '/')
 
@@ -68,6 +83,17 @@ pub fn (ctx &Context) is_htmx_request() bool {
 	}
 }
 
+// is_boosted_request reports whether the request came from htmx's hx-boost
+// navigation (full-page swap), as opposed to a fragment fetch like the
+// infinite-scroll sentinel. Boosted nav must get the full page, not a partial.
+pub fn (ctx &Context) is_boosted_request() bool {
+	return if _ := ctx.get_custom_header("HX-Boosted") {
+		true
+	} else {
+		false
+	}
+}
+
 pub fn (mut wapp App) before_request(mut ctx Context) bool {
 	ctx.lang = if lang_cookie := ctx.req.cookie('wikilang') {
 		lang_cookie.value
@@ -82,7 +108,7 @@ pub fn (mut wapp App) before_request(mut ctx Context) bool {
 
 	ctx.user = if user_cookie := ctx.req.cookie(session_cookie_key) {
 		println("Found cookie: ${user_cookie}")
-		if user := wapp.sessions[user_cookie.value] {
+		if user := sessions[user_cookie.value] {
 			println("Found user: ${user}")
 			user
 		} else {

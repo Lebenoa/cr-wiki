@@ -10,6 +10,18 @@ Register | Classic/FanWiki
 cookies_page_title
 Cookies | Classic/FanWiki
 -----
+pets_page_title
+Pets | Classic/FanWiki
+-----
+treasures_page_title
+Treasures | Classic/FanWiki
+-----
+pet_page_header
+All Pets List
+-----
+treasure_page_header
+All Treasures List
+-----
 cookie_page_header
 All Cookies List
 -----
@@ -46,8 +58,23 @@ Abilities
 release_date
 Release Date
 -----
-missing_tip_for_player
-No tip available yet.
+power_plus
+Power+
+-----
+power_plus_placeholder
+Describe the Power+ effect
+-----
+power_plus_requirement
+Power+ Requirement
+-----
+power_plus_requirement_placeholder
+What must be met before Power+ can be used?
+-----
+unlock_goal
+Unlock Goal
+-----
+unlock_goal_placeholder
+How is this cookie unlocked?
 -----
 login
 Login
@@ -87,4 +114,55 @@ Don't have an account?
 -----
 close
 Close
+-----
+new_cookie_page_header
+New Cookie
+-----
+new_cookie_subtitle
+Add a new cookie to the archive.
+-----
+new_pet_page_header
+New Pet
+-----
+new_pet_subtitle
+Add a new pet to the archive.
+-----
+new_treasure_page_header
+New Treasure
+-----
+new_treasure_subtitle
+Add a new treasure to the archive.
+-----
+cookie_name
+Cookie Name
+-----
+pet_name
+Pet Name
+-----
+treasure_name
+Treasure Name
+-----
+grade
+Grade
+-----
+description
+Description
+-----
+image
+Image
+-----
+evolved
+Evolved
+-----
+blessed
+Blessed
+-----
+create_cookie_button
+Create Cookie
+-----
+create_pet_button
+Create Pet
+-----
+create_treasure_button
+Create Treasure
 -----

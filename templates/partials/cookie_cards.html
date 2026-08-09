@@ -1,0 +1,14 @@
+@for cookie in cookies
+<a href="/cookies/@cookie.cookie_id" data-cr-card data-name="@cookie.name" data-grade="@cookie.grade"
+    class="border border-secondary px-4 py-2 rounded flex flex-col items-center justify-start hover:border-primary transition-colors group gap-2">
+    <img src="/img/grades/@{cookie.grade}.png" alt="@cookie.grade" class="size-10 self-start">
+    <img src="@{ctx.cookie_img_src(cookie.image)}" alt="@cookie.name"
+        class="h-28 w-full object-contain">
+    <h2 class="text-xl group-hover:text-primary text-secondary text-center">@cookie.name</h2>
+</a>
+@endfor
+@if next_page > 0
+<div hx-get="/cookies?page=@next_page" hx-trigger="revealed" hx-swap="outerHTML"></div>
+@else
+<div></div>
+@endif

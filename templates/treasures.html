@@ -8,7 +8,51 @@
 <body>
     @include 'layout/navbar.html'
 
-    Treasures
+    <h1 class="text-4xl font-bold my-4 text-center">%treasure_page_header</h1>
+
+    @if user := ctx.user
+    @if user.is_admin
+    <div class="flex justify-end px-8">
+        <a href="/treasures/new" class="btn-primary">+ New Treasure</a>
+    </div>
+    @endif
+    @endif
+
+    <div class="flex flex-wrap items-center justify-center gap-3 my-6 px-8">
+        <input id="filter-name" type="text" placeholder="%navbar_search_placeholder"
+            class="bg-surface border-2 border-secondary/50 focus:border-primary focus:ring-0 rounded-full py-2 pl-4 pr-6 w-72 transition-all outline-none text-sm text-foreground" />
+    </div>
+    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 p-8">
+        @for treasure in treasures
+        <div data-cr-card data-name="@treasure.name"
+            class="border border-secondary px-4 py-2 rounded flex flex-col items-center justify-start hover:border-primary transition-colors gap-2">
+            <img src="@{ctx.img_src('treasures', treasure.image)}" alt="@treasure.name" class="h-28 w-full object-contain">
+            <h2 class="text-xl text-secondary text-center">@treasure.name</h2>
+            <div class="flex gap-2 text-xs mt-1">
+                @if treasure.is_evolved
+                <span class="text-primary font-bold uppercase">%evolved</span>
+                @endif
+                @if treasure.is_blessed
+                <span class="text-tertiary font-bold uppercase">%blessed</span>
+                @endif
+            </div>
+        </div>
+        @endfor
+    </div>
+
+    <script>
+        function crFilter() {
+            var q = (document.getElementById('filter-name')?.value || '').toLowerCase();
+            document.querySelectorAll('[data-cr-card]').forEach(function (card) {
+                card.style.display = (!q || card.dataset.name.toLowerCase().indexOf(q) !== -1) ? '' : 'none';
+            });
+        }
+        document.addEventListener('input', function (e) {
+            if (e.target.id === 'filter-name') crFilter();
+        });
+        // htmx 4 swaps don't fire DOMNodeInserted; re-filter after any htmx swap
+        document.addEventListener('htmx:after:settle', crFilter);
+    </script>
 </body>
 
 </html>

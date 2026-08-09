@@ -4,6 +4,10 @@ import db.sqlite
 import strings
 import models
 
+$if sqlite_fts5 ? {
+	#flag -DSQLITE_ENABLE_FTS5
+}
+
 pub fn initialize(path string) !sqlite.DB {
 	conn := sqlite.connect(path)!
 
@@ -20,6 +24,8 @@ pub fn initialize(path string) !sqlite.DB {
 		create table models.EffectTranslation
 		create table models.TreasureEffect
 	}!
+
+	migrate(conn)!
 
 	$if sqlite_fts5 ? {
 		conn.exec("PRAGMA journal_mode = WAL; PRAGMA synchoronous = FULL;")!
@@ -162,6 +168,34 @@ fn create_fts_table(conn sqlite.DB, table FtsTable) ! {
 			LIMIT 1
 		);
 	")!
+}
+
+// migrate applies schema changes that `create table` cannot handle on existing databases.
+fn migrate(conn sqlite.DB) ! {
+	// power_plus lives on cookie_translation; ensure these columns exist for
+	// databases created before they were introduced.
+	translation_cols := conn.columns('cookie_translation') or { return }
+	if 'power_plus' !in translation_cols {
+		query := 'ALTER TABLE cookie_translation ADD COLUMN power_plus TEXT NOT NULL DEFAULT ""'
+		result := conn.exec_none(query)
+		if !sqlite_success(result) {
+			return conn.error_message(result, query)
+		}
+	}
+	if 'power_plus_requirement' !in translation_cols {
+		query := 'ALTER TABLE cookie_translation ADD COLUMN power_plus_requirement TEXT NOT NULL DEFAULT ""'
+		result := conn.exec_none(query)
+		if !sqlite_success(result) {
+			return conn.error_message(result, query)
+		}
+	}
+	if 'unlock_goal' !in translation_cols {
+		query := 'ALTER TABLE cookie_translation ADD COLUMN unlock_goal TEXT NOT NULL DEFAULT ""'
+		result := conn.exec_none(query)
+		if !sqlite_success(result) {
+			return conn.error_message(result, query)
+		}
+	}
 }
 
 @[inline]

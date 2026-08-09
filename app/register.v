@@ -37,7 +37,7 @@ pub fn (mut wapp App) register(mut ctx Context) veb.Result {
 		}
 
 		session_id := rand.uuid_v4()
-		wapp.sessions[session_id] = sql wapp.db {
+		sessions[session_id] = sql wapp.db {
 			select from models.User where user_id == new_user_id
 		} or { panic("Somehow user disappeared: ${err}") }.first()
 		ctx.set_cookie(

@@ -3,6 +3,7 @@ module models
 import time
 
 pub struct Treasure {
+pub:
 	treasure_id ?int @[primary; serial]
 	image ?string
 	is_evolved bool
@@ -13,6 +14,7 @@ pub struct Treasure {
 @[table: 'treasure_translation']
 @[unique_key: 'treasure_id, lang']
 pub struct TreasureTranslation {
+pub:
     treasure_translation_id ?int @[primary; serial]
 
     treasure_id int @[required; references: 'treasure(treasure_id)'; index]
@@ -46,13 +48,11 @@ pub enum EffectUnit {
 
 @[table: 'treasure_effect']
 @[unique_key: 'treasure_id, effect_id']
-@[index: 'treasure_id, sort_order']
 pub struct TreasureEffect {
 	treasure_effect_id ?int @[primary; serial]
 
 	treasure_id int @[required; references: 'treasure'; index]
 	effect_id int @[required; references: 'effect'; index]
-	sort_order int
 
 	value ?f32
 	unit EffectUnit @[required]

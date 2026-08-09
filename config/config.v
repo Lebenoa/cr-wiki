@@ -5,7 +5,7 @@ import toml
 pub struct Config {
 pub:
 	host string = "127.0.0.1"
-	port u16 = 6785
+	port int = 6785
 	db_file string = "sqlite.db"
 }
 

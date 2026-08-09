@@ -9,8 +9,6 @@ const invalid_credentials = "Invalid username/password"
 
 @[get; post]
 pub fn (mut wapp App) login(mut ctx Context) veb.Result {
-
-	println("User: ${ctx.user}\nSessions: ${wapp.sessions}")
 	if ctx.user != none {
 		return ctx.redirect("/")
 	}
@@ -53,7 +51,7 @@ pub fn (mut wapp App) login(mut ctx Context) veb.Result {
 		}
 
 		session_key := rand.uuid_v4()
-		wapp.sessions[session_key] = first_user
+		sessions[session_key] = first_user
 		ctx.set_cookie(
 			name:  session_cookie_key
 			value: session_key

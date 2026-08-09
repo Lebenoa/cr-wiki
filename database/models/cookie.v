@@ -8,7 +8,6 @@ pub struct Cookie {
 	cookie_id ?int @[primary; serial]
 	grade Grade
 	image ?string
-	tip_for_player ?string
 	release_date time.Time
 }
 
@@ -25,4 +24,7 @@ pub struct CookieTranslation {
     name string @[required]
     abilities string @[required]
     description string
+    power_plus string
+    power_plus_requirement string
+    unlock_goal string
 }
