@@ -244,6 +244,9 @@ fn clean_markup(s string) string {
 	out = strip_templates(out)
 	out = out.replace('<br/>', '\n').replace('<br />', '\n').replace('<br>', '\n')
 	out = out.replace("''", '')
+	// strip invisible unicode that some infobox fields carry (bidi marks,
+	// non-breaking spaces) which would otherwise poison filenames
+	out = out.replace('\u200e', '').replace('\u200f', '').replace('\u00a0', ' ')
 	out = out.trim_space()
 	for out.ends_with('}}') {
 		out = out[..out.len - 2].trim_space()

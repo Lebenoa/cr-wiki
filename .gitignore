@@ -34,3 +34,6 @@ Config.toml
 *.db-shm
 *.db-wal
 *.def
+
+# Python tooling
+__pycache__/
