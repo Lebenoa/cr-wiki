@@ -1,0 +1,3028 @@
+{
+ "cookie": [
+  {
+   "cookie_id": 1,
+   "grade": "c",
+   "image": "gingerbright.png",
+   "release_date": "2013-04-02T00:00:00Z"
+  },
+  {
+   "cookie_id": 2,
+   "grade": "c",
+   "image": "gingerbrave.png",
+   "release_date": "2013-04-02T00:00:00Z"
+  },
+  {
+   "cookie_id": 3,
+   "grade": "b",
+   "image": "strawberry_cookie.png",
+   "release_date": "2013-04-02T00:00:00Z"
+  },
+  {
+   "cookie_id": 4,
+   "grade": "b",
+   "image": "cream_cookie.png",
+   "release_date": "2013-04-02T00:00:00Z"
+  },
+  {
+   "cookie_id": 5,
+   "grade": "b",
+   "image": "cloud_cookie.png",
+   "release_date": "2013-04-02T00:00:00Z"
+  },
+  {
+   "cookie_id": 6,
+   "grade": "b",
+   "image": "buttercream_choco_cookie.png",
+   "release_date": "2013-04-02T00:00:00Z"
+  },
+  {
+   "cookie_id": 7,
+   "grade": "a",
+   "image": "zombie_cookie.png",
+   "release_date": "2013-04-02T00:00:00Z"
+  },
+  {
+   "cookie_id": 8,
+   "grade": "a",
+   "image": "princess_cookie.png",
+   "release_date": "2013-04-02T00:00:00Z"
+  },
+  {
+   "cookie_id": 9,
+   "grade": "a",
+   "image": "muscle_cookie.png",
+   "release_date": "2013-04-02T00:00:00Z"
+  },
+  {
+   "cookie_id": 10,
+   "grade": "a",
+   "image": "knight_cookie.png",
+   "release_date": "2013-04-02T00:00:00Z"
+  },
+  {
+   "cookie_id": 11,
+   "grade": "a",
+   "image": "coffee_cookie.png",
+   "release_date": "2013-04-02T00:00:00Z"
+  },
+  {
+   "cookie_id": 12,
+   "grade": "a",
+   "image": "boarder_cookie.png",
+   "release_date": "2013-04-02T00:00:00Z"
+  },
+  {
+   "cookie_id": 13,
+   "grade": "s",
+   "image": "pirate_cookie.png",
+   "release_date": "2013-04-02T00:00:00Z"
+  },
+  {
+   "cookie_id": 14,
+   "grade": "s",
+   "image": "ninja_cookie.png",
+   "release_date": "2013-04-02T00:00:00Z"
+  },
+  {
+   "cookie_id": 15,
+   "grade": "s",
+   "image": "angel_cookie.png",
+   "release_date": "2013-04-02T00:00:00Z"
+  },
+  {
+   "cookie_id": 16,
+   "grade": "s",
+   "image": "skating_queen_cookie.png",
+   "release_date": "2013-05-11T00:00:00Z"
+  },
+  {
+   "cookie_id": 17,
+   "grade": "s",
+   "image": "hero_cookie.png",
+   "release_date": "2013-05-11T00:00:00Z"
+  },
+  {
+   "cookie_id": 18,
+   "grade": "s",
+   "image": "special_force_cookie.png",
+   "release_date": "2013-06-22T00:00:00Z"
+  },
+  {
+   "cookie_id": 19,
+   "grade": "s",
+   "image": "cheerleader_cookie.png",
+   "release_date": "2013-07-12T00:00:00Z"
+  },
+  {
+   "cookie_id": 20,
+   "grade": "s",
+   "image": "devil_cookie.png",
+   "release_date": "2013-08-30T00:00:00Z"
+  },
+  {
+   "cookie_id": 21,
+   "grade": "s",
+   "image": "rebel_cookie.png",
+   "release_date": "2013-09-14T00:00:00Z"
+  },
+  {
+   "cookie_id": 22,
+   "grade": "s",
+   "image": "kumiho_cookie.png",
+   "release_date": "2013-09-14T00:00:00Z"
+  },
+  {
+   "cookie_id": 23,
+   "grade": "s",
+   "image": "wizard_cookie.png",
+   "release_date": "2013-10-19T00:00:00Z"
+  },
+  {
+   "cookie_id": 24,
+   "grade": "s",
+   "image": "fairy_cookie.png",
+   "release_date": "2013-11-01T00:00:00Z"
+  },
+  {
+   "cookie_id": 25,
+   "grade": "s",
+   "image": "rockstar_cookie.png",
+   "release_date": "2013-11-16T00:00:00Z"
+  },
+  {
+   "cookie_id": 26,
+   "grade": "a",
+   "image": "ginger_claus.png",
+   "release_date": "2013-12-20T00:00:00Z"
+  },
+  {
+   "cookie_id": 27,
+   "grade": "s",
+   "image": "cherry_cookie.png",
+   "release_date": "2013-12-20T00:00:00Z"
+  },
+  {
+   "cookie_id": 28,
+   "grade": "s",
+   "image": "carol_cookie.png",
+   "release_date": "2013-12-20T00:00:00Z"
+  },
+  {
+   "cookie_id": 29,
+   "grade": "s",
+   "image": "snow_sugar_cookie.png",
+   "release_date": "2014-01-01T00:00:00Z"
+  },
+  {
+   "cookie_id": 30,
+   "grade": "s",
+   "image": "pink_choco_cookie.png",
+   "release_date": "2014-02-13T00:00:00Z"
+  },
+  {
+   "cookie_id": 31,
+   "grade": "s",
+   "image": "prophet_cookie.png",
+   "release_date": "2014-03-01T00:00:00Z"
+  },
+  {
+   "cookie_id": 32,
+   "grade": "s",
+   "image": "pistachio_cookie.png",
+   "release_date": "2014-03-15T00:00:00Z"
+  },
+  {
+   "cookie_id": 33,
+   "grade": "s",
+   "image": "alchemist_cookie.png",
+   "release_date": "2014-03-29T00:00:00Z"
+  },
+  {
+   "cookie_id": 34,
+   "grade": "s",
+   "image": "vampire_cookie.png",
+   "release_date": "2014-04-19T00:00:00Z"
+  },
+  {
+   "cookie_id": 35,
+   "grade": "s",
+   "image": "apple_cookie.png",
+   "release_date": "2014-05-01T00:00:00Z"
+  },
+  {
+   "cookie_id": 36,
+   "grade": "s",
+   "image": "cheesecake_cookie.png",
+   "release_date": "2014-05-24T00:00:00Z"
+  },
+  {
+   "cookie_id": 37,
+   "grade": "s",
+   "image": "마그마맛_쿠키_(magma_cookie).png",
+   "release_date": "2014-05-30T00:00:00Z"
+  },
+  {
+   "cookie_id": 38,
+   "grade": "s",
+   "image": "soda_cookie.png",
+   "release_date": "2014-07-01T00:00:00Z"
+  },
+  {
+   "cookie_id": 39,
+   "grade": "s",
+   "image": "adventurer_cookie.png",
+   "release_date": "2014-07-31T00:00:00Z"
+  },
+  {
+   "cookie_id": 40,
+   "grade": "l",
+   "image": "tiger_lily.png",
+   "release_date": "2014-07-31T00:00:00Z"
+  },
+  {
+   "cookie_id": 41,
+   "grade": "l",
+   "image": "fire_spirit.png",
+   "release_date": "2014-07-31T00:00:00Z"
+  },
+  {
+   "cookie_id": 42,
+   "grade": "s",
+   "image": "blackberry_cookie.png",
+   "release_date": "2014-08-30T00:00:00Z"
+  },
+  {
+   "cookie_id": 43,
+   "grade": "s",
+   "image": "kiwi_biker_cookie.png",
+   "release_date": "2014-10-01T00:00:00Z"
+  },
+  {
+   "cookie_id": 44,
+   "grade": "s",
+   "image": "werewolf_cookie.png",
+   "release_date": "2014-10-31T00:00:00Z"
+  },
+  {
+   "cookie_id": 45,
+   "grade": "s",
+   "image": "mint_choco_cookie.png",
+   "release_date": "2014-11-29T00:00:00Z"
+  },
+  {
+   "cookie_id": 46,
+   "grade": "s",
+   "image": "cocoa_cookie.png",
+   "release_date": "2014-11-29T00:00:00Z"
+  },
+  {
+   "cookie_id": 47,
+   "grade": "s",
+   "image": "muay_thai_cookie.png",
+   "release_date": "2014-12-18T00:00:00Z"
+  },
+  {
+   "cookie_id": 48,
+   "grade": "s",
+   "image": "cream_puff_cookie.png",
+   "release_date": "2015-02-01T00:00:00Z"
+  },
+  {
+   "cookie_id": 49,
+   "grade": "l",
+   "image": "moonlight_cookie.png",
+   "release_date": "2015-02-01T00:00:00Z"
+  },
+  {
+   "cookie_id": 50,
+   "grade": "s",
+   "image": "gumball_cookie.png",
+   "release_date": "2015-02-28T00:00:00Z"
+  },
+  {
+   "cookie_id": 51,
+   "grade": "s",
+   "image": "cherry_blossom_cookie.png",
+   "release_date": "2015-04-01T00:00:00Z"
+  },
+  {
+   "cookie_id": 52,
+   "grade": "s",
+   "image": "lemon_cookie.png",
+   "release_date": "2015-04-30T00:00:00Z"
+  },
+  {
+   "cookie_id": 53,
+   "grade": "s",
+   "image": "orange_cookie.png",
+   "release_date": "2015-06-03T00:00:00Z"
+  },
+  {
+   "cookie_id": 54,
+   "grade": "s",
+   "image": "lime_cookie.png",
+   "release_date": "2015-07-02T00:00:00Z"
+  },
+  {
+   "cookie_id": 55,
+   "grade": "s",
+   "image": "peppermint_cookie.png",
+   "release_date": "2015-08-11T00:00:00Z"
+  },
+  {
+   "cookie_id": 56,
+   "grade": "s",
+   "image": "peach_cookie.png",
+   "release_date": "2015-09-26T00:00:00Z"
+  },
+  {
+   "cookie_id": 57,
+   "grade": "s",
+   "image": "general_jujube_cookie.png",
+   "release_date": "2015-09-26T00:00:00Z"
+  },
+  {
+   "cookie_id": 58,
+   "grade": "s",
+   "image": "onion_cookie.png",
+   "release_date": "2015-10-31T00:00:00Z"
+  },
+  {
+   "cookie_id": 59,
+   "grade": "s",
+   "image": "cinnamon_cookie.png",
+   "release_date": "2015-11-28T00:00:00Z"
+  },
+  {
+   "cookie_id": 60,
+   "grade": "s",
+   "image": "macaron_cookie.png",
+   "release_date": "2015-12-17T00:00:00Z"
+  },
+  {
+   "cookie_id": 61,
+   "grade": "s",
+   "image": "red_bean_cookie.png",
+   "release_date": "2015-12-30T00:00:00Z"
+  },
+  {
+   "cookie_id": 62,
+   "grade": "s",
+   "image": "white_choco_cookie.png",
+   "release_date": "2016-01-29T00:00:00Z"
+  },
+  {
+   "cookie_id": 63,
+   "grade": "s",
+   "image": "herb_cookie.png",
+   "release_date": "2016-03-01T00:00:00Z"
+  },
+  {
+   "cookie_id": 64,
+   "grade": "s",
+   "image": "dino-sour_cookie.png",
+   "release_date": "2016-04-04T00:00:00Z"
+  },
+  {
+   "cookie_id": 65,
+   "grade": "l",
+   "image": "sea_fairy_cookie.png",
+   "release_date": "2016-04-04T00:00:00Z"
+  },
+  {
+   "cookie_id": 66,
+   "grade": "s",
+   "image": "cotton_candy_cookie.png",
+   "release_date": "2016-04-29T00:00:00Z"
+  },
+  {
+   "cookie_id": 67,
+   "grade": "s",
+   "image": "roll_cake_cookie.png",
+   "release_date": "2016-05-31T00:00:00Z"
+  },
+  {
+   "cookie_id": 68,
+   "grade": "s",
+   "image": "banana_cookie.png",
+   "release_date": "2016-07-01T00:00:00Z"
+  },
+  {
+   "cookie_id": 69,
+   "grade": "s",
+   "image": "pancake_cookie.png",
+   "release_date": "2016-08-17T00:00:00Z"
+  },
+  {
+   "cookie_id": 70,
+   "grade": "l",
+   "image": "wind_archer_cookie.png",
+   "release_date": "2016-08-17T00:00:00Z"
+  },
+  {
+   "cookie_id": 71,
+   "grade": "s",
+   "image": "moon_rabbit_cookie.png",
+   "release_date": "2016-09-13T00:00:00Z"
+  },
+  {
+   "cookie_id": 72,
+   "grade": "s",
+   "image": "strawberry_shortcake_cookie.png",
+   "release_date": "2024-04-02T00:00:00Z"
+  },
+  {
+   "cookie_id": 73,
+   "grade": "s",
+   "image": "kaju_katli_cookie.png",
+   "release_date": "2024-12-11T00:00:00Z"
+  },
+  {
+   "cookie_id": 74,
+   "grade": "s",
+   "image": "gulab_jamun_cookie.png",
+   "release_date": "2024-12-11T00:00:00Z"
+  },
+  {
+   "cookie_id": 75,
+   "grade": "s",
+   "image": "cricketer_cookie.png",
+   "release_date": "2025-03-25T00:00:00Z"
+  },
+  {
+   "cookie_id": 76,
+   "grade": "s",
+   "image": "marshmallow_bunny_cookie.png",
+   "release_date": "2025-03-27T00:00:00Z"
+  },
+  {
+   "cookie_id": 77,
+   "grade": "s",
+   "image": "cucumber_cookie.png",
+   "release_date": "2025-04-28T00:00:00Z"
+  },
+  {
+   "cookie_id": 78,
+   "grade": "s",
+   "image": "sujeonggwa_cookie.png",
+   "release_date": "2025-05-29T00:00:00Z"
+  },
+  {
+   "cookie_id": 79,
+   "grade": "s",
+   "image": "sikhye_cookie.png",
+   "release_date": "2025-05-29T00:00:00Z"
+  },
+  {
+   "cookie_id": 80,
+   "grade": "s",
+   "image": "barley_sentry_cookie.png",
+   "release_date": "2025-06-30T00:00:00Z"
+  },
+  {
+   "cookie_id": 81,
+   "grade": "s_plus",
+   "image": "princess_bari.png",
+   "release_date": "2025-07-31T00:00:00Z"
+  },
+  {
+   "cookie_id": 82,
+   "grade": "s",
+   "image": "potato_salad_cookie.png",
+   "release_date": "2025-08-28T00:00:00Z"
+  },
+  {
+   "cookie_id": 83,
+   "grade": "s",
+   "image": "white_kimchi_cookie.png",
+   "release_date": "2025-09-29T00:00:00Z"
+  },
+  {
+   "cookie_id": 84,
+   "grade": "s",
+   "image": "scallion_kimchi_cookie.png",
+   "release_date": "2025-09-29T00:00:00Z"
+  },
+  {
+   "cookie_id": 85,
+   "grade": "s",
+   "image": "jalebi_cookie.png",
+   "release_date": "2025-09-30T00:00:00Z"
+  },
+  {
+   "cookie_id": 86,
+   "grade": "s_plus",
+   "image": "admiral_gimbap_cookie.png",
+   "release_date": "2025-11-03T00:00:00Z"
+  },
+  {
+   "cookie_id": 87,
+   "grade": "s",
+   "image": "manggaetteok_cookie.png",
+   "release_date": "2025-12-03T00:00:00Z"
+  },
+  {
+   "cookie_id": 88,
+   "grade": "s",
+   "image": "garaetteok_cookie.png",
+   "release_date": "2026-01-15T00:00:00Z"
+  },
+  {
+   "cookie_id": 89,
+   "grade": "l",
+   "image": "blooming_dancheong_cookie.png",
+   "release_date": "2026-01-15T00:00:00Z"
+  },
+  {
+   "cookie_id": 90,
+   "grade": "s",
+   "image": "choco_pistachio_cookie.png",
+   "release_date": "2026-02-26T00:00:00Z"
+  },
+  {
+   "cookie_id": 91,
+   "grade": "s",
+   "image": "dandelion_fairy_cookie.png",
+   "release_date": "2026-03-31T00:00:00Z"
+  },
+  {
+   "cookie_id": 92,
+   "grade": "s",
+   "image": "kaymak_cookie.png",
+   "release_date": "2026-04-29T00:00:00Z"
+  },
+  {
+   "cookie_id": 93,
+   "grade": "s_plus",
+   "image": "pine_monk_cookie.png",
+   "release_date": "2026-05-28T00:00:00Z"
+  },
+  {
+   "cookie_id": 94,
+   "grade": "s",
+   "image": "lotus_root_phantom_cookie.png",
+   "release_date": "2026-06-25T00:00:00Z"
+  },
+  {
+   "cookie_id": 95,
+   "grade": "s",
+   "image": "braised_pork_cookie.png",
+   "release_date": "2026-07-23T00:00:00Z"
+  },
+  {
+   "cookie_id": 96,
+   "grade": "l",
+   "image": "candied_yam_cookie.png",
+   "release_date": "2026-07-23T00:00:00Z"
+  }
+ ],
+ "cookie_translation": [
+  {
+   "cookie_translation_id": 1,
+   "owner_id": 2,
+   "lang": "en",
+   "name": "GingerBrave",
+   "abilities": "Brave",
+   "description": "",
+   "power_plus": "",
+   "power_plus_requirement": "",
+   "unlock_goal": "Unlocked automatically"
+  },
+  {
+   "cookie_translation_id": 2,
+   "owner_id": 40,
+   "lang": "en",
+   "name": "Tiger Lily Cookie",
+   "abilities": "Spear Thrower",
+   "description": "For a set period of time, she turns obstacles into grass and throws her spear around. Jellies and Potions generate from the place where the spear hits the ground. She then rides her tiger and moves really fast across the platform.\n\nShe is a wild Cookie with sharp eyes, weary of any closing enemy. She grew up alone in the jungle and even though she looks like she has a hostile demeanor, she can be really soft in the inside. Her only family is her tiger, who she cherishes more than anything in the world. Her great skill with the spear and excellent jumping abilities make her one tough Cookie to beat.",
+   "power_plus": "Creates Mystery Boxes at a given rate in Episode 2 \"Primeval Jungle\" (higher probability with upgrades).",
+   "power_plus_requirement": "",
+   "unlock_goal": "Special Reward by Collecting all Mystery Jewels in Episode 2: Primeval Jungle"
+  },
+  {
+   "cookie_translation_id": 3,
+   "owner_id": 81,
+   "lang": "en",
+   "name": "Princess Bari Cookie",
+   "abilities": "Banishment",
+   "description": "Periodically transforms into three types of Flower Jellies that fill the flower gauge. When the gauge is full, Princess Bari Cookie enters the forest of the Sacred Tree to banish spirits to the afterlife, leaving behind Spirit Jellies. Banishing a giant spirit yields a Healing Water Jelly that restores HP and triggers Blast Mode. Healing Water Jellies do not count as HP Potions. (Leveling up increases Flower Jelly Points.)\n\nPrincess Bari, having completed her arduous journey, has finally been reborn as a Goddess of the Underworld. Princess Bari Cookie sends lost souls to the netherworld. Every swing of her sword releases the fragrance of the three flowers from the Sacred Tree it was woven from. Princess Bari Cookie does not rush to comfort the sorrowful spirits, nor does she turn away from them. She simply leads them to the final world that will take in everyone equally.",
+   "power_plus": "",
+   "power_plus_requirement": "",
+   "unlock_goal": "Collect 20 Soulstones"
+  },
+  {
+   "cookie_translation_id": 4,
+   "owner_id": 41,
+   "lang": "en",
+   "name": "Fire Spirit Cookie",
+   "abilities": "Fiery Spark",
+   "description": "It turns into a fire spirit for a set time after being revived.\n\nThis is a legendary Cookie that has withstood flames of the oven for so long that flames have become a part of him. No one knows how he managed to achieve this feat and anyone that rests their eyes on him become enthralled by the warm glowing light of his eternal flames.",
+   "power_plus": "Creates Mystery Box at a given rate in Episode 3 \"Dragon's Valley\" (Higher probability with upgrades)",
+   "power_plus_requirement": "",
+   "unlock_goal": "Special Reward by Collecting all Mystery Jewels in Episode 3: Dragon's Valley"
+  },
+  {
+   "cookie_translation_id": 5,
+   "owner_id": 86,
+   "lang": "en",
+   "name": "Admiral Gimbap Cookie",
+   "abilities": "Admiral's Charge",
+   "description": "Undefeated in battle, Admiral Gimbap Cookie's feat of winning a big sea battle without losing a single ship has become the stuff of legends. Even the infamously rough currents of the Laver Sea calm down in front of him. The spicy red seasoning that accompanies his otherwise restrained black and white attire is said to have been awarded to him in honor of keeping his fighting spirit even when the world turned its back on him. A truly remarkable hero, down to his quirky habit of keeping a diary!",
+   "power_plus": "",
+   "power_plus_requirement": "",
+   "unlock_goal": "Collect 20 Soulstones"
+  },
+  {
+   "cookie_translation_id": 6,
+   "owner_id": 35,
+   "lang": "en",
+   "name": "Apple Cookie",
+   "abilities": "Alphabet Jelly Bubbles",
+   "description": "<tabber>\n\n<tabber> |-|India= A cute little Cookie reminiscent of the fresh month of May, Apple Cookie loves alphabet bubbles and apple-shaped balloons. With an imagination no big Cookies can match, she creates her own Bonus Time, where she has the most fun in the world. Like most kids, she starts off running fast with excitement but slows down as she loses steam. |-|LINE= This cute little cookie loves apple shaped balloons and alphabet bubbles. No other cookie can rival her powerful innocent creativity. She even created her own Bonus Time to play to her heart's content. Like any other kid, she runs like crazy at first and slows down when tired. </tabber>",
+   "power_plus": "",
+   "power_plus_requirement": "",
+   "unlock_goal": "*Reach Lv. 50 Energy (Kakao, LINE)\n*Reach Lv. 22 Bonus Time (India)"
+  },
+  {
+   "cookie_translation_id": 7,
+   "owner_id": 89,
+   "lang": "en",
+   "name": "Blooming Dancheong Cookie",
+   "abilities": "Plum Blossom",
+   "description": "Blooming Dancheong Cookie was baked from gat-kimchi, made by grinding plum blossoms that bloomed in the snow and seasoning them over mustard leaves. Born from ingredients that overcame biting winds and solitude, this Cookie came to possess a spirit both resilient and noble. To create a land where Cookies could thrive, Blooming Dancheong Cookie gathered the energy of the Five Colors, swept away the heavy clouds, and planted a colossal plum World Tree on Mount Kimchi, the peak closest to the sky, linking heaven and earth as one. Warm sunlight and the gentle fragrance of plum blossoms soon began to fill the barren land. A world that had once been silent slowly became alive with the laughter of Cookies, and Blooming Dancheong Cookie, accompanied by the Plum Blossom Dragons, continued to watch over them. Though the tale now lives on only as a legend, a lone shrine is said to still be standing at the summit of Mount Kimchi, where Blooming Dancheong Cookie is worshipped as a mountain spirit.",
+   "power_plus": "",
+   "power_plus_requirement": "",
+   "unlock_goal": "Special Reward by collecting all Mystery Jewels in Episode 6: Plum Blossom Palace of the Underworld"
+  },
+  {
+   "cookie_translation_id": 8,
+   "owner_id": 90,
+   "lang": "en",
+   "name": "Choco Pistachio Cookie",
+   "abilities": "Choco Pistachio Jellies",
+   "description": "Boing! Choco Pistachio Cookie travels across the Cocoa Desert in search of the Pistachio Oasis. After discovering rich Spread Springs within the oasis, the Cookie built a massive fortune from collecting the precious liquid. The confident pose may come off as a little arrogant at first glance, but in truth, this Cookie generously shares the hard-earned spring water with every Cookie across the Cocoa Desert—a true believer in giving back to the community.",
+   "power_plus": "",
+   "power_plus_requirement": "",
+   "unlock_goal": "Unlock pistachio and marshmallowbunny"
+  },
+  {
+   "cookie_translation_id": 9,
+   "owner_id": 75,
+   "lang": "en",
+   "name": "Cricketer Cookie",
+   "abilities": "Bat Swing",
+   "description": "Cricketer Cookie comes equipped with a Kulfi bat and protective gear, fortified with crushed nuts for extra toughness. This formidable all-rounder never ceases to captivate fans with charismatic gameplay. Feared by bowlers as the ultimate batter.",
+   "power_plus": "",
+   "power_plus_requirement": "",
+   "unlock_goal": "Add 30 Friends"
+  },
+  {
+   "cookie_translation_id": 10,
+   "owner_id": 77,
+   "lang": "en",
+   "name": "Cucumber Cookie",
+   "abilities": "Fishing",
+   "description": "With his laid-back personality, Cucumber Cookie would like to enjoy fishing at a leisurely pace, but the fish just keep coming. Maybe the high moisture content is the secret of every cast bringing a huge catch!",
+   "power_plus": "",
+   "power_plus_requirement": "",
+   "unlock_goal": "Collect 67 Cookies"
+  },
+  {
+   "cookie_translation_id": 11,
+   "owner_id": 91,
+   "lang": "en",
+   "name": "Dandelion Fairy Cookie",
+   "abilities": "Dandelion Breeze",
+   "description": "Dandelion Fairy Cookie is a gentle friend to nameless wildflowers. No matter how barren the land, it is quickly colored with a warm energy of happiness upon encountering Dandelion Fairy Cookie's flower breeze. Dandelion Cookie rides the wind on her Pom-pom Flower Stalk diligently every day to bring a happy and cozy spring to all Cookies and fill the world with love and gratitude.",
+   "power_plus": "",
+   "power_plus_requirement": "",
+   "unlock_goal": "Collect 400 Dandelion Seeds"
+  },
+  {
+   "cookie_translation_id": 12,
+   "owner_id": 88,
+   "lang": "en",
+   "name": "Garaetteok Cookie",
+   "abilities": "Garae Totem Blast",
+   "description": "Garaetteok Cookie's fierce gaze is fixed on the village shrine under the protection of the heavens. After wandering the land in search of learning, he was chosen by the shrine as the village's guardian. With a nature as pure and firm as garaetteok, he watches over the village day and night, the totems his only companions.",
+   "power_plus": "",
+   "power_plus_requirement": "",
+   "unlock_goal": "Have Pet: Sotdae Flock"
+  },
+  {
+   "cookie_translation_id": 13,
+   "owner_id": 74,
+   "lang": "en",
+   "name": "Gulab Jamun Cookie",
+   "abilities": "Color Splash",
+   "description": "<tabber>\n\n<tabber> |-|India= Little Gulab Jamun Cookie fell in love with dance at her very first Holi, many years ago. Now, there is no other dancer as graceful as she is. Her movements are as vibrant and fluid as honeyed syrup, yet as delicate, leaving behind a faint but captivating trail of cardamom and rose. It is said that just watching Gulab Jamun Cookie perform can free your heart of all worries. |-|Kakao= Gulab Jamun Cookie, baked with rasgulla fried in rose oil, then soaked in sugar syrup. Captivated by the dance at a Holi festival as a child, this Cookie now captivates the hearts of other Cookies with mesmerizing dance moves at various festivals. Watching this Cookie's dance makes your soul feel free. </tabber>",
+   "power_plus": "",
+   "power_plus_requirement": "",
+   "unlock_goal": "*Earn 1,50,00,000 pts (India)\n*Upgrade 45 Treasures to +9 (Kakao)"
+  },
+  {
+   "cookie_translation_id": 14,
+   "owner_id": 85,
+   "lang": "en",
+   "name": "Jalebi Cookie",
+   "abilities": "Obstacle Destruction & Jelly Creation",
+   "description": "Jalebi Cookie was fried in hot oil, sizzling like festival fireworks. After sundown, this Cookie lights up the village by dancing with a sparkler in hand. All fireworks set off during festivals are said to carry the touch of Jalebi Cookie.",
+   "power_plus": "",
+   "power_plus_requirement": "",
+   "unlock_goal": "Add 60 friends"
+  },
+  {
+   "cookie_translation_id": 15,
+   "owner_id": 73,
+   "lang": "en",
+   "name": "Kaju Katli Cookie",
+   "abilities": "Master of the Spear",
+   "description": "<tabber>\n\n<tabber> |-|India= Delectable kaju and silky condensed milk-what a regal combination! Alas, Prince Kaju Katli Cookie is forced to hide his regal descent to pursue his dream of traveling the lands. Armed with his trusty spear, Kaju Katli Cookie is on a quest to unravel what his fate holds in store. Ah, the infinite mysteries of the world! |-|Kakao= Kaju Katli Cookie, baked with the richness of kaju and solid condensed milk. A prince with a hidden identity, who is curious about the world beyond the palace. This Cookie, carrying a spear on hand, boldly runs across fate to find the true self in the journey. Wanting to explore the infinite secrets of the world! </tabber>",
+   "power_plus": "",
+   "power_plus_requirement": "",
+   "unlock_goal": "*Reach Level 30 (India)\n*Own 35 S-grade Evolve Treasures (Kakao)"
+  },
+  {
+   "cookie_translation_id": 16,
+   "owner_id": 92,
+   "lang": "en",
+   "name": "Kaymak Cookie",
+   "abilities": "Decoy Technique",
+   "description": "Hard as granite and swift as the wind, Kaymak Cookie knows not a fear in the world. He is known for his arrogant nature, fearing not even the heavens, but upon closer inspection, he possesses a nature as pure and profound as milk. After spending 500 years isolated in the mountains due to his uncontrollable power, he was able to return to the world and embark on a path of asceticism under the guidance of a . Through indefatigable training, he has learned to wield his power beneficially and is being reformed into a Cookie with an increasingly deep and solid flavor.",
+   "power_plus": "Summons XP Party when Kaymak Cookie, Pine Monk, Lotus Root Phantom, and Braised Pork Cookie are gathered",
+   "power_plus_requirement": "when Kaymak Cookie, Pine Monk Cookie, Lotus Root Phantom Cookie, and Braised Pork Cookie are gathered",
+   "unlock_goal": "Own 60 S-rank Evolved Treasures"
+  },
+  {
+   "cookie_translation_id": 17,
+   "owner_id": 76,
+   "lang": "en",
+   "name": "Marshmallow Bunny Cookie",
+   "abilities": "Mysterious World",
+   "description": "Marshmallow Bunny Cookie is always full of bubbly curiosity! Hopping in and out of her Bunny Tunnel, Marshmallow Bunny Cookie always goes wherever the fun is. Nothing is more exciting than jumping into the great unknown: that's how one learns new stories—the greatest treasure there is!",
+   "power_plus": "",
+   "power_plus_requirement": "",
+   "unlock_goal": "Collect 400 Marshmallow Eggs"
+  },
+  {
+   "cookie_translation_id": 18,
+   "owner_id": 93,
+   "lang": "en",
+   "name": "Pine Monk Cookie",
+   "abilities": "Giant Statue",
+   "description": "Pine Monk Cookie was born beneath a Red Pine Tree that endured the river's fierce currents and strong winds. While his often unrestrained and inconsiderate behavior makes it hard to believe he is a monk, no one can deny his competence in effortlessly solving any problem with his brilliant mind and eyes of wisdom. Made of red pine, he possesses deep and unwavering conviction and will. Now chosen by the heavens, he is walking the path of ascetic practice for enlightenment. Possessing immense magical power, monsters coveting his strength are constantly eyeing Pine Monk Cookie, but with his trusty companions by his side, he seemingly has no need to worry.",
+   "power_plus": "Summons XP Party when Kaymak, Pine Monk Cookie, Lotus Root Phantom, and Braised Pork Cookie are gathered",
+   "power_plus_requirement": "when Kaymak Cookie, Pine Monk Cookie, Lotus Root Phantom Cookie, and Braised Pork Cookie are gathered",
+   "unlock_goal": "Collect 20 Soulstones"
+  },
+  {
+   "cookie_translation_id": 19,
+   "owner_id": 82,
+   "lang": "en",
+   "name": "Potato Salad Cookie",
+   "abilities": "Salad Bomb",
+   "description": "Potato Salad Cookie travels far and wide carrying his fresh veggie carpets, stitch by stitch handcrafted with overflowing affection for vegetables. Be it on his hooves or on his delivery bike \"Mayo Vroom Vroom\", this Cookie reaches even the farthest corners of the land. As a true merchant, naturally he loves Coins and makes a jingling sound wherever he runs.",
+   "power_plus": "",
+   "power_plus_requirement": "",
+   "unlock_goal": "Unlock Tater Trader"
+  },
+  {
+   "cookie_translation_id": 20,
+   "owner_id": 84,
+   "lang": "en",
+   "name": "Scallion Kimchi Cookie",
+   "abilities": "Scallion Kimchi",
+   "description": "Originally a fresh, vibrant green scallion, Scallion Kimchi Cookie returned in fully fermented form from the training she was called on by the heavens. Her haggard appearance alone may seem enough to scare away ghosts, but once you see the sharp blades in her hands flashing, you'll know she's about to unleash the spiciest exorcism you can imagine!",
+   "power_plus": "",
+   "power_plus_requirement": "",
+   "unlock_goal": "Have 50 evolved S Treasures"
+  },
+  {
+   "cookie_translation_id": 21,
+   "owner_id": 79,
+   "lang": "en",
+   "name": "Sikhye Cookie",
+   "abilities": "Masterful Gambit",
+   "description": "Sikhye Cookie spends more time lingering in front of a candy store choosing treats than contemplating her next move! As soon as she sits down in front of a Baduk board, her eyes gleam as she plans dozens of moves ahead in an instant. With her free-spirited nature, she constantly throws moves as unpredictable as the grains of rice in Sikhye at her opponent.",
+   "power_plus": "",
+   "power_plus_requirement": "",
+   "unlock_goal": "Have 70 Cookies at Lv.8"
+  },
+  {
+   "cookie_translation_id": 22,
+   "owner_id": 72,
+   "lang": "en",
+   "name": "Strawberry Shortcake Cookie",
+   "abilities": "Giant Cake Hound",
+   "description": "<tabber>\n\nOnce a Cake Hound deeply loved by their Cookie, they eventually went to doggy heaven. After making a wish to the Witch, they returned as half-Cookie, half-hound. While they can't quite remember their Cookie's face anymore, the joyful memories they shared remain vivid. Perhaps a familiar sniff will help them recognize the Cookie again!",
+   "power_plus": "",
+   "power_plus_requirement": "",
+   "unlock_goal": "*Collect 400 Sweet Strawberry Pieces (Kakao)\n*Have 10 S-tier Treasures (India)"
+  },
+  {
+   "cookie_translation_id": 23,
+   "owner_id": 78,
+   "lang": "en",
+   "name": "Sujeonggwa Cookie",
+   "abilities": "Masterful Gambit",
+   "description": "With a subtle scent of cinnamon and a focus as firm as ginger, Sujeonggwa Cookie always sits before the Baduk board with a look of perfect calm. With each move built upon sincerity, she always delivers quiet yet profound moves, much like subtle sweetness lingering at the end of a bitter flavor.",
+   "power_plus": "",
+   "power_plus_requirement": "",
+   "unlock_goal": "Unlock Elder Black Rice"
+  },
+  {
+   "cookie_translation_id": 24,
+   "owner_id": 83,
+   "lang": "en",
+   "name": "White Kimchi Cookie",
+   "abilities": "White Kimchi",
+   "description": "White Kimchi Cookie soothes souls with her pure shamanic dance. Her solemn and serene movements resemble the dance of a butterfly. It is said that all souls that touch the leaves of White Kimchi Cookie's robe are freed from their suffering.",
+   "power_plus": "",
+   "power_plus_requirement": "",
+   "unlock_goal": "Have 55 Treasures at +9"
+  },
+  {
+   "cookie_translation_id": 25,
+   "owner_id": 80,
+   "lang": "en",
+   "name": "Barley Sentry Cookie",
+   "abilities": "Sentry Flight",
+   "description": "Barley Sentry Cookie usually flutters around like a baby sparrow, but at crucial times, he seizes the moment to transform into a fierce warrior, defeating enemies with his sturdy Barley Spear in hand. He looks quite dignified and serious as he keeps on the lookout for bugs hiding in the fields.",
+   "power_plus": "",
+   "power_plus_requirement": "",
+   "unlock_goal": "Own 40 Evolved S Grade Treasures"
+  },
+  {
+   "cookie_translation_id": 26,
+   "owner_id": 87,
+   "lang": "en",
+   "name": "Manggaetteok Cookie",
+   "abilities": "Manggae Leaf Glider",
+   "description": "Manggaetteok Cookie is the only daughter of the venerable Vine Leaf family. She likes to go on secret outings in the forest, hiding her soft cheeks under her leaf cloak, which also allows her to glide freely through the woods on the gentle breeze and land on the ground just as smoothly.",
+   "power_plus": "",
+   "power_plus_requirement": "",
+   "unlock_goal": "Own 75 Cookies"
+  },
+  {
+   "cookie_translation_id": 27,
+   "owner_id": 39,
+   "lang": "en",
+   "name": "Adventurer Cookie",
+   "abilities": "Hidden Ruins Exploration",
+   "description": "He can open secret doors to an underground passage filled with Coins and, if lucky, a Mystery Box.\n\nThis cookies has traveled far and wide, beyond the realm of the Witch. All other Cookies thought he was a legend, but he's back and will guide others into uncharted territories of a new exciting world. His thirst for the unknown is unquenchable and will continue to roam the wide world as long as he can.",
+   "power_plus": "",
+   "power_plus_requirement": "",
+   "unlock_goal": "Get 2,000,000 points (LINE)\nAdd 200 Friends (Kakao)"
+  },
+  {
+   "cookie_translation_id": 28,
+   "owner_id": 33,
+   "lang": "en",
+   "name": "Alchemist Cookie",
+   "abilities": "Alchemy",
+   "description": "When the green alchemy bar is full, double jump to shoot a special jelly. Jump to toggle between the types of alchemy you can use. (Alchemy bar fills faster with upgrades).\n\nMade from the freshest of grapes said to have descended from the heavens, this smart cookie only cares about one thing; Research! Not only she can calculate the value of all matter in her head, she can figure out what elements to add to transform it! But she knows that being lazy or sitting idly by will achieve nothing! To get something of value, you have to give something of value in return - that's the Alchemist Cookie's theory.",
+   "power_plus": "",
+   "power_plus_requirement": "",
+   "unlock_goal": "Possess 11 Fully Upgraded Treasures"
+  },
+  {
+   "cookie_translation_id": 29,
+   "owner_id": 15,
+   "lang": "en",
+   "name": "Angel Cookie",
+   "abilities": "Magnetic Aura",
+   "description": "Surrounded by magnetic field, which gets stronger with upgrades\n\nStill a baby, Angel Cookie is slowly mastering the art of flying. For now, they got merely one inch off the ground. They cannot fly cause the wings are not fully grown yet, not because of their disproportionately large head (as some Cookies claim). The Magnetic aura is as strong as ever though, easily catching all nearby Jellies and Coins.",
+   "power_plus": "",
+   "power_plus_requirement": "",
+   "unlock_goal": "Reach Level 30"
+  },
+  {
+   "cookie_translation_id": 30,
+   "owner_id": 68,
+   "lang": "en",
+   "name": "Banana Cookie",
+   "abilities": "Circus",
+   "description": "At a given interval, replaced with monkey. Pass through hula hoops as monkey to get Coins.\n\nStep right up to see Banana Cookie's sweet Hula Hoop Show! Once in, you'll see that the crowd is filled with her wild animals friends. After all, she used to be a world famous explorer. Watching her show will energize you to the max! Banana Cookie's favorite part of the show is when she's showered with Coins after the finale act, Maybe she enjoys it a bit too much. Some even say that she takes all the Coins, even though it's the monkey who does the tricks. But the truth is, she donates most of the circus earnings to animal protection organizations, and the monkey approves.",
+   "power_plus": "",
+   "power_plus_requirement": "",
+   "unlock_goal": "Unobtainable"
+  },
+  {
+   "cookie_translation_id": 31,
+   "owner_id": 42,
+   "lang": "en",
+   "name": "Blackberry Cookie",
+   "abilities": "Paranormal Activity",
+   "description": "Spirits surrounding her eat Jellies and produce Blackberry Jellies at a given interval. Produces more Jellies with upgrades.\n\nShe always wears a nonchalant look and other Cookies might think she is hard to approach. But looks are deceiving. She has the amazing ability to concentrate on one task until it's finished and has been helping other Cookies with their problems with amazing organizational skills she learned from working for a prestigious household. Anyone would think one Cookie is incapable of doing so many things, but she proves everyone wrong. When it's time to run, she really cranks it up.",
+   "power_plus": "",
+   "power_plus_requirement": "",
+   "unlock_goal": "Possess 16 Fully Upgraded Treasures"
+  },
+  {
+   "cookie_translation_id": 32,
+   "owner_id": 28,
+   "lang": "en",
+   "name": "Carol Cookie",
+   "abilities": "Magic Songs",
+   "description": "7 double jumps change the song between: a song of Life (recovers Energy), a song of Change (turns obstacles into Jellies), a song of Abundance (creates Coins). Increase frequency of song effects with upgrades.\n\nThe gentle Cookie believes that a song can be stronger than a sword. She exerts great power with just a song of beautiful poetry and melody. \"No matter what happens, I will always have my songs. If you need more Energy, I'll sing of how beautiful life can be. If obstacles bother you, I'll sing the magic song of Change. If Coins is what you need, let me sing of abundance.\"",
+   "power_plus": "",
+   "power_plus_requirement": "",
+   "unlock_goal": "Reach Level 57"
+  },
+  {
+   "cookie_translation_id": 33,
+   "owner_id": 19,
+   "lang": "en",
+   "name": "Cheerleader Cookie",
+   "abilities": "Cheer Squad",
+   "description": "A cheerleader squad comes to help after 18-3218 jumps are for Level 8 of Cheerleader Cookie. The number of jumps are changing on each level. See the statistics table for list of number jumps required. jumps, destroying obstacles and spreading Coins and Jellies. Upgrades will reduce the number of jumps needed and will keep the squad longer.\n\nHer sunny and cheerful personality energizes Cookie crowds better than anything else. Rumor has it that she takes energy drink showers and drinks only lemon juice.",
+   "power_plus": "",
+   "power_plus_requirement": "",
+   "unlock_goal": "Own 12 Pets"
+  },
+  {
+   "cookie_translation_id": 34,
+   "owner_id": 36,
+   "lang": "en",
+   "name": "Cheesecake Cookie",
+   "abilities": "Coin Firework Party",
+   "description": "Coin Firework Party triggered when 16-23 invitation Jellies are obtained.\n\nThis is a flavorful Cookie made out of an entire cheesecake. Since she never had problems with money while growing up, she likes to throw luxurious parties and set off Coin Fireworks for her friends. She is as rich in flavor as the Buttercream Choco Cookie and likes to stay stylish as she casually jogs along. It's hard to resist the temptation to devour this deliciously decadent Cookie.",
+   "power_plus": "",
+   "power_plus_requirement": "",
+   "unlock_goal": "Own 24 Pets"
+  },
+  {
+   "cookie_translation_id": 35,
+   "owner_id": 51,
+   "lang": "en",
+   "name": "Cherry Blossom Cookie",
+   "abilities": "Blossom Power",
+   "description": "Creates Cherry Blossom Jellies while flying at a given interval. Cherry Blossom Jelly Party is created at bonus time. (More frequent flies with upgrades).\n\nOn a warm spring day, the first pink cherry blossoms were collected, then made into liquid essence for a generous amount of time. And with this essence, Cherry Blossom Cookie was born. Just by looking at her, you will feel splendid and warm inside, with a tingle on both your cheek. On a perfect weather, you will be able to witness her humming with her umbrella open, trying to fly into the air. She is most adorable when she offers you her delicious sandwich and tea. But watch out, once she starts to chat, you will lose track of time.",
+   "power_plus": "",
+   "power_plus_requirement": "",
+   "unlock_goal": "Possess 20 Evolved S Rank Treasures"
+  },
+  {
+   "cookie_translation_id": 36,
+   "owner_id": 27,
+   "lang": "en",
+   "name": "Cherry Cookie",
+   "abilities": "Cherry Bomb",
+   "description": "Throws Cherry Bombs that will destroy obstacles and create Cherry Jellies. Speed will get higher until you hit an obstacle. Hitting an obstacle will take you to original speed. More frequent bombs with upgrades.\n\nDecorated with bright cherry syrup, this Cookie is always looking for trouble. The cute look makes her dangerous pranks that much more unexpected. Beware of Cherry Bombs that she loves throwing around so much.",
+   "power_plus": "",
+   "power_plus_requirement": "",
+   "unlock_goal": "Possess 8 Fully Upgraded Treasures"
+  },
+  {
+   "cookie_translation_id": 37,
+   "owner_id": 59,
+   "lang": "en",
+   "name": "Cinnamon Cookie",
+   "abilities": "Card Trick",
+   "description": "Performs various Card Tricks at a given interval. Surprises with Revival Magic one time. (More frequent Card Tricks with upgrades.)\n\nSweet cinnamon powder lightly scatters each time this Cookie swings its cape. This delightful Cookie insists on showing its Card Tricks, which are so hectic, as they go up and down from side to side, it is almost impossible to follow. Some of the other Cookies at times refer to Cinnamon Cookie as frivolous. But as long as a single Cookie enjoys the show, it must go on. Keep your distance, being too close to this sweet scented magician will make you sneeze. Poof!",
+   "power_plus": "",
+   "power_plus_requirement": "",
+   "unlock_goal": "Possess 70 S Rank Treasures"
+  },
+  {
+   "cookie_translation_id": 38,
+   "owner_id": 46,
+   "lang": "en",
+   "name": "Cocoa Cookie",
+   "abilities": "Cocoa Cup",
+   "description": "When she takes a potion, she hops onto a cocoa cup and flies through the course for a set of period of time. When she is on her cup, regular Jellies turn into higher scoring Marshmallow Jellies. After drinking a Potion, she recovers more Energy than usual. (With upgrades, she flies longer with her cup and recovers more Energy.) (Cocoa Cookie's cup is considered to be a ride and will get additional points when she is on it.)\n\nEven if her body is 80% cocoa, she's always sipping hot cocoa, even during summer time. Her marshmallow hat is so deliciously sweet she needs to resist the temptation of taking a chunk out of it and dipping it into her cup. Her plump smooth cheeks just add to her charm! When she indulges in a freshly prepared cup of cocoa, all her worries melt away.",
+   "power_plus": "",
+   "power_plus_requirement": "",
+   "unlock_goal": "Possess 5 Evolved Treasures"
+  },
+  {
+   "cookie_translation_id": 39,
+   "owner_id": 11,
+   "lang": "en",
+   "name": "Coffee Cookie",
+   "abilities": "Recovers up to 29% more Energy from Potions.",
+   "description": "Recovers up to 29% more Energy from Potions.\n\nA classic example of a city Cookie, she refuses to start the day without a cup of coffee. She loves meeting up with friends, shopping for designer bags, and Pilates. Infused with strong coffee, she recovers faster with each Energy Potion.",
+   "power_plus": "",
+   "power_plus_requirement": "",
+   "unlock_goal": "Reach Level 15"
+  },
+  {
+   "cookie_translation_id": 40,
+   "owner_id": 66,
+   "lang": "en",
+   "name": "Cotton Candy Cookie",
+   "abilities": "Cotton Candy Letter",
+   "description": "Collects unusual alphabets and goes to a special Bonus Time. Send a love letter through Bird Post during Bonus Time to create Heart Jellies. Throws away unfinished love letters, which destroys obstacles and creates Cotton Candy Jellies. (Alphabet Jellies occasionally appear in between regular Jellies)\n\nCookie made of sweet, sweet sugar. Apparently, Cotton Candy Cookie has the highest level of sugar among the Cookies. With a heart so sweet, no wonder she's always in love! She spends all day writing love letters, but discards more letters than she sends. She does not write those letters for her love to come true, but to cherish each moment of being in love. Almost every Cookie has received a letter from Cotton Candy Cookie. They say that the contents of the letter are so sweet, that every Cookie hopes to receive one someday.",
+   "power_plus": "",
+   "power_plus_requirement": "",
+   "unlock_goal": "Own Cotton Candy Birdie Pet"
+  },
+  {
+   "cookie_translation_id": 41,
+   "owner_id": 48,
+   "lang": "en",
+   "name": "Cream Puff Cookie",
+   "abilities": "Magic Apprentice",
+   "description": "Performs small magic tricks for a set period of time. She starts running with a low probability of triggering a big magic trick that increases whenever she fails to trigger one. When successful, the probability gauge will reset. (With upgrades, she can do big magic tricks more often)\n\nShe is the sweet Cream Puff Cookie that makes you feel good just by looking at her. Something about her makes you worry about her, but that's her charm point. Although she is a bit clumsy, great powers lie within her, and her potential is unpredictable. After many failed attempts with her spells, she visits the library to cheer herself up. That day, she found out about the City of Wizards, and hence her adventure to become a respected wizard begins! Will Cream Puff Cookie be able to reach her goal?? Let's find out!",
+   "power_plus": "",
+   "power_plus_requirement": "",
+   "unlock_goal": "*Possess 10 Evolved S-Grade Treasures (Kakao, LINE)\n*Have 14 S-tier Treasures (India)"
+  },
+  {
+   "cookie_translation_id": 42,
+   "owner_id": 20,
+   "lang": "en",
+   "name": "Devil Cookie",
+   "abilities": "Super Devil Rush",
+   "description": "Transforms into an all-consuming Super Devil after catching 22~15 Spirit Jellies. With upgrades, less Spirit Jellies trigger the transformation.\n\nMysterious in many ways. Looks hot and spicy, but tastes like Cola. A byproduct of Angel Cookie batter exposed to dark magic, he can see flying Spirit Jellies unknown to other Cookies. Catching those Jellies unleashes the feared Super Devil.",
+   "power_plus": "",
+   "power_plus_requirement": "",
+   "unlock_goal": "Reach Level 50"
+  },
+  {
+   "cookie_translation_id": 43,
+   "owner_id": 64,
+   "lang": "en",
+   "name": "Dino-Sour Cookie",
+   "abilities": "Jelly Dinosaur Ride",
+   "description": "Runs with Jelly Dinosaur. Speeds up with Jelly Dinosaur in Giant Mode. Giant landing makes Dino-Foot Jelly sprout from the ground. The higher the jump, the more Jellies created.\n\nHighly enriched sour jellies were melted as ingredients for this sour Cookie. The most important rule in baking Dino-Sour Cookie was to style its sharp hairdo with sour cream mousse. Because he craves extreme adventures and loves dinosaurs, he practically lives in the Dragon's Valley. On one of those adventures, he met his companion. He had accidentally dropped a fossil, but to his surprise, a Jelly Dinosaur popped out! Now, these two have become the best of pals and set out on dangerous adventures together.",
+   "power_plus": "",
+   "power_plus_requirement": "",
+   "unlock_goal": "Have 333 friends"
+  },
+  {
+   "cookie_translation_id": 44,
+   "owner_id": 24,
+   "lang": "en",
+   "name": "Fairy Cookie",
+   "abilities": "Magnetic Shield",
+   "description": "Creates Magnetic Aura which also serves as a shield.\n\nWith the least calories and highest fiber content, it's the healthiest Cookie of all. She can even produce oxygen, which keeps the air clean around her. The energy of the forest feeds her protective shield. Those who envy Fairy Cookie say she has strawberry jam of arrogance inside, but you don't believe them, right?",
+   "power_plus": "",
+   "power_plus_requirement": "",
+   "unlock_goal": "Possess 5 Fully Upgraded Treasures"
+  },
+  {
+   "cookie_translation_id": 45,
+   "owner_id": 57,
+   "lang": "en",
+   "name": "General Jujube Cookie",
+   "abilities": "Horseback Charge",
+   "description": "Rides his Red Jujube Horse and destroy obstacles and arrows flying his way at a given interval. A Candy Scimitar button replaces the Slide button during skill trigger, pressing it will turn obstacles into Jujube Slice Jellies. (More frequent skill trigger with upgrades.) (Horseback riding counts as a Ride.)\n\nThis long-bearded Cookie is from the furthest eastern edge of the continent. Don't let his fierce appearance intimidate you, he is actually quite sweet. And he becomes even sweeter when his face reddens with anger or surprise. With his Candy Scimitar he can destroy everything standing in his path with a swift slash. But, don't worry, behind his rough exterior is a delicate soul. Every morning he can be spotted carefully combing out his beard.",
+   "power_plus": "",
+   "power_plus_requirement": "",
+   "unlock_goal": "Possess 30 Fully Upgraded Treasures"
+  },
+  {
+   "cookie_translation_id": 46,
+   "owner_id": 26,
+   "lang": "en",
+   "name": "Ginger Claus",
+   "abilities": "13-20% Coin Bonus, 3-10% XP Bonus.",
+   "description": "13-20% Coin Bonus, 3-10% XP Bonus.\n\nIt's the cookie you can meet after being a good child for the whole year. It is said that it was baked in a faraway land and crawled into the oven through the Witch's chimney. This Cookies loves giving presents more than receiving them and goes around handing out special, but certainly pretty odd gifts for everyone.",
+   "power_plus": "",
+   "power_plus_requirement": "",
+   "unlock_goal": "Unlocked upon collecting 400 Gold Bells"
+  },
+  {
+   "cookie_translation_id": 47,
+   "owner_id": 1,
+   "lang": "en",
+   "name": "GingerBright",
+   "abilities": "Earns more XP (Up to 12% more)",
+   "description": "Earns more XP (Up to 12% more)\n\n<tabber> |-|Classic=Maybe the Witch thought  seemed lonely all by himself, because she baked GingerBright with the leftover dough from making GingerBrave. Sweet and bubbly GingerBright is full of life. But this smart Cookie clearly knows that it would be a bad idea to offer her lollipop to GingerBrave! She's so smart, she even found a way to get extra XP every time. |-|India/LINE=She's half gingerbread, half brains. Running is one way out of a problem, but she can think of a gazillion other solutions. She's so smart she found a way to get extra XP every time.<ref group=\"note\">GingerBright's English LINE Cookie Run description is a wildly inaccurate localization compared to the original Korean text from Cookie Run for Kakao and said text's accurate localization seen in Cookie Run Classic. See Trivia. |-|Kakao=상큼 발랄한 맛의 명랑한 쿠키양. 용감한 쿠키군이 혼자 외로워 보이자 남은 반죽을 조금 떼어내 명랑한 쿠키양을 만들었다고. 매우 현명한 이 쿠키는 절대 용감한 쿠키군에게 자신의 사탕을 나눠먹자고 제안하지 않는다고 한다. 달리기가 끝나면 추가 경험치를 준다. </tabber>",
+   "power_plus": "",
+   "power_plus_requirement": "",
+   "unlock_goal": "Reach 30,000 points"
+  },
+  {
+   "cookie_translation_id": 48,
+   "owner_id": 50,
+   "lang": "en",
+   "name": "Gumball Cookie",
+   "abilities": "Gumball Cannon",
+   "description": "He loads Gumballs while jumping and shoots while sliding. The shots destroy obstacles and receives shot points. Consecutive shots increase points! Gumball can be loaded up to 20 times. (More shot points are received with upgrades).\n\nThe hard outside and soft inside of a gumball was separated, then evenly mixed into this cookie batter... and Ta-Da! Gumball Cookie was born! If you smell sweet and sour aroma, Gumball Cookie is nearby! He is out on a mission to transform the \"boring\" into colorful and fun! Walls? Ceilings? Obstacles? Everything is a canvas for this mischievous cookie! It is said that he even made the Witch angry for coloring her oven the day after he was born. For such reasons, he is resented at times but he will stop at nothing to share his art with the world. When he discovered the City of Wizards, he danced with joy for finding a canvas like world waiting to be colored!",
+   "power_plus": "",
+   "power_plus_requirement": "",
+   "unlock_goal": "Reach Level 70"
+  },
+  {
+   "cookie_translation_id": 49,
+   "owner_id": 63,
+   "lang": "en",
+   "name": "Herb Cookie",
+   "abilities": "Cultivation",
+   "description": "Rain Jelly and Sun Jelly will appear at a given interval. Collect Rain Jelly to fill the Raindrop Gauge. When Raindrop Gauge is full, no more raindrops can be saved. Collect Sun Jelly to bring out the Sun. The Sun uses the collected raindrops to turn regular Jelly into Sprout Jelly. (More frequent Rain Jelly and Sun Jelly with upgrades.\n\nWarm like the sunshine and fresh like the scent of rain, Herb Cookie will ease your mind when you're feeling down. Herb Cookie was made of fresh, nutritious organic ingredients, which may not be to everyone's taste. On rainy days, Herb Cookie keeps himself dry with a leaf umbrella while listening to the sound of falling raindrops. On warm days, Herb Cookie enjoys the sunshine while carrying around his favourite potted plant. This Cookie treats all living things and each and every moment as precious. He believes the little things in life that make you laugh or cry are to be cherished, just like a ray of sunshine after the rain.",
+   "power_plus": "",
+   "power_plus_requirement": "",
+   "unlock_goal": "Own 55 Cookies"
+  },
+  {
+   "cookie_translation_id": 50,
+   "owner_id": 17,
+   "lang": "en",
+   "name": "Hero Cookie",
+   "abilities": "Hero Mode",
+   "description": "When Power meter is full, Cookie transforms into a Superhero, who can Blast-fly and is invincible. (During Hero Mode, you can perform invincible high-speed flight and gain a magnetic aura.)\n\nAfter hours of studying, he finally succeeded in building a Caramel Syrup Supersuit, optimized for escape with a rechargeable Candy Engine and rocket powers. Upgrades will reduce the time needed to fully recharge the Engine.",
+   "power_plus": "",
+   "power_plus_requirement": "",
+   "unlock_goal": "Have 120 friends"
+  },
+  {
+   "cookie_translation_id": 51,
+   "owner_id": 43,
+   "lang": "en",
+   "name": "Kiwi Biker Cookie",
+   "abilities": "Biker",
+   "description": "He blasts through the platform while riding his motorcycle, which goes even faster when he eats Fuel Jellies (faster with upgrades). Please note the motorcycle is not consider a \"Ride\", so no extra points will be awarded from treasures when used.\n\nHe is a tough Cookie that has been hardened under the blazing sun while riding to nowhere in particular with his precious bike. He feels most alive when the wind blows into his face while riding at top speed. He is said to have vowed to spread his kiwi smell all over the world and it seems nothing will quench his thirst for adventure. Where he'll ride off to next?",
+   "power_plus": "",
+   "power_plus_requirement": "",
+   "unlock_goal": "Possess 25 S Rank Treasures"
+  },
+  {
+   "cookie_translation_id": 52,
+   "owner_id": 10,
+   "lang": "en",
+   "name": "Knight Cookie",
+   "abilities": "Special Blast",
+   "description": "Runs faster and longer after collecting Blast Jelly.\n\nArmed with white chocolate reinforced by milk bubbles, Knight Cookie is a living legend. It is said that he fights dragons for exercise, conjures a horse from thin air and can ride faster and longer than any knight in the history of Cookies.",
+   "power_plus": "",
+   "power_plus_requirement": "",
+   "unlock_goal": "Reach Lv. 15 Energy"
+  },
+  {
+   "cookie_translation_id": 53,
+   "owner_id": 22,
+   "lang": "en",
+   "name": "Kumiho Cookie",
+   "abilities": "Jelly Seduction",
+   "description": "9 two-level jumps will change her into Ninetales, seducing Bear Jellies to gain extra points.\n\nOriginally a fox-shaped marshmallow. She aspired to be a cookie so much that she survived on only flour and butter for 999 days while mastering the sorcery to fake a Cookie. As a result, she can now disguise herself as a seducing and appealing cookie. Anyone who catches even a glimpse of her will fall in love with her.",
+   "power_plus": "",
+   "power_plus_requirement": "",
+   "unlock_goal": "Reach Level 55"
+  },
+  {
+   "cookie_translation_id": 54,
+   "owner_id": 52,
+   "lang": "en",
+   "name": "Lemon Cookie",
+   "abilities": "Electro Shield",
+   "description": "Creates Electro  at a given interval. Electro Shield increases Jelly points and slightly reduces Energy drain speed. It also attracts all Jellies, even the tough Dark Moon Jelly. Lemon Cookie's Blast turn into a Lightning Blast, which destroys obstacles and earns extra points. (More frequent Electro  with upgrades).\n\nThe acidic and sharp Lemon Cookie was born in a cold laboratory while the creator was experimenting with electricity. A giant, fresh lemon with a high dose of acidity was added in the making of this cookie, hence it courses with electricity. The cube that Lemon Cookie carries with him controls all the high voltage electricity his body contains. Lemon Cookie's childhood friend found this cube quite intriguing. Thanks to the friend, Lemon Cookie learned various ways to solve the cube and even has some of his own tricks up his sleeve. When Lemon Cookie was unable to control its power it became a danger to other cookies. This childhood friend may have been the only one Lemon Cookie could talk to. Lemon Cookie might not be easy to approach, but electrifying surprises might await us if we do.",
+   "power_plus": "",
+   "power_plus_requirement": "",
+   "unlock_goal": "Own 50 Pets"
+  },
+  {
+   "cookie_translation_id": 55,
+   "owner_id": 54,
+   "lang": "en",
+   "name": "Lime Cookie",
+   "abilities": "Super Beach Ball",
+   "description": "Double jump after receiving beach ball to throw it and create lime pulps to destroy obstacles. More lime pulps are created in Giant Mode. At a given interval, Lime Cookie goes into Beach Ball Dash, destroying obstacles in its way. (More frequent Beach Ball Dash with upgrades)\n\nWhen baking this Cookie, large amounts of citrus peels were used. Perhaps that's why Lime Cookie is so feisty. Her trademark bangs were made with sweet, sweet pudding. No matter how fast or wildly she runs, her bangs stay perfect. Don't let her cute appearance fool you, she is known to be a bit cold to the other Cookies. But there is a single Cookie that she has a weak spot for. She follows that Cookie around and looks up to it. Sometimes, her jealousy causes uncomfortable situations. It is said that she learned her SMASH! skills from that Cookie...",
+   "power_plus": "",
+   "power_plus_requirement": "",
+   "unlock_goal": "Possess 60 S Rank Treasures"
+  },
+  {
+   "cookie_translation_id": 56,
+   "owner_id": 60,
+   "lang": "en",
+   "name": "Macaron Cookie",
+   "abilities": "Parade",
+   "description": "Leads Macaron Parade at a given interval. Macaron animals create Macaron Jellies and destroys obstacles, earning destruction points and additional Jelly Points. (More frequent parades with upgrades.)\n\nDid you think this Cookie was made with artificial food colorings? Guess again! She was made with 100% all-natural ingredients. Even her long, gorgeous eyelashes are completely organic. Cookies are drawn to her friendly smile and gentle voice. In fact, cute little macaron animals love to gather around her too. Once she starts playing her macaron drum, the macaron animals start a little parade. At times, the parade can get out of hands, but Macaron Cookie still enjoys the company anyway. When she gets really excited, Macaron Cookie may debut her most festive performance for you.",
+   "power_plus": "",
+   "power_plus_requirement": "",
+   "unlock_goal": "Own Castanets Pet"
+  },
+  {
+   "cookie_translation_id": 57,
+   "owner_id": 37,
+   "lang": "en",
+   "name": "마그마맛 쿠키 (Magma Cookie)",
+   "abilities": "Magma Cookie has had her skill updated several times across multiple versions of Cookie Ru",
+   "description": "Magma Cookie has had her skill updated several times across multiple versions of Cookie Run for Kakao. For the sake of differenciation, skills will be identified by the version of the game they originated in.\n\n<nowiki>*</nowiki>능력 : 마그마그 문구필요 (*Skill: Magumagu Need Text)",
+   "power_plus": "",
+   "power_plus_requirement": "",
+   "unlock_goal": "Get 2,000,000 points (unactivated)"
+  },
+  {
+   "cookie_translation_id": 58,
+   "owner_id": 45,
+   "lang": "en",
+   "name": "Mint Choco Cookie",
+   "abilities": "Violin Performance",
+   "description": "Creates Coins when playing the violin. For a set period of time, if he doesn't collide with any Obstacles, he runs faster and creates many Coins. If he collides with an Obstacle, his speed will return to normal and his energy will be drained significantly. (With upgrades, the quantity of Coins he creates increases.) (You can enjoy the special Mint Choco Cookie BGM when you run with him.)\n\nHis exquisite performance, his dashing looks and the incredible ability of his Mint Candy violin of giving off a sweet intoxicating candy aroma while he plays make him a favorite of all cookies. Though often called a 'genius', he refuses to let all this attention get to his head and will never forget his long years as a humble street performer.",
+   "power_plus": "",
+   "power_plus_requirement": "",
+   "unlock_goal": "Own 40 Cookies"
+  },
+  {
+   "cookie_translation_id": 59,
+   "owner_id": 71,
+   "lang": "en",
+   "name": "Moon Rabbit Cookie",
+   "abilities": "Rice Cake Bunny",
+   "description": "Transforms into giant Rice Cake Bunny at given intervals. Giant Rice Cake Bunny's landings create Honey Rice Cake jellies. Giant Rice Cake Bunny's size gets bigger and jumps become higher as time goes by.\n\nFresh rice harvested from the happy soils of Dessert Paradise were used to bake the happy Moon Rabbit Cookie. This Cookie's chubby cheeks are always filled with sweet rice cake. How cute! But her desire for rice cake has a dark side too. Under a full moon, Moon Rabbit Cookie's craving for rice cake can grow so strong that she transforms into giant Rice Cake Bunny! She then jumps around wildly, crushing everything around her until someone gives her some rice cake to calm her down. Once upon a time, during one of her crazy transformations, the other Cookies tried to keep the giant Rice Cake Bunny in check by grabbing each other's hands and building a circle around her. Ever since, the Cookies have keep a tradition of holding hands and going around in circles under full moon.",
+   "power_plus": "",
+   "power_plus_requirement": "",
+   "unlock_goal": "Own 58 Cookies"
+  },
+  {
+   "cookie_translation_id": 60,
+   "owner_id": 49,
+   "lang": "en",
+   "name": "Moonlight Cookie",
+   "abilities": "Moonlight Magic",
+   "description": "She falls asleep and dreams for a set period of time and while in her sweet dreams, she attracts all Jellies, including Dark Moon Jellies. She also creates Star Powder Jellies that clears her path. And when she awakes from her sweet dream, her Energy is restored. (She dreams more often with upgrades)\n\nMoonlight Cookie's graceful wavy hair shines under the night sky, elegant and mystical as ever. She was created by the ancient wizards even before the Cookie Kingdom itself was built, and learned the secrets of the City of Wizards. But for some unknown reason, she was left to protect the city all alone. She is strongest while in her dreams, therefore was able to protect the city from intruders. But being by herself for a long time has made her sad and lonely at times. At these moments, she falls asleep, where she is able to lean by her friend Moon and draw in the night sky with her Star friends to cheer up.",
+   "power_plus": "Creates Mystery Boxes at a given rate in Episode 4 \"The City of Wizards\" (Higher probability with upgrades)",
+   "power_plus_requirement": "",
+   "unlock_goal": "Special Reward from obtaining all Mystery Jewels in Episode 4: The City of Wizards"
+  },
+  {
+   "cookie_translation_id": 61,
+   "owner_id": 9,
+   "lang": "en",
+   "name": "Muscle Cookie",
+   "abilities": "Invincible to obstacles when hitting them, up to 75% of time with upgrades.",
+   "description": "Invincible to obstacles when hitting them, up to 75% of time with upgrades.\n\nMuscle Cookie's recipe requires protein powder and at least 3 weeks of kneading (the longer the better). Such rigorous cooking process prepared him to push through most obstacles without losing Energy. Consistent upgrades will strengthen his crust even more.",
+   "power_plus": "",
+   "power_plus_requirement": "",
+   "unlock_goal": "Score 450,000 points"
+  },
+  {
+   "cookie_translation_id": 62,
+   "owner_id": 14,
+   "lang": "en",
+   "name": "Ninja Cookie",
+   "abilities": "With upgrades, he can jump in the air up to 10 times.",
+   "description": "With upgrades, he can jump in the air up to 10 times.\n\nNo cookie knows the importance of training better than Ninja Cookie. But is it just training? The secret to his multi-step jump is unknown. Some say he steps on wind, others claim he is more than a Cookie. The higher his level, the more he can jump.",
+   "power_plus": "",
+   "power_plus_requirement": "",
+   "unlock_goal": "LINE: Score 600,000 points"
+  },
+  {
+   "cookie_translation_id": 63,
+   "owner_id": 58,
+   "lang": "en",
+   "name": "Onion Cookie",
+   "abilities": "Haunted House",
+   "description": "Enters Haunted House and goes through obstacles at a given interval. Extra points for going through obstacles. (More frequent visit to the Haunted House with upgrades.)\n\nYour eyes will start to water if you get too close to this onion-based Cookie! And once she starts crying, she cannot stop. Mainly because her tears consist of onion juice, which cause her to cry even more. Poor thing. She is truly afraid of ghosts and weeps when scared. Perhaps one day she'll realize why her surroundings sometime become ghostly and clocks suddenly start ticking backward.",
+   "power_plus": "",
+   "power_plus_requirement": "",
+   "unlock_goal": "Possess 25 Evolved S Rank Treasures"
+  },
+  {
+   "cookie_translation_id": 64,
+   "owner_id": 53,
+   "lang": "en",
+   "name": "Orange Cookie",
+   "abilities": "Power Tennis",
+   "description": "Tennis ball appears at a given interval. After a double jump, the tennis ball bounces around destroying obstacles and splatting orange pulps. 'Smash' button replaces the 'Slide,' allowing an even stronger bounce. Orange Cookie throws limitless amount of tennis balls during Blast. (More frequent tennis balls with upgrades)\n\nYou can't find another cookie as zesty as Orange Cookie. She enjoys all outdoors activities, especially on a sunny day. The sunscreen ingredient inside of her is the secret to her perfect tan. She is always full of positive energy and just being with her makes others happy. Her smashes are getting stronger every time.. perhaps it is because of her childhood friend?..",
+   "power_plus": "",
+   "power_plus_requirement": "",
+   "unlock_goal": "Own 42 Max Level Cookies"
+  },
+  {
+   "cookie_translation_id": 65,
+   "owner_id": 69,
+   "lang": "en",
+   "name": "Pancake Cookie",
+   "abilities": "Flying Squirrel",
+   "description": "Creates Acorn Jelly and Sunflower Jelly and flies at given intervals. Collecting Sunflower Jellies will create Sunflower Seed Jellies. (Upgrade for more frequent flight)\n\nBrowned to perfection, the cute and energetic Pancake Cookie was born. Unlike his brother, he is cute to the extreme. And he knows it! He even added a piece of butter on top of his head to make himself even cuter. Cuteness overload! This sweet and innocent Cookie's favorite thing in the world is Acorn Jelly. You can try to resist his charms, but he'll get that Acorn Jelly from you one way or another.",
+   "power_plus": "",
+   "power_plus_requirement": "",
+   "unlock_goal": "Own Roll Cake Cookie"
+  },
+  {
+   "cookie_translation_id": 66,
+   "owner_id": 56,
+   "lang": "en",
+   "name": "Peach Cookie",
+   "abilities": "Peachy Bo-Staff",
+   "description": "Enter Bamboo Forest and fights Bamboo Assasins at a given interval. Receive points for fighting Bamboo Assasins, and even more points for continuous attacks. In the Bamboo Forest, 5 Step Jumps are possible due to some kind of mystical energy. (More Destruction Points with upgrades)\n\nPeach Cookie is a master of martial arts from far, far away. She picked two of the juiciest peaches in a sunny valley and wears them in a traditional \"ox horns\" hairstyle. Don't be fooled by her cute smile–-she can crush your bones! She is brimming with confidence and ready to fight any obstacles standing in her way. The Bamboo Forest is hardly a challenge to her. You can always tell where she's been, for she leaves behind a sweet, peachy scent... and a few fallen enemies. Gulp!",
+   "power_plus": "",
+   "power_plus_requirement": "",
+   "unlock_goal": "Own 52 Cookies"
+  },
+  {
+   "cookie_translation_id": 67,
+   "owner_id": 55,
+   "lang": "en",
+   "name": "Peppermint Cookie",
+   "abilities": "Whale Surfing",
+   "description": "<tabber> Classic=The green gauge charges over time. When it is full, Peppermint Cookie blows the conch shell to call upon the Peppermint Whale. The Peppermint Whale creates Splash Jellies as it makes its appearance swimming with Peppermint Cookie on its back. While riding the whale, the Jump and Slide buttons call dolphins to gather Jellies instead. (The Peppermint Whale counts as a riding skill. Leveling up makes the gauge fill faster.) Blows a conch shell to call upon the Peppermint Whale at given intervals. The Peppermint Whale creates Splash Jellies as it makes its appearance, swimming with Peppermint Cookie on its back. While summon the whale, you can summon a dolphin to collect Jellies instead of jumping or sliding. Upgrades will summon the Peppermint Whale more often. Whale summon is considered a summon skill. Blows conch shell to call upon the Peppermint Whale, which takes Peppermint Cookie on its back and create Sea Bubble Jellies. Dolphins are called upon, instead of jumping or sliding, to eat the Jellies while riding. (More frequent Peppermint Whale appearances with upgrades) </tabber>\n\n<tabber> |-|Classic/India= Mint leaves for Peppermint Cookie were gathered from a town near the clear sea. This Cookie likes to spend time at the shore, staring dreamily at the horizon, or playing the shell ocarina. An old friend, the Peppermint Whale, often appears to the sound for company. Peppermint Cookie treasures the simple but unchanging things, just like the waves that come and go. May the Cookie's smile remain unchanging as well! |-|LINE= The mint leaves used to make this Cookie was gathered from a town near the clear sea. This refreshing Cookie likes to stare far away, with a distant dreamy expression. Its eyes itself seem like a deep, deep ocean. When it is deep in its thoughts, it gives an even more mysterious atmosphere. When it blows its treasured conch shell, an old friend, Peppermint Whale appears for company. Peppermint Cookie believes in and treasures, not the great, but the unchanging things, just like the waves that come and go. May its smiles be unchanging as well. </tabber>",
+   "power_plus": "",
+   "power_plus_requirement": "",
+   "unlock_goal": "Reach Level 74"
+  },
+  {
+   "cookie_translation_id": 68,
+   "owner_id": 30,
+   "lang": "en",
+   "name": "Pink Choco Cookie",
+   "abilities": "Heart Beam",
+   "description": "Generates Pink Bon Bon Jellies, shoots a Heart Beam at fixed intervals that destroys obstacles. More frequent Heart Beam with upgrades.\n\nThis cookie spreads love far and wide with her sugary sweet love virus. Her infectious smile and bright pink cheeks make it impossible to not to succumb to her lovely Heart Beam. However, no matter how hard she tries in her mission to be loved by all, she spends a lot of time all by her lonesome self. If only she was better at aiming the love beam.",
+   "power_plus": "",
+   "power_plus_requirement": "",
+   "unlock_goal": "Have 160 friends"
+  },
+  {
+   "cookie_translation_id": 69,
+   "owner_id": 13,
+   "lang": "en",
+   "name": "Pirate Cookie",
+   "abilities": "After running out of Energy, revives as Ghost Pirate with up to 160 Energy.",
+   "description": "After running out of Energy, revives as Ghost Pirate with up to 160 Energy.\n\nSea water and rum are crucial ingredients when it comes to Pirate Cookie. He might look tough, but really is a hopeless romantic. In his ghostly form, Pirate Cookie walks right through obstacles but, alas, is unable to pick up any Energy Potions.",
+   "power_plus": "",
+   "power_plus_requirement": "",
+   "unlock_goal": "Have 100 friends"
+  },
+  {
+   "cookie_translation_id": 70,
+   "owner_id": 32,
+   "lang": "en",
+   "name": "Pistachio Cookie",
+   "abilities": "Guardian Hero",
+   "description": "Performs a super-fast and invincible dash at regular intervals. After a dash she receives energy from a devine and mysterious being. She escapes collisions with minimal damage thanks to her tough shell armour, but as a result her energy drains a little quicker than usual. (Dash activated more regularly after upgrading.)\n\nA purple storm cloud loomed over the forgotten forest where Pistachio Cookie was sleeping. She was suddenly struck by lilac lightening and a devine and mysterious being appeared to her in a vision to tell her that it was her destiny to rescue all the other Cookies from the oven. When she awoke she was surrounded by a thousand fireflies with hard pistachio shells and she realized right then and there that was now her time to shine! She then swore to the devine and mysterious being that she would give her life to helping other Cookies. Clad in her shell armour the healthy and deliciously nutty Pistachio Cookie then set out on her sacred mission to rid the oven of danger. This was the first step in Pistachio Cookie's journey to becoming a hero and a saint!",
+   "power_plus": "",
+   "power_plus_requirement": "",
+   "unlock_goal": "Reach Level 60"
+  },
+  {
+   "cookie_translation_id": 71,
+   "owner_id": 8,
+   "lang": "en",
+   "name": "Princess Cookie",
+   "abilities": "Less Energy loss when colliding with an obstacle (Up to 50%).",
+   "description": "Less Energy loss when colliding with an obstacle (Up to 50%).\n\nThe royal family's darling, she always gets her way. Don't be fooled by the adorable smile and cute hairdo. Princess Cookie had some serious martial arts training growing up. She's fearless, knowing that her whipped cream petticoat is as good as a shield.",
+   "power_plus": "",
+   "power_plus_requirement": "",
+   "unlock_goal": "Get Lv. 15 Jelly"
+  },
+  {
+   "cookie_translation_id": 72,
+   "owner_id": 31,
+   "lang": "en",
+   "name": "Prophet Cookie",
+   "abilities": "Divination",
+   "description": "His prophecies always come true.\n\nThis wizened cookie is often called \"fortune cookie for his ability to know what's coming before it happens. His scroll of prophecy tells him how he should run, giving him the confidence to jump and slide his way to victory, even if it isn't always right. Some say the source of his foresight is his mysterious purple crystal ball, but everyone else knows it all comes from his majestic beard!",
+   "power_plus": "",
+   "power_plus_requirement": "",
+   "unlock_goal": "Own 20 Max Level Cookies"
+  },
+  {
+   "cookie_translation_id": 73,
+   "owner_id": 21,
+   "lang": "en",
+   "name": "Rebel Cookie",
+   "abilities": "Instant landing when pressing SLIDE after a 3-10 multi-step jump.",
+   "description": "Instant landing when pressing SLIDE after a 3-10 multi-step jump.\n\nAn organic cookie made of rice that makes you feel healthy only by looking at it. He mastered sorcery on his own and can do up to 10-level jumps. He is popular among Cookies for stealing the Witch's possessions and sharing it with others.",
+   "power_plus": "",
+   "power_plus_requirement": "",
+   "unlock_goal": "Unlock Windy (Line)\nHave 120 friends (Kakao)"
+  },
+  {
+   "cookie_translation_id": 74,
+   "owner_id": 61,
+   "lang": "en",
+   "name": "Red Bean Cookie",
+   "abilities": "Penguin Sled",
+   "description": "Collects Fish Treat jelly while running. Rides Penguin Sled at a given interval, depending on the number of collected Fish Treat Jellies, the faster the sled. (Penguin Sled counts as a Ride.)\n\nRed Bean Cookie was born on a frigid day when snow made of sweet rice flour fell from the sky. The hardiest grains of rice from that snowstorm were collected and used to make his thick and chewy Sweet Rice Cake Hat. The bitter winter is no challenge for Red Bean Cookie. He rides along joyfully on his sled as harsh winds muss up his red bean paste hair. As he rides along, Red Bean Cookie is always on the look out for delicious Fish Treat Jellies. A single sniff of these tasty treats will elate even the grouchiest penguin. The more treats the penguins receive the faster they'll pull the sled.",
+   "power_plus": "",
+   "power_plus_requirement": "",
+   "unlock_goal": "Obtain Sweet Rice Seal"
+  },
+  {
+   "cookie_translation_id": 75,
+   "owner_id": 47,
+   "lang": "en",
+   "name": "Muay Thai Cookie",
+   "abilities": "Muay Thai",
+   "description": "Destroys a certain amount of Obstacles when running into them. Once he's pumped he annihilates all Obstacles. When he runs out of Energy he revives through sheer willpower. He also gets extra points for destroying Obstacles (upgrades give him fighting spirit and he revives with more Energy).\n\nHot peppers were directly added to the dough to make this one spicy Cookie. His desire to be the best is unbeatable. He will use pain as his weapon. All the Cookies say that Muay Thai Cookie stayed in the oven a little too long to become tough. He's now got quite a tan, which goes perfectly with his charisma. He's thinks his hairstyle shows his diligence so he'll never change it.",
+   "power_plus": "",
+   "power_plus_requirement": "",
+   "unlock_goal": "Have 150 Friends or from Limited-time Invite Event (LINE)"
+  },
+  {
+   "cookie_translation_id": 76,
+   "owner_id": 25,
+   "lang": "en",
+   "name": "Rockstar Cookie",
+   "abilities": "Slide Blast",
+   "description": "Slide Blast releases Note Jellies that can be collected for points. A fully charged Slide Blast will destroy nearby obstacles.\n\n<nowiki>He's the only Cookie to discover rock and roll in the oven. His rock shows will knock your socks off. What makes his performances so stunning? He knows that practice makes perfect. Amidst ceaselessly tuning his style, he discovered the Slide Blast ability. He's a shining star amongst the Cookies.</nowiki>",
+   "power_plus": "",
+   "power_plus_requirement": "",
+   "unlock_goal": "Possess 20 Treasures"
+  },
+  {
+   "cookie_translation_id": 77,
+   "owner_id": 67,
+   "lang": "en",
+   "name": "Roll Cake Cookie",
+   "abilities": "Road Roller",
+   "description": "Can use the hammer at a given interval. While using the hammer, double jump landings destroy obstacles and create Ingredient Jellies. Road Roller will be summoned upon collecting 37-30 Ingredient Jellies. (Skill counts as riding).\n\nA Cookie applied with a generous amount of fresh whipped cream. Only the fluffiest and sweetest ingredients were used to make this Cookie. So it's a huge mystery on why he's so wild. Roll Cake Cookie carries a giant Roll Cake Hammer to crush all obstacles on his path. But that's not all, he rides his enormous Road Roller to squash some more. Phew, what a character. (But they say that the Road Roller tastes better with the almonds stuck to it from all the squashing!) Perhaps the milked cow had a wild side, or the whipped cream was whipped too much? We'll never know. And here's another mystery to solve. Roll Cake Cookie was heard yelling, \"I too wanted to be a lovable cake!\"",
+   "power_plus": "",
+   "power_plus_requirement": "",
+   "unlock_goal": "Own Light Bros Pet"
+  },
+  {
+   "cookie_translation_id": 78,
+   "owner_id": 65,
+   "lang": "en",
+   "name": "Sea Fairy Cookie",
+   "abilities": "Wave Blast",
+   "description": "Summons a powerful wave and blasts at a given interval. During Wave Blast, Wave Beads destroy obstacles, creating Sea Crystal Jelly. \n\nWith the wrath of the dragon covering the Cookie World, Sea Fairy's curse started to melt little by little. But perhaps because of her grieving heart, her soul was frozen beyond magic. If it weren't for the warm kindness of our Cookies, she might have chosen to stay frozen forever. Now, alongside our Cookies, she fights against the Red Dragons flames with her ability to control icy cold air and water. Beyond her flowing hair, the twinkle in her eyes still states that she is willing to fight her fate. Let's hope she does not let go of her sword, giving up hope and choosing to turn into sea foam.",
+   "power_plus": "Recovers partial Energy when colliding with an obstacle at a given interval (More recovery with upgrades)",
+   "power_plus_requirement": "",
+   "unlock_goal": "Special Reward by collecting 100 Flaming Hearts"
+  },
+  {
+   "cookie_translation_id": 79,
+   "owner_id": 12,
+   "lang": "en",
+   "name": "Boarder Cookie",
+   "abilities": "Moves up to 35% faster.",
+   "description": "Moves up to 35% faster.\n\nInseparable with his limited edition Sugar Cane Board, Boarder Cookie lives on the fast lane. If crumbs are not flying around, it ain't fast enough. Not everyone can handle a Boarder Cookie, but if you dare to, prepare for a sweet ride.",
+   "power_plus": "",
+   "power_plus_requirement": "",
+   "unlock_goal": "Score 300,000 points"
+  },
+  {
+   "cookie_translation_id": 80,
+   "owner_id": 16,
+   "lang": "en",
+   "name": "Skating Queen Cookie",
+   "abilities": "Figure Skating",
+   "description": "Additional points for Double Jumps, Blast Jellies and Bonus Time. Points increase with each upgrade and can get very high.\n\nTop quality ingredients, exhausting rehearsals and unparalleled discipline made the Cookie we know today. She gains extra points with a performance so perfect in technical merit and presentation that all others pale in comparison. Beautiful in every detail.",
+   "power_plus": "",
+   "power_plus_requirement": "",
+   "unlock_goal": "Reach level 35"
+  },
+  {
+   "cookie_translation_id": 81,
+   "owner_id": 29,
+   "lang": "en",
+   "name": "Snow Sugar Cookie",
+   "abilities": "Snow Friends",
+   "description": "Destroys obstacles at given intervals by summoning the Sea Snow Cone that creates Snow Flower Jellies. By collecting Snow Flower Jellies, it can also summon the Great Snow King that creates Snow Flower Jelly Blizzards. Energy is recovered a little when on the Great Snow King.\n\nMade of snow, sugar, and an  secret ingredient, this Cookie was once very lonely, wandering through a vast snow field. Then one day, it found a magic wand that could summon snow creatures and wouldn't melt even in the oven. The Cookie learned to summon friends like the Sea Snow Cone and the Great Snow King and was never lonely again.",
+   "power_plus": "",
+   "power_plus_requirement": "",
+   "unlock_goal": "Possess 12 S Rank Treasures"
+  },
+  {
+   "cookie_translation_id": 82,
+   "owner_id": 38,
+   "lang": "en",
+   "name": "Soda Cookie",
+   "abilities": "Soda Surfing",
+   "description": "Rides on a wave of soda after taking an Energy Potion. Whenever he's on the board, all the obstacles . (Longer surfs with upgrades).\n\nAfter coating himself with a special glaze, he soaked up some sun and was toasted to the perfect shade of golden brown. He is now a free-spirited waterproof cookie who loves to surf around on the soda popsicle board he found in the Witch's freezer. Given the chance, he would embark on a never-ending pursuit of the perfect wave. Would he ever come back? Maybe not! With his miraculous power for generating soda waves, he could surf for the whole summer! You'll know the true meaning of  with this Cookie.",
+   "power_plus": "",
+   "power_plus_requirement": "",
+   "unlock_goal": "Own 25 Max Level Cookies"
+  },
+  {
+   "cookie_translation_id": 83,
+   "owner_id": 18,
+   "lang": "en",
+   "name": "Special Force Cookie",
+   "abilities": "Candy Defense",
+   "description": "Shoots star candies that destroy some obstacles and, when collected, earn points. More obstacles can be destroyed with each upgrade.\n\n<center>Armed with a sweet candy gun, Cookie passed special force training with flying colors and joined Cookie Intelligence Agency shortly after. Her mission is classified, but probably involves escaping from the oven first.</center>",
+   "power_plus": "",
+   "power_plus_requirement": "",
+   "unlock_goal": "Own 10 Max Level Cookies"
+  },
+  {
+   "cookie_translation_id": 84,
+   "owner_id": 34,
+   "lang": "en",
+   "name": "Vampire Cookie",
+   "abilities": "Juice Bat",
+   "description": "Transforms into a speedy and invincible winged Juice Bat at regular intervals. While a Juice Bat, he extracts delicious juice from obstacles every so often to boost his energy. (More frequent transformations after upgrading and extra points for passing through obstacles.)\n\nThe Witch was busy making cookies while brewing a batch of her favorite grape juice, but she used of over-ripened grapes and left it in the barrel for far far too long. She tried to create a juice flavored cookie, but out of the Barrel came Vampire Cookie, an incredibly potent yet delicious cookie with an unquenchable thirst for grape juice. As the Vampire Cookie's body is 10% grape juice he's always on the hunt for extra juice droplets to stop his juice level from dropping. The hunt keeps him up late into the night so he really struggles to get up in the morning. His lazy morning attitude may make you think that he likes an easy life, but he is full of passion and legend has it that he risked his life to free the Alchemist Cookie from the Witch's lair. His charming attitude and rugged handsome looks make him popular with the girl cookies. When not on the hunt he likes to relax with a nice glass of grape juice and ponder the meaning of life.",
+   "power_plus": "",
+   "power_plus_requirement": "",
+   "unlock_goal": "Possess 17 S-Grade Treasures"
+  },
+  {
+   "cookie_translation_id": 85,
+   "owner_id": 44,
+   "lang": "en",
+   "name": "Werewolf Cookie",
+   "abilities": "Wolf Transformation",
+   "description": "He turns into a wolf for a set period of time and he transforms more frequently when his Energy is low. Gets extra points for destroying obstacles. Please be careful because he can fall into holes when if he is turned into a wolf. With upgrades, his transformation is more frequent and gets extra points for destroying obstacles.\n\nWhen the cookie was being baked, there was a wolf hair mixed in the ingredients. And whenever he feels scared or threatened, his wolf instinct kicks in and he transforms into a feral beast. One day, one of his friends was in danger, and he saved him after transforming and revealing his true self to the villagers of the town he lived in. He was cast away out of fear and has been living alone since then. Do his eyes hold any traces of his former self? No one knows.",
+   "power_plus": "",
+   "power_plus_requirement": "",
+   "unlock_goal": "Own 25 Max Level Pets"
+  },
+  {
+   "cookie_translation_id": 86,
+   "owner_id": 62,
+   "lang": "en",
+   "name": "White Choco Cookie",
+   "abilities": "Fencing",
+   "description": "Slide for a given amount of time and stand up to destroy obstacles. When the small gauge fills up, the Cookie will destroy nearby obstacles. When the large gauge fills up, the Cookie will Blast a short distance. When the Blast is over, large amounts of obstacles are destroyed. All obstacles destroyed by White Choco Cookie turn into White Choco Jelly. Faster speed will fill up the small gauge more quickly.\n\nA Cookie made of rich and indulgent gourmet white chocolate containing abundant butter. White Choco Cookie's moves are both elegant and precise. With her fencing sword, she is sharp and graceful. Without it, she remains delicate and exact. Watch her perfect hair shine with every step she takes. White Choco Cookie can always be found surrounded by her devoted Cookie fans. With her excellent skill and dapper appearance, it's no wonder she makes the hearts of her female fans bubble with adoration.",
+   "power_plus": "",
+   "power_plus_requirement": "",
+   "unlock_goal": "Reach Level 76"
+  },
+  {
+   "cookie_translation_id": 87,
+   "owner_id": 70,
+   "lang": "en",
+   "name": "Wind Archer Cookie",
+   "abilities": "Wind Dash",
+   "description": "Press the Slide button to pull the bowstring and let go to hit the fallen souls. Hitting the right amount of fallen souls will trigger Wind Dash. (Upgrade will reduce the number of fallen souls needed to trigger Wind Dash)\n\nOriginally, this Cookie was the wind who loved the forest green. This wind delightfully spent its days spreading fresh and sweet fragrances across the forest. Until the fallen souls started to invade the forest and eat up everything sweet that they saw, leaving the desserts to live in fear. In order to save the paradise in peril, the Sugar Swan, blew life and power of purification into the wind. Transforming the wind into the Wind Archer Cookie, the protector of the forest from the darkness. As long as Wind Archer Cookie's heart containing the hope of the forest is intact, he'll never stop protecting the forest.",
+   "power_plus": "Creates Mystery Box at a given rate in Episode 5 \"Dessert Paradise\" (Higher probability with upgrades)",
+   "power_plus_requirement": "",
+   "unlock_goal": "Special Reward by Collecting all Mystery Jewels in Episode 5: Dessert Paradise"
+  },
+  {
+   "cookie_translation_id": 88,
+   "owner_id": 23,
+   "lang": "en",
+   "name": "Wizard Cookie",
+   "abilities": "Magic Spells",
+   "description": "Casts Magic Spells that can destroy obstacles and create Ice Cream Cone Jellies. Upgrades will reduce the time between spells.\n\nHaving come to possess the Witch's Candy Wand by accident (or not?), he discovered unique magical powers, which seem to be reinforced by his wafflecone hat. Frequently used spells include \"MayeverydaybelikeHalloweennolessnomore\", which never fails to start up celebrations here and there.",
+   "power_plus": "",
+   "power_plus_requirement": "",
+   "unlock_goal": "Own 16 Max Level Pets"
+  },
+  {
+   "cookie_translation_id": 89,
+   "owner_id": 7,
+   "lang": "en",
+   "name": "Zombie Cookie",
+   "abilities": "Revives after running out of Energy up to 8 times (every time 17~30 energy) with upgrades.",
+   "description": "Revives after running out of Energy up to 8 times (every time 17~30 energy) with upgrades.\n\nMade from moldy ingredients, Zombie Cookie was thoroughly underbaked and slopped carelessly with strawberry jam and melted chocolate. As he can revive easily, he is really only worried about falling into holes.",
+   "power_plus": "",
+   "power_plus_requirement": "",
+   "unlock_goal": "Have 50 Friends Limited time Invite Event"
+  },
+  {
+   "cookie_translation_id": 90,
+   "owner_id": 95,
+   "lang": "en",
+   "name": "Braised Pork Cookie",
+   "abilities": "Whirlwind Sweep",
+   "description": "The small blue gauge charges over time. When it is full, Braised Pork Cookie tills the soil to harvest Braised Pork Jellies. Each harvest fills the green gauge a little. When the green gauge is full, the Cookie whirls around the Braised Pork Pitchfork to draw in Jellies and obstacles. Jellies absorbed thusly award bonus points. Finally, Braised Pork Cookie throws the pitchfork to draw in Jellies in front. (Skill activates faster the lower the remaining HP.)\n\nNo one tops Braised Pork Cookie when it comes to plowing the field! Braised Pork Cookie's limbs are strong from working the fields. So famous she became for her reliability in handling all the village's tasks that  recruited her into his traveling party. Her biggest strengths are her fiery temperament that causes her to charge straight into any problem, and her hearty nature that allows her to shake off any hardship and bounce right back at the sight of a delicious meal.",
+   "power_plus": "Summons XP Party when Kaymak, Pine Monk, Lotus Root Phantom, and Braised Pork Cookie are gathered",
+   "power_plus_requirement": "when Kaymak Cookie, Pine Monk Cookie, Lotus Root Phantom Cookie, and Braised Pork Cookie are gathered",
+   "unlock_goal": "Have Kaymak / Pine Monk / Lotus Root Cookie"
+  },
+  {
+   "cookie_translation_id": 91,
+   "owner_id": 6,
+   "lang": "en",
+   "name": "Buttercream Choco Cookie",
+   "abilities": "Slows HP drain (up to 17%)",
+   "description": "Slows HP drain (up to 17%)\n\n<tabber> |-|Classic= They don't call him \"Rich\" without reason - Buttercream Choco Cookie knows how to handle his Coins, with positive return on all investments. He wouldn't share his secret, but a source tells us he is particularly into renewable energy. |-|LINE= Justifying his nickname \"Rich\", Buttercream Choco Cookie knows how to handle his Coins, with positive return on all investments. He wouldn't share his secret, but a source tells us he particularly likes clean energy. </tabber>",
+   "power_plus": "",
+   "power_plus_requirement": "",
+   "unlock_goal": "Score 180,000 Points"
+  },
+  {
+   "cookie_translation_id": 92,
+   "owner_id": 96,
+   "lang": "en",
+   "name": "Candied Yam Cookie",
+   "abilities": "Stage of Nirvana",
+   "description": "The small blue gauge charges over time. When it is full, Candied Yams falls from the sky and create Candied Yam Jellies. Each activation fills the green gauge a little. When the green gauge is full, Candied Yam Cookie enters an enlightened state and creates Sacred Bear Jellies that are drawn towards her by the power of enlightenment.\n\nCandied Yam Cookie came into being by adding Lotus Honey to sweet potatoes placed as offerings of devotion by Cookies. Using appropriate trials to prevent them from fixating solely on comfort and sweetness, she guides Cookies towards attaining enlightenment by their own strength. Recently, she has bestowed a major task upon  and his disciples, and is paying particularly close attention to their journey toward enlightenment. Since time immemorial, she has always listened to the Cookies' prayers and extended a helping hand, ensuring that no Cookie has to succumb to despair at the end of a lonely life. Maybe she is even right now quietly listening to our small voices!",
+   "power_plus": "Chance of creating a Mystery Box in Episode 7 (Land of Enlightenment). (Leveling up increases the chance.)",
+   "power_plus_requirement": "",
+   "unlock_goal": "Special Reward by collecting all Mystery Jewels in Episode 7: Land of Enlightenment"
+  },
+  {
+   "cookie_translation_id": 93,
+   "owner_id": 5,
+   "lang": "en",
+   "name": "Cloud Cookie",
+   "abilities": "Increases Power Jelly duration (up to 35%)",
+   "description": "Increases Power Jelly duration (up to 35%)\n\n\"I dance cuz life's a party and we each make our own funky beat,\" she likes to say. Her dream is to dance in the clouds. Cloud Cookie's energetic persona makes Power Jellies last longer.",
+   "power_plus": "",
+   "power_plus_requirement": "",
+   "unlock_goal": "Own 5 Pets"
+  },
+  {
+   "cookie_translation_id": 95,
+   "owner_id": 4,
+   "lang": "en",
+   "name": "Cream Cookie",
+   "abilities": "Slows HP drain (up to 17%)",
+   "description": "Slows HP drain (up to 17%)\n\n<tabber> |-|Classic= A delicious mix of cookie and cream, she enjoys knitting in front of a warm oven. Years of running taught her to manage the scarce HP pool well, so even though she prefers knitting in the warmth of the Oven, once she gets running, she doesn't tire easily. |-|LINE= A delicious mix of cookie and cream, she enjoys knitting in front of a warm oven. Years of running taught her to manage the scarce Energy pool well and, even with advanced arthritis, she is fierce competition to all the youngsters. </tabber>",
+   "power_plus": "",
+   "power_plus_requirement": "",
+   "unlock_goal": "Reach Level 8"
+  },
+  {
+   "cookie_translation_id": 99,
+   "owner_id": 94,
+   "lang": "en",
+   "name": "Lotus Root Phantom Cookie",
+   "abilities": "Lotus Phantom",
+   "description": "Swings the crescent moon spade to make obstacles passable and create Skull Lotus Jellies when the small blue gauge is full. Each swing slightly charges the green gauge. When the green gauge is full, Lotus Root Phantom Cookie transforms into a Lotus Phantom and rushes ahead quickly while passing through obstacles.\n\nLotus Root Phantom Cookie used to spend the time leisurely by a small lake in the desert. She would put her trickster mind to use by playing all kinds of pranks on unassuming Cookies that had gotten lost in the desert. When  party managed to avoid falling for her traps, she took a keen interest and joined them on their journey. Though she rarely reveals her true feelings, she seems quite content among this group of unique and talented personalities.",
+   "power_plus": "Summons XP Party when Kaymak, Pine Monk, Lotus Root Phantom Cookie, and Braised Pork Cookie are gathered",
+   "power_plus_requirement": "when Kaymak Cookie, Pine Monk Cookie, Lotus Root Phantom Cookie, and Braised Pork Cookie are gathered",
+   "unlock_goal": "Obtain Lotus Sitter"
+  },
+  {
+   "cookie_translation_id": 105,
+   "owner_id": 3,
+   "lang": "en",
+   "name": "Strawberry Cookie",
+   "abilities": "Slows HP drain (up to 17%)",
+   "description": "Slows HP drain (up to 17%)\n\nAs shy as a Cookie can get, she prefers Bonus Time to all the running. She'd stay there forever if she could.",
+   "power_plus": "",
+   "power_plus_requirement": "",
+   "unlock_goal": "Get 3 friends"
+  }
+ ],
+ "pet": [
+  {
+   "pet_id": 1,
+   "image": "double_bubble.png",
+   "grade": "c",
+   "release_date": "1970-01-01T00:00:00Z"
+  },
+  {
+   "pet_id": 2,
+   "image": "tr_pet22.png",
+   "grade": "a",
+   "release_date": "1970-01-01T00:00:00Z"
+  },
+  {
+   "pet_id": 3,
+   "image": "rainbow_s_end.png",
+   "grade": "c",
+   "release_date": "2013-04-02T00:00:00Z"
+  },
+  {
+   "pet_id": 4,
+   "image": "choco_drop.png",
+   "grade": "c",
+   "release_date": "2013-04-02T00:00:00Z"
+  },
+  {
+   "pet_id": 5,
+   "image": "mocha_delight_line.png",
+   "grade": "b",
+   "release_date": "2013-04-02T00:00:00Z"
+  },
+  {
+   "pet_id": 6,
+   "image": "dust_unicorn.png",
+   "grade": "b",
+   "release_date": "2013-04-02T00:00:00Z"
+  },
+  {
+   "pet_id": 7,
+   "image": "cozy_yarn.png",
+   "grade": "b",
+   "release_date": "2013-04-02T00:00:00Z"
+  },
+  {
+   "pet_id": 8,
+   "image": "flowercopter.png",
+   "grade": "a",
+   "release_date": "2013-04-02T00:00:00Z"
+  },
+  {
+   "pet_id": 9,
+   "image": "gingerghost.png",
+   "grade": "s",
+   "release_date": "2013-04-02T00:00:00Z"
+  },
+  {
+   "pet_id": 10,
+   "image": "gold_drop.png",
+   "grade": "s",
+   "release_date": "2013-08-23T00:00:00Z"
+  },
+  {
+   "pet_id": 11,
+   "image": "foxy_bead.png",
+   "grade": "s",
+   "release_date": "2013-10-01T00:00:00Z"
+  },
+  {
+   "pet_id": 12,
+   "image": "luckolantern.png",
+   "grade": "a",
+   "release_date": "2013-10-19T00:00:00Z"
+  },
+  {
+   "pet_id": 13,
+   "image": "forgotten_stocking.png",
+   "grade": "c",
+   "release_date": "2013-12-20T00:00:00Z"
+  },
+  {
+   "pet_id": 14,
+   "image": "hat_of_santa.png",
+   "grade": "b",
+   "release_date": "2013-12-20T00:00:00Z"
+  },
+  {
+   "pet_id": 15,
+   "image": "cheeseberry.png",
+   "grade": "c",
+   "release_date": "2014-01-23T00:00:00Z"
+  },
+  {
+   "pet_id": 16,
+   "image": "witty_dumbell.png",
+   "grade": "b",
+   "release_date": "2014-01-23T00:00:00Z"
+  },
+  {
+   "pet_id": 17,
+   "image": "rare_garlic.png",
+   "grade": "b",
+   "release_date": "2014-01-23T00:00:00Z"
+  },
+  {
+   "pet_id": 18,
+   "image": "electric_beat.png",
+   "grade": "b",
+   "release_date": "2014-01-23T00:00:00Z"
+  },
+  {
+   "pet_id": 19,
+   "image": "lucky_dice.png",
+   "grade": "a",
+   "release_date": "2014-01-23T00:00:00Z"
+  },
+  {
+   "pet_id": 20,
+   "image": "dragon_s_tail.png",
+   "grade": "a",
+   "release_date": "2014-01-23T00:00:00Z"
+  },
+  {
+   "pet_id": 21,
+   "image": "wishing_star.png",
+   "grade": "a",
+   "release_date": "2014-01-23T00:00:00Z"
+  },
+  {
+   "pet_id": 22,
+   "image": "brain_gum.png",
+   "grade": "a",
+   "release_date": "2014-01-23T00:00:00Z"
+  },
+  {
+   "pet_id": 23,
+   "image": "pirate_s_bomb.png",
+   "grade": "s",
+   "release_date": "2014-01-23T00:00:00Z"
+  },
+  {
+   "pet_id": 24,
+   "image": "crob_standard_princess_s_locket.png",
+   "grade": "s",
+   "release_date": "2014-01-23T00:00:00Z"
+  },
+  {
+   "pet_id": 25,
+   "image": "lucky_pouch.png",
+   "grade": "s",
+   "release_date": "2014-01-29T00:00:00Z"
+  },
+  {
+   "pet_id": 26,
+   "image": "snow_blossom.png",
+   "grade": "s",
+   "release_date": "2014-02-22T00:00:00Z"
+  },
+  {
+   "pet_id": 27,
+   "image": "jellyco_cube.png",
+   "grade": "s",
+   "release_date": "2014-02-22T00:00:00Z"
+  },
+  {
+   "pet_id": 28,
+   "image": "awol_cracker.png",
+   "grade": "s",
+   "release_date": "2014-03-20T00:00:00Z"
+  },
+  {
+   "pet_id": 29,
+   "image": "glitter_ball.png",
+   "grade": "s",
+   "release_date": "2014-03-31T00:00:00Z"
+  },
+  {
+   "pet_id": 30,
+   "image": "cony_balloon.png",
+   "grade": "a",
+   "release_date": "2014-04-18T00:00:00Z"
+  },
+  {
+   "pet_id": 31,
+   "image": "brown_balloon.png",
+   "grade": "a",
+   "release_date": "2014-04-18T00:00:00Z"
+  },
+  {
+   "pet_id": 32,
+   "image": "apple_slice_rabbit.png",
+   "grade": "s",
+   "release_date": "2014-05-01T00:00:00Z"
+  },
+  {
+   "pet_id": 33,
+   "image": "magic_pod.png",
+   "grade": "s",
+   "release_date": "2014-05-05T00:00:00Z"
+  },
+  {
+   "pet_id": 34,
+   "image": "flame_bat.png",
+   "grade": "s",
+   "release_date": "2014-05-12T00:00:00Z"
+  },
+  {
+   "pet_id": 35,
+   "image": "book_of_wizdom.png",
+   "grade": "s",
+   "release_date": "2014-05-28T00:00:00Z"
+  },
+  {
+   "pet_id": 36,
+   "image": "spotlight_fan.png",
+   "grade": "s",
+   "release_date": "2014-07-10T00:00:00Z"
+  },
+  {
+   "pet_id": 37,
+   "image": "lemon_slice.png",
+   "grade": "s",
+   "release_date": "2014-08-01T00:00:00Z"
+  },
+  {
+   "pet_id": 38,
+   "image": "rocket_firecracker.png",
+   "grade": "s",
+   "release_date": "2014-09-01T00:00:00Z"
+  },
+  {
+   "pet_id": 39,
+   "image": "fluffy_cheese_cat.png",
+   "grade": "s",
+   "release_date": "2014-09-30T00:00:00Z"
+  },
+  {
+   "pet_id": 40,
+   "image": "purple_candle.png",
+   "grade": "s",
+   "release_date": "2014-10-20T00:00:00Z"
+  },
+  {
+   "pet_id": 41,
+   "image": "pistachio_firefly.png",
+   "grade": "s",
+   "release_date": "2014-10-30T00:00:00Z"
+  },
+  {
+   "pet_id": 42,
+   "image": "jelly_scale.png",
+   "grade": "s",
+   "release_date": "2014-11-14T00:00:00Z"
+  },
+  {
+   "pet_id": 43,
+   "image": "coin_scale.png",
+   "grade": "s",
+   "release_date": "2014-11-14T00:00:00Z"
+  },
+  {
+   "pet_id": 44,
+   "image": "wooden_barrel.png",
+   "grade": "s",
+   "release_date": "2014-11-28T00:00:00Z"
+  },
+  {
+   "pet_id": 45,
+   "image": "paprika_punching_bag.png",
+   "grade": "s",
+   "release_date": "2014-12-18T00:00:00Z"
+  },
+  {
+   "pet_id": 46,
+   "image": "backpacky.png",
+   "grade": "s",
+   "release_date": "2014-12-18T00:00:00Z"
+  },
+  {
+   "pet_id": 47,
+   "image": "king_choco_drop.png",
+   "grade": "l",
+   "release_date": "2014-12-18T00:00:00Z"
+  },
+  {
+   "pet_id": 48,
+   "image": "snow_globe.png",
+   "grade": "s",
+   "release_date": "2014-12-29T00:00:00Z"
+  },
+  {
+   "pet_id": 49,
+   "image": "ghost_butler.png",
+   "grade": "s",
+   "release_date": "2015-01-30T00:00:00Z"
+  },
+  {
+   "pet_id": 50,
+   "image": "pink_candy.png",
+   "grade": "s",
+   "release_date": "2015-02-13T00:00:00Z"
+  },
+  {
+   "pet_id": 51,
+   "image": "kiwi_bird.png",
+   "grade": "s",
+   "release_date": "2015-02-27T00:00:00Z"
+  },
+  {
+   "pet_id": 52,
+   "image": "furball_pup.png",
+   "grade": "s",
+   "release_date": "2015-03-27T00:00:00Z"
+  },
+  {
+   "pet_id": 53,
+   "image": "crob_standard_ms_do_re_mi.png",
+   "grade": "s",
+   "release_date": "2015-04-10T00:00:00Z"
+  },
+  {
+   "pet_id": 54,
+   "image": "mr_fa_sol_la_si.png",
+   "grade": "s",
+   "release_date": "2015-04-10T00:00:00Z"
+  },
+  {
+   "pet_id": 55,
+   "image": "marshmallow_hamster.png",
+   "grade": "s",
+   "release_date": "2015-04-24T00:00:00Z"
+  },
+  {
+   "pet_id": 56,
+   "image": "tea_cup.png",
+   "grade": "s",
+   "release_date": "2015-05-15T00:00:00Z"
+  },
+  {
+   "pet_id": 57,
+   "image": "owlcorn.png",
+   "grade": "s",
+   "release_date": "2015-05-15T00:00:00Z"
+  },
+  {
+   "pet_id": 58,
+   "image": "mini_jackson_no_2.png",
+   "grade": "s",
+   "release_date": "2015-06-12T00:00:00Z"
+  },
+  {
+   "pet_id": 59,
+   "image": "electro_lemon.png",
+   "grade": "s",
+   "release_date": "2015-07-10T00:00:00Z"
+  },
+  {
+   "pet_id": 60,
+   "image": "mini_orange_mouse.png",
+   "grade": "s",
+   "release_date": "2015-08-07T00:00:00Z"
+  },
+  {
+   "pet_id": 61,
+   "image": "mr_beep_beep.png",
+   "grade": "s",
+   "release_date": "2015-09-16T00:00:00Z"
+  },
+  {
+   "pet_id": 62,
+   "image": "sailor_paper_boat.png",
+   "grade": "s",
+   "release_date": "2015-10-23T00:00:00Z"
+  },
+  {
+   "pet_id": 63,
+   "image": "panda_dumpling.png",
+   "grade": "s",
+   "release_date": "2015-12-11T00:00:00Z"
+  },
+  {
+   "pet_id": 64,
+   "image": "onion_fish.png",
+   "grade": "s",
+   "release_date": "2015-12-21T00:00:00Z"
+  },
+  {
+   "pet_id": 65,
+   "image": "bean_drop_duo.png",
+   "grade": "e",
+   "release_date": "2016-01-22T00:00:00Z"
+  },
+  {
+   "pet_id": 66,
+   "image": "cinnamon_roll_rabbit.png",
+   "grade": "s",
+   "release_date": "2016-02-05T00:00:00Z"
+  },
+  {
+   "pet_id": 67,
+   "image": "castanet.png",
+   "grade": "s",
+   "release_date": "2016-03-04T00:00:00Z"
+  },
+  {
+   "pet_id": 68,
+   "image": "sweet_rice_seal.png",
+   "grade": "s",
+   "release_date": "2016-03-25T00:00:00Z"
+  },
+  {
+   "pet_id": 69,
+   "image": "dino_egg.png",
+   "grade": "s",
+   "release_date": "2016-04-04T00:00:00Z"
+  },
+  {
+   "pet_id": 70,
+   "image": "herb_teapot.png",
+   "grade": "s",
+   "release_date": "2016-04-28T00:00:00Z"
+  },
+  {
+   "pet_id": 71,
+   "image": "pocket_watch_referee.png",
+   "grade": "s",
+   "release_date": "2016-05-27T00:00:00Z"
+  },
+  {
+   "pet_id": 72,
+   "image": "light_brothers.png",
+   "grade": "s",
+   "release_date": "2016-05-31T00:00:00Z"
+  },
+  {
+   "pet_id": 73,
+   "image": "cotton_candy_birdie.png",
+   "grade": "s",
+   "release_date": "2016-07-29T00:00:00Z"
+  },
+  {
+   "pet_id": 74,
+   "image": "moon_mortar.png",
+   "grade": "s",
+   "release_date": "2016-09-13T00:00:00Z"
+  },
+  {
+   "pet_id": 75,
+   "image": "savannahna_lion.png",
+   "grade": "s",
+   "release_date": "2016-09-23T00:00:00Z"
+  },
+  {
+   "pet_id": 76,
+   "image": "pancake_frisbee.png",
+   "grade": "s",
+   "release_date": "2016-10-14T00:00:00Z"
+  },
+  {
+   "pet_id": 77,
+   "image": "hand_of_liker.png",
+   "grade": "c",
+   "release_date": "2016-12-22T00:00:00Z"
+  },
+  {
+   "pet_id": 78,
+   "image": "parrot_dada.png",
+   "grade": "s",
+   "release_date": "2024-12-11T00:00:00Z"
+  },
+  {
+   "pet_id": 79,
+   "image": "desi_delight_drop.png",
+   "grade": "c",
+   "release_date": "2025-01-15T00:00:00Z"
+  },
+  {
+   "pet_id": 80,
+   "image": "pet87_shop.png",
+   "grade": "s",
+   "release_date": "2025-03-27T00:00:00Z"
+  },
+  {
+   "pet_id": 81,
+   "image": "cucumber_pudding_frog.png",
+   "grade": "s",
+   "release_date": "2025-04-28T00:00:00Z"
+  },
+  {
+   "pet_id": 82,
+   "image": "pet91_shop.png",
+   "grade": "s",
+   "release_date": "2025-05-29T00:00:00Z"
+  },
+  {
+   "pet_id": 83,
+   "image": "pet90_shop.png",
+   "grade": "s",
+   "release_date": "2025-05-29T00:00:00Z"
+  },
+  {
+   "pet_id": 84,
+   "image": "orion_chocopie.png",
+   "grade": "s",
+   "release_date": "2025-06-24T00:00:00Z"
+  },
+  {
+   "pet_id": 85,
+   "image": "pet92_shop.png",
+   "grade": "s",
+   "release_date": "2025-06-30T00:00:00Z"
+  },
+  {
+   "pet_id": 86,
+   "image": "pet93_shop.png",
+   "grade": "s",
+   "release_date": "2025-07-31T00:00:00Z"
+  },
+  {
+   "pet_id": 87,
+   "image": "pet94_shop.png",
+   "grade": "s",
+   "release_date": "2025-08-28T00:00:00Z"
+  },
+  {
+   "pet_id": 88,
+   "image": "pet95_shop.png",
+   "grade": "s",
+   "release_date": "2025-09-29T00:00:00Z"
+  },
+  {
+   "pet_id": 89,
+   "image": "pet96_shop.png",
+   "grade": "s",
+   "release_date": "2025-09-29T00:00:00Z"
+  },
+  {
+   "pet_id": 90,
+   "image": "jalebi_flame_diya.png",
+   "grade": "s",
+   "release_date": "2025-09-30T00:00:00Z"
+  },
+  {
+   "pet_id": 91,
+   "image": "pet97_shop.png",
+   "grade": "s",
+   "release_date": "2025-11-03T00:00:00Z"
+  },
+  {
+   "pet_id": 92,
+   "image": "air_drop.png",
+   "grade": "s",
+   "release_date": "2025-11-25T00:00:00Z"
+  },
+  {
+   "pet_id": 93,
+   "image": "cr_standard_manggae_snail_pet.png",
+   "grade": "s",
+   "release_date": "2025-12-03T00:00:00Z"
+  },
+  {
+   "pet_id": 94,
+   "image": "cr_standard_sotdae_family_pet.png",
+   "grade": "s",
+   "release_date": "2026-01-15T00:00:00Z"
+  },
+  {
+   "pet_id": 95,
+   "image": "pet100_shop.png",
+   "grade": "s",
+   "release_date": "2026-02-26T00:00:00Z"
+  },
+  {
+   "pet_id": 96,
+   "image": "cr_standard_baby_spore.png",
+   "grade": "s",
+   "release_date": "2026-03-31T00:00:00Z"
+  },
+  {
+   "pet_id": 97,
+   "image": "cr_standard_honey_gourd.png",
+   "grade": "s",
+   "release_date": "2026-04-29T00:00:00Z"
+  },
+  {
+   "pet_id": 98,
+   "image": "cr_standard_lotus_sitter.png",
+   "grade": "s",
+   "release_date": "2026-06-25T00:00:00Z"
+  },
+  {
+   "pet_id": 99,
+   "image": "cr_standard_bok_choy_cushion.png",
+   "grade": "s",
+   "release_date": "2026-07-23T00:00:00Z"
+  }
+ ],
+ "pet_translation": [
+  {
+   "pet_translation_id": 1,
+   "pet_id": 32,
+   "lang": "en",
+   "name": "Apple Rabbit",
+   "abilities": "Gives speed points & slower Energy drain",
+   "description": "Bonus points for faster speed and slower Energy drain.\n\nCut an apple slice into the shape off a rabbit and start playing again. Soon, the Apple Rabbit will hop along besides you! Its crisp apple scent keeps your energy up, making playtime even more enjoyable. It's shy around forks, though, so keep the silverware away."
+  },
+  {
+   "pet_translation_id": 2,
+   "pet_id": 35,
+   "lang": "en",
+   "name": "Book of Wizdom",
+   "abilities": "Extra speed points",
+   "description": "he Book cannot be closed. Be careful with it, since it knows all the spells it contains. The faster you run, the more points it gives."
+  },
+  {
+   "pet_translation_id": 3,
+   "pet_id": 22,
+   "lang": "en",
+   "name": "Brain Gum",
+   "abilities": "Slower Energy drain",
+   "description": "c bubbles and improves Cookie's IQ to enable them to use up Energy slower."
+  },
+  {
+   "pet_translation_id": 4,
+   "pet_id": 67,
+   "lang": "en",
+   "name": "Castanets",
+   "abilities": "Castanets Performance",
+   "description": "One day, Macaron Cookie found an exceptionally hard macaron. She took this macaron, tied a fancy yellow ribbon to it, and called it Castanets. It couldn't be happier to have been repurposed from a stale dessert into a wonderful musical instrument. Someday it hopes to produce as beautiful a sound as Macaron Cookie's macaron drums. Although not everyone welcomes this loud chatterbox's company, Macaron Cookie is always there for Castanets. Talk about perfect harmony!"
+  },
+  {
+   "pet_translation_id": 5,
+   "pet_id": 15,
+   "lang": "en",
+   "name": "Cheese Drop",
+   "abilities": "Collects missed Jellies",
+   "description": "eeseberry bushes of the Witch's Forest towards the end of summer."
+  },
+  {
+   "pet_translation_id": 6,
+   "pet_id": 4,
+   "lang": "en",
+   "name": "Choco Drop",
+   "abilities": "Creates Bear Jellies",
+   "description": "companion made from 100% cocoa. Among the Witch's shelves crowded with bizarre and questionable ingredients, this might just be the most normal thing around."
+  },
+  {
+   "pet_translation_id": 7,
+   "pet_id": 66,
+   "lang": "en",
+   "name": "Cinnamon Bunny",
+   "abilities": "Bunny Magic",
+   "description": "On a sweet, sweet day, Cinnamon Cookie pulled this rabbit out of its hat. But this special rabbit refused to re-enter the hat! Cinnamon Cookie forcefully pushed and rolled this rabbit into the hat, and ta-da! Cinnamon Bunny was born! Get it? Bun-ny? Although Cinnamon Cookie now gave up on putting it back in the hat, this little bunny is still full of suspicion."
+  },
+  {
+   "pet_translation_id": 8,
+   "pet_id": 69,
+   "lang": "en",
+   "name": "Dino-Egg",
+   "abilities": "Dino-Candy Giant Item",
+   "description": "could hatch any time it wanted to, this little guy prefers to stay safely tucked away inside the egg. It's uncertain why it stays hidden. What is certain is that only it can break itself free. You can do it!"
+  },
+  {
+   "pet_translation_id": 9,
+   "pet_id": 16,
+   "lang": "en",
+   "name": "Witty Dumbbell",
+   "abilities": "Creates Giant Jellies",
+   "description": "ste to any Cookie. Its Giant Jellies will make you strong and invincible to any obstacles. Feeling strong already?"
+  },
+  {
+   "pet_translation_id": 10,
+   "pet_id": 59,
+   "lang": "en",
+   "name": "Electro Lemon",
+   "abilities": "Creates Bear Jelly Party Blast",
+   "description": "le bulb you'll have a limitless supply of vitamin C. This pet allows cookies to feel refreshed and excitedly run faster. (Perfect for skincare as well)."
+  },
+  {
+   "pet_translation_id": 11,
+   "pet_id": 34,
+   "lang": "en",
+   "name": "Flame Bat",
+   "abilities": "Catches Spirit Jellies",
+   "description": "Witch's attention when it was searching around for ice water after eating something really, really hot. Since then, it always seems to be thirsty."
+  },
+  {
+   "pet_translation_id": 12,
+   "pet_id": 33,
+   "lang": "en",
+   "name": "Flower Pod",
+   "abilities": "Generates Blast and Bonus Time items",
+   "description": "te, it withers from any touch and tears up in empathy from news of strong winds in a far away land. It fully blossoms only in the clean air of Bonus Time."
+  },
+  {
+   "pet_translation_id": 13,
+   "pet_id": 49,
+   "lang": "en",
+   "name": "Ghost Butler",
+   "abilities": "Creates Jellies in a precise order",
+   "description": "This ghost is the spirit of a faithful butler that oversaw the management of an ancient mansion in his past life. His loyalty to this household was so engrained into his very being that even after he passed away, his soul continues to haunt the mansion while going about his incredibly tight schedule with the ease of a pro. Does he ever take a break? Nobody knows."
+  },
+  {
+   "pet_translation_id": 14,
+   "pet_id": 23,
+   "lang": "en",
+   "name": "Pirate's Bomb",
+   "abilities": "Turns obstacles into Coins",
+   "description": "oo close. You probably won't like the smell."
+  },
+  {
+   "pet_translation_id": 15,
+   "pet_id": 70,
+   "lang": "en",
+   "name": "Herb Teapot",
+   "abilities": "Water Sprinkle",
+   "description": "Originally, a teapot for herbal tea. But ever since its friendship with Herb Cookie sprouted, it spends most of its days as a watering tin. When Cookies are tired, it gives them a nice cup of warm, fluorescent herbal tea. And when the sprouts seem thirsty, it energizes them with fresh water. But - a strange thing - it flinches at the sight of bugs... Perhaps it's hiding a past we do not know of."
+  },
+  {
+   "pet_translation_id": 16,
+   "pet_id": 51,
+   "lang": "en",
+   "name": "Kiwi Bird",
+   "abilities": "Generates kiwi-flavored Giant Jellies",
+   "description": "ne day, the Kiwi Biker Cookie was taking a long nap under a ginormous kiwi tree and was woken up by a curious chirping sound. When he opened his eyes, he was faced with a curious-looking bird that refused to leave his side. It seems that this little bird has mistaken the Kiwi Biker Cookie's Helmet as his loving mom. Now the Kiwi Biker Cookie has a new adventure pal!\n\n'(OvenBreak)' One day Kiwi Cookie was taking a nap under a ginormous kiwi tree, as per usual. Suddenly, the largest kiwi fell from the tree, splitting in half... into a Kiwi Bird! Since this day, this curious-looking bird refuses to leave Kiwi Cookie's side. Maybe it has mistaken Kiwi Cookie's helmet as its loving mom. How cute!"
+  },
+  {
+   "pet_translation_id": 17,
+   "pet_id": 72,
+   "lang": "en",
+   "name": "Light Bros",
+   "abilities": "Blast, slower Energy drain",
+   "description": "d to be the only thing that could stop Roll Cake Cookie. But now they've teamed up! Instead of stopping at red, the Road Roller rolls even faster - somewhat like a bull seeing a red cape. Green is frightened of all the speed, but that won't stop Red from enjoying the ride."
+  },
+  {
+   "pet_translation_id": 18,
+   "pet_id": 58,
+   "lang": "en",
+   "name": "Mini Jackson No. 2",
+   "abilities": "Coloring Laser",
+   "description": "Gumball Cookie brought back a broken piece of sphere metal from the City of Wizards and colored it his way. Perhaps it's because he put his heart and soul into it night after night, Mini Jackson No. 2 started shooting colorful lasers! Prepare yourself if you want to see them together, you may be dazzled by their colorful art feast."
+  },
+  {
+   "pet_translation_id": 19,
+   "pet_id": 60,
+   "lang": "en",
+   "name": "Mini Orange Mouse",
+   "abilities": "Creates Blast Jelly, Speed Points",
+   "description": "received this cutie on her birthday. Energetic and active, it wanders around in the wrong places all the time, making Orange Cookie look for it in all places imaginable. In fact, it was thanks to this pet that Orange Cookie made friends with a cookie tucked away all alone behind some bushes."
+  },
+  {
+   "pet_translation_id": 20,
+   "pet_id": 74,
+   "lang": "en",
+   "name": "Moon Mortar",
+   "abilities": "Full Moon Rice Cake Pounding",
+   "description": "life is devoted in creating the PERFECT Full Moon Rice Cake Jelly. Even though its Full Moon Rice Cake Jellies are tasty and beautiful already, it's never enough for this Pet. All the \"failed\" rice cakes are happily consumed by Moon Rabbit Cookie."
+  },
+  {
+   "pet_translation_id": 21,
+   "pet_id": 54,
+   "lang": "en",
+   "name": "Mr. Fa-Sol-La-Si",
+   "abilities": "Creates Royal Blast Dash Coins",
+   "description": "be the cranky orchestra director who spares no biting criticism if a performance is not up to his standards, but no one can question his skill and innate sensitivity for music. He was the one to discover Mint Choco Cookie's talent and has been his advisor since they first met. While he used to be able to give ground-shaking performances, he is now conducting his orchestra."
+  },
+  {
+   "pet_translation_id": 22,
+   "pet_id": 61,
+   "lang": "en",
+   "name": "Mr. Limeguard",
+   "abilities": "Lifts/Revives, Cookie Relay Energy increase",
+   "description": "!--Notice that there is no space between Mr.Limeguard, it's intentional--> is the go to Pet for safety on the water. According to Special Force Cookie, Mr.Limeguard was one tough coach in the Cookie Camp. He was known to be strict and his training methods were intense. But with his past aside, he is now busy keeping the feisty Lime Cookie safe from the dangers water can cause."
+  },
+  {
+   "pet_translation_id": 23,
+   "pet_id": 53,
+   "lang": "en",
+   "name": "Ms. Do-Re-Mi",
+   "abilities": "Creates Star Firework Potion",
+   "description": "pend quiet nights, staring at the dark blue sky in absolute silence. She used to lament the fact that she could only produce a limited range of sounds, but now that she has Mr. Fa-Sol-La-Si by her side, they can both produce a harmoniously beautiful melody that is said to trigger feelings of love to anyone who listens to it."
+  },
+  {
+   "pet_translation_id": 24,
+   "pet_id": 44,
+   "lang": "en",
+   "name": "Oak Barrel",
+   "abilities": "Produces Potions with ripe grapes",
+   "description": "rrel full of juice made out of over-ripeneded grapes was left forgotten in a dark corner of the Witch's kitchen and it was able to age into a delightfully sweet nectar with a delicate woody note. You might be tempted to drink the whole thing, but the recommended amount is 1 or 2 glasses per day."
+  },
+  {
+   "pet_translation_id": 25,
+   "pet_id": 57,
+   "lang": "en",
+   "name": "Owlcorn",
+   "abilities": "Creates All-Bear Jelly Potions",
+   "description": "te Owlcorn that helps Cream Puff Cookie practice her spells. Although Owlcorn is tough on Cream Puff Cookie, deep down Owlcorn wishes that she become a great wizard one day. When Cream Puff Cookie left in search for The City of Wizards, Owlcorn was right there beside her."
+  },
+  {
+   "pet_translation_id": 26,
+   "pet_id": 63,
+   "lang": "en",
+   "name": "Panda Dumpling",
+   "abilities": "Spreads Dumpling Jellies",
+   "description": "This little pet sold dumplings for a long, long time. One day, it mistook Peach Cookie's head leaf for a bamboo leaf, and tried to eat it. That's when their special friendship started... right after it was beaten up. It provides free dumplings to Peach Cookie, but somehow collects Coins along the way. Old habits die hard? Maybe it cannot forget its days as a dumpling vendor."
+  },
+  {
+   "pet_translation_id": 27,
+   "pet_id": 62,
+   "lang": "en",
+   "name": "Paper Boat Sailor",
+   "abilities": "Shoots Sea Bubbles, Creates Potions",
+   "description": "A paper boat made out of the letter that Peppermint Cookie did not send. Although it is not strong enough to cross the waves of the ocean yet, it claims that it will cross the ocean one day. Perhaps it wishes, not itself, but Peppermint Cookie's message to be delivered..."
+  },
+  {
+   "pet_translation_id": 28,
+   "pet_id": 45,
+   "lang": "en",
+   "name": "Paprika Punching Bag",
+   "abilities": "Creates Giant Gold Coins",
+   "description": "ns with Muay Thai Cookie and saves him when the chips are down. He's a very reliable friend. The Punching Bag's tough Paprika skin provides the ultimate defense and helps him with his training. The powerful hits seem to choose him. He wants to get Muay Thai Cookie pumped up with fighting spirit. By the way, does it really not hurt at all?"
+  },
+  {
+   "pet_translation_id": 29,
+   "pet_id": 50,
+   "lang": "en",
+   "name": "Pink Candy",
+   "abilities": "Attracts the Royal Bear Jelly shooting star.",
+   "description": "Even the Royal Bear Jellies, the mysterious Jellies from Bonus Time, are dazzled by this pink candy. The secret in this special ability comes from the concentrated love signals Pink Candy emits. But even the Royal Bear Jellies can withstand the power of love, so gaze into the sky of Bonus Time and make a wish."
+  },
+  {
+   "pet_translation_id": 30,
+   "pet_id": 41,
+   "lang": "en",
+   "name": "Pistachio Firefly",
+   "abilities": "Energy recovery, creates Blast Speed Jellies",
+   "description": "ch's lair lies the forgotten pistachio forest which glows a luminous bright green at night. This light is created by the Pistachio Firefly, an extra-bright firefly unique to the forgotten forest. Although they buzz around restlessly and are always worried that their nutty and delicious insides will be eaten, they smell like hot roast chestnuts and light your way on long dark runs."
+  },
+  {
+   "pet_translation_id": 31,
+   "pet_id": 71,
+   "lang": "en",
+   "name": "Pocket Watch Referee",
+   "abilities": "Pocket Watch Referee",
+   "description": "g can slip through this strict referee. But don't be alarmed, once the match is over, it will be the gentlest Pet you've ever seen. Just make sure you don't touch its mustache. No one touches the mustache.</center>"
+  },
+  {
+   "pet_translation_id": 32,
+   "pet_id": 40,
+   "lang": "en",
+   "name": "Purple Candle",
+   "abilities": "Makes Purple Fireworks",
+   "description": "its a mysterious purple flame, entrancing all who gaze upon it with its mesmerizing scent and shimmer. Those caught under its spell can see unknown Jellies from another dimension, and must take great care to not lose themselves in that world lest they be trapped there forever."
+  },
+  {
+   "pet_translation_id": 33,
+   "pet_id": 38,
+   "lang": "en",
+   "name": "Rocket Firecracker",
+   "abilities": "Lifts from hole with a blast",
+   "description": "ry candy and bubble gum, it flies far and bursts with joy. Its star candy powder filling helps Chewy Rocket put itself on fire and explode after a speedy flight. It can save the Cookie again when the filling regenerates."
+  },
+  {
+   "pet_translation_id": 34,
+   "pet_id": 26,
+   "lang": "en",
+   "name": "Snow Blossom",
+   "abilities": "Creates Ice Bridges}}",
+   "description": "in ingredient for shaved ice, a fantastic summer specialty, it's Skating Queen Cookie's best friend and makes her performances even more beautiful!"
+  },
+  {
+   "pet_translation_id": 35,
+   "pet_id": 48,
+   "lang": "en",
+   "name": "Snow Globe",
+   "abilities": "Makes Snow Energy Potions",
+   "description": "winter, just look inside the glass, where it snows all day every day., even on the hottest summer days. Don't hold the globe for too long, though, you might catch a cold."
+  },
+  {
+   "pet_translation_id": 36,
+   "pet_id": 36,
+   "lang": "en",
+   "name": "Spotlight Fan",
+   "abilities": "Spotlight Effect",
+   "description": "best in every Cookie. When it shines over you, a wonderful vanilla scent is spread around too. If that's too much attention for you, just take a step back."
+  },
+  {
+   "pet_translation_id": 37,
+   "pet_id": 68,
+   "lang": "en",
+   "name": "Sweet Rice Seal",
+   "abilities": "Roll N Roll",
+   "description": "This little fellow likes to sit still and think ...and think ...and think. It thinks that because it thinks that it exists. When it thinks too much, it rolls over on its back and stops for a while to let some thoughts go."
+  },
+  {
+   "pet_translation_id": 38,
+   "pet_id": 56,
+   "lang": "en",
+   "name": "Tea Cup",
+   "abilities": "Creates Alphabet Potions",
+   "description": "rst thing Cherry Blossom Cookie does at a picnic is to drink tea from her lovely tea cup. No matter what the weather, it maintains the perfect temperature and blend! With this kind of tea cup, you will want to go on a picnic every single day!</center>"
+  },
+  {
+   "pet_translation_id": 39,
+   "pet_id": 46,
+   "lang": "en",
+   "name": "Backpacky",
+   "abilities": "Power Burps Many Jellies",
+   "description": "It's an awesome backpack you don't need to carry. And when the temperature drops during the night, you can actually use it to warm yourself up."
+  },
+  {
+   "pet_translation_id": 40,
+   "pet_id": 20,
+   "lang": "en",
+   "name": "Dragon's Tail",
+   "abilities": "Calls Dragon's spirit",
+   "description": "mpared to aloe vera. It was taken from the blue dragon in a fierce fight and still stores some of the dragon's powers. You sure can't confuse it with aloe vera when the dragon's spirit comes back."
+  },
+  {
+   "pet_translation_id": 41,
+   "pet_id": 11,
+   "lang": "en",
+   "name": "Foxy Bead",
+   "abilities": "Giant Blast Beads",
+   "description": "Ninetales' lost companion, it's unusual skill is still strong, but it has to rejoin the Cookie before the bright blue light is extinguished."
+  },
+  {
+   "pet_translation_id": 42,
+   "pet_id": 52,
+   "lang": "en",
+   "name": "Furball Pup",
+   "abilities": "Revives Cookies|Power+ = No",
+   "description": "Born from a ball of hair that was sitting in the corner of the Werewolf Cookie's room. He never leaves his master's side and has been a faithful companion ever since his birth. Thinking about how lonely he would be without him makes him tear up and look like a big ball of wet hair."
+  },
+  {
+   "pet_translation_id": 43,
+   "pet_id": 29,
+   "lang": "en",
+   "name": "Glitter Ball",
+   "abilities": "Gives Jellies and Coins",
+   "description": "xcitement, and Rainbow Star Jellies wherever it goes. Not only will you get extra points, you'll feel GREAT too!"
+  },
+  {
+   "pet_translation_id": 44,
+   "pet_id": 27,
+   "lang": "en",
+   "name": "Jellyco Cube",
+   "abilities": "Launches Jellyco Missiles|Power+ = No",
+   "description": "A masterpiece of cutting edge escape technology, it releases powerful missiles filled with Jellies. Hurry, get a glance of the sophisticated Jellyco missile system. You've never seen anything like it."
+  },
+  {
+   "pet_translation_id": 45,
+   "pet_id": 37,
+   "lang": "en",
+   "name": "Lemon Slice",
+   "abilities": "Creates Lemon Soda Potion",
+   "description": "roken when he lost a wedge of himself. But, he has come to realize that he's gained a lot too. Without that wedge he can now eat jellies. And, as his smile returned, he even has the confidence to blow kisses to his Cookie crush."
+  },
+  {
+   "pet_translation_id": 46,
+   "pet_id": 19,
+   "lang": "en",
+   "name": "Lucky Dice Bros",
+   "abilities": "Makes random Power Jellies",
+   "description": "ng bets with one another and taking risks.The power of two makes them extra lucky and spontaneous."
+  },
+  {
+   "pet_translation_id": 47,
+   "pet_id": 55,
+   "lang": "en",
+   "name": "Marshmallow Hamster",
+   "abilities": "Stuffed Cheeks",
+   "description": "<center>Its eyes are painted with super concentrated drops of cocoa and its bright red nose with a dash of cherry syrup. He looked to be thin and looked like deflated marshmallow when he was bullied by his friends, but ever since he met the Cocoa Cookie, he's been happier than ever and now he can melt anyone's heart when he smiles with his plum cheeks stuffed with sunflower seeds.</center>"
+  },
+  {
+   "pet_translation_id": 48,
+   "pet_id": 73,
+   "lang": "en",
+   "name": "Cotton Candy Birdie",
+   "abilities": "Creates Alphabet Blast Item",
+   "description": "ffice bird set out to deliver love to the Cookie World. This veteran only made one delivery mistake in its lifetime, one of Cotton Candy Cookie's letters. But it's understandable. I mean, it's pretty confusing when the recipient changes all the time. Right?"
+  },
+  {
+   "pet_translation_id": 49,
+   "pet_id": 6,
+   "lang": "en",
+   "name": "Dust Unicorn",
+   "abilities": "Creates Gold Coins (worth 10 Coins)",
+   "description": "icorns sleep and dried under the moonlight. It's an ingredient much treasured by the Witch."
+  },
+  {
+   "pet_translation_id": 50,
+   "pet_id": 14,
+   "lang": "en",
+   "name": "Hat of Santa",
+   "abilities": "Creates Silver Coins (worth 5 Coins)",
+   "description": "is only for sale in [https://en.wikipedia.org/wiki/New_Zealand New Zealand]. Grab one of these and join Santa on his journey to bring happiness to children everywhere."
+  },
+  {
+   "pet_translation_id": 51,
+   "pet_id": 13,
+   "lang": "en",
+   "name": "Holiday Stocking",
+   "abilities": "Base speed increase",
+   "description": "ly just an imitation version—surprisingly easy to make with nothing more than red fabric and a bit of stuffing. Honestly, it's so convincing that there's barely any difference from the real thing, so most Cookies can't even tell which one's authentic anymore. (Though rumors say the original is hidden somewhere far, far away.) Holiday Stocking also gives Cookies a nice little speed boost while running."
+  },
+  {
+   "pet_translation_id": 52,
+   "pet_id": 9,
+   "lang": "en",
+   "name": "Ginger Ghost",
+   "abilities": "Lift up from a hole",
+   "description": "could only escape the Witch as a ghost."
+  },
+  {
+   "pet_translation_id": 53,
+   "pet_id": 5,
+   "lang": "en",
+   "name": "Mocha Delight",
+   "abilities": "Creates Alphabet Jelly",
+   "description": "ocha cup you'll ever have. All that whipped cream makes it sooo good."
+  },
+  {
+   "pet_translation_id": 54,
+   "pet_id": 64,
+   "lang": "en",
+   "name": "Onion Fish",
+   "abilities": "Sprays Onion Juice",
+   "description": "A fish that Onion Cookie found swimming in her tears one day. It enjoys swimming in tears. And when it feels dehydrated, it'll start spraying Onion Juice to gather tears from anything that surrounds it (even obstacles)!"
+  },
+  {
+   "pet_translation_id": 55,
+   "pet_id": 75,
+   "lang": "en",
+   "name": "Savannahna Lion",
+   "abilities": "Banana Face Launch",
+   "description": "circus? Savannahna Lion's Body Split Show of course! But what's frightening is that it doesn't seem like an illusion trick..."
+  },
+  {
+   "pet_translation_id": 56,
+   "pet_id": 21,
+   "lang": "en",
+   "name": "Celestial Star",
+   "abilities": "Revives the Cookie",
+   "description": "ardest wish come true - breathes Energy into exhausted Cookies."
+  },
+  {
+   "pet_translation_id": 57,
+   "pet_id": 39,
+   "lang": "en",
+   "name": "Fluffy Cheese Cat",
+   "abilities": "Creates 20 Cat Coins after a set period of time",
+   "description": "This small kitten was snooping around a kitchen full of fragrant teas and delicious desserts when he stumbled across a block of crumbly cheese. He's a real messy eater and he ended up covered in so much powdered cheese that now he doesn't even look like a cat."
+  },
+  {
+   "pet_translation_id": 58,
+   "pet_id": 76,
+   "lang": "en",
+   "name": "Pancake Frisbee",
+   "abilities": "Pancake Frisbee Throw",
+   "description": "Pancake Frisbee wakes up early every morning to style its head(?) with maple syrup. It's so difficult to find the perfect amount to drip."
+  },
+  {
+   "pet_translation_id": 59,
+   "pet_id": 24,
+   "lang": "en",
+   "name": "Enchanted Locket",
+   "abilities": "Creates Mini Energy Potions}}",
+   "description": "A rare and precious accessory of Cookie Royalty passed down for generations. The Witch might have made it long time ago, when she used to work for the Royal family."
+  },
+  {
+   "pet_translation_id": 60,
+   "pet_id": 28,
+   "lang": "en",
+   "name": "AWOL Cracker",
+   "abilities": "Makes snacks to turn Cookies Giant",
+   "description": "ks that make Cookies giant and give a small dose of Energy.\n\nof the flour division, he was too impatient to wait for the promotion and decided to flee and join Cookies escape team."
+  },
+  {
+   "pet_translation_id": 61,
+   "pet_id": 92,
+   "lang": "en",
+   "name": "Air Drop",
+   "abilities": "Creates Giant Mode Bandage Life Jellies",
+   "description": "Bonus points for faster speed and creates Strawberry Potions.\n\nThis crate looks rather bold. It even comes with a parachute. Seeing the way it keeps providing Bandage Jellies for Cookies to recover, it might be quite friendly... Could it be from another dimension, too?<br>(Air Drop Pet doesn't appear in the Hatch Surprise Pets, but you can obtain it from the Cookie Pass's Free Track)"
+  },
+  {
+   "pet_translation_id": 62,
+   "pet_id": 96,
+   "lang": "en",
+   "name": "Baby Spore",
+   "abilities": "Spring Flower Jellies",
+   "description": "ally flies ahead on a flower petal, creating Spring Flower Jellies and a winged HP Potion on the path.\n\nBaby Spore lets itself be carried by the spring breeze on its long flight. It likes to shyly hide its soft cheeks behind flower petals whenever it gets the chance. Alternating between riding the winds and napping among the spring flowers, maybe that's why Baby Spore is always filled with the warm scent of sunshine."
+  },
+  {
+   "pet_translation_id": 63,
+   "pet_id": 2,
+   "lang": "en",
+   "name": "Banana Potion",
+   "abilities": "None (Intended to create Giant Items)",
+   "description": "바나나맛 물약펫의 능력설명\n\n(Translated: Banana Potion's description)"
+  },
+  {
+   "pet_translation_id": 64,
+   "pet_id": 99,
+   "lang": "en",
+   "name": "Bok Choy Cushion",
+   "abilities": "-HP drain",
+   "description": "Slows HP drain at lower Cookie HP.\n\nChoy Cushion has been {{cch|braisedpork|'s|ov=t}} companion since her days of working the fields in her village. The moment you sit down on this crisp yet ever-fresh cushion, all the fatigue accumulated from hard work is lifted at once. Even now, as Braised Pork Cookie has set out on the journey, it remains by her side so she can rest her feet on the long road ahead."
+  },
+  {
+   "pet_translation_id": 65,
+   "pet_id": 31,
+   "lang": "en",
+   "name": "Brown Balloon",
+   "abilities": "Saves Cookie, extra XP",
+   "description": "ie after falling down a pit, gives bonus XP after game ends.\n\ncial balloons the witch brought back with her after her relaxing island vacation. The Brown Balloon was incredibly popular there, with Brown's mysterious poker face capturing the hearts of the island's brave cookies."
+  },
+  {
+   "pet_translation_id": 66,
+   "pet_id": 95,
+   "lang": "en",
+   "name": "Choco Hedgehog",
+   "abilities": "Chewy Choco Jellies",
+   "description": "Periodically dashes ahead, bouncing off obstacles and scattering Cocoa Powder. Areas covered in Cocoa Powder turn into Cocoa Ground and generate Chewy Choco Jellies. While on Cocoa Ground, HP drains more slowly.\n\nA round little hedgehog that lives in groups across the Pistachio Oasis, Choco Hedgehog was discovered rolling alone through the oasis mud after losing its herd and eventually teamed up with {{cch|chocopistachio|ov=t}}. Don't let the adorable looks fool you—its sharp spikes and incredible bounce power can smash through any obstacle. Small but mighty!"
+  },
+  {
+   "pet_translation_id": 67,
+   "pet_id": 91,
+   "lang": "en",
+   "name": "Runjung Ilgi",
+   "abilities": "Gives points & creates Yellow Bear Jelly Party",
+   "description": "At regular intervals, writes a journal entry that gives extra points proportionate to the Cookie's earned score, and creates a Yellow Bear Jelly Party. After completing the journal entry, restores the Cookie's energy. When the Cookie stops running, gives the total points of the top five entries throughout the run.\n\n{{section}}"
+  },
+  {
+   "pet_translation_id": 68,
+   "pet_id": 43,
+   "lang": "en",
+   "name": "Coin Scale",
+   "abilities": "Convert Points into Coins",
+   "description": "oints into Coins at regular intervals. (There is a limit to the amount he can convert at any one time.) Upgrades will make the conversion rate faster.\n\nject has it's own purpose and function, but with Coins, you can get your hands on ALL of them! If you're a Coin lover, this Scale is the ultimate pet to have by your side. This scale does far more than simply weigh the coins. It also converts points to coins, and let's face it...we could all do with a few extra coins!"
+  },
+  {
+   "pet_translation_id": 69,
+   "pet_id": 30,
+   "lang": "en",
+   "name": "Cony Balloon",
+   "abilities": "Saves Cookie, extra Coins",
+   "description": "ie after falling down a pit, gives bonus Coins after the game ends.\n\ncial balloons the witch brought back with her after her relaxing island vacation. This balloon just looks like it's bursting with energy. It's lovely face crumples when it's mad, so remember to always keep it in a good mood."
+  },
+  {
+   "pet_translation_id": 70,
+   "pet_id": 7,
+   "lang": "en",
+   "name": "Cozy Yarn",
+   "abilities": "Creates Bonus Time Jellies",
+   "description": "llies that send you into Bonus Time.\n\nrm yarn that generates light and heat on its own. It's made out of sun crumbs. If you eat them, you'll instantly fly into Bonus Time."
+  },
+  {
+   "pet_translation_id": 71,
+   "pet_id": 81,
+   "lang": "en",
+   "name": "Cucu-dding",
+   "abilities": "Obstacle Crush, Jellies",
+   "description": "ally sings to summon the Frog Family. The Frog Family crushes obstacles and creates Duckweed Jellies.\n\nCucu-dding became best friends with {{Cch|cucumber|ov=t}} after a chance meeting at a fishing spot. It's convinced that its singing is what draws the fish to Cucumber Cookie's rod. It loves gathering a family of frogs at the pond for a lively croaking chorus.</center>"
+  },
+  {
+   "pet_translation_id": 72,
+   "pet_id": 79,
+   "lang": "en",
+   "name": "Desi Delight Drop",
+   "abilities": "Creates Bear Jellies",
+   "description": "Creates Bear Jellies.\n\nrops are made with 99% rich cocoa and 1% of a special, secret ingredient! So far, no one has managed to find a Cookie who knows the secret ingredient, though..."
+  },
+  {
+   "pet_translation_id": 73,
+   "pet_id": 1,
+   "lang": "en",
+   "name": "Double Bubble",
+   "abilities": "Creates Bear Jelly Party",
+   "description": "ar Jelly Party (they turn regular Jellies into Bear Jellies).\n\nas bubblegum."
+  },
+  {
+   "pet_translation_id": 74,
+   "pet_id": 83,
+   "lang": "en",
+   "name": "Elder Black Rice",
+   "abilities": "Black Rice Jellies",
+   "description": "Periodically creates a Black Rice Bowl Jelly that restores HP and transforms basic Jellies into Black Stone Jellies.\n\nElder Black Rice, crafted from tightly packed black rice grains. As strict as the firm, chewy bite of black rice itself, this stern teacher stays busy keeping snack-loving students in line all day long."
+  },
+  {
+   "pet_translation_id": 75,
+   "pet_id": 82,
+   "lang": "en",
+   "name": "Elder White Rice",
+   "abilities": "White Rice Jellies",
+   "description": "Periodically creates a White Rice Bowl Jelly that restores HP and transforms basic Jellies into White Stone Jellies.\n\nSoft white rice carefully packed together to form the warm and gentle Elder White Rice. Whether it's a bad move or a rough day, this sweet old teacher always pats the student's back and says not to worry too much. After all, both Go{{Sic}} and life are better when you know how to slow down for a turn or two."
+  },
+  {
+   "pet_translation_id": 76,
+   "pet_id": 18,
+   "lang": "en",
+   "name": "Electric Beat",
+   "abilities": "Makes Magnet Jellies",
+   "description": "et Jellies\n\nom funky music."
+  },
+  {
+   "pet_translation_id": 77,
+   "pet_id": 8,
+   "lang": "en",
+   "name": "Flowercopter",
+   "abilities": "Speeds up Bonus Time",
+   "description": "Bonus Time.\n\nallergies sometimes."
+  },
+  {
+   "pet_translation_id": 78,
+   "pet_id": 86,
+   "lang": "en",
+   "name": "Ghoul Cake",
+   "abilities": "Tear Jellies, Honey Tear Jellies",
+   "description": "Periodically sheds tears, causing Tear Jellies and Honey Tear Jellies to rain from the sky. Collecting Honey Tear Jellies restores HP. Honey Tear Jellies do not count as HP Potions."
+  },
+  {
+   "pet_translation_id": 79,
+   "pet_id": 10,
+   "lang": "en",
+   "name": "Golden Drop",
+   "abilities": "Giant Gold Coin",
+   "description": "ally creates a Giant Gold Coin worth 100 Coins.\n\nrop! One of the best drops there are. Make sure not to miss one when you see one!"
+  },
+  {
+   "pet_translation_id": 80,
+   "pet_id": 77,
+   "lang": "en",
+   "name": "Hand of Liker",
+   "abilities": "Creates Coins",
+   "description": "Silver Coin worth 5 Coins.\n\nst about everything, happy smiles in particular."
+  },
+  {
+   "pet_translation_id": 81,
+   "pet_id": 97,
+   "lang": "en",
+   "name": "Honey Gourd",
+   "abilities": "Blast Honey Jelly Party",
+   "description": "Periodically creates Blast Honey Jelly Party.\n\nits cute, round appearance, this is actually quite a terrifying gourd that lures its victims in with a sweet honey scent and sucks them inside. It is filled with sticky, sweet honey, making it impossible to escape once you fall in... but no one knows what happens afterward. It is said that {{cch|kaymak|ov=t}} is the only Cookie to have ever escaped Honey Gourd's trap. And it must have been very displeased with that, for it is constantly waiting for an opportunity to absorb Kaymak Cookie again."
+  },
+  {
+   "pet_translation_id": 82,
+   "pet_id": 90,
+   "lang": "en",
+   "name": "Jalebi Flame Diya",
+   "abilities": "Creates jellies and passes through obstacles",
+   "description": "Lights up at given intervals making jellies from another dimension visible, passes through obstacles whilst lit.\n\nJelebi Flame Diya's light makes Jalebi Cookie’s smile even brighter. Makes sure Jalebi Cookie's sparkler never goes out with the flame on its head. Jelabi Flame Diya's Flame Jellies have the subtle taste of syrup thanks to Jalebi Cookie's touch."
+  },
+  {
+   "pet_translation_id": 83,
+   "pet_id": 42,
+   "lang": "en",
+   "name": "Jelly Scale",
+   "abilities": "Convert Coins into Points",
+   "description": "oins into Points at regular intervals. (There is a limit to the amount he can convert at any one time.) Upgrades will make the conversion rate faster.\n\no have for Cookie's who just want to have a blast getting the highest score possible, no matter what the cost! And no matter how much you eat, the only thing that's going to get fat is your score! Nice!"
+  },
+  {
+   "pet_translation_id": 84,
+   "pet_id": 89,
+   "lang": "en",
+   "name": "Kimchi Bell",
+   "abilities": "Obstacle Evasion, Revive}}",
+   "description": "Periodically moves ahead, pickling obstacles with salt to make them passable. Slows HP drain while the skill is active. Sprinkles salt to revive the Cookie once upon collapse.\n\nThe sacred Kimchi Bell that lifts the spirit with its clear, calming chime. Passed down through {{cch|whitekimchi|ov=t|'s}} family for generations, this mysterious little bell is said to carry the power of purification. Listen closely, and even the darkest thoughts may simply drift away!"
+  },
+  {
+   "pet_translation_id": 85,
+   "pet_id": 47,
+   "lang": "en",
+   "name": "King Choco Drop",
+   "abilities": "Throws a Jelly parade while escorting",
+   "description": "For a set period of time, it destroys obstacles and it spreads Jellies and items. It also spreads a red carpet over holes so that the Cookie can pass them safely.\n\nIt's a pet that has been locked away for years in a long forgotten castle of a kingdom in ruins. It's appearance now does not do justice to his former glory, but he still exudes an air of regal dignity."
+  },
+  {
+   "pet_translation_id": 86,
+   "pet_id": 88,
+   "lang": "en",
+   "name": "Lady Mudang",
+   "abilities": "Obstacle Crush, Revive}}",
+   "description": "Periodically flies up and rams into the ground, crushing obstacles to earn Crush Points. Leaves behind Scallion Kimchi Bear Jellies in place of crushed obstacles and an HP potion at its impact. Sprinkles seasoning to grant 1 Revive upon collapse.\n\nA fearless little shaman bug that charges headfirst with its sturdy body to \"drive away\" evil spirits. It first met {{Cch|scallionkimchi|ov=t}} after mistaking the utterly exhausted Cookie for a ghost and attacking on sight—somehow, the two ended up becoming companions instead. Be careful not to catch Lady Mudang's sharp glowing gaze, or you might find yourself getting smacked with a handful of salt."
+  },
+  {
+   "pet_translation_id": 87,
+   "pet_id": 98,
+   "lang": "en",
+   "name": "Lotus Sitter",
+   "abilities": "Lotus Drop Jelly",
+   "description": "Periodically creates a Lotus Drop Jelly that bursts, making nearby obstacles passable.\n\nus seed pod always follows in the shade of {{cch|lotusrootphantom|ov=t}}, mostly to stay out of the dry desert sun. Magical power granted by Lotus Root Phantom Cookie allows it to fly around freely. A timid personality means it often sticks its head in the water whenever it gets embarrassed."
+  },
+  {
+   "pet_translation_id": 88,
+   "pet_id": 12,
+   "lang": "en",
+   "name": "Luck-o'-Lantern",
+   "abilities": "Gives random goodies",
+   "description": "om goodies, better than any other pet.\n\nandies inside, it's probably the sweetest pumpkin you'll find. It loves parties and dark places where it can be seen in all its glory."
+  },
+  {
+   "pet_translation_id": 89,
+   "pet_id": 25,
+   "lang": "en",
+   "name": "Lucky Pouch",
+   "abilities": "Makes it rain Coins.}}",
+   "description": "Coins (1 Coin at fixed intervals).\n\npon a time, when cookies had no financial sense, they would bring the lucky pouch their grandparents gave them wherever they went. Full of joy and bursting to the brim, this bag brought fortune wherever it went. Legend has it that one time it ate too many Coins during the New Year celebration and it's been fat ever since.</center>"
+  },
+  {
+   "pet_translation_id": 90,
+   "pet_id": 93,
+   "lang": "en",
+   "name": "Manggae Snail",
+   "abilities": "Snail Slime Jelly",
+   "description": "ally creates a Snail Slime Jelly that grants Giant and Magnet for a short time, and creates Dew Jellies that crush obstacles.\n\nOnce just a homeless little leaf snail, it finally found a place to belong after meeting {{cch|manggaetteok|ov=t}}, who gifted it a perfectly round rice cake shell to call home. At first glance, it looks just like a Manggae Rice Cake, but the tiny antennae poking up from the top give it away every time. Thanks to its special snail slime, it stays fresh and dewy all day long, leaving behind plenty of sparkling Dew Jellies wherever it goes."
+  },
+  {
+   "pet_translation_id": 91,
+   "pet_id": 84,
+   "lang": "en",
+   "name": "Orion ChocoPie Pet",
+   "abilities": "Creates Choco-Pie Jellies and Items",
+   "description": "Plays castanets at intervals. While playing, Choco-Pie Jellies appear, along with one Power Jelly.\n\nrned into a cute little castanet with an Orion hair tie! It's just found its voice and can't stop playing with joy."
+  },
+  {
+   "pet_translation_id": 92,
+   "pet_id": 78,
+   "lang": "en",
+   "name": "Parrot Dada",
+   "abilities": "Gives speed points & creates Power Jellies",
+   "description": "Gives bonus points for higher speed and creates goodies at given intervals.\n\n{cch|Kaju Katli}}'s old avian assistant, Parrot Dada, urges the prince to settle down a bit too often.\n\n'Kakao:' A parrot that has served {{cch|Kaju Katli}} since childhood. It has a habit of repeating the phrase, \"It would be nice to get you a partner soon\"."
+  },
+  {
+   "pet_translation_id": 93,
+   "pet_id": 85,
+   "lang": "en",
+   "name": "Pegaplush",
+   "abilities": "Speed Points, Pit Lift/Revive",
+   "description": "Grants Speed Points based on running speed. Grants 3 Pit Lifts or Revives with 38 HP to each Cookie."
+  },
+  {
+   "pet_translation_id": 94,
+   "pet_id": 3,
+   "lang": "en",
+   "name": "Rainbow's End",
+   "abilities": "Grows in Bonus Time",
+   "description": "Grows in Bonus Time.\n\nather, but it's never gloomy."
+  },
+  {
+   "pet_translation_id": 95,
+   "pet_id": 17,
+   "lang": "en",
+   "name": "Rare Garlic",
+   "abilities": "Makes Blast Jellies",
+   "description": "t Jellies.\n\nad. Good thing it's rare."
+  },
+  {
+   "pet_translation_id": 96,
+   "pet_id": 80,
+   "lang": "en",
+   "name": "Soft Egg Bunny",
+   "abilities": "Obstacle Crush, Jellies",
+   "description": "Periodically charges ahead, crushing obstacles and creating Egg Jellies and HP Egg Jellies.\n\n<center>Egg-xasperated about where it might fall? No worries! While its body is soft, it is protected by a sturdy eggshell!</center>"
+  },
+  {
+   "pet_translation_id": 97,
+   "pet_id": 94,
+   "lang": "en",
+   "name": "Sotdae Flock",
+   "abilities": "Jellies, Obstacle Evasion",
+   "description": "ally drops Sotdae poles from the sky to create Almond Slice Jellies. Obstacles hit by the poles become transparent and passable.\n\nWhat began as a hand-carved almond duck made by {{cch|garaetteok}} was blessed with the mysterious power of a village totem, transforming it into the Sotdae Flock overflowing with good fortune and abundance. Rumor has it that anyone lucky enough to stumble across the family gathered together is guaranteed a rich, satisfying, and wonderfully cozy day ahead."
+  },
+  {
+   "pet_translation_id": 98,
+   "pet_id": 87,
+   "lang": "en",
+   "name": "Tater Trader",
+   "abilities": "Speed Coins, Giant Jellies",
+   "description": "Periodically creates a Giant Jelly surrounded by Coins. Grants bonus Coins depending on speed.\n\nA cheerful little Tater Trader helping {{cch|potatosalad|ov=t}} run the shop in exchange for delicious homemade salads. It's surprisingly excellent at managing Coins and keeping business booming, though its sales strategy mostly consists of yelling \"Buy everything!\" at every customer who walks by."
+  },
+  {
+   "pet_translation_id": 99,
+   "pet_id": 65,
+   "lang": "en",
+   "name": "Bean Drop Duo",
+   "abilities": "Creates Bean Jelly",
+   "description": "Bean Jellies at a given interval. Lifts 2 times and Revives 2 times with 22 Energy. (Revival is applied again for Relay Cookie).\n\nback yard, grew a magical beanstalk. But one day, a strange looking bean started sprouting out of it! Hence this long and unique buddy was born. And not only one, but two beans were born!"
+  }
+ ]
+}

@@ -2,6 +2,8 @@ module database
 
 import db.sqlite
 import strings
+import os
+import json2
 import models
 
 $if sqlite_fts5 ? {
@@ -31,8 +33,57 @@ pub fn initialize(path string) !sqlite.DB {
 		conn.exec("PRAGMA journal_mode = WAL; PRAGMA synchoronous = FULL;")!
 		create_fts(conn)
 	}
+
+	// Fresh checkouts have no data (sqlite.db is gitignored); bootstrap the
+	// roster from the committed fixture so the site works out of the box.
+	seed_if_empty(conn)!
 	return conn
 }
+
+// SeedFixture mirrors the committed scripts/seed_data.json dump: the roster
+// tables only. Users are never seeded (auth data stays local).
+pub struct SeedFixture {
+	cookie             []models.Cookie
+	cookie_translation []models.CookieTranslation
+	pet                []models.Pet
+	pet_translation    []models.PetTranslation
+}
+
+// seed_if_empty loads scripts/seed_data.json into a database that has no
+// cookies yet. It is a no-op for existing databases and for checkouts without
+// the fixture. Inserts go through the ORM, so FTS triggers populate the index.
+fn seed_if_empty(conn sqlite.DB) ! {
+	rows := conn.exec('SELECT COUNT(*) AS n FROM cookie') or { return }
+	if rows.len > 0 && rows[0].get_int('n') > 0 {
+		return
+	}
+	path := 'scripts/seed_data.json'
+	if !os.exists(path) {
+		return
+	}
+	fixture := json2.decode[SeedFixture](os.read_file(path)!)!
+	for c in fixture.cookie {
+		sql conn {
+			insert c into models.Cookie
+		}!
+	}
+	for tr in fixture.cookie_translation {
+		sql conn {
+			insert tr into models.CookieTranslation
+		}!
+	}
+	for p in fixture.pet {
+		sql conn {
+			insert p into models.Pet
+		}!
+	}
+	for tr in fixture.pet_translation {
+		sql conn {
+			insert tr into models.PetTranslation
+		}!
+	}
+}
+
 struct FtsTable {
 	table   string
 	columns []string
