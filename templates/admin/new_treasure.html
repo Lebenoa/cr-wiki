@@ -26,6 +26,35 @@
             @endif
             enctype="multipart/form-data">
             <div class="space-y-2">
+                <label class="font-label text-secondary uppercase" for="image">%image</label>
+                <label for="image" class="flex flex-col w-fit mx-auto gap-2 cursor-pointer group">
+                    <img id="imagePreview" alt="%image"
+                        class="size-36 rounded-xl object-contain border-2 border-dashed border-primary/40 bg-surface group-hover:border-primary group-hover:bg-primary/10 transition-all
+                        @if !state.edit_mode
+                        hidden
+                        @endif
+                        "
+                        src="@{ctx.img_src('treasures', state.image)}" />
+                    <span
+                        class="w-full min-w-40 bg-surface border-2 border-dashed border-primary/40 rounded-xl py-3 px-4 text-sm font-semibold text-foreground-muted group-hover:border-primary group-hover:text-foreground transition-all text-center">%choose_image</span>
+                </label>
+                <input id="image" type="file" name="image" accept="image/*" class="sr-only" />
+            </div>
+            <script>
+                document.getElementById('image').addEventListener('change', function (e) {
+                    var file = e.target.files && e.target.files[0];
+                    var preview = document.getElementById('imagePreview');
+                    if (file) {
+                        var reader = new FileReader();
+                        reader.onload = function (ev) {
+                            preview.src = ev.target.result;
+                            preview.classList.remove('hidden');
+                        };
+                        reader.readAsDataURL(file);
+                    }
+                });
+            </script>
+            <div class="space-y-2">
                 <label class="font-label text-secondary uppercase" for="lang">%language</label>
                 <select id="lang" name="lang"
                     class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground focus:border-primary focus:ring-0 transition-all outline-none">
@@ -73,35 +102,6 @@
                 <textarea id="description" name="description" rows="4"
                     class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground placeholder:text-foreground/30 focus:border-primary focus:ring-0 transition-all outline-none resize-y">@state.description</textarea>
             </div>
-            <div class="space-y-2">
-                <label class="font-label text-secondary uppercase" for="image">%image</label>
-                <label for="image" class="flex flex-col w-fit gap-2 cursor-pointer group">
-                    <img id="imagePreview" alt="%image"
-                        class="size-36 rounded-xl object-contain border-2 border-dashed border-primary/40 bg-surface group-hover:border-primary group-hover:bg-primary/10 transition-all
-                        @if !state.edit_mode
-                        hidden
-                        @endif
-                        "
-                        src="@{ctx.img_src('treasures', state.image)}" />
-                    <span
-                        class="w-full min-w-40 bg-surface border-2 border-dashed border-primary/40 rounded-xl py-3 px-4 text-sm font-semibold text-foreground-muted group-hover:border-primary group-hover:text-foreground transition-all text-center">%choose_image</span>
-                </label>
-                <input id="image" type="file" name="image" accept="image/*" class="sr-only" />
-            </div>
-            <script>
-                document.getElementById('image').addEventListener('change', function (e) {
-                    var file = e.target.files && e.target.files[0];
-                    var preview = document.getElementById('imagePreview');
-                    if (file) {
-                        var reader = new FileReader();
-                        reader.onload = function (ev) {
-                            preview.src = ev.target.result;
-                            preview.classList.remove('hidden');
-                        };
-                        reader.readAsDataURL(file);
-                    }
-                });
-            </script>
             <button type="submit"
                 class="w-full bg-primary hover:bg-primary/90 text-foreground font-headline py-4 rounded-xl shadow-lg transition-all active:scale-[0.98]">
                 @if state.edit_mode
