@@ -773,23 +773,27 @@ pub fn search_all(conn sqlite.DB, lang string, q string, limit int) !SearchResul
 		'treasure_translation_id', 'treasure_id', q, limit)!
 	results.treasures = treasures_by_ids(conn, lang, treasure_ids)!
 	return results
+} // EffectRowData is one editable treasure effect: a display name plus the raw
+
+// numeric value and unit, ready for the admin form's structured editor.
+pub struct EffectRowData {
+pub:
+	name  string
+	value ?f32
+	unit  models.EffectUnit
 }
 
-// treasure_effect_lines renders the treasure's effects for one state as form
-// lines ("Name | 12%" or "Name"), so the edit page can round-trip them.
-// Names resolve with the user's language first, then English, then any
-// translation, so an effect that lacks the current language still shows up
-// and survives a save. Effects whose name cannot be expressed as a line
-// (blank, or containing the '|' separator — e.g. scrape artifacts like
-// "|Blessed Effect") are skipped, so saving drops those junk links instead of
-// failing the whole form. Duplicate links (same effect twice) emit once,
-// matching the detail page.
-pub fn treasure_effect_lines(conn sqlite.DB, lang string, id int, st models.EffectState) !string {
+// treasure_effect_rows returns the treasure's effects for one state as
+// editable rows, in listing order. Names resolve with the user's language
+// first, then English, then any translation, so an effect that lacks the
+// current language still shows up and survives a save. Duplicate links (the
+// same effect twice) emit once, matching the detail page.
+pub fn treasure_effect_rows(conn sqlite.DB, lang string, id int, st models.EffectState) ![]EffectRowData {
 	links := sql conn {
 		select from models.TreasureEffect where treasure_id == id && state == st order by treasure_effect_id
 	}!
 	if links.len == 0 {
-		return ''
+		return []
 	}
 
 	mut effect_ids := []int{}
@@ -800,6 +804,7 @@ pub fn treasure_effect_lines(conn sqlite.DB, lang string, id int, st models.Effe
 			seen[link.effect_id] = true
 		}
 	}
+
 	translations := sql conn {
 		select from models.EffectTranslation where effect_id in effect_ids
 	}!
@@ -824,24 +829,39 @@ pub fn treasure_effect_lines(conn sqlite.DB, lang string, id int, st models.Effe
 	}
 
 	mut emitted := map[int]bool{}
-	mut lines := []string{}
+	mut rows := []EffectRowData{}
 	for link in links {
 		if link.effect_id in emitted {
 			continue
 		}
 		emitted[link.effect_id] = true
 		name := name_map[link.effect_id] or { continue }
-		if name.contains('|') {
-			continue
-		}
-		value_display := format_effect_value(link.value, link.unit)
-		lines << if value_display != '' {
-			'${name} | ${value_display}'
-		} else {
-			name
+		rows << EffectRowData{
+			name:  name
+			value: link.value
+			unit:  link.unit
 		}
 	}
-	return lines.join('\n')
+	return rows
+}
+
+// effect_names lists the effect names translated in `lang`, deduplicated and
+// sorted, for the admin form's name suggestions.
+pub fn effect_names(conn sqlite.DB, lang string) ![]string {
+	plang := lang
+	translations := sql conn {
+		select from models.EffectTranslation where lang == plang order by name
+	}!
+	mut seen := map[string]bool{}
+	mut names := []string{}
+	for tr in translations {
+		n := tr.name.trim_space()
+		if n != '' && n !in seen {
+			names << n
+			seen[n] = true
+		}
+	}
+	return names
 }
 
 pub fn get_cookie(conn sqlite.DB, lang string, id int) !CookieView {

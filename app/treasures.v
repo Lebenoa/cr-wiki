@@ -60,7 +60,8 @@ pub fn (wapp &App) new_treasure(mut ctx Context) veb.Result {
 		languages := api.available_lang()
 		grades := models.grade_values
 		state := TreasureForm{
-			lang: ctx.lang
+			lang:         ctx.lang
+			effect_names: database.effect_names(wapp.db, ctx.lang) or { [] }
 		}
 		return $veb.html('./templates/admin/new_treasure.html')
 	} else if ctx.req.method == .post {
@@ -128,10 +129,11 @@ pub fn (wapp &App) edit_treasure(mut ctx Context, id int) veb.Result {
 			} else {
 				''
 			}
-			effects:         database.treasure_effect_lines(wapp.db, ctx.lang, id,
-				models.EffectState.normal) or { '' }
-			blessed_effects: database.treasure_effect_lines(wapp.db, ctx.lang, id,
-				models.EffectState.blessed) or { '' }
+			effects:         effect_rows_from_db(database.treasure_effect_rows(wapp.db, ctx.lang,
+				id, models.EffectState.normal) or { [] })
+			blessed_effects: effect_rows_from_db(database.treasure_effect_rows(wapp.db, ctx.lang,
+				id, models.EffectState.blessed) or { [] })
+			effect_names:    database.effect_names(wapp.db, ctx.lang) or { [] }
 			is_evolved:      treasure.is_evolved
 			release_date:    '${rd.year:04d}-${int(rd.month):02d}-${rd.day:02d}'
 			lang:            treasure.lang

@@ -115,18 +115,147 @@
                         type="date" name="release_date" value="@state.release_date" />
                 </div>
             </div>
+            <datalist id="effect-names">
+                @for n in state.effect_names
+                <option value="@n"></option>
+                @endfor
+            </datalist>
             <div class="space-y-2">
-                <label class="font-label text-secondary uppercase" for="effects">%treasure_effects</label>
-                <textarea id="effects" name="effects" rows="4"
-                    class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground placeholder:text-foreground/30 focus:border-primary focus:ring-0 transition-all outline-none resize-y"
-                    placeholder="%effects_hint">@state.effects</textarea>
+                <label class="font-label text-secondary uppercase">%treasure_effects</label>
+                <div id="effects-rows" class="space-y-2">
+                    @for i, e in state.effects
+                    <div class="effect-row rounded-xl border-2 border-primary/20 bg-surface/50 p-3 space-y-2">
+                        <input type="text" list="effect-names" data-field="name"
+                            class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground placeholder:text-foreground/30 focus:border-primary focus:ring-0 transition-all outline-none"
+                            name="effects_name_@i" placeholder="%effects_hint" value="@e.name" />
+                        <div class="grid gap-2 items-center" style="grid-template-columns: 1fr 1fr auto;">
+                            <input type="number" step="any" data-field="value"
+                                class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground placeholder:text-foreground/30 focus:border-primary focus:ring-0 transition-all outline-none"
+                                name="effects_value_@i" placeholder="%effect_value" value="@e.value" />
+                            <select data-field="unit" name="effects_unit_@i"
+                                class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground focus:border-primary focus:ring-0 transition-all outline-none">
+                                <option value="percent"
+                                    @if e.unit == 'percent'
+                                    selected
+                                    @endif
+                                >&#37;</option>
+                                <option value="second"
+                                    @if e.unit == 'second'
+                                    selected
+                                    @endif
+                                >s</option>
+                                <option value="flat"
+                                    @if e.unit == 'flat'
+                                    selected
+                                    @endif
+                                >%unit_flat</option>
+                            </select>
+                            <button type="button" data-remove-effect aria-label="%remove_effect"
+                                class="size-11 rounded-xl border-2 border-primary/30 text-foreground-muted hover:border-primary hover:text-foreground transition-all">×</button>
+                        </div>
+                    </div>
+                    @endfor
+                </div>
+                <button type="button" data-add-effect="effects"
+                    class="w-full bg-surface border-2 border-dashed border-primary/40 rounded-xl py-3 px-4 text-sm font-semibold text-foreground-muted hover:border-primary hover:text-foreground transition-all text-center">+ %add_effect</button>
             </div>
             <div class="space-y-2">
-                <label class="font-label text-secondary uppercase" for="blessed_effects">%blessed_effects</label>
-                <textarea id="blessed_effects" name="blessed_effects" rows="4"
-                    class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground placeholder:text-foreground/30 focus:border-primary focus:ring-0 transition-all outline-none resize-y"
-                    placeholder="%effects_hint">@state.blessed_effects</textarea>
+                <label class="font-label text-secondary uppercase">%blessed_effects</label>
+                <div id="blessed_effects-rows" class="space-y-2">
+                    @for i, e in state.blessed_effects
+                    <div class="effect-row rounded-xl border-2 border-primary/20 bg-surface/50 p-3 space-y-2">
+                        <input type="text" list="effect-names" data-field="name"
+                            class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground placeholder:text-foreground/30 focus:border-primary focus:ring-0 transition-all outline-none"
+                            name="blessed_effects_name_@i" placeholder="%effects_hint" value="@e.name" />
+                        <div class="grid gap-2 items-center" style="grid-template-columns: 1fr 1fr auto;">
+                            <input type="number" step="any" data-field="value"
+                                class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground placeholder:text-foreground/30 focus:border-primary focus:ring-0 transition-all outline-none"
+                                name="blessed_effects_value_@i" placeholder="%effect_value" value="@e.value" />
+                            <select data-field="unit" name="blessed_effects_unit_@i"
+                                class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground focus:border-primary focus:ring-0 transition-all outline-none">
+                                <option value="percent"
+                                    @if e.unit == 'percent'
+                                    selected
+                                    @endif
+                                >&#37;</option>
+                                <option value="second"
+                                    @if e.unit == 'second'
+                                    selected
+                                    @endif
+                                >s</option>
+                                <option value="flat"
+                                    @if e.unit == 'flat'
+                                    selected
+                                    @endif
+                                >%unit_flat</option>
+                            </select>
+                            <button type="button" data-remove-effect aria-label="%remove_effect"
+                                class="size-11 rounded-xl border-2 border-primary/30 text-foreground-muted hover:border-primary hover:text-foreground transition-all">×</button>
+                        </div>
+                    </div>
+                    @endfor
+                </div>
+                <button type="button" data-add-effect="blessed_effects"
+                    class="w-full bg-surface border-2 border-dashed border-primary/40 rounded-xl py-3 px-4 text-sm font-semibold text-foreground-muted hover:border-primary hover:text-foreground transition-all text-center">+ %add_effect</button>
             </div>
+            <template id="effect-row-template">
+                <div class="effect-row rounded-xl border-2 border-primary/20 bg-surface/50 p-3 space-y-2">
+                    <input type="text" list="effect-names" data-field="name"
+                        class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground placeholder:text-foreground/30 focus:border-primary focus:ring-0 transition-all outline-none"
+                        name="effects_name_x" placeholder="%effects_hint" value="" />
+                    <div class="grid gap-2 items-center" style="grid-template-columns: 1fr 1fr auto;">
+                        <input type="number" step="any" data-field="value"
+                            class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground placeholder:text-foreground/30 focus:border-primary focus:ring-0 transition-all outline-none"
+                            name="effects_value_x" placeholder="%effect_value" value="" />
+                        <select data-field="unit" name="effects_unit_x"
+                            class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground focus:border-primary focus:ring-0 transition-all outline-none">
+                            <option value="percent">&#37;</option>
+                            <option value="second">s</option>
+                            <option value="flat" selected>%unit_flat</option>
+                        </select>
+                        <button type="button" data-remove-effect aria-label="%remove_effect"
+                            class="size-11 rounded-xl border-2 border-primary/30 text-foreground-muted hover:border-primary hover:text-foreground transition-all">×</button>
+                    </div>
+                </div>
+            </template>
+            <script>
+                (function () {
+                    function renumber(container, prefix) {
+                        var rows = container.querySelectorAll('.effect-row');
+                        rows.forEach(function (row, i) {
+                            row.querySelector('[data-field="name"]').name = prefix + '_name_' + i;
+                            row.querySelector('[data-field="value"]').name = prefix + '_value_' + i;
+                            row.querySelector('[data-field="unit"]').name = prefix + '_unit_' + i;
+                        });
+                    }
+                    var tpl = document.getElementById('effect-row-template');
+                    document.querySelectorAll('[data-add-effect]').forEach(function (btn) {
+                        var prefix = btn.getAttribute('data-add-effect');
+                        var container = document.getElementById(prefix + '-rows');
+                        btn.addEventListener('click', function () {
+                            var row = tpl.content.firstElementChild.cloneNode(true);
+                            container.appendChild(row);
+                            renumber(container, prefix);
+                        });
+                    });
+                    document.addEventListener('click', function (e) {
+                        var btn = e.target.closest('[data-remove-effect]');
+                        if (btn) {
+                            var row = btn.closest('.effect-row');
+                            var container = row.parentElement;
+                            var prefix = container.id.replace('-rows', '');
+                            row.remove();
+                            renumber(container, prefix);
+                        }
+                    });
+                    document.querySelector('form').addEventListener('submit', function () {
+                        document.querySelectorAll('[data-add-effect]').forEach(function (btn) {
+                            var prefix = btn.getAttribute('data-add-effect');
+                            renumber(document.getElementById(prefix + '-rows'), prefix);
+                        });
+                    });
+                })();
+            </script>
             <div class="space-y-2">
                 <label class="font-label text-secondary uppercase" for="description">%description</label>
                 <textarea id="description" name="description" rows="4"

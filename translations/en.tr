@@ -212,7 +212,19 @@ no_grade
 No grade
 -----
 effects_hint
-One effect per line, e.g. "DEF increase | 12%" (value optional)
+Type or pick an effect name
+-----
+add_effect
+Add effect
+-----
+remove_effect
+Remove
+-----
+effect_value
+Value
+-----
+unit_flat
+plain
 -----
 search_page_title
 Search | Classic/FanWiki

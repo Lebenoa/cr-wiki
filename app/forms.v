@@ -46,6 +46,38 @@ pub:
 	image        ?string
 }
 
+// EffectRow carries one effect row in the treasure form's structured editor.
+pub struct EffectRow {
+pub:
+	name  string
+	value string // plain number, '' = no value
+	unit  string // 'percent' | 'second' | 'flat'
+}
+
+// effect_rows_from_db maps the treasure's stored effect rows to form rows,
+// formatting the numeric value for the editor's number input.
+fn effect_rows_from_db(rows []database.EffectRowData) []EffectRow {
+	mut out := []EffectRow{}
+	for r in rows {
+		value_str := if v := r.value {
+			s := v.str()
+			if s.contains('.') {
+				s.trim_right('0').trim_right('.')
+			} else {
+				s
+			}
+		} else {
+			''
+		}
+		out << EffectRow{
+			name:  r.name
+			value: value_str
+			unit:  r.unit.str()
+		}
+	}
+	return out
+}
+
 // TreasureForm carries the form state shared by the treasure create/edit pages.
 pub struct TreasureForm {
 pub:
@@ -54,8 +86,9 @@ pub:
 	name            string
 	description     string
 	grade           string // '' = no wiki grade
-	effects         string // one "Name | 12%" per line
-	blessed_effects string
+	effects         []EffectRow
+	blessed_effects []EffectRow
+	effect_names    []string // suggestions for the effect name input
 	is_evolved      bool
 	release_date    string
 	lang            string
@@ -103,45 +136,41 @@ fn parse_pet_form(mut ctx Context) !database.CreatePetParams {
 	}
 }
 
-// parse_effect_inputs parses the treasure 'effects' textarea: one effect per
-// line, "Name | 12%". The value is optional; a trailing % or s suffix picks
-// the unit (percent/second), anything else is treated as a plain number.
-fn parse_effect_inputs(s string) ![]database.EffectInput {
+// parse_effect_inputs reads the treasure form's structured effect rows for
+// one state (indexed fields `${prefix}_name_N`, `${prefix}_value_N`,
+// `${prefix}_unit_N`) into EffectInputs in submitted order. Rows with a blank
+// name and value are skipped (the trailing blank "add row"); a value without
+// a name is an error.
+fn parse_effect_inputs(mut ctx Context, prefix string) ![]database.EffectInput {
 	mut effects := []database.EffectInput{}
-	for line in s.split_into_lines() {
-		l := line.trim_space()
-		if l == '' {
+	mut i := 0
+	for {
+		mut name := ctx.form['${prefix}_name_${i}'] or { break }
+		name = name.trim_space()
+		value_str := ctx.form['${prefix}_value_${i}'] or { '' }
+		unit_str := ctx.form['${prefix}_unit_${i}'] or { 'flat' }
+		if name == '' {
+			if value_str != '' {
+				return error('Effect ${i + 1}: name is required')
+			}
+			i++
 			continue
 		}
-		mut name := l
 		mut value := ?f32(none)
-		mut unit := models.EffectUnit.flat
-		idx := l.last_index('|') or { -1 }
-		if idx >= 0 {
-			name = l[..idx].trim_space()
-			val_str := l[idx + 1..].trim_space()
-			if val_str != '' {
-				mut num_str := val_str
-				if val_str.ends_with('%') {
-					unit = models.EffectUnit.percent
-					num_str = val_str[..val_str.len - 1]
-				} else if val_str.ends_with('s') {
-					unit = models.EffectUnit.second
-					num_str = val_str[..val_str.len - 1]
-				}
-				value = f32(strconv.atof64(num_str, strconv.AtoF64Param{}) or {
-					return error('Invalid effect value: "${val_str}" (expected e.g. 12%, 3s, or a plain number)')
-				})
-			}
+		if value_str != '' {
+			value = f32(strconv.atof64(value_str, strconv.AtoF64Param{}) or {
+				return error('Effect ${i + 1}: invalid value "${value_str}" (expected a number)')
+			})
 		}
-		if name == '' {
-			return error('Invalid effect line: "${l}" (missing effect name)')
+		unit := models.EffectUnit.from(unit_str) or {
+			return error('Effect ${i + 1}: invalid unit "${unit_str}"')
 		}
 		effects << database.EffectInput{
 			name:  name
 			value: value
 			unit:  unit
 		}
+		i++
 	}
 	return effects
 }
@@ -168,7 +197,7 @@ fn parse_treasure_form(mut ctx Context) !database.CreateTreasureParams {
 		grade:           grade
 		is_evolved:      ctx.form['is_evolved'] == 'true'
 		release_date:    parse_release_date(mut ctx)!
-		effects:         parse_effect_inputs(ctx.form['effects'])!
-		blessed_effects: parse_effect_inputs(ctx.form['blessed_effects'])!
+		effects:         parse_effect_inputs(mut ctx, 'effects')!
+		blessed_effects: parse_effect_inputs(mut ctx, 'blessed_effects')!
 	}
 }
