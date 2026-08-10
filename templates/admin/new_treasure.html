@@ -75,10 +75,33 @@
             </div>
             <div class="space-y-2">
                 <label class="font-label text-secondary uppercase" for="image">%image</label>
-                <input id="image"
-                    class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground focus:border-primary focus:ring-0 transition-all outline-none file:mr-4 file:rounded-lg file:border-0 file:bg-primary/20 file:px-4 file:py-2 file:font-semibold file:text-foreground"
-                    type="file" name="image" accept="image/*" />
+                <div class="flex items-center gap-4">
+                    <input id="image"
+                        class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground focus:border-primary focus:ring-0 transition-all outline-none file:mr-4 file:rounded-lg file:border-0 file:bg-primary/20 file:px-4 file:py-2 file:font-semibold file:text-foreground"
+                        type="file" name="image" accept="image/*" />
+                    <img id="imagePreview" alt="%image"
+                        class="size-24 shrink-0 rounded-xl object-contain border-2 border-primary/30 bg-surface
+                        @if !edit_mode
+                        hidden
+                        @endif
+                        "
+                        src="@{ctx.img_src('treasures', entity_image)}" />
+                </div>
             </div>
+            <script>
+                document.getElementById('image').addEventListener('change', function (e) {
+                    var file = e.target.files && e.target.files[0];
+                    var preview = document.getElementById('imagePreview');
+                    if (file) {
+                        var reader = new FileReader();
+                        reader.onload = function (ev) {
+                            preview.src = ev.target.result;
+                            preview.classList.remove('hidden');
+                        };
+                        reader.readAsDataURL(file);
+                    }
+                });
+            </script>
             <button type="submit"
                 class="w-full bg-primary hover:bg-primary/90 text-foreground font-headline py-4 rounded-xl shadow-lg transition-all active:scale-[0.98]">
                 @if edit_mode

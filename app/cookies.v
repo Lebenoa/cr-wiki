@@ -51,6 +51,7 @@ pub fn (wapp &App) new_cookie(mut ctx Context) veb.Result {
 		entity_grade := 'c'
 		entity_release_date := ''
 		entity_lang := ctx.lang
+		entity_image := ?string(none)
 		return $veb.html("./templates/admin/new_cookie.html")
 
 	} else if ctx.req.method == .post {
@@ -101,6 +102,7 @@ pub fn (wapp &App) edit_cookie(mut ctx Context, id int) veb.Result {
 		rd := cookie.release_date
 		entity_release_date := '${rd.year:04d}-${int(rd.month):02d}-${rd.day:02d}'
 		entity_lang := cookie.lang
+		entity_image := cookie.image
 		return $veb.html("./templates/admin/new_cookie.html")
 
 	} else if ctx.req.method == .post {

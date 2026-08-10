@@ -61,6 +61,7 @@ pub fn (wapp &App) edit_pet(mut ctx Context, id int) veb.Result {
 		rd := pet.release_date
 		entity_release_date := '${rd.year:04d}-${int(rd.month):02d}-${rd.day:02d}'
 		entity_lang := pet.lang
+		entity_image := pet.image
 		return $veb.html("./templates/admin/new_pet.html")
 
 	} else if ctx.req.method == .post {
@@ -99,6 +100,7 @@ pub fn (wapp &App) new_pet(mut ctx Context) veb.Result {
 		entity_grade := 'c'
 		entity_release_date := ''
 		entity_lang := ctx.lang
+		entity_image := ?string(none)
 		return $veb.html("./templates/admin/new_pet.html")
 	} else if ctx.req.method == .post {
 		params := parse_pet_form(mut ctx) or {
