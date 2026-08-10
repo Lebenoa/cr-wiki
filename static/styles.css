@@ -493,6 +493,7 @@
 .lg\:grid-cols-4{grid-template-columns:repeat(4,minmax(0,1fr));}
 .lg\:grid-cols-5{grid-template-columns:repeat(5,minmax(0,1fr));}
 .lg\:w-72{width:calc(var(--spacing) * 72);}
+.lg\:block{display:block;}
 }
 @media (min-width: 80rem){
 .xl\:grid-cols-6{grid-template-columns:repeat(6,minmax(0,1fr));}
