@@ -8,8 +8,8 @@
                     COOKIE//ARCHIVE
                 </span>
             </a>
-            <button id="nav-toggle" type="button" class="btn-secondary size-12 md:hidden"
-                popovertarget="mobile-nav" aria-label="%navbar_nav_toggle">
+            <button id="nav-toggle" type="button" class="btn-secondary size-12 md:hidden" popovertarget="mobile-nav"
+                aria-label="%navbar_nav_toggle">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
                     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <line x1="4" x2="20" y1="6" y2="6" />
@@ -43,8 +43,8 @@
                             <circle cx="11" cy="11" r="8" />
                         </svg>
                     </span>
-                    <input name="q" hx-get="/search" hx-trigger="input changed delay:300ms"
-                        hx-target="#search-results" hx-swap="innerHTML"
+                    <input name="q" hx-get="/search" hx-trigger="input changed delay:300ms" hx-target="#search-results"
+                        hx-swap="innerHTML"
                         class="bg-surface border-2 border-secondary/50 focus:border-primary focus:ring-0 rounded-full py-2 pl-12 pr-6 w-full transition-all outline-none text-sm text-foreground"
                         placeholder="%navbar_search_placeholder" type="text" />
                 </form>
@@ -69,7 +69,7 @@
                 </svg>
             </button>
             <div id="mobile-nav" popover
-                class="p-4 m-0 bg-background text-foreground rounded border border-secondary/70 shadow-2xl transition-discrete transition-all duration-300 flex-col gap-2 hidden popover-open:flex fixed top-20 w-screen"
+                class="p-4 m-bs-1 inline-64 bg-background text-foreground rounded border border-accent transition-discrete transition-all duration-300 flex-col gap-2 hidden popover-open:flex"
                 hx-boost:inherited="true">
                 @{ctx.nav_link('cookies')}
                 @{ctx.nav_link('pets')}

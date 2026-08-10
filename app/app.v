@@ -70,9 +70,9 @@ pub fn (ctx &Context) nav_link(href string, tr_key ?string) veb.RawHtml {
 	active := ctx.req.url == '/${href}' || ctx.req.url.starts_with('/' + href + '/')
 
 	class := if active {
-		'font-semibold text-primary border-b-2 border-primary pb-1 transition-all duration-1000'
+		'font-semibold text-center text-primary border-b-2 border-primary pb-1 transition-all duration-1000'
 	} else {
-		'font-medium text-foreground-muted hover:text-primary transition-all duration-1000'
+		'font-medium text-center text-foreground-muted hover:text-primary transition-all duration-1000'
 	}
 
 	abs_tr_key := tr_key or { href }
