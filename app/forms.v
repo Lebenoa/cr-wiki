@@ -16,6 +16,48 @@ fn parse_release_date(mut ctx Context) !time.Time {
 	}
 }
 
+// CookieForm carries the form state shared by the cookie create/edit pages.
+pub struct CookieForm {
+pub:
+	edit_mode    bool
+	id           int
+	name         string
+	abilities    string
+	description  string
+	power_plus   string
+	grade        string
+	release_date string
+	lang         string
+	image        ?string
+}
+
+// PetForm carries the form state shared by the pet create/edit pages.
+pub struct PetForm {
+pub:
+	edit_mode    bool
+	id           int
+	name         string
+	abilities    string
+	description  string
+	grade        string
+	release_date string
+	lang         string
+	image        ?string
+}
+
+// TreasureForm carries the form state shared by the treasure create/edit pages.
+pub struct TreasureForm {
+pub:
+	edit_mode    bool
+	id           int
+	name         string
+	description  string
+	is_evolved   bool
+	release_date string
+	lang         string
+	image        ?string
+}
+
 fn parse_cookie_form(mut ctx Context) !database.CreateCookieParams {
 	image := upload_image(mut ctx, 'cookies')!
 	grade := models.Grade.from(ctx.form['grade']) or {

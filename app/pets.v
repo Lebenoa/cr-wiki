@@ -31,6 +31,39 @@ pub fn (wapp &App) pets(mut ctx Context) veb.Result {
 	return $veb.html()
 }
 
+@['/pets/new'; get; post]
+pub fn (wapp &App) new_pet(mut ctx Context) veb.Result {
+	cur_user := ctx.user or { return ctx.not_found() }
+	if !cur_user.is_admin {
+		return ctx.not_found()
+	}
+
+	if ctx.req.method == .get {
+		ctx.page_title = 'New Pet | Classic/FanWiki'
+		languages := api.available_lang()
+		grades := models.grade_values
+		state := PetForm{
+			lang:  ctx.lang
+			grade: 'c'
+		}
+		return $veb.html("./templates/admin/new_pet.html")
+	} else if ctx.req.method == .post {
+		params := parse_pet_form(mut ctx) or {
+			ctx.res.set_status(.bad_request)
+			return ctx.text(err.msg())
+		}
+
+		database.create_pet(wapp.db, params) or {
+			ctx.res.set_status(.bad_request)
+			return ctx.text('Failed to create pet: ${err}')
+		}
+
+		return ctx.redirect('/pets')
+	}
+
+	return ctx.not_found()
+}
+
 @['/pets/:id']
 pub fn (wapp &App) pet_info(mut ctx Context, id int) veb.Result {
 	pet := database.get_pet(wapp.db, ctx.lang, id) or { return ctx.not_found() }
@@ -52,16 +85,18 @@ pub fn (wapp &App) edit_pet(mut ctx Context, id int) veb.Result {
 		ctx.page_title = 'Edit ${pet.name} | Classic/FanWiki'
 		languages := api.available_lang()
 		grades := models.grade_values
-		edit_mode := true
-		entity_id := pet.pet_id
-		entity_name := pet.name
-		entity_abilities := pet.abilities
-		entity_description := pet.description
-		entity_grade := pet.grade.str()
 		rd := pet.release_date
-		entity_release_date := '${rd.year:04d}-${int(rd.month):02d}-${rd.day:02d}'
-		entity_lang := pet.lang
-		entity_image := pet.image
+		state := PetForm{
+			edit_mode:    true
+			id:           pet.pet_id
+			name:         pet.name
+			abilities:    pet.abilities
+			description:  pet.description
+			grade:        pet.grade.str()
+			release_date: '${rd.year:04d}-${int(rd.month):02d}-${rd.day:02d}'
+			lang:         pet.lang
+			image:        pet.image
+		}
 		return $veb.html("./templates/admin/new_pet.html")
 
 	} else if ctx.req.method == .post {
@@ -76,44 +111,6 @@ pub fn (wapp &App) edit_pet(mut ctx Context, id int) veb.Result {
 		}
 
 		return ctx.redirect('/pets/${id}')
-	}
-
-	return ctx.not_found()
-}
-
-@['/pets/new'; get; post]
-pub fn (wapp &App) new_pet(mut ctx Context) veb.Result {
-	cur_user := ctx.user or { return ctx.not_found() }
-	if !cur_user.is_admin {
-		return ctx.not_found()
-	}
-
-	if ctx.req.method == .get {
-		ctx.page_title = 'New Pet | Classic/FanWiki'
-		languages := api.available_lang()
-		grades := models.grade_values
-		edit_mode := false
-		entity_id := 0
-		entity_name := ''
-		entity_abilities := ''
-		entity_description := ''
-		entity_grade := 'c'
-		entity_release_date := ''
-		entity_lang := ctx.lang
-		entity_image := ?string(none)
-		return $veb.html("./templates/admin/new_pet.html")
-	} else if ctx.req.method == .post {
-		params := parse_pet_form(mut ctx) or {
-			ctx.res.set_status(.bad_request)
-			return ctx.text(err.msg())
-		}
-
-		database.create_pet(wapp.db, params) or {
-			ctx.res.set_status(.bad_request)
-			return ctx.text('Failed to create pet: ${err}')
-		}
-
-		return ctx.redirect('/pets')
 	}
 
 	return ctx.not_found()
