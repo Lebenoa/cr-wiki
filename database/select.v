@@ -480,10 +480,10 @@ pub fn select_treasures(conn sqlite.DB, lang string, limit int, offset int, tab 
 		return []
 	}
 	if offset > 0 {
-		result = result[offset..]
+		result = result[offset..].clone()
 	}
 	if result.len > limit {
-		result = result[..limit]
+		result = result[..limit].clone()
 	}
 	return result
 }
