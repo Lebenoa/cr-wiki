@@ -26,7 +26,14 @@
 @for treasure in treasures
 <a href="/treasures/@treasure.treasure_id"
     class="flex items-center gap-2 px-2 py-1.5 rounded text-sm text-foreground hover:bg-secondary/20">
+    @if grade := treasure.grade
+    <img src="/img/grades/@{grade}.png" alt="" class="size-5 shrink-0">
+    @endif
     <span class="truncate">@treasure.name</span>
+    @if treasure.is_evolved
+    <span
+        class="ml-auto shrink-0 bg-primary text-foreground font-bold uppercase text-[10px] px-1.5 py-0.5 rounded-full">%evolved</span>
+    @endif
 </a>
 @endfor
 @endif
