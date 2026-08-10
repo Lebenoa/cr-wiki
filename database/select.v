@@ -433,9 +433,9 @@ pub fn get_treasure_blessed_effects(conn sqlite.DB, lang string, id int) ![]Effe
 	return effects_by_state(conn, lang, id, models.EffectState.blessed)
 }
 
-// select_treasures lists treasures newest-first; evolved selects only evolved
-// rows, false only normal rows.
-pub fn select_treasures(conn sqlite.DB, lang string, limit int, offset int, evolved bool) ![]TreasureView {
+// select_treasures lists treasures newest-first; tab filters to normal or
+// evolved rows, 'all' returns both.
+pub fn select_treasures(conn sqlite.DB, lang string, limit int, offset int, tab string) ![]TreasureView {
 	treasures := sql conn {
 		select from models.Treasure
 	}!
@@ -465,7 +465,7 @@ pub fn select_treasures(conn sqlite.DB, lang string, limit int, offset int, evol
 	mut result := []TreasureView{}
 
 	for treasure in treasures {
-		if treasure.is_evolved != evolved {
+		if (tab == 'normal' && treasure.is_evolved) || (tab == 'evo' && !treasure.is_evolved) {
 			continue
 		}
 		if tr := translation_map[treasure.treasure_id or { continue }] {

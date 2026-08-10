@@ -9,15 +9,15 @@ pub fn (wapp &App) treasures(mut ctx Context) veb.Result {
 	ctx.set_translate_title("treasures_page_title")
 	page_size := 30
 
-	mut tab := ctx.query['tab'] or { 'normal' }
-	if tab != 'normal' && tab != 'evo' {
-		tab = 'normal'
+	mut tab := ctx.query['tab'] or { 'all' }
+	if tab !in ['all', 'normal', 'evo'] {
+		tab = 'all'
 	}
 	mut page := (ctx.query['page'] or { '1' }).int()
 	if page < 1 {
 		page = 1
 	}
-	treasures := database.select_treasures(wapp.db, ctx.lang, page_size, (page - 1) * page_size, tab == 'evo') or {
+	treasures := database.select_treasures(wapp.db, ctx.lang, page_size, (page - 1) * page_size, tab) or {
 		println(err)
 		return ctx.html("Something went wrong")
 	}
@@ -27,6 +27,7 @@ pub fn (wapp &App) treasures(mut ctx Context) veb.Result {
 		0
 	}
 
+	all_cls := pill_cls(tab == 'all')
 	normal_cls := pill_cls(tab == 'normal')
 	evo_cls := pill_cls(tab == 'evo')
 

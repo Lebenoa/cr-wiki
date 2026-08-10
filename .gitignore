@@ -41,3 +41,4 @@ __pycache__/
 
 # Scraper/seed helper scripts stay local
 scripts/*.v
+scripts/th/
