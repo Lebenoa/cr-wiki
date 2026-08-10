@@ -509,10 +509,80 @@ fn fts_match_query(q string) string {
 	return terms.join(' ')
 }
 
+// thai_search_cols lists the translation columns searched for Thai queries.
+// It includes columns the FTS tables don't index (unlock_goal, power_plus,
+// pet abilities) because that's where the Thai content lives.
+fn thai_search_cols(table string) []string {
+	return match table {
+		'cookie_translation' {
+			['name', 'abilities', 'description', 'power_plus', 'power_plus_requirement', 'unlock_goal']
+		}
+		'pet_translation' { ['name', 'abilities', 'description'] }
+		'treasure_translation' { ['name', 'description'] }
+		else { [] }
+	}
+}
+
+// has_thai reports whether the string contains any Thai-script character
+// (U+0E00–U+0E7F).
+fn has_thai(s string) bool {
+	for r in s.runes() {
+		if r >= 0x0e00 && r <= 0x0e7f {
+			return true
+		}
+	}
+	return false
+}
+
+// like_escape escapes SQL LIKE wildcards (and quotes, for inline
+// interpolation) so user input matches literally.
+fn like_escape(s string) string {
+	return s.replace('\\', '\\\\').replace('%', '\\%').replace('_', '\\_').replace("'", "''")
+}
+
+// like_owner_ids finds entity ids via substring (LIKE) matching. Used when the
+// query contains Thai: FTS5's unicode61 tokenizer can't segment Thai, so
+// prefix matching misses substrings (and V's bundled build drops Thai tokens
+// entirely). Whitespace-separated tokens are AND'd, each token matching any
+// of the searched columns.
+fn like_owner_ids(conn sqlite.DB, translation_table string, owner_col string, cols []string, q string, limit int) ![]int {
+	mut conds := []string{}
+	for raw in q.split(' ') {
+		tok := raw.trim_space()
+		if tok == '' {
+			continue
+		}
+		escaped := like_escape(tok)
+		mut ors := []string{}
+		for col in cols {
+			ors << "${col} LIKE '%${escaped}%' ESCAPE '\\'"
+		}
+		conds << '(' + ors.join(' OR ') + ')'
+	}
+	if conds.len == 0 {
+		return []
+	}
+	query := "SELECT DISTINCT ${owner_col} AS owner_id FROM ${translation_table} WHERE ${conds.join(' AND ')} ORDER BY owner_id LIMIT ${limit}"
+	rows := conn.exec(query) or { return [] }
+	mut ids := []int{}
+	for r in rows {
+		ids << r.get_int('owner_id')
+	}
+	return ids
+}
+
 // fts_owner_ids returns the entity ids whose translations (in fts_table)
 // match `q`. Rowids of the FTS table are translation ids, which are mapped
-// back to entity ids via the translation table.
+// back to entity ids via the translation table. Thai queries bypass FTS (see
+// like_owner_ids) since the tokenizer can't segment Thai.
 fn fts_owner_ids(conn sqlite.DB, fts_table string, translation_table string, translation_id_col string, owner_col string, q string, limit int) ![]int {
+	if has_thai(q) {
+		cols := thai_search_cols(translation_table)
+		if cols.len == 0 {
+			return []
+		}
+		return like_owner_ids(conn, translation_table, owner_col, cols, q, limit)
+	}
 	match_expr := fts_match_query(q)
 	if match_expr == '' {
 		return []
