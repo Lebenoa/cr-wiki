@@ -78,13 +78,13 @@
                 </div>
                 <div id="effects-normal" class="mt-2 flex flex-col gap-2">
                     @for effect in effects
-                    @include 'partials/effect_card'
+                    @include 'components/effect_card'
                     @endfor
                 </div>
                 @if blessed_effects.len > 0
                 <div id="effects-blessed" class="blessed-effect mt-2 flex flex-col gap-2 hidden">
                     @for effect in blessed_effects
-                    @include 'partials/effect_card'
+                    @include 'components/effect_card'
                     @endfor
                 </div>
                 @endif
@@ -92,7 +92,7 @@
             @endif
             <!-- Quick Info Panel -->
             <div class="mt-8 grid grid-cols-2 sm:grid-cols-3 gap-4 w-full">
-                @include 'partials/treasure_variant'
+                @include 'components/treasure_variant'
                 <div class="p-4 rounded-xl flex flex-col gap-1 border-l-4 border-tertiary">
                     <span class="text-xs font-label text-foreground-muted uppercase">%release_date</span>
                     <span id="releaseDate" class="text-on-surface font-bold">

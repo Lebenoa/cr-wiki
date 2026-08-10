@@ -25,7 +25,7 @@ pub fn (wapp &App) pets(mut ctx Context) veb.Result {
 	}
 
 	if ctx.is_htmx_request() && !ctx.is_boosted_request() {
-		return $veb.html("./templates/partials/pet_cards.html")
+		return $veb.html("./templates/components/pet_cards.html")
 	}
 
 	return $veb.html()

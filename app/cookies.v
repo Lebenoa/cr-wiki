@@ -25,7 +25,7 @@ pub fn (wapp &App) cookies(mut ctx Context) veb.Result {
 	}
 
 	if ctx.is_htmx_request() && !ctx.is_boosted_request() {
-		return $veb.html("./templates/partials/cookie_cards.html")
+		return $veb.html("./templates/components/cookie_cards.html")
 	}
 
 	return $veb.html()

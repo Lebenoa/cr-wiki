@@ -31,7 +31,7 @@ pub fn (wapp &App) treasures(mut ctx Context) veb.Result {
 	evo_cls := pill_cls(tab == 'evo')
 
 	if ctx.is_htmx_request() && !ctx.is_boosted_request() {
-		return $veb.html("./templates/partials/treasure_cards.html")
+		return $veb.html("./templates/components/treasure_cards.html")
 	}
 
 	return $veb.html()
