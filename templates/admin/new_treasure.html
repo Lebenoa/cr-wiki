@@ -75,11 +75,31 @@
             </div>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div class="space-y-2">
+                    <label class="font-label text-secondary uppercase" for="grade">%grade</label>
+                    <select id="grade" name="grade"
+                        class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground focus:border-primary focus:ring-0 transition-all outline-none">
+                        <option value=""
+                            @if state.grade == ""
+                            selected
+                            @endif
+                        >%no_grade</option>
+                        @for g in grades
+                        <option value="@g"
+                            @if g == state.grade
+                            selected
+                            @endif
+                        >@{ctx.grade_name(g)}</option>
+                        @endfor
+                    </select>
+                </div>
+                <div class="space-y-2">
                     <label class="font-label text-secondary uppercase" for="release_date">%release_date</label>
                     <input id="release_date"
                         class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground focus:border-primary focus:ring-0 transition-all outline-none"
                         type="date" name="release_date" value="@state.release_date" />
                 </div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div class="space-y-2">
                     <label class="font-label text-secondary uppercase" for="is_evolved">%evolved</label>
                     <select id="is_evolved" name="is_evolved"
@@ -96,6 +116,24 @@
                         >Yes</option>
                     </select>
                 </div>
+                <div class="space-y-2">
+                    <label class="font-label text-secondary uppercase" for="base_treasure_id">%base_treasure</label>
+                    <input id="base_treasure_id" name="base_treasure_id" type="number" min="0"
+                        class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground focus:border-primary focus:ring-0 transition-all outline-none"
+                        value="@state.base_treasure_id" />
+                </div>
+            </div>
+            <div class="space-y-2">
+                <label class="font-label text-secondary uppercase" for="effects">%treasure_effects</label>
+                <textarea id="effects" name="effects" rows="4"
+                    class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground placeholder:text-foreground/30 focus:border-primary focus:ring-0 transition-all outline-none resize-y"
+                    placeholder="%effects_hint">@state.effects</textarea>
+            </div>
+            <div class="space-y-2">
+                <label class="font-label text-secondary uppercase" for="blessed_effects">%blessed_effects</label>
+                <textarea id="blessed_effects" name="blessed_effects" rows="4"
+                    class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground placeholder:text-foreground/30 focus:border-primary focus:ring-0 transition-all outline-none resize-y"
+                    placeholder="%effects_hint">@state.blessed_effects</textarea>
             </div>
             <div class="space-y-2">
                 <label class="font-label text-secondary uppercase" for="description">%description</label>

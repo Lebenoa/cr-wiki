@@ -6,24 +6,24 @@ import time
 
 @[table: 'cookie']
 pub struct CookieView {
-	pub:
-		cookie_id int
-		image ?string
-		grade models.Grade
-		release_date time.Time
+pub:
+	cookie_id    int
+	image        ?string
+	grade        models.Grade
+	release_date time.Time
 
-		lang string
-		name string
-		abilities string
-		description string
-		power_plus string
-		power_plus_requirement string
-		unlock_goal string
+	lang                   string
+	name                   string
+	abilities              string
+	description            string
+	power_plus             string
+	power_plus_requirement string
+	unlock_goal            string
 }
 
 struct BackupTranslationParam {
 	owner_id ?int
-	limit int = -1
+	limit    int = -1
 }
 
 fn backup_translations[T](conn sqlite.DB, user_lang string, params ?BackupTranslationParam) !map[int]T {
@@ -31,15 +31,11 @@ fn backup_translations[T](conn sqlite.DB, user_lang string, params ?BackupTransl
 
 	translations := if ow_id := abs_params.owner_id {
 		sql conn {
-			select from T
-			where (lang == user_lang || lang == 'en') && owner_id == ow_id
-			limit abs_params.limit
+			select from T where (lang == user_lang || lang == 'en') && owner_id == ow_id limit abs_params.limit
 		}!
 	} else {
 		sql conn {
-			select from T
-			where lang == user_lang || lang == 'en'
-			limit abs_params.limit
+			select from T where lang == user_lang || lang == 'en' limit abs_params.limit
 		}!
 	}
 
@@ -64,10 +60,7 @@ fn backup_translations[T](conn sqlite.DB, user_lang string, params ?BackupTransl
 
 pub fn select_cookies(conn sqlite.DB, lang string, limit int, offset int) ![]CookieView {
 	cookies := sql conn {
-		select from models.Cookie
-		order by cookie_id desc
-		limit limit
-		offset offset
+		select from models.Cookie order by cookie_id desc limit limit offset offset
 	}!
 
 	if cookies.len == 0 {
@@ -86,17 +79,17 @@ pub fn select_cookies(conn sqlite.DB, lang string, limit int, offset int) ![]Coo
 	for cookie in cookies {
 		if tr := translation_map[cookie.cookie_id or { continue }] {
 			result << CookieView{
-				cookie_id: cookie.cookie_id or { 0 }
-				image: cookie.image
-				grade: cookie.grade
-				release_date: cookie.release_date
-				lang: tr.lang
-				name: tr.name
-				abilities: tr.abilities
-				description: tr.description
-				power_plus: tr.power_plus
+				cookie_id:              cookie.cookie_id or { 0 }
+				image:                  cookie.image
+				grade:                  cookie.grade
+				release_date:           cookie.release_date
+				lang:                   tr.lang
+				name:                   tr.name
+				abilities:              tr.abilities
+				description:            tr.description
+				power_plus:             tr.power_plus
 				power_plus_requirement: tr.power_plus_requirement
-				unlock_goal: tr.unlock_goal
+				unlock_goal:            tr.unlock_goal
 			}
 		}
 	}
@@ -106,24 +99,21 @@ pub fn select_cookies(conn sqlite.DB, lang string, limit int, offset int) ![]Coo
 
 @[table: 'pet']
 pub struct PetView {
-	pub:
-		pet_id int
-		image ?string
-		grade models.Grade
-		release_date time.Time
+pub:
+	pet_id       int
+	image        ?string
+	grade        models.Grade
+	release_date time.Time
 
-		lang string
-		name string
-		abilities string
-		description string
+	lang        string
+	name        string
+	abilities   string
+	description string
 }
 
 pub fn select_pets(conn sqlite.DB, lang string, limit int, offset int) ![]PetView {
 	pets := sql conn {
-		select from models.Pet
-		order by pet_id desc
-		limit limit
-		offset offset
+		select from models.Pet order by pet_id desc limit limit offset offset
 	}!
 
 	if pets.len == 0 {
@@ -132,8 +122,7 @@ pub fn select_pets(conn sqlite.DB, lang string, limit int, offset int) ![]PetVie
 
 	user_lang := lang
 	translations := sql conn {
-		select from models.PetTranslation
-		where lang == user_lang || lang == 'en'
+		select from models.PetTranslation where lang == user_lang || lang == 'en'
 	}!
 
 	mut translation_map := map[int]models.PetTranslation{}
@@ -153,14 +142,14 @@ pub fn select_pets(conn sqlite.DB, lang string, limit int, offset int) ![]PetVie
 	for pet in pets {
 		if tr := translation_map[pet.pet_id or { continue }] {
 			result << PetView{
-				pet_id: pet.pet_id or { 0 }
-				image: pet.image
-				grade: pet.grade
+				pet_id:       pet.pet_id or { 0 }
+				image:        pet.image
+				grade:        pet.grade
 				release_date: pet.release_date
-				lang: tr.lang
-				name: tr.name
-				abilities: tr.abilities
-				description: tr.description
+				lang:         tr.lang
+				name:         tr.name
+				abilities:    tr.abilities
+				description:  tr.description
 			}
 		}
 	}
@@ -174,8 +163,7 @@ pub fn get_pet(conn sqlite.DB, lang string, id int) !PetView {
 	}
 
 	pets := sql conn {
-		select from models.Pet
-		where pet_id == id
+		select from models.Pet where pet_id == id
 	}!
 
 	if pets.len == 0 {
@@ -185,11 +173,14 @@ pub fn get_pet(conn sqlite.DB, lang string, id int) !PetView {
 
 	user_lang := lang
 	translations := sql conn {
-		select from models.PetTranslation
-		where pet_id == id && (lang == user_lang || lang == 'en')
+		select from models.PetTranslation where pet_id == id && (lang == user_lang || lang == 'en')
 	}!
 
-	mut tr := if translations.len > 0 { translations.first() } else { return error('pet (${id}) has no translation') }
+	mut tr := if translations.len > 0 {
+		translations.first()
+	} else {
+		return error('pet (${id}) has no translation')
+	}
 	for t in translations {
 		if t.lang == user_lang {
 			tr = t
@@ -198,30 +189,30 @@ pub fn get_pet(conn sqlite.DB, lang string, id int) !PetView {
 	}
 
 	return PetView{
-		pet_id: pet.pet_id or { 0 }
-		image: pet.image
-		grade: pet.grade
+		pet_id:       pet.pet_id or { 0 }
+		image:        pet.image
+		grade:        pet.grade
 		release_date: pet.release_date
-		lang: tr.lang
-		name: tr.name
-		abilities: tr.abilities
-		description: tr.description
+		lang:         tr.lang
+		name:         tr.name
+		abilities:    tr.abilities
+		description:  tr.description
 	}
 }
 
 @[table: 'treasure']
 pub struct TreasureView {
-	pub:
-		treasure_id      int
-		image            ?string
-		grade            ?models.Grade
-		base_treasure_id ?int
-		is_evolved       bool
-		release_date     time.Time
+pub:
+	treasure_id      int
+	image            ?string
+	grade            ?models.Grade
+	base_treasure_id ?int
+	is_evolved       bool
+	release_date     time.Time
 
-		lang string
-		name string
-		description string
+	lang        string
+	name        string
+	description string
 }
 
 // treasure_view maps a stored row + translation to the view handed to templates
@@ -243,8 +234,8 @@ fn treasure_view(t models.Treasure, tr models.TreasureTranslation) TreasureView 
 fn best_treasure_translation(conn sqlite.DB, lang string, tid int) !models.TreasureTranslation {
 	user_lang := lang
 	translations := sql conn {
-		select from models.TreasureTranslation
-		where treasure_id == tid && (lang == user_lang || lang == 'en')
+		select from models.TreasureTranslation where treasure_id == tid
+		&& (lang == user_lang || lang == 'en')
 	}!
 	if translations.len == 0 {
 		return error('treasure (${tid}) has no translation')
@@ -279,10 +270,10 @@ fn compare_treasures(a &TreasureView, b &TreasureView) int {
 
 @[table: 'effect']
 pub struct EffectView {
-	pub:
-		effect_id     int
-		name          string
-		value_display string
+pub:
+	effect_id     int
+	name          string
+	value_display string
 }
 
 // treasure_grade maps the stored int enum value back to the Grade enum;
@@ -316,8 +307,7 @@ pub fn get_treasure(conn sqlite.DB, lang string, id int) !TreasureView {
 	}
 
 	treasures := sql conn {
-		select from models.Treasure
-		where treasure_id == id
+		select from models.Treasure where treasure_id == id
 	}!
 
 	if treasures.len == 0 {
@@ -333,8 +323,7 @@ pub fn get_treasure_base(conn sqlite.DB, lang string, base_id int) !TreasureView
 		return error('no base treasure')
 	}
 	bases := sql conn {
-		select from models.Treasure
-		where treasure_id == base_id
+		select from models.Treasure where treasure_id == base_id
 	}!
 	if bases.len == 0 {
 		return error('base treasure (${base_id}) not found')
@@ -347,8 +336,7 @@ pub fn get_treasure_base(conn sqlite.DB, lang string, base_id int) !TreasureView
 // when the treasure has no evolved form
 pub fn get_treasure_evo(conn sqlite.DB, lang string, id int) !TreasureView {
 	evos := sql conn {
-		select from models.Treasure
-		where base_treasure_id == id && is_evolved == true
+		select from models.Treasure where base_treasure_id == id && is_evolved == true
 	}!
 	if evos.len == 0 {
 		return error('treasure (${id}) has no evolved variant')
@@ -375,8 +363,8 @@ fn effects_from_links(conn sqlite.DB, lang string, links []models.TreasureEffect
 
 	user_lang := lang
 	translations := sql conn {
-		select from models.EffectTranslation
-		where effect_id in effect_ids && (lang == user_lang || lang == 'en')
+		select from models.EffectTranslation where effect_id in effect_ids
+		&& (lang == user_lang || lang == 'en')
 	}!
 
 	mut translation_map := map[int]models.EffectTranslation{}
@@ -413,9 +401,7 @@ fn effects_from_links(conn sqlite.DB, lang string, links []models.TreasureEffect
 // blessed), in the order the wiki listed them (treasure_effect_id order).
 fn effects_by_state(conn sqlite.DB, lang string, id int, st models.EffectState) ![]EffectView {
 	links := sql conn {
-		select from models.TreasureEffect
-		where treasure_id == id && state == st
-		order by treasure_effect_id
+		select from models.TreasureEffect where treasure_id == id && state == st order by treasure_effect_id
 	}!
 	return effects_from_links(conn, lang, links)
 }
@@ -446,8 +432,7 @@ pub fn select_treasures(conn sqlite.DB, lang string, limit int, offset int, tab 
 
 	user_lang := lang
 	translations := sql conn {
-		select from models.TreasureTranslation
-		where lang == user_lang || lang == 'en'
+		select from models.TreasureTranslation where lang == user_lang || lang == 'en'
 	}!
 
 	mut translation_map := map[int]models.TreasureTranslation{}
@@ -489,10 +474,10 @@ pub fn select_treasures(conn sqlite.DB, lang string, limit int, offset int, tab 
 }
 
 pub struct SearchResults {
-	pub mut:
-		cookies   []CookieView
-		pets      []PetView
-		treasures []TreasureView
+pub mut:
+	cookies   []CookieView
+	pets      []PetView
+	treasures []TreasureView
 }
 
 // fts_match_query turns free-text input into an FTS5 MATCH expression: each
@@ -515,11 +500,18 @@ fn fts_match_query(q string) string {
 fn thai_search_cols(table string) []string {
 	return match table {
 		'cookie_translation' {
-			['name', 'abilities', 'description', 'power_plus', 'power_plus_requirement', 'unlock_goal']
+			['name', 'abilities', 'description', 'power_plus', 'power_plus_requirement',
+				'unlock_goal']
 		}
-		'pet_translation' { ['name', 'abilities', 'description'] }
-		'treasure_translation' { ['name', 'description'] }
-		else { [] }
+		'pet_translation' {
+			['name', 'abilities', 'description']
+		}
+		'treasure_translation' {
+			['name', 'description']
+		}
+		else {
+			[]
+		}
 	}
 }
 
@@ -555,14 +547,14 @@ fn like_owner_ids(conn sqlite.DB, translation_table string, owner_col string, co
 		escaped := like_escape(tok)
 		mut ors := []string{}
 		for col in cols {
-			ors << "${col} LIKE '%${escaped}%' ESCAPE '\\'"
+			ors << '${col} LIKE \'%${escaped}%\' ESCAPE \'\\\''
 		}
 		conds << '(' + ors.join(' OR ') + ')'
 	}
 	if conds.len == 0 {
 		return []
 	}
-	query := "SELECT DISTINCT ${owner_col} AS owner_id FROM ${translation_table} WHERE ${conds.join(' AND ')} ORDER BY owner_id LIMIT ${limit}"
+	query := 'SELECT DISTINCT ${owner_col} AS owner_id FROM ${translation_table} WHERE ${conds.join(' AND ')} ORDER BY owner_id LIMIT ${limit}'
 	rows := conn.exec(query) or { return [] }
 	mut ids := []int{}
 	for r in rows {
@@ -611,19 +603,191 @@ fn fts_owner_ids(conn sqlite.DB, fts_table string, translation_table string, tra
 	return ids
 }
 
+// cookies_by_ids returns the cookies for the given ids, ordered by `ids` so
+// FTS5 rank order survives the batch fetch. Translations prefer `lang` with
+// English fallback, matching get_cookie but in two queries total instead of
+// two per cookie. Entities are fetched unfiltered (the ORM cannot use `in` on
+// the optional serial id column) and filtered in memory; the tables are small.
+fn cookies_by_ids(conn sqlite.DB, lang string, ids []int) ![]CookieView {
+	if ids.len == 0 {
+		return []
+	}
+	user_lang := lang
+	cookies := sql conn {
+		select from models.Cookie
+	}!
+	translations := sql conn {
+		select from models.CookieTranslation where owner_id in ids
+		&& (lang == user_lang || lang == 'en')
+	}!
+
+	mut cookie_map := map[int]models.Cookie{}
+	for cookie in cookies {
+		if id := cookie.cookie_id {
+			cookie_map[id] = cookie
+		}
+	}
+	mut translation_map := map[int]models.CookieTranslation{}
+	for tr in translations {
+		if tr.lang == user_lang {
+			translation_map[tr.owner_id] = tr
+		}
+	}
+	for tr in translations {
+		if tr.owner_id !in translation_map {
+			translation_map[tr.owner_id] = tr
+		}
+	}
+
+	mut result := []CookieView{}
+	for id in ids {
+		if cookie := cookie_map[id] {
+			if tr := translation_map[id] {
+				result << CookieView{
+					cookie_id:              cookie.cookie_id or { 0 }
+					image:                  cookie.image
+					grade:                  cookie.grade
+					release_date:           cookie.release_date
+					lang:                   tr.lang
+					name:                   tr.name
+					abilities:              tr.abilities
+					description:            tr.description
+					power_plus:             tr.power_plus
+					power_plus_requirement: tr.power_plus_requirement
+					unlock_goal:            tr.unlock_goal
+				}
+			}
+		}
+	}
+	return result
+}
+
+// pets_by_ids is the batched counterpart of get_pet for search results.
+fn pets_by_ids(conn sqlite.DB, lang string, ids []int) ![]PetView {
+	if ids.len == 0 {
+		return []
+	}
+	user_lang := lang
+	pets := sql conn {
+		select from models.Pet
+	}!
+	translations := sql conn {
+		select from models.PetTranslation where pet_id in ids && (lang == user_lang || lang == 'en')
+	}!
+
+	mut pet_map := map[int]models.Pet{}
+	for pet in pets {
+		if id := pet.pet_id {
+			pet_map[id] = pet
+		}
+	}
+	mut translation_map := map[int]models.PetTranslation{}
+	for tr in translations {
+		if tr.lang == user_lang {
+			translation_map[tr.pet_id] = tr
+		}
+	}
+	for tr in translations {
+		if tr.pet_id !in translation_map {
+			translation_map[tr.pet_id] = tr
+		}
+	}
+
+	mut result := []PetView{}
+	for id in ids {
+		if pet := pet_map[id] {
+			if tr := translation_map[id] {
+				result << PetView{
+					pet_id:       pet.pet_id or { 0 }
+					image:        pet.image
+					grade:        pet.grade
+					release_date: pet.release_date
+					lang:         tr.lang
+					name:         tr.name
+					abilities:    tr.abilities
+					description:  tr.description
+				}
+			}
+		}
+	}
+	return result
+}
+
+// treasures_by_ids is the batched counterpart of get_treasure for search
+// results (effects are not loaded for search hits).
+fn treasures_by_ids(conn sqlite.DB, lang string, ids []int) ![]TreasureView {
+	if ids.len == 0 {
+		return []
+	}
+	user_lang := lang
+	treasures := sql conn {
+		select from models.Treasure
+	}!
+	translations := sql conn {
+		select from models.TreasureTranslation where treasure_id in ids
+		&& (lang == user_lang || lang == 'en')
+	}!
+
+	mut treasure_map := map[int]models.Treasure{}
+	for treasure in treasures {
+		if id := treasure.treasure_id {
+			treasure_map[id] = treasure
+		}
+	}
+	mut translation_map := map[int]models.TreasureTranslation{}
+	for tr in translations {
+		if tr.lang == user_lang {
+			translation_map[tr.treasure_id] = tr
+		}
+	}
+	for tr in translations {
+		if tr.treasure_id !in translation_map {
+			translation_map[tr.treasure_id] = tr
+		}
+	}
+
+	mut result := []TreasureView{}
+	for id in ids {
+		if treasure := treasure_map[id] {
+			if tr := translation_map[id] {
+				result << treasure_view(treasure, tr)
+			}
+		}
+	}
+	return result
+}
+
 // search_all returns up to `limit` matches per entity type, ranked by FTS5.
+// Each type resolves with two batched queries (entity ids from FTS, then
+// entities + translations in two IN queries), instead of the previous two
+// queries per match, so the total stays flat no matter the limit.
 pub fn search_all(conn sqlite.DB, lang string, q string, limit int) !SearchResults {
 	mut results := SearchResults{}
-	for id in fts_owner_ids(conn, 'cookie_translation_fts', 'cookie_translation', 'cookie_translation_id', 'owner_id', q, limit)! {
-		results.cookies << get_cookie(conn, lang, id) or { continue }
-	}
-	for id in fts_owner_ids(conn, 'pet_translation_fts', 'pet_translation', 'pet_translation_id', 'pet_id', q, limit)! {
-		results.pets << get_pet(conn, lang, id) or { continue }
-	}
-	for id in fts_owner_ids(conn, 'treasure_translation_fts', 'treasure_translation', 'treasure_translation_id', 'treasure_id', q, limit)! {
-		results.treasures << get_treasure(conn, lang, id) or { continue }
-	}
+	cookie_ids := fts_owner_ids(conn, 'cookie_translation_fts', 'cookie_translation',
+		'cookie_translation_id', 'owner_id', q, limit)!
+	results.cookies = cookies_by_ids(conn, lang, cookie_ids)!
+	pet_ids := fts_owner_ids(conn, 'pet_translation_fts', 'pet_translation', 'pet_translation_id',
+		'pet_id', q, limit)!
+	results.pets = pets_by_ids(conn, lang, pet_ids)!
+	treasure_ids := fts_owner_ids(conn, 'treasure_translation_fts', 'treasure_translation',
+		'treasure_translation_id', 'treasure_id', q, limit)!
+	results.treasures = treasures_by_ids(conn, lang, treasure_ids)!
 	return results
+}
+
+// treasure_effect_lines renders the treasure's effects for one state as form
+// lines ("Name | 12%" or "Name"), so the edit page can round-trip them.
+pub fn treasure_effect_lines(conn sqlite.DB, lang string, id int, st models.EffectState) string {
+	effects := effects_by_state(conn, lang, id, st) or { return '' }
+	mut lines := []string{}
+	for e in effects {
+		lines << if e.value_display != '' {
+			'${e.name} | ${e.value_display}'
+		} else {
+			e.name
+		}
+	}
+	return lines.join('\n')
 }
 
 pub fn get_cookie(conn sqlite.DB, lang string, id int) !CookieView {
@@ -632,8 +796,7 @@ pub fn get_cookie(conn sqlite.DB, lang string, id int) !CookieView {
 	}
 
 	cookies := sql conn {
-		select from models.Cookie
-		where cookie_id == id
+		select from models.Cookie where cookie_id == id
 	}!
 
 	if cookies.len == 0 {
@@ -644,16 +807,16 @@ pub fn get_cookie(conn sqlite.DB, lang string, id int) !CookieView {
 	translations := backup_translations[models.CookieTranslation](conn, lang, owner_id: id)!
 
 	return CookieView{
-		cookie_id: cookie.cookie_id or { 0 }
-		image: cookie.image
-		grade: cookie.grade
-		release_date: cookie.release_date
-		lang: translations[id].lang
-		name: translations[id].name
-		abilities: translations[id].abilities
-		description: translations[id].description
-		power_plus: translations[id].power_plus
+		cookie_id:              cookie.cookie_id or { 0 }
+		image:                  cookie.image
+		grade:                  cookie.grade
+		release_date:           cookie.release_date
+		lang:                   translations[id].lang
+		name:                   translations[id].name
+		abilities:              translations[id].abilities
+		description:            translations[id].description
+		power_plus:             translations[id].power_plus
 		power_plus_requirement: translations[id].power_plus_requirement
-		unlock_goal: translations[id].unlock_goal
+		unlock_goal:            translations[id].unlock_goal
 	}
 }

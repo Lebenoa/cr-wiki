@@ -3,9 +3,10 @@ module app
 import veb
 import api
 import database
+import database.models
 
 pub fn (wapp &App) treasures(mut ctx Context) veb.Result {
-	ctx.set_translate_title("treasures_page_title")
+	ctx.set_translate_title('treasures_page_title')
 	page_size := 30
 
 	mut tab := ctx.query['tab'] or { 'all' }
@@ -18,7 +19,7 @@ pub fn (wapp &App) treasures(mut ctx Context) veb.Result {
 	}
 	treasures := database.select_treasures(wapp.db, ctx.lang, page_size, (page - 1) * page_size, tab) or {
 		println(err)
-		return ctx.html("Something went wrong")
+		return ctx.html('Something went wrong')
 	}
 	next_page := if treasures.len == page_size {
 		page + 1
@@ -31,7 +32,7 @@ pub fn (wapp &App) treasures(mut ctx Context) veb.Result {
 	evo_cls := pill_cls(tab == 'evo')
 
 	if ctx.is_htmx_request() && !ctx.is_boosted_request() {
-		return $veb.html("./templates/components/treasure_cards.html")
+		return $veb.html('./templates/components/treasure_cards.html')
 	}
 
 	return $veb.html()
@@ -57,11 +58,11 @@ pub fn (wapp &App) new_treasure(mut ctx Context) veb.Result {
 	if ctx.req.method == .get {
 		ctx.set_translate_title('new_treasure_page_title')
 		languages := api.available_lang()
+		grades := models.grade_values
 		state := TreasureForm{
 			lang: ctx.lang
 		}
-		return $veb.html("./templates/admin/new_treasure.html")
-
+		return $veb.html('./templates/admin/new_treasure.html')
 	} else if ctx.req.method == .post {
 		params := parse_treasure_form(mut ctx) or {
 			ctx.res.set_status(.bad_request)
@@ -100,7 +101,7 @@ pub fn (wapp &App) treasure_info(mut ctx Context, id int) veb.Result {
 	}
 	ctx.set_translate_title('entity_detail_title', treasure.name)
 	is_admin := ctx.is_admin()
-	return $veb.html("./templates/views/treasure.html")
+	return $veb.html('./templates/views/treasure.html')
 }
 
 @['/treasures/:id/edit'; get; post]
@@ -115,19 +116,29 @@ pub fn (wapp &App) edit_treasure(mut ctx Context, id int) veb.Result {
 	if ctx.req.method == .get {
 		ctx.set_translate_title('edit_treasure_page_title', treasure.name)
 		languages := api.available_lang()
+		grades := models.grade_values
 		rd := treasure.release_date
 		state := TreasureForm{
-			edit_mode:    true
-			id:           treasure.treasure_id
-			name:         treasure.name
-			description:  treasure.description
-			is_evolved:   treasure.is_evolved
-			release_date: '${rd.year:04d}-${int(rd.month):02d}-${rd.day:02d}'
-			lang:         treasure.lang
-			image:        treasure.image
+			edit_mode:        true
+			id:               treasure.treasure_id
+			name:             treasure.name
+			description:      treasure.description
+			grade:            if g := treasure.grade {
+				g.str()
+			} else {
+				''
+			}
+			base_treasure_id: treasure.base_treasure_id or { 0 }
+			effects:          database.treasure_effect_lines(wapp.db, ctx.lang, id,
+				models.EffectState.normal)
+			blessed_effects:  database.treasure_effect_lines(wapp.db, ctx.lang, id,
+				models.EffectState.blessed)
+			is_evolved:       treasure.is_evolved
+			release_date:     '${rd.year:04d}-${int(rd.month):02d}-${rd.day:02d}'
+			lang:             treasure.lang
+			image:            treasure.image
 		}
-		return $veb.html("./templates/admin/new_treasure.html")
-
+		return $veb.html('./templates/admin/new_treasure.html')
 	} else if ctx.req.method == .post {
 		params := parse_treasure_form(mut ctx) or {
 			ctx.res.set_status(.bad_request)

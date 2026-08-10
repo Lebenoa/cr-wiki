@@ -5,17 +5,13 @@ import models
 
 pub fn update_cookie(conn sqlite.DB, id int, params CreateCookieParams) ! {
 	sql conn {
-		update models.Cookie set
-			grade = params.grade,
-			release_date = params.release_date
+		update models.Cookie set grade = params.grade, release_date = params.release_date
 		where cookie_id == id
 	}!
 
 	if image := params.image {
 		sql conn {
-			update models.Cookie set
-				image = image
-			where cookie_id == id
+			update models.Cookie set image = image where cookie_id == id
 		}!
 	}
 
@@ -25,21 +21,20 @@ pub fn update_cookie(conn sqlite.DB, id int, params CreateCookieParams) ! {
 	}!
 	if existing.len > 0 {
 		sql conn {
-			update models.CookieTranslation set
-				name = params.name,
-				abilities = params.abilities,
-				description = params.description,
-				power_plus = params.power_plus
-			where owner_id == id && lang == params.lang
+			update models.CookieTranslation set name = params.name, abilities = params.abilities,
+			description = params.description, power_plus = params.power_plus, power_plus_requirement = params.power_plus_requirement,
+			unlock_goal = params.unlock_goal where owner_id == id && lang == params.lang
 		}!
 	} else {
 		new_tr := models.CookieTranslation{
-			owner_id:    id
-			lang:        params.lang
-			name:        params.name
-			abilities:   params.abilities
-			description: params.description
-			power_plus:  params.power_plus
+			owner_id:               id
+			lang:                   params.lang
+			name:                   params.name
+			abilities:              params.abilities
+			description:            params.description
+			power_plus:             params.power_plus
+			power_plus_requirement: params.power_plus_requirement
+			unlock_goal:            params.unlock_goal
 		}
 		sql conn {
 			insert new_tr into models.CookieTranslation
@@ -49,17 +44,12 @@ pub fn update_cookie(conn sqlite.DB, id int, params CreateCookieParams) ! {
 
 pub fn update_pet(conn sqlite.DB, id int, params CreatePetParams) ! {
 	sql conn {
-		update models.Pet set
-			grade = params.grade,
-			release_date = params.release_date
-		where pet_id == id
+		update models.Pet set grade = params.grade, release_date = params.release_date where pet_id == id
 	}!
 
 	if image := params.image {
 		sql conn {
-			update models.Pet set
-				image = image
-			where pet_id == id
+			update models.Pet set image = image where pet_id == id
 		}!
 	}
 
@@ -68,11 +58,8 @@ pub fn update_pet(conn sqlite.DB, id int, params CreatePetParams) ! {
 	}!
 	if existing.len > 0 {
 		sql conn {
-			update models.PetTranslation set
-				name = params.name,
-				abilities = params.abilities,
-				description = params.description
-			where pet_id == id && lang == params.lang
+			update models.PetTranslation set name = params.name, abilities = params.abilities,
+			description = params.description where pet_id == id && lang == params.lang
 		}!
 	} else {
 		new_tr := models.PetTranslation{
@@ -90,17 +77,13 @@ pub fn update_pet(conn sqlite.DB, id int, params CreatePetParams) ! {
 
 pub fn update_treasure(conn sqlite.DB, id int, params CreateTreasureParams) ! {
 	sql conn {
-		update models.Treasure set
-			is_evolved = params.is_evolved,
-			release_date = params.release_date
-		where treasure_id == id
+		update models.Treasure set grade = params.grade, base_treasure_id = params.base_treasure_id,
+		is_evolved = params.is_evolved, release_date = params.release_date where treasure_id == id
 	}!
 
 	if image := params.image {
 		sql conn {
-			update models.Treasure set
-				image = image
-			where treasure_id == id
+			update models.Treasure set image = image where treasure_id == id
 		}!
 	}
 
@@ -109,9 +92,7 @@ pub fn update_treasure(conn sqlite.DB, id int, params CreateTreasureParams) ! {
 	}!
 	if existing.len > 0 {
 		sql conn {
-			update models.TreasureTranslation set
-				name = params.name,
-				description = params.description
+			update models.TreasureTranslation set name = params.name, description = params.description
 			where treasure_id == id && lang == params.lang
 		}!
 	} else {
@@ -125,4 +106,7 @@ pub fn update_treasure(conn sqlite.DB, id int, params CreateTreasureParams) ! {
 			insert new_tr into models.TreasureTranslation
 		}!
 	}
+
+	replace_effects(conn, id, params.lang, params.effects, models.EffectState.normal)!
+	replace_effects(conn, id, params.lang, params.blessed_effects, models.EffectState.blessed)!
 }

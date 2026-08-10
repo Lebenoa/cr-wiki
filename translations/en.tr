@@ -205,6 +205,18 @@ Blessed
 treasure_effects
 Effects
 -----
+blessed_effects
+Blessed Effects
+-----
+no_grade
+No grade
+-----
+base_treasure
+Base Treasure ID
+-----
+effects_hint
+One effect per line, e.g. "DEF increase | 12%" (value optional)
+-----
 search_page_title
 Search | Classic/FanWiki
 -----
