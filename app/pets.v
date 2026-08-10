@@ -1,7 +1,6 @@
 module app
 
 import veb
-import time
 import api
 import database
 import database.models
@@ -36,10 +35,7 @@ pub fn (wapp &App) pets(mut ctx Context) veb.Result {
 pub fn (wapp &App) pet_info(mut ctx Context, id int) veb.Result {
 	pet := database.get_pet(wapp.db, ctx.lang, id) or { return ctx.not_found() }
 	ctx.page_title = '${pet.name} | Classic Fan/Wiki'
-	mut is_admin := false
-	if user := ctx.user {
-		is_admin = user.is_admin
-	}
+	is_admin := ctx.is_admin()
 	return $veb.html("./templates/views/pet.html")
 }
 
@@ -68,40 +64,12 @@ pub fn (wapp &App) edit_pet(mut ctx Context, id int) veb.Result {
 		return $veb.html("./templates/admin/new_pet.html")
 
 	} else if ctx.req.method == .post {
-		image := upload_image(mut ctx, 'pets') or {
+		params := parse_pet_form(mut ctx) or {
 			ctx.res.set_status(.bad_request)
 			return ctx.text(err.msg())
 		}
 
-		grade := models.Grade.from(ctx.form['grade']) or {
-			ctx.res.set_status(.bad_request)
-			return ctx.text('Invalid grade: expected one of e, c, b, a, s, s_plus, l')
-		}
-
-		date_str := ctx.form['release_date']
-		release_date := if date_str != '' {
-			time.parse('${date_str} 00:00:00') or {
-				ctx.res.set_status(.bad_request)
-				return ctx.text('Invalid release date, expected YYYY-MM-DD')
-			}
-		} else {
-			time.now()
-		}
-
-		lang_str := ctx.form['lang'] or { ctx.lang }
-		database.update_pet(wapp.db, id, database.UpdatePetParams{
-			lang:         lang_str
-			name:         ctx.form['name']
-			abilities:    ctx.form['abilities']
-			description:  ctx.form['description']
-			grade:        grade
-			image:        if image == '' {
-				none
-			} else {
-				image
-			}
-			release_date: release_date
-		}) or {
+		database.update_pet(wapp.db, id, params) or {
 			ctx.res.set_status(.bad_request)
 			return ctx.text('Failed to update pet: ${err}')
 		}
@@ -133,63 +101,12 @@ pub fn (wapp &App) new_pet(mut ctx Context) veb.Result {
 		entity_lang := ctx.lang
 		return $veb.html("./templates/admin/new_pet.html")
 	} else if ctx.req.method == .post {
-		image := upload_image(mut ctx, 'pets') or {
+		params := parse_pet_form(mut ctx) or {
 			ctx.res.set_status(.bad_request)
 			return ctx.text(err.msg())
 		}
 
-		grade := match ctx.form['grade'] {
-			'e' {
-				models.Grade.e
-			}
-			'c' {
-				models.Grade.c
-			}
-			'b' {
-				models.Grade.b
-			}
-			'a' {
-				models.Grade.a
-			}
-			's' {
-				models.Grade.s
-			}
-			's_plus' {
-				models.Grade.s_plus
-			}
-			'l' {
-				models.Grade.l
-			}
-			else {
-				ctx.res.set_status(.bad_request)
-				return ctx.text('Invalid grade: expected one of e, c, b, a, s, s_plus, l')
-			}
-		}
-
-		date_str := ctx.form['release_date']
-		release_date := if date_str != '' {
-			time.parse('${date_str} 00:00:00') or {
-				ctx.res.set_status(.bad_request)
-				return ctx.text('Invalid release date, expected YYYY-MM-DD')
-			}
-		} else {
-			time.now()
-		}
-
-		lang_str := ctx.form['lang'] or { ctx.lang }
-		database.create_pet(wapp.db, database.CreatePetParams{
-			lang:         lang_str
-			name:         ctx.form['name']
-			abilities:    ctx.form['abilities']
-			description:  ctx.form['description']
-			grade:        grade
-			image:        if image == '' {
-				none
-			} else {
-				image
-			}
-			release_date: release_date
-		}) or {
+		database.create_pet(wapp.db, params) or {
 			ctx.res.set_status(.bad_request)
 			return ctx.text('Failed to create pet: ${err}')
 		}

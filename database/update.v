@@ -1,25 +1,13 @@
 module database
 
 import db.sqlite
-import time
 import models
 
-pub struct UpdateCookieParams {
-pub:
-	lang         string
-	name         string
-	abilities    string
-	description  string
-	grade        models.Grade
-	image        ?string
-	power_plus   string
-	release_date time.Time
-}
-
-pub fn update_cookie(conn sqlite.DB, id int, params UpdateCookieParams) ! {
+pub fn update_cookie(conn sqlite.DB, id int, params CreateCookieParams) ! {
 	sql conn {
 		update models.Cookie set
-			grade = params.grade
+			grade = params.grade,
+			release_date = params.release_date
 		where cookie_id == id
 	}!
 
@@ -59,21 +47,11 @@ pub fn update_cookie(conn sqlite.DB, id int, params UpdateCookieParams) ! {
 	}
 }
 
-pub struct UpdatePetParams {
-pub:
-	lang         string
-	name         string
-	abilities    string
-	description  string
-	grade        models.Grade
-	image        ?string
-	release_date time.Time
-}
-
-pub fn update_pet(conn sqlite.DB, id int, params UpdatePetParams) ! {
+pub fn update_pet(conn sqlite.DB, id int, params CreatePetParams) ! {
 	sql conn {
 		update models.Pet set
-			grade = params.grade
+			grade = params.grade,
+			release_date = params.release_date
 		where pet_id == id
 	}!
 
@@ -110,20 +88,11 @@ pub fn update_pet(conn sqlite.DB, id int, params UpdatePetParams) ! {
 	}
 }
 
-pub struct UpdateTreasureParams {
-pub:
-	lang         string
-	name         string
-	description  string
-	image        ?string
-	is_evolved   bool
-	release_date time.Time
-}
-
-pub fn update_treasure(conn sqlite.DB, id int, params UpdateTreasureParams) ! {
+pub fn update_treasure(conn sqlite.DB, id int, params CreateTreasureParams) ! {
 	sql conn {
 		update models.Treasure set
-			is_evolved = params.is_evolved
+			is_evolved = params.is_evolved,
+			release_date = params.release_date
 		where treasure_id == id
 	}!
 

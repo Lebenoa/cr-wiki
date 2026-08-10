@@ -75,6 +75,14 @@ pub fn (ctx &Context) nav_link(href string, tr_key ?string) veb.RawHtml {
 	return '<a class="${class}" href="/${href}">${veb.tr(ctx.lang, abs_tr_key)}</a>'
 }
 
+// is_admin reports whether the current session belongs to an admin user.
+pub fn (ctx &Context) is_admin() bool {
+	if user := ctx.user {
+		return user.is_admin
+	}
+	return false
+}
+
 pub fn (ctx &Context) is_htmx_request() bool {
 	return if _ := ctx.get_custom_header("HX-Request") {
 		true

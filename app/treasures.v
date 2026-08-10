@@ -1,7 +1,6 @@
 module app
 
 import veb
-import time
 import api
 import database
 
@@ -68,10 +67,7 @@ pub fn (wapp &App) treasure_info(mut ctx Context, id int) veb.Result {
 		}
 	}
 	ctx.page_title = '${treasure.name} | Classic Fan/Wiki'
-	mut is_admin := false
-	if user := ctx.user {
-		is_admin = user.is_admin
-	}
+	is_admin := ctx.is_admin()
 	return $veb.html("./templates/views/treasure.html")
 }
 
@@ -98,34 +94,12 @@ pub fn (wapp &App) edit_treasure(mut ctx Context, id int) veb.Result {
 		return $veb.html("./templates/admin/new_treasure.html")
 
 	} else if ctx.req.method == .post {
-		image := upload_image(mut ctx, 'treasures') or {
+		params := parse_treasure_form(mut ctx) or {
 			ctx.res.set_status(.bad_request)
 			return ctx.text(err.msg())
 		}
 
-		date_str := ctx.form['release_date']
-		release_date := if date_str != '' {
-			time.parse('${date_str} 00:00:00') or {
-				ctx.res.set_status(.bad_request)
-				return ctx.text('Invalid release date, expected YYYY-MM-DD')
-			}
-		} else {
-			time.now()
-		}
-
-		lang_str := ctx.form['lang'] or { ctx.lang }
-		database.update_treasure(wapp.db, id, database.UpdateTreasureParams{
-			lang:         lang_str
-			name:         ctx.form['name']
-			description:  ctx.form['description']
-			image:        if image == '' {
-				none
-			} else {
-				image
-			}
-			is_evolved:   ctx.form['is_evolved'] == 'true'
-			release_date: release_date
-		}) or {
+		database.update_treasure(wapp.db, id, params) or {
 			ctx.res.set_status(.bad_request)
 			return ctx.text('Failed to update treasure: ${err}')
 		}
@@ -156,34 +130,12 @@ pub fn (wapp &App) new_treasure(mut ctx Context) veb.Result {
 		return $veb.html("./templates/admin/new_treasure.html")
 
 	} else if ctx.req.method == .post {
-		image := upload_image(mut ctx, 'treasures') or {
+		params := parse_treasure_form(mut ctx) or {
 			ctx.res.set_status(.bad_request)
 			return ctx.text(err.msg())
 		}
 
-		date_str := ctx.form['release_date']
-		release_date := if date_str != '' {
-			time.parse('${date_str} 00:00:00') or {
-				ctx.res.set_status(.bad_request)
-				return ctx.text('Invalid release date, expected YYYY-MM-DD')
-			}
-		} else {
-			time.now()
-		}
-
-		lang_str := ctx.form['lang'] or { ctx.lang }
-		database.create_treasure(wapp.db, database.CreateTreasureParams{
-			lang:         lang_str
-			name:         ctx.form['name']
-			description:  ctx.form['description']
-			image:        if image == '' {
-				none
-			} else {
-				image
-			}
-			is_evolved:   ctx.form['is_evolved'] == 'true'
-			release_date: release_date
-		}) or {
+		database.create_treasure(wapp.db, params) or {
 			ctx.res.set_status(.bad_request)
 			return ctx.text('Failed to create treasure: ${err}')
 		}
