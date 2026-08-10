@@ -38,7 +38,7 @@ def main():
         "pet_translation": rows(c, "pet_translation",
                                 ["pet_translation_id", "pet_id", "lang", "name",
                                  "abilities", "description"]),
-        "treasure": rows(c, "treasure", ["treasure_id", "image", "is_evolved",
+        "treasure": rows(c, "treasure", ["treasure_id", "image", "grade", "is_evolved",
                                          "is_blessed", "release_date"]),
         "treasure_translation": rows(c, "treasure_translation",
                                      ["treasure_translation_id", "treasure_id", "lang",
@@ -55,6 +55,7 @@ def main():
     for r in data["cookie"] + data["pet"] + data["treasure"]:
         r["release_date"] = date_str(r["release_date"])
     for r in data["treasure"]:
+        # grade stays an int (the model stores the enum value; null = no badge)
         r["is_evolved"] = bool(r["is_evolved"])
         r["is_blessed"] = bool(r["is_blessed"])
     for r in data["treasure_effect"]:

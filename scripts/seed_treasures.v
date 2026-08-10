@@ -11,6 +11,7 @@ import time
 struct ParsedTreasure {
 	title        string
 	image        string
+	grade        ?models.Grade
 	release_date time.Time
 	description  string
 	is_evolved   bool
@@ -74,7 +75,9 @@ fn api_get(params map[string]string) !string {
 		q.add(k, v)
 	}
 	url := 'https://cookierun.wiki/mw/api.php?' + q.encode()
-	resp := http.fetch(url: url, user_agent: 'Mozilla/5.0') or { return error('fetch failed: ${err}') }
+	resp := http.fetch(url: url, user_agent: 'Mozilla/5.0') or {
+		return error('fetch failed: ${err}')
+	}
 	if resp.status_code != 200 {
 		return error('HTTP ${resp.status_code}')
 	}
@@ -93,10 +96,20 @@ fn list_page_titles(page string) ![]string {
 	})!
 	resp := json2.decode[ParseResp](body)!
 	skip := [
-		'Cookie_Run_Classic', 'LINE_Cookie_Run', 'Cookie_Run_for_Kakao',
-		'List_of_Evolve_Treasures', 'List_of_Treasures/Classic', 'List_of_Treasures_(Classic)',
-		'List_of_Treasures/LINE/S-grade', 'Treasure_Categories', 'Category:Treasure_categories',
-		'Elixir_of_Experience', 'Evolve_Treasures', 'Cookies', 'Pets', 'Cream_Cookie',
+		'Cookie_Run_Classic',
+		'LINE_Cookie_Run',
+		'Cookie_Run_for_Kakao',
+		'List_of_Evolve_Treasures',
+		'List_of_Treasures/Classic',
+		'List_of_Treasures_(Classic)',
+		'List_of_Treasures/LINE/S-grade',
+		'Treasure_Categories',
+		'Category:Treasure_categories',
+		'Elixir_of_Experience',
+		'Evolve_Treasures',
+		'Cookies',
+		'Pets',
+		'Cream_Cookie',
 	]
 	mut titles := []string{}
 	mut idx := 0
@@ -185,8 +198,9 @@ fn infobox_field(block string, key string) string {
 				name_start++
 			}
 			mut name_end := name_start
-			for name_end < lower.len && (lower[name_end].is_letter() || lower[name_end] == ` `
-				|| lower[name_end] == `+` || lower[name_end].is_digit()) {
+			for name_end < lower.len && (lower[name_end].is_letter()
+				|| lower[name_end] == ` ` || lower[name_end] == `+`
+				|| lower[name_end].is_digit()) {
 				name_end++
 			}
 			mut o := name_end
@@ -244,6 +258,16 @@ fn clean_markup(s string) string {
 	out = strip_templates(out)
 	out = out.replace('<br/>', '\n').replace('<br />', '\n').replace('<br>', '\n')
 	out = out.replace("''", '')
+	// strip remaining html tags (gallery/div/ref...); malformed infoboxes can
+	// swallow block markup into a field value
+	for {
+		p := out.index('<') or { break }
+		q := index_from(out, '>', p)
+		if q < 0 {
+			break
+		}
+		out = out[..p] + out[q + 1..]
+	}
 	// strip invisible unicode that some infobox fields carry (bidi marks,
 	// non-breaking spaces) which would otherwise poison filenames
 	out = out.replace('\u200e', '').replace('\u200f', '').replace('\u00a0', ' ')
@@ -298,8 +322,8 @@ fn parse_wiki_date(s string) time.Time {
 		b--
 	}
 	mut be := b + 1
-	for b >= 0 && (lower[b].is_digit() || lower[b] == `t` || lower[b] == `h` || lower[b] == `s`
-		|| lower[b] == `n` || lower[b] == `d` || lower[b] == `r`) {
+	for b >= 0 && (lower[b].is_digit() || lower[b] == `t` || lower[b] == `h`
+		|| lower[b] == `s` || lower[b] == `n` || lower[b] == `d` || lower[b] == `r`) {
 		b--
 	}
 	day_str := lower[b + 1..be].trim('th').trim('st').trim('nd').trim('rd').trim_space()
@@ -320,6 +344,13 @@ fn parse_wiki_date(s string) time.Time {
 		return time.unix(0)
 	}
 	return time.parse('${year}-${month:02}-${day:02} 00:00:00') or { time.unix(0) }
+}
+
+// parse the infobox grade ("S", "s+", "C", ...); none when absent/unknown
+fn parse_grade(s string) ?models.Grade {
+	mut g := clean_markup(s).to_lower().trim_space()
+	g = g.replace('+', '_plus').replace(' ', '_')
+	return models.Grade.from(g) or { none }
 }
 
 // best-effort structured effect metadata: first single number -> value;
@@ -451,6 +482,11 @@ fn main() {
 				continue
 			}
 			mut title := clean_markup(infobox_field(block, 'title'))
+			// malformed infoboxes can pile gallery content onto the title; keep
+			// only the first line
+			if nl := title.index('\n') {
+				title = title[..nl].trim_space()
+			}
 			if title == '' {
 				title = page.title
 			}
@@ -460,6 +496,7 @@ fn main() {
 			mut pt := ParsedTreasure{
 				title:        title
 				image:        image
+				grade:        parse_grade(infobox_field(block, 'grade'))
 				release_date: date
 				description:  desc
 				is_evolved:   is_evo
@@ -484,6 +521,7 @@ fn main() {
 		for bi, blessed in states {
 			tr := models.Treasure{
 				image:        if pt.image == '' { none } else { pt.image }
+				grade:        if g := pt.grade { int(g) } else { none }
 				is_evolved:   pt.is_evolved
 				is_blessed:   blessed
 				release_date: pt.release_date

@@ -7,9 +7,24 @@ import database
 
 pub fn (wapp &App) treasures(mut ctx Context) veb.Result {
 	ctx.set_translate_title("treasures_page_title")
-	treasures := database.select_treasures(wapp.db, ctx.lang) or {
+	page_size := 30
+
+	mut page := (ctx.query['page'] or { '1' }).int()
+	if page < 1 {
+		page = 1
+	}
+	treasures := database.select_treasures(wapp.db, ctx.lang, page_size, (page - 1) * page_size) or {
 		println(err)
 		return ctx.html("Something went wrong")
+	}
+	next_page := if treasures.len == page_size {
+		page + 1
+	} else {
+		0
+	}
+
+	if ctx.is_htmx_request() && !ctx.is_boosted_request() {
+		return $veb.html("./templates/partials/treasure_cards.html")
 	}
 
 	return $veb.html()

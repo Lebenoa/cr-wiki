@@ -214,6 +214,7 @@ pub struct TreasureView {
 	pub:
 		treasure_id int
 		image ?string
+		grade ?models.Grade
 		is_evolved bool
 		is_blessed bool
 		release_date time.Time
@@ -247,6 +248,15 @@ pub struct EffectView {
 		effect_id     int
 		name          string
 		value_display string
+}
+
+// treasure_grade maps the stored int enum value back to the Grade enum;
+// none when the treasure has no wiki grade (renders without a badge).
+fn treasure_grade(g ?int) ?models.Grade {
+	if v := g {
+		return models.Grade.from(v) or { none }
+	}
+	return none
 }
 
 // format_effect_value renders the extracted numeric value with its unit
@@ -300,6 +310,7 @@ pub fn get_treasure(conn sqlite.DB, lang string, id int) !TreasureView {
 	return TreasureView{
 		treasure_id: treasure.treasure_id or { 0 }
 		image: treasure.image
+		grade: treasure_grade(treasure.grade)
 		is_evolved: treasure.is_evolved
 		is_blessed: treasure.is_blessed
 		release_date: treasure.release_date
@@ -367,11 +378,9 @@ pub fn get_treasure_effects(conn sqlite.DB, lang string, id int) ![]EffectView {
 	return result
 }
 
-pub fn select_treasures(conn sqlite.DB, lang string) ![]TreasureView {
+pub fn select_treasures(conn sqlite.DB, lang string, limit int, offset int) ![]TreasureView {
 	treasures := sql conn {
 		select from models.Treasure
-		order by release_date desc
-		limit 30
 	}!
 
 	if treasures.len == 0 {
@@ -403,6 +412,7 @@ pub fn select_treasures(conn sqlite.DB, lang string) ![]TreasureView {
 			result << TreasureView{
 				treasure_id: treasure.treasure_id or { 0 }
 				image: treasure.image
+				grade: treasure_grade(treasure.grade)
 				is_evolved: treasure.is_evolved
 				is_blessed: treasure.is_blessed
 				release_date: treasure.release_date
@@ -415,6 +425,16 @@ pub fn select_treasures(conn sqlite.DB, lang string) ![]TreasureView {
 
 	result.sort_with_compare(compare_treasures)
 
+	// paginate after the in-memory sort (newest first, name tie-break)
+	if offset >= result.len {
+		return []
+	}
+	if offset > 0 {
+		result = result[offset..]
+	}
+	if result.len > limit {
+		result = result[..limit]
+	}
 	return result
 }
 

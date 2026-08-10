@@ -3029,6 +3029,7 @@
   {
    "treasure_id": 1,
    "image": null,
+   "grade": null,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "2015-10-23T00:00:00Z"
@@ -3036,6 +3037,7 @@
   {
    "treasure_id": 2,
    "image": "Star_Jelly_from_Glitter_Ball.png",
+   "grade": 4,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -3043,6 +3045,7 @@
   {
    "treasure_id": 3,
    "image": "A_Page_from_Book_of_Wizdom.png",
+   "grade": 4,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -3050,6 +3053,7 @@
   {
    "treasure_id": 4,
    "image": "Spotlight Vanilla Bulb.png",
+   "grade": 4,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -3057,6 +3061,7 @@
   {
    "treasure_id": 5,
    "image": "Hefty Slice of Roll Cake.png",
+   "grade": 4,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -3064,6 +3069,7 @@
   {
    "treasure_id": 6,
    "image": "Fresh_Lemon_Segment.png",
+   "grade": 4,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -3071,6 +3077,7 @@
   {
    "treasure_id": 7,
    "image": "Purple_Candle_Wax.png",
+   "grade": 4,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "2014-10-20T00:00:00Z"
@@ -3078,6 +3085,7 @@
   {
    "treasure_id": 8,
    "image": "Coin Scale plate.png",
+   "grade": 4,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "2014-11-14T00:00:00Z"
@@ -3085,6 +3093,7 @@
   {
    "treasure_id": 9,
    "image": "Jelly_Scale_plate.png",
+   "grade": 4,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "2014-11-14T00:00:00Z"
@@ -3092,6 +3101,7 @@
   {
    "treasure_id": 10,
    "image": "Wooden Barrel Tap.png",
+   "grade": 4,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "2014-11-28T00:00:00Z"
@@ -3099,6 +3109,7 @@
   {
    "treasure_id": 11,
    "image": "Pink Candy Wrapping.png",
+   "grade": 4,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "2015-02-13T00:00:00Z"
@@ -3106,6 +3117,7 @@
   {
    "treasure_id": 12,
    "image": "Book_of_Action_Secrets.png",
+   "grade": 4,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -3113,6 +3125,7 @@
   {
    "treasure_id": 13,
    "image": "1000 Year Old Red Ginseng.png",
+   "grade": 4,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -3120,6 +3133,7 @@
   {
    "treasure_id": 14,
    "image": "Mining_Dynamite.png",
+   "grade": 4,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -3127,6 +3141,7 @@
   {
    "treasure_id": 15,
    "image": "500_Year_Old_Ginseng_Root.png",
+   "grade": 4,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -3134,6 +3149,7 @@
   {
    "treasure_id": 16,
    "image": "Bouncy Rainbow Rice Cake.png",
+   "grade": 4,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -3141,6 +3157,7 @@
   {
    "treasure_id": 17,
    "image": "Sour_Note_Jelly.png",
+   "grade": 4,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -3148,6 +3165,7 @@
   {
    "treasure_id": 18,
    "image": "Antique Magic Pot.png",
+   "grade": 4,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -3155,6 +3173,7 @@
   {
    "treasure_id": 19,
    "image": "Flame_Bat_Camping_Lantern.png",
+   "grade": 4,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -3162,6 +3181,7 @@
   {
    "treasure_id": 20,
    "image": "MoonRock.png",
+   "grade": 4,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -3169,6 +3189,7 @@
   {
    "treasure_id": 21,
    "image": "Ultra Power Rainbow Ginseng.png",
+   "grade": 4,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -3176,6 +3197,7 @@
   {
    "treasure_id": 22,
    "image": "Caramel Chocolate Energy Bar.png",
+   "grade": 4,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -3183,6 +3205,7 @@
   {
    "treasure_id": 23,
    "image": "Frozen Cracker.png",
+   "grade": 4,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -3190,6 +3213,7 @@
   {
    "treasure_id": 24,
    "image": "RockyHotdog.png",
+   "grade": 4,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -3197,6 +3221,7 @@
   {
    "treasure_id": 25,
    "image": "Temptation9Perfume.png",
+   "grade": 4,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -3204,6 +3229,7 @@
   {
    "treasure_id": 26,
    "image": "Finally_Discovered_Wild_Ginseng.png",
+   "grade": 4,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -3211,6 +3237,7 @@
   {
    "treasure_id": 27,
    "image": "Glossy_Pink_Lipstick.png",
+   "grade": null,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -3218,6 +3245,7 @@
   {
    "treasure_id": 28,
    "image": "Limited Edition Cookie Comics.png",
+   "grade": 4,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -3225,6 +3253,7 @@
   {
    "treasure_id": 29,
    "image": "Cookiebox 720 Controller.png",
+   "grade": 4,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "2014-01-23T00:00:00Z"
@@ -3232,6 +3261,7 @@
   {
    "treasure_id": 30,
    "image": "Heavenly_Sweet_Donuts.png",
+   "grade": 4,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -3239,6 +3269,7 @@
   {
    "treasure_id": 31,
    "image": "Simply_Satisfying_Rice_Ball.png",
+   "grade": 4,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -3246,6 +3277,7 @@
   {
    "treasure_id": 32,
    "image": "Magnetobuff Energy Drink.png",
+   "grade": 4,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -3253,6 +3285,7 @@
   {
    "treasure_id": 33,
    "image": "Honey-dipped_String_Cheese.png",
+   "grade": 4,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -3260,6 +3293,7 @@
   {
    "treasure_id": 34,
    "image": "Pick-Me-Up_Wasabi_Lip_Balm.png",
+   "grade": 4,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -3267,6 +3301,7 @@
   {
    "treasure_id": 35,
    "image": "Limited_Edition_Colorful_Star_Jelly_Pendant.png",
+   "grade": 4,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -3274,6 +3309,7 @@
   {
    "treasure_id": 36,
    "image": "Chocolate Covered Workbook.png",
+   "grade": 4,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -3281,6 +3317,7 @@
   {
    "treasure_id": 37,
    "image": "Magnetic Rainbow Drink.png",
+   "grade": 4,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -3288,6 +3325,7 @@
   {
    "treasure_id": 38,
    "image": "Cookie_Energy_Drink.png",
+   "grade": 4,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -3295,6 +3333,7 @@
   {
    "treasure_id": 39,
    "image": "Wonder Donut.png",
+   "grade": 4,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "2014-10-30T00:00:00Z"
@@ -3302,6 +3341,7 @@
   {
    "treasure_id": 40,
    "image": "Golden Wreath.png",
+   "grade": 4,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "2014-10-30T00:00:00Z"
@@ -3309,6 +3349,7 @@
   {
    "treasure_id": 41,
    "image": "Choccy Russian Doll.png",
+   "grade": 4,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "2014-10-30T00:00:00Z"
@@ -3316,6 +3357,7 @@
   {
    "treasure_id": 42,
    "image": "Magnetic_Helmet.png",
+   "grade": 4,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "2014-11-28T00:00:00Z"
@@ -3323,6 +3365,7 @@
   {
    "treasure_id": 43,
    "image": "212px-Medi Cat.png",
+   "grade": 4,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "2014-11-28T00:00:00Z"
@@ -3330,6 +3373,7 @@
   {
    "treasure_id": 44,
    "image": "Red_Hot_Chili_Soda.png",
+   "grade": 4,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "2014-11-28T00:00:00Z"
@@ -3337,6 +3381,7 @@
   {
    "treasure_id": 45,
    "image": "Yellow Bear Jelly Roll Cake.png",
+   "grade": 4,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "2015-04-24T00:00:00Z"
@@ -3344,6 +3389,7 @@
   {
    "treasure_id": 46,
    "image": "Soda Flavored Ice Pop.png",
+   "grade": 4,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "2014-12-29T00:00:00Z"
@@ -3351,6 +3397,7 @@
   {
    "treasure_id": 47,
    "image": "Sweet Pretzel Donut.png",
+   "grade": 4,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -3358,6 +3405,7 @@
   {
    "treasure_id": 48,
    "image": "Simply Superb Star Brooch.png",
+   "grade": 4,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -3365,6 +3413,7 @@
   {
    "treasure_id": 49,
    "image": "Creamy Monster Muffin.png",
+   "grade": 4,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -3372,6 +3421,7 @@
   {
    "treasure_id": 50,
    "image": "Drenched Drink.png",
+   "grade": 4,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -3379,6 +3429,7 @@
   {
    "treasure_id": 51,
    "image": "Pink Bear Jelly Party Hat.png",
+   "grade": 4,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "2015-02-13T00:00:00Z"
@@ -3386,6 +3437,7 @@
   {
    "treasure_id": 52,
    "image": "Spotted Cow Protein Drink.png",
+   "grade": 4,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "2015-02-27T00:00:00Z"
@@ -3393,6 +3445,7 @@
   {
    "treasure_id": 53,
    "image": "Fluffy Kiwi Bread.png",
+   "grade": 4,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "2015-02-27T00:00:00Z"
@@ -3400,6 +3453,7 @@
   {
    "treasure_id": 54,
    "image": "Delicious Peanut Butter Sandwich.png",
+   "grade": 4,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "2015-02-27T00:00:00Z"
@@ -3407,6 +3461,7 @@
   {
    "treasure_id": 55,
    "image": "Candy Roller Skates.png",
+   "grade": 4,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "2015-04-24T00:00:00Z"
@@ -3414,6 +3469,7 @@
   {
    "treasure_id": 56,
    "image": "Golden Energy Drink.png",
+   "grade": 4,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "2015-04-24T00:00:00Z"
@@ -3421,6 +3477,7 @@
   {
    "treasure_id": 57,
    "image": "Tip of the Ice Popsicle.png",
+   "grade": 4,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "2015-05-15T00:00:00Z"
@@ -3428,6 +3485,7 @@
   {
    "treasure_id": 58,
    "image": "Crescent Moonlight Mood Cocktail.png",
+   "grade": 4,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "2015-05-15T00:00:00Z"
@@ -3435,6 +3493,7 @@
   {
    "treasure_id": 59,
    "image": "Sweet Nightsky Crepe.png",
+   "grade": 4,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "2015-05-15T00:00:00Z"
@@ -3442,6 +3501,7 @@
   {
    "treasure_id": 60,
    "image": "Flaming Red Jellyco.png",
+   "grade": 4,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "2015-05-15T00:00:00Z"
@@ -3449,6 +3509,7 @@
   {
    "treasure_id": 61,
    "image": "Prosperity Bracelet of Earth.png",
+   "grade": 4,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "2015-06-30T00:00:00Z"
@@ -3456,6 +3517,7 @@
   {
    "treasure_id": 62,
    "image": "Protection Ring of Fire.png",
+   "grade": 4,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "2015-06-30T00:00:00Z"
@@ -3463,6 +3525,7 @@
   {
    "treasure_id": 63,
    "image": "Galloping Earring of Wind.png",
+   "grade": 4,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "2015-06-30T00:00:00Z"
@@ -3470,6 +3533,7 @@
   {
    "treasure_id": 64,
    "image": "Compass Eternally Pointing to Coin Island.png",
+   "grade": 4,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "2014-12-18T00:00:00Z"
@@ -3477,6 +3541,7 @@
   {
    "treasure_id": 65,
    "image": "Restoration Pendant of Water.png",
+   "grade": 4,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "2015-06-30T00:00:00Z"
@@ -3484,6 +3549,7 @@
   {
    "treasure_id": 66,
    "image": "Exhilarating AAA Battery Baton.png",
+   "grade": 4,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "2015-08-07T00:00:00Z"
@@ -3491,6 +3557,7 @@
   {
    "treasure_id": 67,
    "image": "Flavorful Butter Croissant.png",
+   "grade": 4,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "2015-08-07T00:00:00Z"
@@ -3498,6 +3565,7 @@
   {
    "treasure_id": 68,
    "image": "Colorful Mini Gumball Missile.png",
+   "grade": 4,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "2015-08-07T00:00:00Z"
@@ -3505,6 +3573,7 @@
   {
    "treasure_id": 69,
    "image": "5g Ankle Weights for Amateurs.png",
+   "grade": 4,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "2015-08-07T00:00:00Z"
@@ -3512,6 +3581,7 @@
   {
    "treasure_id": 70,
    "image": "Shiny Golden Nunchaku.png",
+   "grade": 4,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "2015-11-27T00:00:00Z"
@@ -3519,6 +3589,7 @@
   {
    "treasure_id": 71,
    "image": "Jelly Pogo Stick.png",
+   "grade": 4,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "2015-11-27T00:00:00Z"
@@ -3526,6 +3597,7 @@
   {
    "treasure_id": 72,
    "image": "Pink Cherry Blossom Cotton Candy.png",
+   "grade": 4,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "2015-11-27T00:00:00Z"
@@ -3533,6 +3605,7 @@
   {
    "treasure_id": 73,
    "image": "Sweet Jujube Flower Rice Cake.png",
+   "grade": 4,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "2015-11-27T00:00:00Z"
@@ -3540,6 +3613,7 @@
   {
    "treasure_id": 74,
    "image": "Icy Creamy Popsicle.png",
+   "grade": 4,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "2015-12-11T00:00:00Z"
@@ -3547,6 +3621,7 @@
   {
    "treasure_id": 75,
    "image": "Sparkling Water Drink.png",
+   "grade": 4,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "2015-12-11T00:00:00Z"
@@ -3554,6 +3629,7 @@
   {
    "treasure_id": 76,
    "image": "Icy Glass Slippers.png",
+   "grade": 4,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "2015-12-11T00:00:00Z"
@@ -3561,6 +3637,7 @@
   {
    "treasure_id": 77,
    "image": "Bamboo Scented Sticky Rice.png",
+   "grade": 4,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "2015-12-11T00:00:00Z"
@@ -3568,6 +3645,7 @@
   {
    "treasure_id": 78,
    "image": "Orange-Lime Smoothie.png",
+   "grade": 4,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "2016-09-09T00:00:00Z"
@@ -3575,6 +3653,7 @@
   {
    "treasure_id": 79,
    "image": "Sweet Chocolate Eclair Baton.png",
+   "grade": 4,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "2016-09-09T00:00:00Z"
@@ -3582,6 +3661,7 @@
   {
    "treasure_id": 80,
    "image": "Springy Pink Jelly Shoes.png",
+   "grade": 4,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "2016-09-09T00:00:00Z"
@@ -3589,6 +3669,7 @@
   {
    "treasure_id": 81,
    "image": "Big crystal.png",
+   "grade": 4,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -3596,6 +3677,7 @@
   {
    "treasure_id": 82,
    "image": "Rare Sapphire Brooch.png",
+   "grade": 4,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -3603,6 +3685,7 @@
   {
    "treasure_id": 83,
    "image": "Pink Bear Jelly Prototype.png",
+   "grade": 4,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -3610,6 +3693,7 @@
   {
    "treasure_id": 84,
    "image": "Magic Sword Handle.png",
+   "grade": 4,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -3617,6 +3701,7 @@
   {
    "treasure_id": 85,
    "image": "Rare Crystal Clam.png",
+   "grade": 4,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -3624,6 +3709,7 @@
   {
    "treasure_id": 86,
    "image": "Ultimate Racing Firecracker Set.png",
+   "grade": 4,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "2015-02-27T00:00:00Z"
@@ -3631,6 +3717,7 @@
   {
    "treasure_id": 87,
    "image": "Translucent Crystal Alarm Clock.png",
+   "grade": 4,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "2015-04-24T00:00:00Z"
@@ -3638,6 +3725,7 @@
   {
    "treasure_id": 88,
    "image": "Giant Crystal Ring.png",
+   "grade": 4,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "2015-05-15T00:00:00Z"
@@ -3645,6 +3733,7 @@
   {
    "treasure_id": 89,
    "image": "Icy Starlight Bellflower.png",
+   "grade": 4,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -3652,6 +3741,7 @@
   {
    "treasure_id": 90,
    "image": "Embraced Sacred Crystal Sword.png",
+   "grade": 4,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "2016-09-09T00:00:00Z"
@@ -3659,6 +3749,7 @@
   {
    "treasure_id": 91,
    "image": "Lv.50 Golden Club Trophy.png",
+   "grade": 4,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -3666,6 +3757,7 @@
   {
    "treasure_id": 92,
    "image": "A Seed of Flowecopter.png",
+   "grade": null,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -3673,6 +3765,7 @@
   {
    "treasure_id": 93,
    "image": "Wishing Star Dust.png",
+   "grade": 3,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -3680,6 +3773,7 @@
   {
    "treasure_id": 94,
    "image": "A_Piece_of_Brain_Gum.png",
+   "grade": 3,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -3687,6 +3781,7 @@
   {
    "treasure_id": 95,
    "image": "Lv.60 Legends Club Trophy.png",
+   "grade": 4,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "2014-12-18T00:00:00Z"
@@ -3694,6 +3789,7 @@
   {
    "treasure_id": 96,
    "image": "Lv.70 Club Trophy.png",
+   "grade": 4,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "2015-05-15T00:00:00Z"
@@ -3701,6 +3797,7 @@
   {
    "treasure_id": 97,
    "image": "Lv.80 Premium Club Trophy.png",
+   "grade": 4,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "2016-10-14T00:00:00Z"
@@ -3708,6 +3805,7 @@
   {
    "treasure_id": 98,
    "image": "Lv.90 VIP Club Trophy.png",
+   "grade": 4,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "2016-10-14T00:00:00Z"
@@ -3715,6 +3813,7 @@
   {
    "treasure_id": 99,
    "image": "Lv.100 Dream-Come-True Club Trophy.png",
+   "grade": 4,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "2016-10-14T00:00:00Z"
@@ -3722,6 +3821,7 @@
   {
    "treasure_id": 100,
    "image": "Cony Balloon Cony Jelly.png",
+   "grade": 3,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -3729,6 +3829,7 @@
   {
    "treasure_id": 101,
    "image": "Brown_Balloon_Brown_Jelly.png",
+   "grade": 3,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -3736,6 +3837,7 @@
   {
    "treasure_id": 102,
    "image": "Mystery_Meteor_Chip.png",
+   "grade": 3,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -3743,6 +3845,7 @@
   {
    "treasure_id": 103,
    "image": "Purple_Ribbon_Bow.png",
+   "grade": 3,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -3750,6 +3853,7 @@
   {
    "treasure_id": 104,
    "image": "Champion_Chess_Piece.png",
+   "grade": 3,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "2014-01-23T00:00:00Z"
@@ -3757,6 +3861,7 @@
   {
    "treasure_id": 105,
    "image": "Homemade_Strawberry_Jam.png",
+   "grade": 3,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -3764,6 +3869,7 @@
   {
    "treasure_id": 106,
    "image": "Dark_Choco_Hair_Gel.png",
+   "grade": 3,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -3771,6 +3877,7 @@
   {
    "treasure_id": 107,
    "image": "Waterproof_Superwatch.png",
+   "grade": 3,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "2014-01-23T00:00:00Z"
@@ -3778,6 +3885,7 @@
   {
    "treasure_id": 108,
    "image": "Cookie_Juice_Bottle_Cap.png",
+   "grade": 3,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -3785,6 +3893,7 @@
   {
    "treasure_id": 109,
    "image": "Crystal Pearl Earring.png",
+   "grade": 3,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -3792,6 +3901,7 @@
   {
    "treasure_id": 110,
    "image": "Flaring_Slice_of_Sun.png",
+   "grade": 3,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -3799,6 +3909,7 @@
   {
    "treasure_id": 111,
    "image": "Macaron_Burger.png",
+   "grade": 3,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -3806,6 +3917,7 @@
   {
    "treasure_id": 112,
    "image": "Mythical_Soft_Hammer.png",
+   "grade": 3,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -3813,6 +3925,7 @@
   {
    "treasure_id": 113,
    "image": "Energizing_Ice_Cream.png",
+   "grade": 3,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -3820,6 +3933,7 @@
   {
    "treasure_id": 114,
    "image": "Always_Hungry_Piggy_Bank.png",
+   "grade": 3,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -3827,6 +3941,7 @@
   {
    "treasure_id": 115,
    "image": "Speedy Lollipop.png",
+   "grade": 3,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -3834,6 +3949,7 @@
   {
    "treasure_id": 116,
    "image": "A_Piece_of_Rare_Garlic.png",
+   "grade": 2,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -3841,6 +3957,7 @@
   {
    "treasure_id": 117,
    "image": "Surreal Clock.png",
+   "grade": 3,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -3848,6 +3965,7 @@
   {
    "treasure_id": 118,
    "image": "Star_Lamp.png",
+   "grade": 3,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -3855,6 +3973,7 @@
   {
    "treasure_id": 119,
    "image": "Choco Dip Sticks.png",
+   "grade": 3,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -3862,6 +3981,7 @@
   {
    "treasure_id": 120,
    "image": "Pumped_up_Pork_Pie.png",
+   "grade": 3,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -3869,6 +3989,7 @@
   {
    "treasure_id": 121,
    "image": "Cookie First-Aid Kit.png",
+   "grade": 2,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -3876,6 +3997,7 @@
   {
    "treasure_id": 122,
    "image": "Deep_Sea_Murex_Shell.png",
+   "grade": 2,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -3883,6 +4005,7 @@
   {
    "treasure_id": 123,
    "image": "Empowering Vitamin C Pill.png",
+   "grade": 2,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -3890,6 +4013,7 @@
   {
    "treasure_id": 124,
    "image": "Smiling Carnival Mask.png",
+   "grade": 2,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -3897,6 +4021,7 @@
   {
    "treasure_id": 125,
    "image": "Famous ChocoChip Cookie.png",
+   "grade": 2,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "2014-01-23T00:00:00Z"
@@ -3904,6 +4029,7 @@
   {
    "treasure_id": 126,
    "image": "Lucky 5-Leaf Clover.png",
+   "grade": 2,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -3911,6 +4037,7 @@
   {
    "treasure_id": 127,
    "image": "Grilled Sausage.png",
+   "grade": 2,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -3918,6 +4045,7 @@
   {
    "treasure_id": 128,
    "image": "Roof Whirligig.png",
+   "grade": 2,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -3925,6 +4053,7 @@
   {
    "treasure_id": 129,
    "image": "First_Harvest_Olive_Oil.png",
+   "grade": 2,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -3932,6 +4061,7 @@
   {
    "treasure_id": 130,
    "image": "Kitty Paw Marshmallow.png",
+   "grade": 2,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -3939,6 +4069,7 @@
   {
    "treasure_id": 131,
    "image": "Hair Shine Gel.png",
+   "grade": 2,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -3946,6 +4077,7 @@
   {
    "treasure_id": 132,
    "image": "Nutritious Cranberry.png",
+   "grade": 2,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -3953,6 +4085,7 @@
   {
    "treasure_id": 133,
    "image": "10mil.png",
+   "grade": 3,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "2014-03-11T00:00:00Z"
@@ -3960,6 +4093,7 @@
   {
    "treasure_id": 134,
    "image": "Roasted Fresh Peanut.png",
+   "grade": 1,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -3967,6 +4101,7 @@
   {
    "treasure_id": 135,
    "image": "Healthy_Carrot_Snack.png",
+   "grade": 1,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -3974,6 +4109,7 @@
   {
    "treasure_id": 136,
    "image": "White_Sugar_Cube.png",
+   "grade": 1,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -3981,6 +4117,7 @@
   {
    "treasure_id": 137,
    "image": "Just Baked Cracker.png",
+   "grade": 1,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -3988,6 +4125,7 @@
   {
    "treasure_id": 138,
    "image": "Big_Head_Mushroom.png",
+   "grade": 1,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -3995,6 +4133,7 @@
   {
    "treasure_id": 139,
    "image": "IQ_enhancing_Walnut.png",
+   "grade": 1,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -4002,6 +4141,7 @@
   {
    "treasure_id": 140,
    "image": "Pitted_Pickled_Olives.png",
+   "grade": 1,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -4009,6 +4149,7 @@
   {
    "treasure_id": 141,
    "image": "Organic Wheat Flour.png",
+   "grade": 1,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -4016,6 +4157,7 @@
   {
    "treasure_id": 142,
    "image": "Always Cute Acorn.png",
+   "grade": 1,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -4023,6 +4165,7 @@
   {
    "treasure_id": 143,
    "image": "Sweet Red Cherry.png",
+   "grade": 1,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "2014-01-23T00:00:00Z"
@@ -4030,6 +4173,7 @@
   {
    "treasure_id": 144,
    "image": "Mud Arrowhead.png",
+   "grade": 1,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -4037,6 +4181,7 @@
   {
    "treasure_id": 145,
    "image": "Happy_Rainbow_Drop.png",
+   "grade": 3,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -4044,6 +4189,7 @@
   {
    "treasure_id": 146,
    "image": null,
+   "grade": null,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "2014-11-06T00:00:00Z"
@@ -4051,6 +4197,7 @@
   {
    "treasure_id": 147,
    "image": "4LayerCake.png",
+   "grade": 4,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "2014-11-14T00:00:00Z"
@@ -4058,6 +4205,7 @@
   {
    "treasure_id": 148,
    "image": "LineGame_2nd_Anniversary_Coin.png",
+   "grade": 3,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "2014-11-17T00:00:00Z"
@@ -4065,6 +4213,7 @@
   {
    "treasure_id": 149,
    "image": "Mini Diamond Cookie Cutter.png",
+   "grade": 3,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "2015-04-01T00:00:00Z"
@@ -4072,6 +4221,7 @@
   {
    "treasure_id": 150,
    "image": "Dreaming Choco Donut of Life.png",
+   "grade": 3,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "2015-05-15T00:00:00Z"
@@ -4079,6 +4229,7 @@
   {
    "treasure_id": 151,
    "image": "Summer_2015_Crystal_Bingsoo.png",
+   "grade": 4,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -4086,6 +4237,7 @@
   {
    "treasure_id": 152,
    "image": "50 Million Commemorative Firecrackers.png",
+   "grade": 4,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "2015-07-31T00:00:00Z"
@@ -4093,6 +4245,7 @@
   {
    "treasure_id": 153,
    "image": "Mysterious Moon Lantern.png",
+   "grade": 3,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "2015-10-01T00:00:00Z"
@@ -4100,6 +4253,7 @@
   {
    "treasure_id": 154,
    "image": "2015 Halloween Party Group Photo.png",
+   "grade": 3,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "2015-10-30T00:00:00Z"
@@ -4107,6 +4261,7 @@
   {
    "treasure_id": 155,
    "image": "Hot Hot Sweet Potato.png",
+   "grade": 3,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "2015-11-27T00:00:00Z"
@@ -4114,6 +4269,7 @@
   {
    "treasure_id": 156,
    "image": "Ultimate Snowman Soldier Figurine.png",
+   "grade": 4,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "2016-01-08T00:00:00Z"
@@ -4121,6 +4277,7 @@
   {
    "treasure_id": 157,
    "image": "Somewhat Strange Handmade Magic Chocolate.png",
+   "grade": 3,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "2016-02-12T00:00:00Z"
@@ -4128,6 +4285,7 @@
   {
    "treasure_id": 158,
    "image": "Lavish Golden Lace Parasol.png",
+   "grade": 3,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -4135,6 +4293,7 @@
   {
    "treasure_id": 159,
    "image": "Dreaming Strawberry Choco Donut.png",
+   "grade": 3,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -4142,6 +4301,7 @@
   {
    "treasure_id": 160,
    "image": "Squirrel_Snowball.png",
+   "grade": 4,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "2015-12-21T00:00:00Z"
@@ -4149,6 +4309,7 @@
   {
    "treasure_id": 161,
    "image": "Jellyco the Red Nosed Reindeer.png",
+   "grade": 4,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "2015-12-21T00:00:00Z"
@@ -4156,6 +4317,7 @@
   {
    "treasure_id": 162,
    "image": "Splendid Jelly Light Bulbs.png",
+   "grade": 4,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "2015-12-21T00:00:00Z"
@@ -4163,6 +4325,7 @@
   {
    "treasure_id": 163,
    "image": "Coin_Poinsettia_Christmas_Decoration.png",
+   "grade": 4,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "2015-12-21T00:00:00Z"
@@ -4170,6 +4333,7 @@
   {
    "treasure_id": 164,
    "image": "Christmas Supper Ham Cuisine.png",
+   "grade": 4,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -4177,6 +4341,7 @@
   {
    "treasure_id": 165,
    "image": "Rich Rich Chocolate Gold Coin.png",
+   "grade": 3,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -4184,6 +4349,7 @@
   {
    "treasure_id": 166,
    "image": "Mega Giant Rice Puff Cannon.png",
+   "grade": 3,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "2016-04-01T00:00:00Z"
@@ -4191,6 +4357,7 @@
   {
    "treasure_id": 167,
    "image": "Carafe of Happiness.png",
+   "grade": 3,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "2016-04-08T00:00:00Z"
@@ -4198,6 +4365,7 @@
   {
    "treasure_id": 168,
    "image": "Cherry Choco Ice Cream Cake.png",
+   "grade": 3,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "2016-05-13T00:00:00Z"
@@ -4205,6 +4373,7 @@
   {
    "treasure_id": 169,
    "image": "Trusty Golden Compass.png",
+   "grade": 3,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "2016-06-10T00:00:00Z"
@@ -4212,6 +4381,7 @@
   {
    "treasure_id": 170,
    "image": "Savory Banana Choco Dessert.png",
+   "grade": 3,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -4219,6 +4389,7 @@
   {
    "treasure_id": 171,
    "image": "Shiny Halloween Pumpkin Cupcake.png",
+   "grade": 4,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "2016-10-28T00:00:00Z"
@@ -4226,6 +4397,7 @@
   {
    "treasure_id": 172,
    "image": "60M Celebration! Miraculous Magic Powder Hourglass.png",
+   "grade": 4,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "2016-09-23T00:00:00Z"
@@ -4233,6 +4405,7 @@
   {
    "treasure_id": 173,
    "image": "0M Certificate.png",
+   "grade": 4,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "2014-12-18T00:00:00Z"
@@ -4240,6 +4413,7 @@
   {
    "treasure_id": 174,
    "image": "1M Certificate.png",
+   "grade": null,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "2014-12-18T00:00:00Z"
@@ -4247,6 +4421,7 @@
   {
    "treasure_id": 175,
    "image": "2M Certificate.png",
+   "grade": null,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "2014-12-18T00:00:00Z"
@@ -4254,6 +4429,7 @@
   {
    "treasure_id": 176,
    "image": "3M Certificate.png",
+   "grade": null,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "2014-12-18T00:00:00Z"
@@ -4261,6 +4437,7 @@
   {
    "treasure_id": 177,
    "image": "4M Certificate.png",
+   "grade": null,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "2014-12-18T00:00:00Z"
@@ -4268,6 +4445,7 @@
   {
    "treasure_id": 178,
    "image": "5M Certificate.png",
+   "grade": null,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "2014-12-18T00:00:00Z"
@@ -4275,6 +4453,7 @@
   {
    "treasure_id": 179,
    "image": "6M Certificate.png",
+   "grade": null,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "2014-12-18T00:00:00Z"
@@ -4282,6 +4461,7 @@
   {
    "treasure_id": 180,
    "image": "7M Certificate.png",
+   "grade": null,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "2014-12-18T00:00:00Z"
@@ -4289,6 +4469,7 @@
   {
    "treasure_id": 181,
    "image": "8M Certificate.png",
+   "grade": null,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "2014-12-18T00:00:00Z"
@@ -4296,6 +4477,7 @@
   {
    "treasure_id": 182,
    "image": "9M Certificate.png",
+   "grade": null,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "2014-12-18T00:00:00Z"
@@ -4303,6 +4485,7 @@
   {
    "treasure_id": 183,
    "image": "10M Certificate.png",
+   "grade": null,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "2014-12-18T00:00:00Z"
@@ -4310,6 +4493,7 @@
   {
    "treasure_id": 184,
    "image": "20M Certificate.png",
+   "grade": null,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "2014-12-18T00:00:00Z"
@@ -4317,6 +4501,7 @@
   {
    "treasure_id": 185,
    "image": "30M Certificate.png",
+   "grade": null,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "2014-12-18T00:00:00Z"
@@ -4324,6 +4509,7 @@
   {
    "treasure_id": 186,
    "image": "40M Certificate.png",
+   "grade": null,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "2014-12-18T00:00:00Z"
@@ -4331,6 +4517,7 @@
   {
    "treasure_id": 187,
    "image": "50M Certificate.png",
+   "grade": null,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "2014-12-18T00:00:00Z"
@@ -4338,6 +4525,7 @@
   {
    "treasure_id": 188,
    "image": "60M Certificate.png",
+   "grade": null,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "2014-12-18T00:00:00Z"
@@ -4345,6 +4533,7 @@
   {
    "treasure_id": 189,
    "image": "70M Certificate.png",
+   "grade": null,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "2014-12-18T00:00:00Z"
@@ -4352,6 +4541,7 @@
   {
    "treasure_id": 190,
    "image": "80M Certificate.png",
+   "grade": null,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "2014-12-18T00:00:00Z"
@@ -4359,6 +4549,7 @@
   {
    "treasure_id": 191,
    "image": "90M Certificate.png",
+   "grade": null,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "2014-12-18T00:00:00Z"
@@ -4366,6 +4557,7 @@
   {
    "treasure_id": 192,
    "image": "Glistening Green Leaves.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "2014-12-18T00:00:00Z"
@@ -4373,6 +4565,7 @@
   {
    "treasure_id": 193,
    "image": "Glistening Green Leaves.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "2014-12-18T00:00:00Z"
@@ -4380,6 +4573,7 @@
   {
    "treasure_id": 194,
    "image": "Steel_Spike_Horse_Hoof.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -4387,6 +4581,7 @@
   {
    "treasure_id": 195,
    "image": "Steel_Spike_Horse_Hoof.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "1970-01-01T00:00:00Z"
@@ -4394,6 +4589,7 @@
   {
    "treasure_id": 196,
    "image": "Burn Some Rubber Tire.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -4401,6 +4597,7 @@
   {
    "treasure_id": 197,
    "image": "Burn Some Rubber Tire.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "1970-01-01T00:00:00Z"
@@ -4408,6 +4605,7 @@
   {
    "treasure_id": 198,
    "image": "Full Power Protein Powder.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -4415,6 +4613,7 @@
   {
    "treasure_id": 199,
    "image": "Full Power Protein Powder.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "1970-01-01T00:00:00Z"
@@ -4422,6 +4621,7 @@
   {
    "treasure_id": 200,
    "image": "Skärmavbild 2015-01-25 kl. 10.46.05.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "2014-12-18T00:00:00Z"
@@ -4429,6 +4629,7 @@
   {
    "treasure_id": 201,
    "image": "Skärmavbild 2015-01-25 kl. 10.46.05.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "2014-12-18T00:00:00Z"
@@ -4436,6 +4637,7 @@
   {
    "treasure_id": 202,
    "image": "Glossy Blueberry Sherbet.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -4443,6 +4645,7 @@
   {
    "treasure_id": 203,
    "image": "Glossy Blueberry Sherbet.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "1970-01-01T00:00:00Z"
@@ -4450,6 +4653,7 @@
   {
    "treasure_id": 204,
    "image": "Extrmely Dense Mint Candy.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -4457,6 +4661,7 @@
   {
    "treasure_id": 205,
    "image": "Extrmely Dense Mint Candy.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "1970-01-01T00:00:00Z"
@@ -4464,6 +4669,7 @@
   {
    "treasure_id": 206,
    "image": "Skärmavbild 2015-01-28 kl. 17.33.47.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -4471,6 +4677,7 @@
   {
    "treasure_id": 207,
    "image": "Skärmavbild 2015-01-28 kl. 17.33.47.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "1970-01-01T00:00:00Z"
@@ -4478,6 +4685,7 @@
   {
    "treasure_id": 208,
    "image": "Water-proof Chocolate Camouflage.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "2014-12-18T00:00:00Z"
@@ -4485,6 +4693,7 @@
   {
    "treasure_id": 209,
    "image": "Water-proof Chocolate Camouflage.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "2014-12-18T00:00:00Z"
@@ -4492,6 +4701,7 @@
   {
    "treasure_id": 210,
    "image": "Pointy Tailed Compass.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "2014-12-18T00:00:00Z"
@@ -4499,6 +4709,7 @@
   {
    "treasure_id": 211,
    "image": "Pointy Tailed Compass.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "2014-12-18T00:00:00Z"
@@ -4506,6 +4717,7 @@
   {
    "treasure_id": 212,
    "image": "Medium Rare Red Pudding.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -4513,6 +4725,7 @@
   {
    "treasure_id": 213,
    "image": "Medium Rare Red Pudding.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "1970-01-01T00:00:00Z"
@@ -4520,6 +4733,7 @@
   {
    "treasure_id": 214,
    "image": "Gold Dust Ice Cream Sundae.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -4527,6 +4741,7 @@
   {
    "treasure_id": 215,
    "image": "Gold Dust Ice Cream Sundae.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "1970-01-01T00:00:00Z"
@@ -4534,6 +4749,7 @@
   {
    "treasure_id": 216,
    "image": "Premium Green Tea Roll Cake.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "2014-12-18T00:00:00Z"
@@ -4541,6 +4757,7 @@
   {
    "treasure_id": 217,
    "image": "Premium Green Tea Roll Cake.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "2014-12-18T00:00:00Z"
@@ -4548,6 +4765,7 @@
   {
    "treasure_id": 218,
    "image": "Guitar Pick Pendant.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "2014-12-18T00:00:00Z"
@@ -4555,6 +4773,7 @@
   {
    "treasure_id": 219,
    "image": "Guitar Pick Pendant.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "2014-12-18T00:00:00Z"
@@ -4562,6 +4781,7 @@
   {
    "treasure_id": 220,
    "image": "Heartfelt Birthday Cake.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -4569,6 +4789,7 @@
   {
    "treasure_id": 221,
    "image": "Heartfelt Birthday Cake.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "1970-01-01T00:00:00Z"
@@ -4576,6 +4797,7 @@
   {
    "treasure_id": 222,
    "image": "Bling Bling Christmas Tree.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -4583,6 +4805,7 @@
   {
    "treasure_id": 223,
    "image": "Bling Bling Christmas Tree.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "1970-01-01T00:00:00Z"
@@ -4590,6 +4813,7 @@
   {
    "treasure_id": 224,
    "image": "Colorful Snowflake Shaved Ice.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "2014-12-29T00:00:00Z"
@@ -4597,6 +4821,7 @@
   {
    "treasure_id": 225,
    "image": "Colorful Snowflake Shaved Ice.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "2014-12-29T00:00:00Z"
@@ -4604,6 +4829,7 @@
   {
    "treasure_id": 226,
    "image": "100M Certificate.png",
+   "grade": null,
    "is_evolved": false,
    "is_blessed": false,
    "release_date": "2014-12-18T00:00:00Z"
@@ -4611,6 +4837,7 @@
   {
    "treasure_id": 227,
    "image": "Indestructible Holy Grail.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -4618,6 +4845,7 @@
   {
    "treasure_id": 228,
    "image": "Indestructible Holy Grail.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "1970-01-01T00:00:00Z"
@@ -4625,6 +4853,7 @@
   {
    "treasure_id": 229,
    "image": "Atomic Model of a Grape Brooch.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -4632,6 +4861,7 @@
   {
    "treasure_id": 230,
    "image": "Atomic Model of a Grape Brooch.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "1970-01-01T00:00:00Z"
@@ -4639,6 +4869,7 @@
   {
    "treasure_id": 231,
    "image": "Devilish Revival Grape Juice.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "2014-12-18T00:00:00Z"
@@ -4646,6 +4877,7 @@
   {
    "treasure_id": 232,
    "image": "Devilish Revival Grape Juice.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "2014-12-18T00:00:00Z"
@@ -4653,6 +4885,7 @@
   {
    "treasure_id": 233,
    "image": "Special Chocolate for the Elderly.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "2015-02-13T00:00:00Z"
@@ -4660,6 +4893,7 @@
   {
    "treasure_id": 234,
    "image": "Special Chocolate for the Elderly.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "2015-02-13T00:00:00Z"
@@ -4667,6 +4901,7 @@
   {
    "treasure_id": 235,
    "image": "Fruit Embellished Headband.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "2015-03-13T00:00:00Z"
@@ -4674,6 +4909,7 @@
   {
    "treasure_id": 236,
    "image": "Fruit Embellished Headband.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "2015-03-13T00:00:00Z"
@@ -4681,6 +4917,7 @@
   {
    "treasure_id": 237,
    "image": "Gold Coin Filled Violin Case.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "2015-08-14T00:00:00Z"
@@ -4688,6 +4925,7 @@
   {
    "treasure_id": 238,
    "image": "Gold Coin Filled Violin Case.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "2015-08-14T00:00:00Z"
@@ -4695,6 +4933,7 @@
   {
    "treasure_id": 239,
    "image": "Golden Syrup Filled Piece of Cake.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "2015-08-14T00:00:00Z"
@@ -4702,6 +4941,7 @@
   {
    "treasure_id": 240,
    "image": "Golden Syrup Filled Piece of Cake.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "2015-08-14T00:00:00Z"
@@ -4709,6 +4949,7 @@
   {
    "treasure_id": 241,
    "image": "Melt-in-your-mouth Cinnamon Rope.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "2015-08-14T00:00:00Z"
@@ -4716,6 +4957,7 @@
   {
    "treasure_id": 242,
    "image": "Melt-in-your-mouth Cinnamon Rope.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "2015-08-14T00:00:00Z"
@@ -4723,6 +4965,7 @@
   {
    "treasure_id": 243,
    "image": "Gentle Wave Flavored Soda Cocktail.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "2015-08-14T00:00:00Z"
@@ -4730,6 +4973,7 @@
   {
    "treasure_id": 244,
    "image": "Gentle Wave Flavored Soda Cocktail.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "2015-08-14T00:00:00Z"
@@ -4737,6 +4981,7 @@
   {
    "treasure_id": 245,
    "image": "Syrup Dripping Blackberry Hat.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "2015-08-14T00:00:00Z"
@@ -4744,6 +4989,7 @@
   {
    "treasure_id": 246,
    "image": "Syrup Dripping Blackberry Hat.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "2015-08-14T00:00:00Z"
@@ -4751,6 +4997,7 @@
   {
    "treasure_id": 247,
    "image": "Vroom Vroom Gold Kiwi Key.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "2015-08-14T00:00:00Z"
@@ -4758,6 +5005,7 @@
   {
    "treasure_id": 248,
    "image": "Vroom Vroom Gold Kiwi Key.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "2015-08-14T00:00:00Z"
@@ -4765,6 +5013,7 @@
   {
    "treasure_id": 249,
    "image": "Tricolor Hairband of Iron-will.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "2015-08-14T00:00:00Z"
@@ -4772,6 +5021,7 @@
   {
    "treasure_id": 250,
    "image": "Tricolor Hairband of Iron-will.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "2015-08-14T00:00:00Z"
@@ -4779,6 +5029,7 @@
   {
    "treasure_id": 251,
    "image": "Strengthened Precious Necklace.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "2015-08-14T00:00:00Z"
@@ -4786,6 +5037,7 @@
   {
    "treasure_id": 252,
    "image": "Strengthened Precious Necklace.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "2015-08-14T00:00:00Z"
@@ -4793,6 +5045,7 @@
   {
    "treasure_id": 253,
    "image": "Choco Dipped Marshmallow.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "2015-08-14T00:00:00Z"
@@ -4800,6 +5053,7 @@
   {
    "treasure_id": 254,
    "image": "Choco Dipped Marshmallow.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "2015-08-14T00:00:00Z"
@@ -4807,6 +5061,7 @@
   {
    "treasure_id": 255,
    "image": "Sugar Powder Cream Sandwich.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "2015-12-31T00:00:00Z"
@@ -4814,6 +5069,7 @@
   {
    "treasure_id": 256,
    "image": "Sugar Powder Cream Sandwich.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "2015-12-31T00:00:00Z"
@@ -4821,6 +5077,7 @@
   {
    "treasure_id": 257,
    "image": "About-to-Blow Time Bomb.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "2015-12-31T00:00:00Z"
@@ -4828,6 +5085,7 @@
   {
    "treasure_id": 258,
    "image": "About-to-Blow Time Bomb.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "2015-12-31T00:00:00Z"
@@ -4835,6 +5093,7 @@
   {
    "treasure_id": 259,
    "image": "Lemon Zest Smartphone.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "2015-12-31T00:00:00Z"
@@ -4842,6 +5101,7 @@
   {
    "treasure_id": 260,
    "image": "Lemon Zest Smartphone.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "2015-12-31T00:00:00Z"
@@ -4849,6 +5109,7 @@
   {
    "treasure_id": 261,
    "image": "Frozen Solid Orange Drink.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -4856,6 +5117,7 @@
   {
    "treasure_id": 262,
    "image": "Frozen Solid Orange Drink.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "1970-01-01T00:00:00Z"
@@ -4863,6 +5125,7 @@
   {
    "treasure_id": 263,
    "image": "Lime Scented Eye Makeup Remover.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "2015-12-31T00:00:00Z"
@@ -4870,6 +5133,7 @@
   {
    "treasure_id": 264,
    "image": "Lime Scented Eye Makeup Remover.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "2015-12-31T00:00:00Z"
@@ -4877,6 +5141,7 @@
   {
    "treasure_id": 265,
    "image": "Colorful Candy Shell.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "2015-02-13T00:00:00Z"
@@ -4884,6 +5149,7 @@
   {
    "treasure_id": 266,
    "image": "Colorful Candy Shell.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "2015-02-13T00:00:00Z"
@@ -4891,6 +5157,7 @@
   {
    "treasure_id": 267,
    "image": "Bling Bling Tiny Accessor.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -4898,6 +5165,7 @@
   {
    "treasure_id": 268,
    "image": "Bling Bling Tiny Accessor.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "1970-01-01T00:00:00Z"
@@ -4905,6 +5173,7 @@
   {
    "treasure_id": 269,
    "image": "Gold Auspicious Cloth.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "2014-12-18T00:00:00Z"
@@ -4912,6 +5181,7 @@
   {
    "treasure_id": 270,
    "image": "Gold Auspicious Cloth.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "2014-12-18T00:00:00Z"
@@ -4919,6 +5189,7 @@
   {
    "treasure_id": 271,
    "image": "Ice Sculpture with the Starry Sky.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -4926,6 +5197,7 @@
   {
    "treasure_id": 272,
    "image": "Ice Sculpture with the Starry Sky.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "1970-01-01T00:00:00Z"
@@ -4933,6 +5205,7 @@
   {
    "treasure_id": 273,
    "image": "Valiant Firecracker Jelly.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "2014-12-18T00:00:00Z"
@@ -4940,6 +5213,7 @@
   {
    "treasure_id": 274,
    "image": "Valiant Firecracker Jelly.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "2014-12-18T00:00:00Z"
@@ -4947,6 +5221,7 @@
   {
    "treasure_id": 275,
    "image": "Random_Colored_Jelly_Scrub.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -4954,6 +5229,7 @@
   {
    "treasure_id": 276,
    "image": "Random_Colored_Jelly_Scrub.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "1970-01-01T00:00:00Z"
@@ -4961,6 +5237,7 @@
   {
    "treasure_id": 277,
    "image": "Cutting Edge Caramel Helmet.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "2014-12-18T00:00:00Z"
@@ -4968,6 +5245,7 @@
   {
    "treasure_id": 278,
    "image": "Cutting Edge Caramel Helmet.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "2014-12-18T00:00:00Z"
@@ -4975,6 +5253,7 @@
   {
    "treasure_id": 279,
    "image": "Red_Glowing_Fox_Heart_Bead.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -4982,6 +5261,7 @@
   {
    "treasure_id": 280,
    "image": "Red_Glowing_Fox_Heart_Bead.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "1970-01-01T00:00:00Z"
@@ -4989,6 +5269,7 @@
   {
    "treasure_id": 281,
    "image": "Smooth_Rainbow_Colored_Petals.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -4996,6 +5277,7 @@
   {
    "treasure_id": 282,
    "image": "Smooth_Rainbow_Colored_Petals.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "1970-01-01T00:00:00Z"
@@ -5003,6 +5285,7 @@
   {
    "treasure_id": 283,
    "image": "Super Amber Vanilla UV Light.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -5010,6 +5293,7 @@
   {
    "treasure_id": 284,
    "image": "Super Amber Vanilla UV Light.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "1970-01-01T00:00:00Z"
@@ -5017,6 +5301,7 @@
   {
    "treasure_id": 285,
    "image": "Burning_Fireworks_Balloon_Gum.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -5024,6 +5309,7 @@
   {
    "treasure_id": 286,
    "image": "Burning_Fireworks_Balloon_Gum.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "1970-01-01T00:00:00Z"
@@ -5031,6 +5317,7 @@
   {
    "treasure_id": 287,
    "image": "2.5_Slices_of_Extravagant_Christmas_Cake.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -5038,6 +5325,7 @@
   {
    "treasure_id": 288,
    "image": "2.5_Slices_of_Extravagant_Christmas_Cake.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "1970-01-01T00:00:00Z"
@@ -5045,6 +5333,7 @@
   {
    "treasure_id": 289,
    "image": "Lilac_Wax_Rose.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -5052,6 +5341,7 @@
   {
    "treasure_id": 290,
    "image": "Lilac_Wax_Rose.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "1970-01-01T00:00:00Z"
@@ -5059,6 +5349,7 @@
   {
    "treasure_id": 291,
    "image": "Colorful_Pistachio_Shell.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -5066,6 +5357,7 @@
   {
    "treasure_id": 292,
    "image": "Colorful_Pistachio_Shell.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "1970-01-01T00:00:00Z"
@@ -5073,6 +5365,7 @@
   {
    "treasure_id": 293,
    "image": "Plate_Overflowing_with_Jellies.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -5080,6 +5373,7 @@
   {
    "treasure_id": 294,
    "image": "Plate_Overflowing_with_Jellies.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "1970-01-01T00:00:00Z"
@@ -5087,6 +5381,7 @@
   {
    "treasure_id": 295,
    "image": "Plate Overflowing with Coins.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -5094,6 +5389,7 @@
   {
    "treasure_id": 296,
    "image": "Plate Overflowing with Coins.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "1970-01-01T00:00:00Z"
@@ -5101,6 +5397,7 @@
   {
    "treasure_id": 297,
    "image": "Young Girly Apple.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "2015-03-13T00:00:00Z"
@@ -5108,6 +5405,7 @@
   {
    "treasure_id": 298,
    "image": "Young Girly Apple.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "2015-03-13T00:00:00Z"
@@ -5115,6 +5413,7 @@
   {
    "treasure_id": 299,
    "image": "How_to_Become_a_Celebrity_Book.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -5122,6 +5421,7 @@
   {
    "treasure_id": 300,
    "image": "How_to_Become_a_Celebrity_Book.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "1970-01-01T00:00:00Z"
@@ -5129,6 +5429,7 @@
   {
    "treasure_id": 301,
    "image": "Super Cheesy Hairball.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "2015-08-14T00:00:00Z"
@@ -5136,6 +5437,7 @@
   {
    "treasure_id": 302,
    "image": "Super Cheesy Hairball.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "2015-08-14T00:00:00Z"
@@ -5143,6 +5445,7 @@
   {
    "treasure_id": 303,
    "image": "Yellow Seed Sprouts.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "2015-08-14T00:00:00Z"
@@ -5150,6 +5453,7 @@
   {
    "treasure_id": 304,
    "image": "Yellow Seed Sprouts.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "2015-08-14T00:00:00Z"
@@ -5157,6 +5461,7 @@
   {
    "treasure_id": 305,
    "image": "Rainbow Heart Keychain.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "2015-08-14T00:00:00Z"
@@ -5164,6 +5469,7 @@
   {
    "treasure_id": 306,
    "image": "Rainbow Heart Keychain.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "2015-08-14T00:00:00Z"
@@ -5171,6 +5477,7 @@
   {
    "treasure_id": 307,
    "image": "Savory Sunflower Seeds.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "2015-08-14T00:00:00Z"
@@ -5178,6 +5485,7 @@
   {
    "treasure_id": 308,
    "image": "Savory Sunflower Seeds.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "2015-08-14T00:00:00Z"
@@ -5185,6 +5493,7 @@
   {
    "treasure_id": 309,
    "image": "Sweet and Sour Lemonade.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "2015-08-14T00:00:00Z"
@@ -5192,6 +5501,7 @@
   {
    "treasure_id": 310,
    "image": "Sweet and Sour Lemonade.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "2015-08-14T00:00:00Z"
@@ -5199,6 +5509,7 @@
   {
    "treasure_id": 311,
    "image": "Two Pieces of Delightful Kiwi.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "2015-08-14T00:00:00Z"
@@ -5206,6 +5517,7 @@
   {
    "treasure_id": 312,
    "image": "Two Pieces of Delightful Kiwi.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "2015-08-14T00:00:00Z"
@@ -5213,6 +5525,7 @@
   {
    "treasure_id": 313,
    "image": "The Perfect Scheduling Kit.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "2015-08-14T00:00:00Z"
@@ -5220,6 +5533,7 @@
   {
    "treasure_id": 314,
    "image": "The Perfect Scheduling Kit.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "2015-08-14T00:00:00Z"
@@ -5227,6 +5541,7 @@
   {
    "treasure_id": 315,
    "image": "Fancy Lace Ribbon.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "2015-08-14T00:00:00Z"
@@ -5234,6 +5549,7 @@
   {
    "treasure_id": 316,
    "image": "Fancy Lace Ribbon.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "2015-08-14T00:00:00Z"
@@ -5241,6 +5557,7 @@
   {
    "treasure_id": 317,
    "image": "Bling Bling Top Hat.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "2015-08-14T00:00:00Z"
@@ -5248,6 +5565,7 @@
   {
    "treasure_id": 318,
    "image": "Bling Bling Top Hat.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "2015-08-14T00:00:00Z"
@@ -5255,6 +5573,7 @@
   {
    "treasure_id": 319,
    "image": "Majestic Acorn Hat.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "2015-12-31T00:00:00Z"
@@ -5262,6 +5581,7 @@
   {
    "treasure_id": 320,
    "image": "Majestic Acorn Hat.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "2015-12-31T00:00:00Z"
@@ -5269,6 +5589,7 @@
   {
    "treasure_id": 321,
    "image": "Full Bloom Floral Teaspoon.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "2015-12-31T00:00:00Z"
@@ -5276,6 +5597,7 @@
   {
    "treasure_id": 322,
    "image": "Full Bloom Floral Teaspoon.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "2015-12-31T00:00:00Z"
@@ -5283,6 +5605,7 @@
   {
    "treasure_id": 323,
    "image": "Neon Lime Life Jacket.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "2015-12-31T00:00:00Z"
@@ -5290,6 +5613,7 @@
   {
    "treasure_id": 324,
    "image": "Neon Lime Life Jacket.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "2015-12-31T00:00:00Z"
@@ -5297,6 +5621,7 @@
   {
    "treasure_id": 325,
    "image": "Radiant Illumination Lemon LED.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -5304,6 +5629,7 @@
   {
    "treasure_id": 326,
    "image": "Radiant Illumination Lemon LED.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "1970-01-01T00:00:00Z"
@@ -5311,6 +5637,7 @@
   {
    "treasure_id": 327,
    "image": "Orange Peel Treadmill.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -5318,6 +5645,7 @@
   {
    "treasure_id": 328,
    "image": "Orange Peel Treadmill.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "1970-01-01T00:00:00Z"
@@ -5325,6 +5653,7 @@
   {
    "treasure_id": 329,
    "image": "Honey_Dipped_Gingseng_Root.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "2014-12-18T00:00:00Z"
@@ -5332,6 +5661,7 @@
   {
    "treasure_id": 330,
    "image": "Honey_Dipped_Gingseng_Root.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "2014-12-18T00:00:00Z"
@@ -5339,6 +5669,7 @@
   {
    "treasure_id": 331,
    "image": "500 Year Old Premium Ginseng Root Liquor.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -5346,6 +5677,7 @@
   {
    "treasure_id": 332,
    "image": "500 Year Old Premium Ginseng Root Liquor.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "1970-01-01T00:00:00Z"
@@ -5353,6 +5685,7 @@
   {
    "treasure_id": 333,
    "image": "Pitch_Black_Sword.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -5360,6 +5693,7 @@
   {
    "treasure_id": 334,
    "image": "Pitch_Black_Sword.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "1970-01-01T00:00:00Z"
@@ -5367,6 +5701,7 @@
   {
    "treasure_id": 335,
    "image": "Honey_Strawberry_Ice_Cream.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -5374,6 +5709,7 @@
   {
    "treasure_id": 336,
    "image": "Honey_Strawberry_Ice_Cream.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "1970-01-01T00:00:00Z"
@@ -5381,6 +5717,7 @@
   {
    "treasure_id": 337,
    "image": "Mythical_Stone_Hammer.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -5388,6 +5725,7 @@
   {
    "treasure_id": 338,
    "image": "Mythical_Stone_Hammer.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "1970-01-01T00:00:00Z"
@@ -5395,6 +5733,7 @@
   {
    "treasure_id": 339,
    "image": "Lustrous_Choco_Hair_Wax.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -5402,6 +5741,7 @@
   {
    "treasure_id": 340,
    "image": "Lustrous_Choco_Hair_Wax.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "1970-01-01T00:00:00Z"
@@ -5409,6 +5749,7 @@
   {
    "treasure_id": 341,
    "image": "Silver Cookie Juice Cap.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -5416,6 +5757,7 @@
   {
    "treasure_id": 342,
    "image": "Silver Cookie Juice Cap.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "1970-01-01T00:00:00Z"
@@ -5423,6 +5765,7 @@
   {
    "treasure_id": 343,
    "image": "Famous Honey Cookie.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -5430,6 +5773,7 @@
   {
    "treasure_id": 344,
    "image": "Famous Honey Cookie.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "1970-01-01T00:00:00Z"
@@ -5437,6 +5781,7 @@
   {
    "treasure_id": 345,
    "image": "Cookie_Box_1440_Controller.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -5444,6 +5789,7 @@
   {
    "treasure_id": 346,
    "image": "Cookie_Box_1440_Controller.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "1970-01-01T00:00:00Z"
@@ -5451,6 +5797,7 @@
   {
    "treasure_id": 347,
    "image": "Rose Life Ice Cream.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -5458,6 +5805,7 @@
   {
    "treasure_id": 348,
    "image": "Rose Life Ice Cream.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "1970-01-01T00:00:00Z"
@@ -5465,6 +5813,7 @@
   {
    "treasure_id": 349,
    "image": "Femme_Fatale_Perfume_No._10.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "2014-12-18T00:00:00Z"
@@ -5472,6 +5821,7 @@
   {
    "treasure_id": 350,
    "image": "Femme_Fatale_Perfume_No._10.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "2014-12-18T00:00:00Z"
@@ -5479,6 +5829,7 @@
   {
    "treasure_id": 351,
    "image": "Speed_of_Light_Glass_Horse.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -5486,6 +5837,7 @@
   {
    "treasure_id": 352,
    "image": "Speed_of_Light_Glass_Horse.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "1970-01-01T00:00:00Z"
@@ -5493,6 +5845,7 @@
   {
    "treasure_id": 353,
    "image": "Extraordinary Limited Edition Cookie Comics.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -5500,6 +5853,7 @@
   {
    "treasure_id": 354,
    "image": "Extraordinary Limited Edition Cookie Comics.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "1970-01-01T00:00:00Z"
@@ -5507,6 +5861,7 @@
   {
    "treasure_id": 355,
    "image": "Shiny_Platinum_Pearl_Ring_Size_7.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -5514,6 +5869,7 @@
   {
    "treasure_id": 356,
    "image": "Shiny_Platinum_Pearl_Ring_Size_7.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "1970-01-01T00:00:00Z"
@@ -5521,6 +5877,7 @@
   {
    "treasure_id": 357,
    "image": "1000 Year Old Premium Ginseng Root Liquor.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -5528,6 +5885,7 @@
   {
    "treasure_id": 358,
    "image": "1000 Year Old Premium Ginseng Root Liquor.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "1970-01-01T00:00:00Z"
@@ -5535,6 +5893,7 @@
   {
    "treasure_id": 359,
    "image": "Unrivalled Hot Dog.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -5542,6 +5901,7 @@
   {
    "treasure_id": 360,
    "image": "Unrivalled Hot Dog.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "1970-01-01T00:00:00Z"
@@ -5549,6 +5909,7 @@
   {
    "treasure_id": 361,
    "image": "Brain_Freeze_Iced_CHoco_Biscuit.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -5556,6 +5917,7 @@
   {
    "treasure_id": 362,
    "image": "Brain_Freeze_Iced_CHoco_Biscuit.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "1970-01-01T00:00:00Z"
@@ -5563,6 +5925,7 @@
   {
    "treasure_id": 363,
    "image": "Very Hot Lava Choco Bar.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "2014-12-18T00:00:00Z"
@@ -5570,6 +5933,7 @@
   {
    "treasure_id": 364,
    "image": "Very Hot Lava Choco Bar.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "2014-12-18T00:00:00Z"
@@ -5577,6 +5941,7 @@
   {
    "treasure_id": 365,
    "image": "Muscle Blast Energy Drink.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "2014-12-18T00:00:00Z"
@@ -5584,6 +5949,7 @@
   {
    "treasure_id": 366,
    "image": "Muscle Blast Energy Drink.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "2014-12-18T00:00:00Z"
@@ -5591,6 +5957,7 @@
   {
    "treasure_id": 367,
    "image": "Sweet_Revival_Donut.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -5598,6 +5965,7 @@
   {
    "treasure_id": 368,
    "image": "Sweet_Revival_Donut.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "1970-01-01T00:00:00Z"
@@ -5605,6 +5973,7 @@
   {
    "treasure_id": 369,
    "image": "Magnetic Energy Recovery Drink.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -5612,6 +5981,7 @@
   {
    "treasure_id": 370,
    "image": "Magnetic Energy Recovery Drink.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "1970-01-01T00:00:00Z"
@@ -5619,6 +5989,7 @@
   {
    "treasure_id": 371,
    "image": "Specially made Flaming Cocktail.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -5626,6 +5997,7 @@
   {
    "treasure_id": 372,
    "image": "Specially made Flaming Cocktail.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "1970-01-01T00:00:00Z"
@@ -5633,6 +6005,7 @@
   {
    "treasure_id": 373,
    "image": "Chocolate Hardcover Workbook.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "2014-12-18T00:00:00Z"
@@ -5640,6 +6013,7 @@
   {
    "treasure_id": 374,
    "image": "Chocolate Hardcover Workbook.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "2014-12-18T00:00:00Z"
@@ -5647,6 +6021,7 @@
   {
    "treasure_id": 375,
    "image": "Eye-watering_Wasabi_Balm.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -5654,6 +6029,7 @@
   {
    "treasure_id": 376,
    "image": "Eye-watering_Wasabi_Balm.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "1970-01-01T00:00:00Z"
@@ -5661,6 +6037,7 @@
   {
    "treasure_id": 377,
    "image": "Sneakers for the Perfect Sprint.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "2014-12-18T00:00:00Z"
@@ -5668,6 +6045,7 @@
   {
    "treasure_id": 378,
    "image": "Sneakers for the Perfect Sprint.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "2014-12-18T00:00:00Z"
@@ -5675,6 +6053,7 @@
   {
    "treasure_id": 379,
    "image": "Ultra_Power_Double_Rainbow_Carrot.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "2014-12-18T00:00:00Z"
@@ -5682,6 +6061,7 @@
   {
    "treasure_id": 380,
    "image": "Ultra_Power_Double_Rainbow_Carrot.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "2014-12-18T00:00:00Z"
@@ -5689,6 +6069,7 @@
   {
    "treasure_id": 381,
    "image": "Golden_Magic_Flower_Pot.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "2014-12-18T00:00:00Z"
@@ -5696,6 +6077,7 @@
   {
    "treasure_id": 382,
    "image": "Golden_Magic_Flower_Pot.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "2014-12-18T00:00:00Z"
@@ -5703,6 +6085,7 @@
   {
    "treasure_id": 383,
    "image": "Yellow Bear Jelly Choco Cake.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "2015-04-24T00:00:00Z"
@@ -5710,6 +6093,7 @@
   {
    "treasure_id": 384,
    "image": "Yellow Bear Jelly Choco Cake.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "2015-04-24T00:00:00Z"
@@ -5717,6 +6101,7 @@
   {
    "treasure_id": 385,
    "image": "Limited_Edition_Colorful_Jelly_Crown.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -5724,6 +6109,7 @@
   {
    "treasure_id": 386,
    "image": "Limited_Edition_Colorful_Jelly_Crown.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "1970-01-01T00:00:00Z"
@@ -5731,6 +6117,7 @@
   {
    "treasure_id": 387,
    "image": "Royal Jelly Soft Cream.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -5738,6 +6125,7 @@
   {
    "treasure_id": 388,
    "image": "Royal Jelly Soft Cream.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "1970-01-01T00:00:00Z"
@@ -5745,6 +6133,7 @@
   {
    "treasure_id": 389,
    "image": "Rainbow Black Hole Drink.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "2014-12-18T00:00:00Z"
@@ -5752,6 +6141,7 @@
   {
    "treasure_id": 390,
    "image": "Rainbow Black Hole Drink.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "2014-12-18T00:00:00Z"
@@ -5759,6 +6149,7 @@
   {
    "treasure_id": 391,
    "image": "Darkness_Absorbing_Transparent_Lantern.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "2014-12-18T00:00:00Z"
@@ -5766,6 +6157,7 @@
   {
    "treasure_id": 392,
    "image": "Darkness_Absorbing_Transparent_Lantern.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "2014-12-18T00:00:00Z"
@@ -5773,6 +6165,7 @@
   {
    "treasure_id": 393,
    "image": "Sticky Jazz Jellies.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -5780,6 +6173,7 @@
   {
    "treasure_id": 394,
    "image": "Sticky Jazz Jellies.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "1970-01-01T00:00:00Z"
@@ -5787,6 +6181,7 @@
   {
    "treasure_id": 395,
    "image": "Honey Fondant Kebabs.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -5794,6 +6189,7 @@
   {
    "treasure_id": 396,
    "image": "Honey Fondant Kebabs.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "1970-01-01T00:00:00Z"
@@ -5801,6 +6197,7 @@
   {
    "treasure_id": 397,
    "image": "Stoic Piece of the Moon.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "2014-12-18T00:00:00Z"
@@ -5808,6 +6205,7 @@
   {
    "treasure_id": 398,
    "image": "Stoic Piece of the Moon.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "2014-12-18T00:00:00Z"
@@ -5815,6 +6213,7 @@
   {
    "treasure_id": 399,
    "image": "Strong 8 Colored Rainbow Cake.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "2014-12-18T00:00:00Z"
@@ -5822,6 +6221,7 @@
   {
    "treasure_id": 400,
    "image": "Strong 8 Colored Rainbow Cake.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "2014-12-18T00:00:00Z"
@@ -5829,6 +6229,7 @@
   {
    "treasure_id": 401,
    "image": "Miracle Toy Ambulance.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -5836,6 +6237,7 @@
   {
    "treasure_id": 402,
    "image": "Miracle Toy Ambulance.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "1970-01-01T00:00:00Z"
@@ -5843,6 +6245,7 @@
   {
    "treasure_id": 403,
    "image": "Super_Spicy_Red_Hot_Chili_Drink.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -5850,6 +6253,7 @@
   {
    "treasure_id": 404,
    "image": "Super_Spicy_Red_Hot_Chili_Drink.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "1970-01-01T00:00:00Z"
@@ -5857,6 +6261,7 @@
   {
    "treasure_id": 405,
    "image": "Honey_Dipped_Sweet_Pretzel_Donut.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "2015-01-30T00:00:00Z"
@@ -5864,6 +6269,7 @@
   {
    "treasure_id": 406,
    "image": "Honey_Dipped_Sweet_Pretzel_Donut.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "2015-01-30T00:00:00Z"
@@ -5871,6 +6277,7 @@
   {
    "treasure_id": 407,
    "image": "Mysteriously Magical Star Brooch.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -5878,6 +6285,7 @@
   {
    "treasure_id": 408,
    "image": "Mysteriously Magical Star Brooch.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "1970-01-01T00:00:00Z"
@@ -5885,6 +6293,7 @@
   {
    "treasure_id": 409,
    "image": "Supremely Yummy Monster Muffin.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -5892,6 +6301,7 @@
   {
    "treasure_id": 410,
    "image": "Supremely Yummy Monster Muffin.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "1970-01-01T00:00:00Z"
@@ -5899,6 +6309,7 @@
   {
    "treasure_id": 411,
    "image": "Rich Black Coffee.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "2015-01-30T00:00:00Z"
@@ -5906,6 +6317,7 @@
   {
    "treasure_id": 412,
    "image": "Rich Black Coffee.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "2015-01-30T00:00:00Z"
@@ -5913,6 +6325,7 @@
   {
    "treasure_id": 413,
    "image": "Double Pink Bear Jelly Party Hat.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "2015-02-13T00:00:00Z"
@@ -5920,6 +6333,7 @@
   {
    "treasure_id": 414,
    "image": "Double Pink Bear Jelly Party Hat.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "2015-02-13T00:00:00Z"
@@ -5927,6 +6341,7 @@
   {
    "treasure_id": 415,
    "image": "Flaming High Protein Milk.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "2015-02-27T00:00:00Z"
@@ -5934,6 +6349,7 @@
   {
    "treasure_id": 416,
    "image": "Flaming High Protein Milk.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "2015-02-27T00:00:00Z"
@@ -5941,6 +6357,7 @@
   {
    "treasure_id": 417,
    "image": "Mouth-watering Golden Kiwi Bread.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "2015-02-27T00:00:00Z"
@@ -5948,6 +6365,7 @@
   {
    "treasure_id": 418,
    "image": "Mouth-watering Golden Kiwi Bread.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "2015-02-27T00:00:00Z"
@@ -5955,6 +6373,7 @@
   {
    "treasure_id": 419,
    "image": "Triple Peanut Butter Sandwich.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "2015-02-27T00:00:00Z"
@@ -5962,6 +6381,7 @@
   {
    "treasure_id": 420,
    "image": "Triple Peanut Butter Sandwich.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "2015-02-27T00:00:00Z"
@@ -5969,6 +6389,7 @@
   {
    "treasure_id": 421,
    "image": "Very Wet Drink.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "2015-01-30T00:00:00Z"
@@ -5976,6 +6397,7 @@
   {
    "treasure_id": 422,
    "image": "Very Wet Drink.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "2015-01-30T00:00:00Z"
@@ -5983,6 +6405,7 @@
   {
    "treasure_id": 423,
    "image": "Grand Revival Donut.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -5990,6 +6413,7 @@
   {
    "treasure_id": 424,
    "image": "Grand Revival Donut.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "1970-01-01T00:00:00Z"
@@ -5997,6 +6421,7 @@
   {
    "treasure_id": 425,
    "image": "Stuffed_Elephant_Money_Box.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "2014-12-29T00:00:00Z"
@@ -6004,6 +6429,7 @@
   {
    "treasure_id": 426,
    "image": "Stuffed_Elephant_Money_Box.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "2014-12-29T00:00:00Z"
@@ -6011,6 +6437,7 @@
   {
    "treasure_id": 427,
    "image": "Royal Bear Jelly Saddle.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "2015-04-24T00:00:00Z"
@@ -6018,6 +6445,7 @@
   {
    "treasure_id": 428,
    "image": "Royal Bear Jelly Saddle.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "2015-04-24T00:00:00Z"
@@ -6025,6 +6453,7 @@
   {
    "treasure_id": 429,
    "image": "Candy Inline Skates.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "2015-04-24T00:00:00Z"
@@ -6032,6 +6461,7 @@
   {
    "treasure_id": 430,
    "image": "Candy Inline Skates.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "2015-04-24T00:00:00Z"
@@ -6039,6 +6469,7 @@
   {
    "treasure_id": 431,
    "image": "Gold Lotus Blossom Wisdom Ring.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -6046,6 +6477,7 @@
   {
    "treasure_id": 432,
    "image": "Gold Lotus Blossom Wisdom Ring.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "1970-01-01T00:00:00Z"
@@ -6053,6 +6485,7 @@
   {
    "treasure_id": 433,
    "image": "Soda Flavor Twin Ice Pops.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -6060,6 +6493,7 @@
   {
    "treasure_id": 434,
    "image": "Soda Flavor Twin Ice Pops.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "1970-01-01T00:00:00Z"
@@ -6067,6 +6501,7 @@
   {
    "treasure_id": 435,
    "image": "Doll Lurking with Burning Chocolate.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -6074,6 +6509,7 @@
   {
    "treasure_id": 436,
    "image": "Doll Lurking with Burning Chocolate.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "1970-01-01T00:00:00Z"
@@ -6081,6 +6517,7 @@
   {
    "treasure_id": 437,
    "image": "Titanium Demagnetizing Helmet.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -6088,6 +6525,7 @@
   {
    "treasure_id": 438,
    "image": "Titanium Demagnetizing Helmet.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "1970-01-01T00:00:00Z"
@@ -6095,6 +6533,7 @@
   {
    "treasure_id": 439,
    "image": "Honeymoon_Cocktail_of_Full_Moonlight.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -6102,6 +6541,7 @@
   {
    "treasure_id": 440,
    "image": "Honeymoon_Cocktail_of_Full_Moonlight.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "1970-01-01T00:00:00Z"
@@ -6109,6 +6549,7 @@
   {
    "treasure_id": 441,
    "image": "Extra Topping Nightsky Crepe.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "2015-05-15T00:00:00Z"
@@ -6116,6 +6557,7 @@
   {
    "treasure_id": 442,
    "image": "Extra Topping Nightsky Crepe.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "2015-05-15T00:00:00Z"
@@ -6123,6 +6565,7 @@
   {
    "treasure_id": 443,
    "image": "Fatal_Double_Stick_Icicle.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -6130,6 +6573,7 @@
   {
    "treasure_id": 444,
    "image": "Fatal_Double_Stick_Icicle.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "1970-01-01T00:00:00Z"
@@ -6137,6 +6581,7 @@
   {
    "treasure_id": 445,
    "image": "Burning Heat Infused Jellyco.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "2015-05-15T00:00:00Z"
@@ -6144,6 +6589,7 @@
   {
    "treasure_id": 446,
    "image": "Burning Heat Infused Jellyco.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "2015-05-15T00:00:00Z"
@@ -6151,6 +6597,7 @@
   {
    "treasure_id": 447,
    "image": "Sacred Prosperity Bracelet of Earth.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "2015-06-30T00:00:00Z"
@@ -6158,6 +6605,7 @@
   {
    "treasure_id": 448,
    "image": "Sacred Prosperity Bracelet of Earth.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "2015-06-30T00:00:00Z"
@@ -6165,6 +6613,7 @@
   {
    "treasure_id": 449,
    "image": "Sacred Protection Ring of Fire.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "2015-06-30T00:00:00Z"
@@ -6172,6 +6621,7 @@
   {
    "treasure_id": 450,
    "image": "Sacred Protection Ring of Fire.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "2015-06-30T00:00:00Z"
@@ -6179,6 +6629,7 @@
   {
    "treasure_id": 451,
    "image": "Sacred Galloping Earring of Wind.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "2015-06-30T00:00:00Z"
@@ -6186,6 +6637,7 @@
   {
    "treasure_id": 452,
    "image": "Sacred Galloping Earring of Wind.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "2015-06-30T00:00:00Z"
@@ -6193,6 +6645,7 @@
   {
    "treasure_id": 453,
    "image": "Sacred Restoration Pendant of Water.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "2015-06-30T00:00:00Z"
@@ -6200,6 +6653,7 @@
   {
    "treasure_id": 454,
    "image": "Sacred Restoration Pendant of Water.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "2015-06-30T00:00:00Z"
@@ -6207,6 +6661,7 @@
   {
    "treasure_id": 455,
    "image": "10g Ankle Weights for Experts.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "2015-08-07T00:00:00Z"
@@ -6214,6 +6669,7 @@
   {
    "treasure_id": 456,
    "image": "10g Ankle Weights for Experts.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "2015-08-07T00:00:00Z"
@@ -6221,6 +6677,7 @@
   {
    "treasure_id": 457,
    "image": "Slippery Golden Banana Peel.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "2015-08-07T00:00:00Z"
@@ -6228,6 +6685,7 @@
   {
    "treasure_id": 458,
    "image": "Slippery Golden Banana Peel.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "2015-08-07T00:00:00Z"
@@ -6235,6 +6693,7 @@
   {
    "treasure_id": 459,
    "image": "Mini Gumball Soda Engine Rocket.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "2015-08-07T00:00:00Z"
@@ -6242,6 +6701,7 @@
   {
    "treasure_id": 460,
    "image": "Mini Gumball Soda Engine Rocket.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "2015-08-07T00:00:00Z"
@@ -6249,6 +6709,7 @@
   {
    "treasure_id": 461,
    "image": "Coma Inducing Choco Croissant.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "2015-08-07T00:00:00Z"
@@ -6256,6 +6717,7 @@
   {
    "treasure_id": 462,
    "image": "Coma Inducing Choco Croissant.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "2015-08-07T00:00:00Z"
@@ -6263,6 +6725,7 @@
   {
    "treasure_id": 463,
    "image": "Electrifying C Battery Baton.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "2015-08-07T00:00:00Z"
@@ -6270,6 +6733,7 @@
   {
    "treasure_id": 464,
    "image": "Electrifying C Battery Baton.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "2015-08-07T00:00:00Z"
@@ -6277,6 +6741,7 @@
   {
    "treasure_id": 465,
    "image": "Honey Coated Jujube Flower Rice Cake.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "2015-11-27T00:00:00Z"
@@ -6284,6 +6749,7 @@
   {
    "treasure_id": 466,
    "image": "Honey Coated Jujube Flower Rice Cake.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "2015-11-27T00:00:00Z"
@@ -6291,6 +6757,7 @@
   {
    "treasure_id": 467,
    "image": "Full Bloom Cotton Candy.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "2015-11-27T00:00:00Z"
@@ -6298,6 +6765,7 @@
   {
    "treasure_id": 468,
    "image": "Full Bloom Cotton Candy.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "2015-11-27T00:00:00Z"
@@ -6305,6 +6773,7 @@
   {
    "treasure_id": 469,
    "image": "Jumpy Jelly Bouncy Ride.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "2015-11-27T00:00:00Z"
@@ -6312,6 +6781,7 @@
   {
    "treasure_id": 470,
    "image": "Jumpy Jelly Bouncy Ride.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "2015-11-27T00:00:00Z"
@@ -6319,6 +6789,7 @@
   {
    "treasure_id": 471,
    "image": "Ice Swirl Popsicle.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "2015-12-11T00:00:00Z"
@@ -6326,6 +6797,7 @@
   {
    "treasure_id": 472,
    "image": "Ice Swirl Popsicle.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "2015-12-11T00:00:00Z"
@@ -6333,6 +6805,7 @@
   {
    "treasure_id": 473,
    "image": "Iced Sparkling Water Drink.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "2015-12-11T00:00:00Z"
@@ -6340,6 +6813,7 @@
   {
    "treasure_id": 474,
    "image": "Iced Sparkling Water Drink.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "2015-12-11T00:00:00Z"
@@ -6347,6 +6821,7 @@
   {
    "treasure_id": 475,
    "image": "Deep_Sea_Murex_Shell_Earrings.png",
+   "grade": 3,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "2014-12-18T00:00:00Z"
@@ -6354,6 +6829,7 @@
   {
    "treasure_id": 476,
    "image": "Deep_Sea_Murex_Shell_Earrings.png",
+   "grade": 3,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "2014-12-18T00:00:00Z"
@@ -6361,6 +6837,7 @@
   {
    "treasure_id": 477,
    "image": "Wiggly Zombie Cell.png",
+   "grade": 3,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "2014-12-18T00:00:00Z"
@@ -6368,6 +6845,7 @@
   {
    "treasure_id": 478,
    "image": "Wiggly Zombie Cell.png",
+   "grade": 3,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "2014-12-18T00:00:00Z"
@@ -6375,6 +6853,7 @@
   {
    "treasure_id": 479,
    "image": "Gleaming Choco Ring.png",
+   "grade": 3,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "2014-12-18T00:00:00Z"
@@ -6382,6 +6861,7 @@
   {
    "treasure_id": 480,
    "image": "Gleaming Choco Ring.png",
+   "grade": 3,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "2014-12-18T00:00:00Z"
@@ -6389,6 +6869,7 @@
   {
    "treasure_id": 481,
    "image": "High Calorie Cranberry Cereal.png",
+   "grade": 3,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "2014-12-18T00:00:00Z"
@@ -6396,6 +6877,7 @@
   {
    "treasure_id": 482,
    "image": "High Calorie Cranberry Cereal.png",
+   "grade": 3,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "2014-12-18T00:00:00Z"
@@ -6403,6 +6885,7 @@
   {
    "treasure_id": 483,
    "image": "Clumsy Cylindrical Dies.png",
+   "grade": 3,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "2014-12-18T00:00:00Z"
@@ -6410,6 +6893,7 @@
   {
    "treasure_id": 484,
    "image": "Clumsy Cylindrical Dies.png",
+   "grade": 3,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "2014-12-18T00:00:00Z"
@@ -6417,6 +6901,7 @@
   {
    "treasure_id": 485,
    "image": "Splendidly Shiny Golden Mace.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "2015-11-27T00:00:00Z"
@@ -6424,6 +6909,7 @@
   {
    "treasure_id": 486,
    "image": "Splendidly Shiny Golden Mace.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "2015-11-27T00:00:00Z"
@@ -6431,6 +6917,7 @@
   {
    "treasure_id": 487,
    "image": "Bamboo Scented Five-Grain Rice.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "2015-12-11T00:00:00Z"
@@ -6438,6 +6925,7 @@
   {
    "treasure_id": 488,
    "image": "Bamboo Scented Five-Grain Rice.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "2015-12-11T00:00:00Z"
@@ -6445,6 +6933,7 @@
   {
    "treasure_id": 489,
    "image": "Perfectly Waterproof Icy Glass Boots.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "2015-12-11T00:00:00Z"
@@ -6452,6 +6941,7 @@
   {
    "treasure_id": 490,
    "image": "Perfectly Waterproof Icy Glass Boots.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "2015-12-11T00:00:00Z"
@@ -6459,6 +6949,7 @@
   {
    "treasure_id": 491,
    "image": "Unbeaten Chess Piece.png",
+   "grade": 3,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "2014-12-18T00:00:00Z"
@@ -6466,6 +6957,7 @@
   {
    "treasure_id": 492,
    "image": "Unbeaten Chess Piece.png",
+   "grade": 3,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "2014-12-18T00:00:00Z"
@@ -6473,6 +6965,7 @@
   {
    "treasure_id": 493,
    "image": "Waterproof Deep Sea Watch.png",
+   "grade": 3,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "2014-12-18T00:00:00Z"
@@ -6480,6 +6973,7 @@
   {
    "treasure_id": 494,
    "image": "Waterproof Deep Sea Watch.png",
+   "grade": 3,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "2014-12-18T00:00:00Z"
@@ -6487,6 +6981,7 @@
   {
    "treasure_id": 495,
    "image": "Super Fruity Orange-Lime Smoothie.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "2016-09-09T00:00:00Z"
@@ -6494,6 +6989,7 @@
   {
    "treasure_id": 496,
    "image": "Super Fruity Orange-Lime Smoothie.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "2016-09-09T00:00:00Z"
@@ -6501,6 +6997,7 @@
   {
    "treasure_id": 497,
    "image": "Shiny Double Spring Jelly Shoes.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -6508,6 +7005,7 @@
   {
    "treasure_id": 498,
    "image": "Shiny Double Spring Jelly Shoes.png",
+   "grade": 4,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "1970-01-01T00:00:00Z"
@@ -6515,6 +7013,7 @@
   {
    "treasure_id": 499,
    "image": "Super_Effective_Multivitamin.png",
+   "grade": 2,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "2014-12-18T00:00:00Z"
@@ -6522,6 +7021,7 @@
   {
    "treasure_id": 500,
    "image": "Super_Effective_Multivitamin.png",
+   "grade": 2,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "2014-12-18T00:00:00Z"
@@ -6529,6 +7029,7 @@
   {
    "treasure_id": 501,
    "image": "Full Stomach Piggy Bank.png",
+   "grade": 3,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "2014-12-18T00:00:00Z"
@@ -6536,6 +7037,7 @@
   {
    "treasure_id": 502,
    "image": "Full Stomach Piggy Bank.png",
+   "grade": 3,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "2014-12-18T00:00:00Z"
@@ -6543,6 +7045,7 @@
   {
    "treasure_id": 503,
    "image": "Crispy Syrup Cracker.png",
+   "grade": 3,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "2015-12-18T00:00:00Z"
@@ -6550,6 +7053,7 @@
   {
    "treasure_id": 504,
    "image": "Crispy Syrup Cracker.png",
+   "grade": 3,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "2015-12-18T00:00:00Z"
@@ -6557,6 +7061,7 @@
   {
    "treasure_id": 505,
    "image": "Sweet Strawberry Tart.png",
+   "grade": 2,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "2014-12-18T00:00:00Z"
@@ -6564,6 +7069,7 @@
   {
    "treasure_id": 506,
    "image": "Sweet Strawberry Tart.png",
+   "grade": 2,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "2014-12-18T00:00:00Z"
@@ -6571,6 +7077,7 @@
   {
    "treasure_id": 507,
    "image": "Explosive Lightning.png",
+   "grade": 2,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "2014-12-18T00:00:00Z"
@@ -6578,6 +7085,7 @@
   {
    "treasure_id": 508,
    "image": "Explosive Lightning.png",
+   "grade": 2,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "2014-12-18T00:00:00Z"
@@ -6585,6 +7093,7 @@
   {
    "treasure_id": 509,
    "image": "Olive_Oil_Suncreen.png",
+   "grade": 3,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "2014-12-18T00:00:00Z"
@@ -6592,6 +7101,7 @@
   {
    "treasure_id": 510,
    "image": "Olive_Oil_Suncreen.png",
+   "grade": 3,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "2014-12-18T00:00:00Z"
@@ -6599,6 +7109,7 @@
   {
    "treasure_id": 511,
    "image": "Cream Beard.png",
+   "grade": 2,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "2014-12-18T00:00:00Z"
@@ -6606,6 +7117,7 @@
   {
    "treasure_id": 512,
    "image": "Cream Beard.png",
+   "grade": 2,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "2014-12-18T00:00:00Z"
@@ -6613,6 +7125,7 @@
   {
    "treasure_id": 513,
    "image": "Bouncy Marshmallow Pie.png",
+   "grade": 2,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "2014-12-18T00:00:00Z"
@@ -6620,6 +7133,7 @@
   {
    "treasure_id": 514,
    "image": "Bouncy Marshmallow Pie.png",
+   "grade": 2,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "2014-12-18T00:00:00Z"
@@ -6627,6 +7141,7 @@
   {
    "treasure_id": 515,
    "image": "Face of Arrogance Mask.png",
+   "grade": 2,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "2014-12-18T00:00:00Z"
@@ -6634,6 +7149,7 @@
   {
    "treasure_id": 516,
    "image": "Face of Arrogance Mask.png",
+   "grade": 2,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "2014-12-18T00:00:00Z"
@@ -6641,6 +7157,7 @@
   {
    "treasure_id": 517,
    "image": "5-color Peanut Butter.png",
+   "grade": 3,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "2014-12-18T00:00:00Z"
@@ -6648,6 +7165,7 @@
   {
    "treasure_id": 518,
    "image": "5-color Peanut Butter.png",
+   "grade": 3,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "2014-12-18T00:00:00Z"
@@ -6655,6 +7173,7 @@
   {
    "treasure_id": 519,
    "image": "Buttercream Choco Pancake.png",
+   "grade": 2,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "2014-12-18T00:00:00Z"
@@ -6662,6 +7181,7 @@
   {
    "treasure_id": 520,
    "image": "Buttercream Choco Pancake.png",
+   "grade": 2,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "2014-12-18T00:00:00Z"
@@ -6669,6 +7189,7 @@
   {
    "treasure_id": 521,
    "image": "Scrumptious Piece of Chocolate.png",
+   "grade": 2,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "2014-12-18T00:00:00Z"
@@ -6676,6 +7197,7 @@
   {
    "treasure_id": 522,
    "image": "Scrumptious Piece of Chocolate.png",
+   "grade": 2,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "2014-12-18T00:00:00Z"
@@ -6683,6 +7205,7 @@
   {
    "treasure_id": 523,
    "image": "Flavor Filled Cheese.png",
+   "grade": 2,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "2014-12-18T00:00:00Z"
@@ -6690,6 +7213,7 @@
   {
    "treasure_id": 524,
    "image": "Flavor Filled Cheese.png",
+   "grade": 2,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "2014-12-18T00:00:00Z"
@@ -6697,6 +7221,7 @@
   {
    "treasure_id": 525,
    "image": "Silky Earplug.png",
+   "grade": 2,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "2014-12-18T00:00:00Z"
@@ -6704,6 +7229,7 @@
   {
    "treasure_id": 526,
    "image": "Silky Earplug.png",
+   "grade": 2,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "2014-12-18T00:00:00Z"
@@ -6711,6 +7237,7 @@
   {
    "treasure_id": 527,
    "image": "Peculiar Garlic Peel Sauce.png",
+   "grade": 2,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "2014-12-18T00:00:00Z"
@@ -6718,6 +7245,7 @@
   {
    "treasure_id": 528,
    "image": "Peculiar Garlic Peel Sauce.png",
+   "grade": 2,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "2014-12-18T00:00:00Z"
@@ -6725,6 +7253,7 @@
   {
    "treasure_id": 529,
    "image": "Fluffy Yarn Spinning Machine.png",
+   "grade": 2,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "2014-12-18T00:00:00Z"
@@ -6732,6 +7261,7 @@
   {
    "treasure_id": 530,
    "image": "Fluffy Yarn Spinning Machine.png",
+   "grade": 2,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "2014-12-18T00:00:00Z"
@@ -6739,6 +7269,7 @@
   {
    "treasure_id": 531,
    "image": "Macaroon Hamburger.png",
+   "grade": 3,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -6746,6 +7277,7 @@
   {
    "treasure_id": 532,
    "image": "Macaroon Hamburger.png",
+   "grade": 3,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "1970-01-01T00:00:00Z"
@@ -6753,6 +7285,7 @@
   {
    "treasure_id": 533,
    "image": "Multicolored_Spiky_Candy.png",
+   "grade": 1,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -6760,6 +7293,7 @@
   {
    "treasure_id": 534,
    "image": "Multicolored_Spiky_Candy.png",
+   "grade": 1,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "1970-01-01T00:00:00Z"
@@ -6767,6 +7301,7 @@
   {
    "treasure_id": 535,
    "image": "Sugar Covered Lollipop Shard.png",
+   "grade": 1,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "1970-01-01T00:00:00Z"
@@ -6774,6 +7309,7 @@
   {
    "treasure_id": 536,
    "image": "Sugar Covered Lollipop Shard.png",
+   "grade": 1,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "1970-01-01T00:00:00Z"
@@ -6781,6 +7317,7 @@
   {
    "treasure_id": 537,
    "image": "Sweet Syrupy Cherry.png",
+   "grade": 2,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "2014-12-18T00:00:00Z"
@@ -6788,6 +7325,7 @@
   {
    "treasure_id": 538,
    "image": "Sweet Syrupy Cherry.png",
+   "grade": 2,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "2014-12-18T00:00:00Z"
@@ -6795,6 +7333,7 @@
   {
    "treasure_id": 539,
    "image": "Stretched_Acorn.png",
+   "grade": 1,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "2014-12-18T00:00:00Z"
@@ -6802,6 +7341,7 @@
   {
    "treasure_id": 540,
    "image": "Stretched_Acorn.png",
+   "grade": 1,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "2014-12-18T00:00:00Z"
@@ -6809,6 +7349,7 @@
   {
    "treasure_id": 541,
    "image": "Flawless_Wheat.png",
+   "grade": 1,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "2014-12-18T00:00:00Z"
@@ -6816,6 +7357,7 @@
   {
    "treasure_id": 542,
    "image": "Flawless_Wheat.png",
+   "grade": 1,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "2014-12-18T00:00:00Z"
@@ -6823,6 +7365,7 @@
   {
    "treasure_id": 543,
    "image": "Not_So_Pointy_Thumb_Tack.png",
+   "grade": 1,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "2014-12-18T00:00:00Z"
@@ -6830,6 +7373,7 @@
   {
    "treasure_id": 544,
    "image": "Not_So_Pointy_Thumb_Tack.png",
+   "grade": 1,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "2014-12-18T00:00:00Z"
@@ -6837,6 +7381,7 @@
   {
    "treasure_id": 545,
    "image": "Springy_Cheese_Ball.png",
+   "grade": 1,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "2014-12-18T00:00:00Z"
@@ -6844,6 +7389,7 @@
   {
    "treasure_id": 546,
    "image": "Springy_Cheese_Ball.png",
+   "grade": 1,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "2014-12-18T00:00:00Z"
@@ -6851,6 +7397,7 @@
   {
    "treasure_id": 547,
    "image": "Silver Arrowhead.png",
+   "grade": 2,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "2014-12-18T00:00:00Z"
@@ -6858,6 +7405,7 @@
   {
    "treasure_id": 548,
    "image": "Silver Arrowhead.png",
+   "grade": 2,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "2014-12-18T00:00:00Z"
@@ -6865,6 +7413,7 @@
   {
    "treasure_id": 549,
    "image": "Sugar-packed Organic Flour.png",
+   "grade": 2,
    "is_evolved": true,
    "is_blessed": false,
    "release_date": "2014-12-18T00:00:00Z"
@@ -6872,6 +7421,7 @@
   {
    "treasure_id": 550,
    "image": "Sugar-packed Organic Flour.png",
+   "grade": 2,
    "is_evolved": true,
    "is_blessed": true,
    "release_date": "2014-12-18T00:00:00Z"
@@ -7897,7 +8447,7 @@
    "treasure_translation_id": 146,
    "treasure_id": 146,
    "lang": "en",
-   "name": "Wishing Lotus Flower\n<div align=\"center\"><gallery>\nWishingLotus.png | Before Update\nWishing Lotus Flower_S.png | After Update\n</gallery></div>",
+   "name": "Wishing Lotus Flower",
    "description": ""
   },
   {

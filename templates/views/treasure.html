@@ -19,6 +19,9 @@
         </div>
         <div class="md:col-span-7 flex flex-col items-start gap-4 z-10 p-8">
             <div class="flex flex-wrap gap-3 mb-2 items-center">
+                @if grade := treasure.grade
+                <img src="/img/grades/@{grade}.png" alt="@grade" class="size-12">
+                @endif
                 @if treasure.is_evolved
                 <span
                     class="text-primary font-bold uppercase border border-primary/50 rounded-full px-3 py-1">%evolved</span>
