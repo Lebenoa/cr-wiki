@@ -9,11 +9,15 @@ pub fn (wapp &App) treasures(mut ctx Context) veb.Result {
 	ctx.set_translate_title("treasures_page_title")
 	page_size := 30
 
+	mut tab := ctx.query['tab'] or { 'normal' }
+	if tab != 'normal' && tab != 'evo' {
+		tab = 'normal'
+	}
 	mut page := (ctx.query['page'] or { '1' }).int()
 	if page < 1 {
 		page = 1
 	}
-	treasures := database.select_treasures(wapp.db, ctx.lang, page_size, (page - 1) * page_size) or {
+	treasures := database.select_treasures(wapp.db, ctx.lang, page_size, (page - 1) * page_size, tab == 'evo') or {
 		println(err)
 		return ctx.html("Something went wrong")
 	}
@@ -21,6 +25,18 @@ pub fn (wapp &App) treasures(mut ctx Context) veb.Result {
 		page + 1
 	} else {
 		0
+	}
+
+	pill := 'rounded-full px-4 py-2 font-bold transition-colors'
+	normal_cls := if tab == 'normal' {
+		'${pill} bg-primary text-foreground'
+	} else {
+		'${pill} border-2 border-secondary/50 text-secondary'
+	}
+	evo_cls := if tab == 'evo' {
+		'${pill} bg-primary text-foreground'
+	} else {
+		'${pill} border-2 border-secondary/50 text-secondary'
 	}
 
 	if ctx.is_htmx_request() && !ctx.is_boosted_request() {
@@ -34,6 +50,20 @@ pub fn (wapp &App) treasures(mut ctx Context) veb.Result {
 pub fn (wapp &App) treasure_info(mut ctx Context, id int) veb.Result {
 	treasure := database.get_treasure(wapp.db, ctx.lang, id) or { return ctx.not_found() }
 	effects := database.get_treasure_effects(wapp.db, ctx.lang, id) or { [] }
+	// evolved rows link to their base; base treasures with an evolved form link
+	// to it (the normal-state evolved row)
+	mut base_treasure := ?database.TreasureView(none)
+	if bid := treasure.base_treasure_id {
+		if b := database.get_treasure_base(wapp.db, ctx.lang, bid) {
+			base_treasure = b
+		}
+	}
+	mut evo_treasure := ?database.TreasureView(none)
+	if !treasure.is_evolved {
+		if e := database.get_treasure_evo(wapp.db, ctx.lang, treasure.treasure_id) {
+			evo_treasure = e
+		}
+	}
 	ctx.page_title = '${treasure.name} | Classic Fan/Wiki'
 	return $veb.html("./templates/views/treasure.html")
 }

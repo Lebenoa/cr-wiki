@@ -9,13 +9,15 @@ import json2
 import time
 
 struct ParsedTreasure {
-	title        string
+	page         string // wiki page name (the href key)
+	title        string // display name from the infobox
 	image        string
 	grade        ?models.Grade
 	release_date time.Time
 	description  string
 	is_evolved   bool
 mut:
+	base            string // evolved: base treasure page name from |Treasure=
 	normal_effects  []string
 	blessed_effects []string
 }
@@ -123,7 +125,10 @@ fn list_page_titles(page string) ![]string {
 			break
 		}
 		link := resp.parse.text[href + 9..q]
-		decoded := link.replace('_', ' ')
+		// hrefs encode apostrophes as %27 ("Ninja_Cookie%27s_Tree_Leaf");
+		// decode before turning underscores into spaces so possessive names
+		// aren't silently dropped
+		decoded := (urllib.query_unescape(link) or { link }).replace('_', ' ')
 		if decoded !in skip && !decoded.starts_with('Category:') && !decoded.starts_with('File:') {
 			if decoded !in titles {
 				titles << decoded
@@ -395,6 +400,53 @@ fn parse_section(wt string, name string) string {
 	return clean_markup(body).trim_space()
 }
 
+// insert_treasure_row writes one treasure row (normal, or an evolved
+// normal/blessed state) plus its translation and effects; returns the new id
+fn insert_treasure_row(db sqlite.DB, mut effect_ids map[string]int, pt ParsedTreasure, blessed bool, base_id int) !int {
+	tr := models.Treasure{
+		image:            if pt.image == '' { none } else { pt.image }
+		grade:            if g := pt.grade { int(g) } else { none }
+		base_treasure_id: if base_id > 0 { base_id } else { none }
+		is_evolved:       pt.is_evolved
+		is_blessed:       blessed
+		release_date:     pt.release_date
+	}
+	tid := sql db {
+		insert tr into models.Treasure
+	}!
+	ttr := models.TreasureTranslation{
+		treasure_id: tid
+		lang:        'en'
+		name:        pt.title
+		description: pt.description
+	}
+	sql db {
+		insert ttr into models.TreasureTranslation
+	}!
+	effects := if blessed { pt.blessed_effects } else { pt.normal_effects }
+	mut seen := map[int]bool{}
+	for text in effects {
+		eid := effect_for(db, mut effect_ids, text) or { panic(err) }
+		// a treasure may list the same effect twice; the schema's unique
+		// (treasure_id, effect_id) pair forbids duplicates
+		if eid in seen {
+			continue
+		}
+		seen[eid] = true
+		val, unit := effect_value_unit(text)
+		te := models.TreasureEffect{
+			treasure_id: tid
+			effect_id:   eid
+			value:       if val == 0 { none } else { val }
+			unit:        unit
+		}
+		sql db {
+			insert te into models.TreasureEffect
+		}!
+	}
+	return tid
+}
+
 // effect_for returns the effect id for `text`, creating the effect +
 // translation rows on first sight
 fn effect_for(db sqlite.DB, mut effect_ids map[string]int, text string) !int {
@@ -457,6 +509,7 @@ fn main() {
 			'prop':          'revisions'
 			'rvprop':        'content'
 			'rvslots':       'main'
+			'redirects':     '1' // list pages link to redirect targets; resolve them
 			'titles':        batch.join('|')
 			'format':        'json'
 			'formatversion': '2'
@@ -490,10 +543,13 @@ fn main() {
 			if title == '' {
 				title = page.title
 			}
-			image := clean_markup(infobox_field(block, 'image'))
+			// some infobox image fields carry percent-encoding ("Santa_Sock%27s_...");
+			// decode so the stored name matches the actual file
+			image := (urllib.query_unescape(clean_markup(infobox_field(block, 'image'))) or { '' })
 			date := parse_wiki_date(infobox_field(block, 'release date'))
 			desc := parse_section(wt, 'Description')
 			mut pt := ParsedTreasure{
+				page:         page.title
 				title:        title
 				image:        image
 				grade:        parse_grade(infobox_field(block, 'grade'))
@@ -502,6 +558,7 @@ fn main() {
 				is_evolved:   is_evo
 			}
 			if is_evo {
+				pt.base = clean_markup(infobox_field(block, 'treasure'))
 				pt.normal_effects = effect_bullets(infobox_field(block, 'normal effect'))
 				pt.blessed_effects = effect_bullets(infobox_field(block, 'blessed effect'))
 			} else {
@@ -513,54 +570,65 @@ fn main() {
 	println('parsed treasures: ${parsed.len}')
 
 	mut effect_ids := map[string]int{}
+	mut title_ids := map[string]int{}
 	mut inserted := 0
+
+	// pass 1: normals first so evolved rows can reference their base id
 	for pt in parsed {
-		// normal treasure: one row; evolved: a normal-state row and a
-		// blessed-state row (the wiki lists both effects)
-		states := if pt.is_evolved { [false, true] } else { [false] }
-		for bi, blessed in states {
-			tr := models.Treasure{
-				image:        if pt.image == '' { none } else { pt.image }
-				grade:        if g := pt.grade { int(g) } else { none }
-				is_evolved:   pt.is_evolved
-				is_blessed:   blessed
-				release_date: pt.release_date
-			}
-			tid := sql db {
-				insert tr into models.Treasure
-			}!
-			ttr := models.TreasureTranslation{
-				treasure_id: tid
-				lang:        'en'
-				name:        pt.title
-				description: pt.description
-			}
-			sql db {
-				insert ttr into models.TreasureTranslation
-			}!
-			effects := if bi == 0 { pt.normal_effects } else { pt.blessed_effects }
-			mut seen := map[int]bool{}
-			for text in effects {
-				eid := effect_for(db, mut effect_ids, text) or { panic(err) }
-				// a treasure may list the same effect twice; the schema's unique
-				// (treasure_id, effect_id) pair forbids duplicates
-				if eid in seen {
-					continue
-				}
-				seen[eid] = true
-				val, unit := effect_value_unit(text)
-				te := models.TreasureEffect{
-					treasure_id: tid
-					effect_id:   eid
-					value:       if val == 0 { none } else { val }
-					unit:        unit
-				}
-				sql db {
-					insert te into models.TreasureEffect
-				}!
-			}
-			inserted++
+		if pt.is_evolved {
+			continue
 		}
+		tid := insert_treasure_row(db, mut effect_ids, pt, false, 0)!
+		title_ids[pt.title] = tid
+		title_ids[pt.page] = tid
+		inserted++
+	}
+
+	// some EvoInfobox |Treasure= values are redirect aliases of the base
+	// ("Brave Cookie's 3rd Skull Button" -> "3rd Skull Button"); resolve those
+	mut resolved_bases := map[string]int{}
+	for pt in parsed {
+		if !pt.is_evolved || pt.base in title_ids || pt.base in resolved_bases {
+			continue
+		}
+		body := api_get({
+			'action':        'query'
+			'prop':          'revisions'
+			'rvprop':        'content'
+			'rvslots':       'main'
+			'redirects':     '1'
+			'titles':        pt.base
+			'format':        'json'
+			'formatversion': '2'
+		}) or { continue }
+		resp := json2.decode[RevResp](body) or { continue }
+		for page in resp.query.pages {
+			if page.missing || page.revisions.len == 0 {
+				continue
+			}
+			if id := title_ids[page.title] {
+				resolved_bases[pt.base] = id
+			}
+		}
+	}
+
+	// pass 2: evolved treasures — a normal-state row and a blessed-state row
+	// (the wiki lists both effects), both pointing at their base
+	for pt in parsed {
+		if !pt.is_evolved {
+			continue
+		}
+		base_id := if b := title_ids[pt.base] {
+			b
+		} else {
+			resolved_bases[pt.base] or { 0 }
+		}
+		if base_id == 0 {
+			println('  no base match: ${pt.title} (base ${pt.base})')
+		}
+		insert_treasure_row(db, mut effect_ids, pt, false, base_id)!
+		insert_treasure_row(db, mut effect_ids, pt, true, base_id)!
+		inserted += 2
 	}
 	println('treasure rows inserted: ${inserted}, distinct effects: ${effect_ids.len}')
 }

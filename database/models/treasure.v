@@ -7,6 +7,7 @@ pub:
 	treasure_id ?int @[primary; serial]
 	image ?string
 	grade ?int // models.Grade value; none = no wiki grade (no badge)
+	base_treasure_id ?int // evolved rows point at their normal base treasure
 	is_evolved bool
 	is_blessed bool
 	release_date time.Time

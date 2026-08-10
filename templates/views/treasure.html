@@ -32,6 +32,16 @@
                 @endif
             </div>
             <h1 class="font-headline text-accent text-4xl leading-tight">@treasure.name</h1>
+            @if base := base_treasure
+            <a href="/treasures/@{base.treasure_id}"
+                class="text-primary font-bold underline underline-offset-4 hover:opacity-80">%view_base
+                @base.name</a>
+            @endif
+            @if evo := evo_treasure
+            <a href="/treasures/@{evo.treasure_id}"
+                class="text-primary font-bold underline underline-offset-4 hover:opacity-80">%view_evolved
+                @evo.name</a>
+            @endif
             <p class="font-body text-foreground max-w-xl whitespace-pre-line">
                 @if treasure.description != ""
                 @treasure.description

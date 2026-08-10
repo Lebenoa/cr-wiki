@@ -289,6 +289,15 @@ fn migrate(conn sqlite.DB) ! {
 			return conn.error_message(result, query)
 		}
 	}
+	// treasure.base_treasure_id added so evolved rows link back to their
+	// normal base treasure; nullable because normal treasures have none
+	if 'base_treasure_id' !in treasure_cols {
+		query := 'ALTER TABLE treasure ADD COLUMN base_treasure_id INTEGER'
+		result := conn.exec_none(query)
+		if !sqlite_success(result) {
+			return conn.error_message(result, query)
+		}
+	}
 }
 
 @[inline]

@@ -212,16 +212,53 @@ pub fn get_pet(conn sqlite.DB, lang string, id int) !PetView {
 @[table: 'treasure']
 pub struct TreasureView {
 	pub:
-		treasure_id int
-		image ?string
-		grade ?models.Grade
-		is_evolved bool
-		is_blessed bool
-		release_date time.Time
+		treasure_id      int
+		image            ?string
+		grade            ?models.Grade
+		base_treasure_id ?int
+		is_evolved       bool
+		is_blessed       bool
+		release_date     time.Time
 
 		lang string
 		name string
 		description string
+}
+
+// treasure_view maps a stored row + translation to the view handed to templates
+fn treasure_view(t models.Treasure, tr models.TreasureTranslation) TreasureView {
+	return TreasureView{
+		treasure_id:      t.treasure_id or { 0 }
+		image:            t.image
+		grade:            treasure_grade(t.grade)
+		base_treasure_id: t.base_treasure_id
+		is_evolved:       t.is_evolved
+		is_blessed:       t.is_blessed
+		release_date:     t.release_date
+		lang:             tr.lang
+		name:             tr.name
+		description:      tr.description
+	}
+}
+
+// best_treasure_translation picks the user's language when present, else en
+fn best_treasure_translation(conn sqlite.DB, lang string, tid int) !models.TreasureTranslation {
+	user_lang := lang
+	translations := sql conn {
+		select from models.TreasureTranslation
+		where treasure_id == tid && (lang == user_lang || lang == 'en')
+	}!
+	if translations.len == 0 {
+		return error('treasure (${tid}) has no translation')
+	}
+	mut tr := translations.first()
+	for t in translations {
+		if t.lang == user_lang {
+			tr = t
+			break
+		}
+	}
+	return tr
 }
 
 fn compare_treasures(a &TreasureView, b &TreasureView) int {
@@ -289,35 +326,37 @@ pub fn get_treasure(conn sqlite.DB, lang string, id int) !TreasureView {
 		return error('treasure (${id}) not found')
 	}
 	treasure := treasures.first()
+	return treasure_view(treasure, best_treasure_translation(conn, lang, id)!)
+}
 
-	user_lang := lang
-	translations := sql conn {
-		select from models.TreasureTranslation
-		where treasure_id == id && (lang == user_lang || lang == 'en')
+// get_treasure_base returns the normal treasure an evolved row evolved from
+pub fn get_treasure_base(conn sqlite.DB, lang string, base_id int) !TreasureView {
+	if base_id <= 0 {
+		return error('no base treasure')
+	}
+	bases := sql conn {
+		select from models.Treasure
+		where treasure_id == base_id
 	}!
+	if bases.len == 0 {
+		return error('base treasure (${base_id}) not found')
+	}
+	b := bases.first()
+	return treasure_view(b, best_treasure_translation(conn, lang, base_id)!)
+}
 
-	if translations.len == 0 {
-		return error('treasure (${id}) has no translation')
+// get_treasure_evo returns the evolved (normal-state) variant of a base
+// treasure; error when the treasure has no evolved form
+pub fn get_treasure_evo(conn sqlite.DB, lang string, id int) !TreasureView {
+	evos := sql conn {
+		select from models.Treasure
+		where base_treasure_id == id && is_evolved == true && is_blessed == false
+	}!
+	if evos.len == 0 {
+		return error('treasure (${id}) has no evolved variant')
 	}
-	mut tr := translations.first()
-	for t in translations {
-		if t.lang == user_lang {
-			tr = t
-			break
-		}
-	}
-
-	return TreasureView{
-		treasure_id: treasure.treasure_id or { 0 }
-		image: treasure.image
-		grade: treasure_grade(treasure.grade)
-		is_evolved: treasure.is_evolved
-		is_blessed: treasure.is_blessed
-		release_date: treasure.release_date
-		lang: tr.lang
-		name: tr.name
-		description: tr.description
-	}
+	e := evos.first()
+	return treasure_view(e, best_treasure_translation(conn, lang, e.treasure_id or { 0 })!)
 }
 
 // get_treasure_effects returns one row per distinct effect of the treasure,
@@ -378,7 +417,9 @@ pub fn get_treasure_effects(conn sqlite.DB, lang string, id int) ![]EffectView {
 	return result
 }
 
-pub fn select_treasures(conn sqlite.DB, lang string, limit int, offset int) ![]TreasureView {
+// select_treasures lists treasures newest-first; evolved selects only evolved
+// rows (any blessed state), false only normal rows (no evo, no bless).
+pub fn select_treasures(conn sqlite.DB, lang string, limit int, offset int, evolved bool) ![]TreasureView {
 	treasures := sql conn {
 		select from models.Treasure
 	}!
@@ -408,18 +449,11 @@ pub fn select_treasures(conn sqlite.DB, lang string, limit int, offset int) ![]T
 	mut result := []TreasureView{}
 
 	for treasure in treasures {
+		if treasure.is_evolved != evolved {
+			continue
+		}
 		if tr := translation_map[treasure.treasure_id or { continue }] {
-			result << TreasureView{
-				treasure_id: treasure.treasure_id or { 0 }
-				image: treasure.image
-				grade: treasure_grade(treasure.grade)
-				is_evolved: treasure.is_evolved
-				is_blessed: treasure.is_blessed
-				release_date: treasure.release_date
-				lang: tr.lang
-				name: tr.name
-				description: tr.description
-			}
+			result << treasure_view(treasure, tr)
 		}
 	}
 
