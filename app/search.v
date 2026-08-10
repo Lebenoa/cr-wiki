@@ -26,6 +26,9 @@ pub fn (wapp &App) search(mut ctx Context) veb.Result {
 	next_page := 0
 	q_url := urllib.query_escape(q)
 	if is_fragment {
+		if q == '' {
+			return ctx.text('')
+		}
 		return $veb.html("./templates/components/search_results.html")
 	}
 	return $veb.html("./templates/search.html")

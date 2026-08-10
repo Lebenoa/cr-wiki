@@ -1,3 +1,32 @@
+<style>
+    #search-box {
+        transition: opacity 0.3s ease, translate 0.3s ease, display 0.3s allow-discrete;
+    }
+    #search-loading {
+        transition: opacity 0.2s ease, display 0.2s allow-discrete;
+        opacity: 0;
+    }
+    #search-loading:not(.hidden) {
+        opacity: 1;
+        @starting-style {
+            opacity: 0;
+        }
+    }
+    @media (max-width: 767px) {
+        #search-box {
+            opacity: 0;
+            translate: 0 -8px;
+        }
+        #search-box.open {
+            opacity: 1;
+            translate: 0 0;
+            @starting-style {
+                opacity: 0;
+                translate: 0 -8px;
+            }
+        }
+    }
+</style>
 <nav class="sticky top-0 w-full z-50 bg-background/80 backdrop-blur-md border-b border-secondary/50 shadow-xl px-2">
     <div class="flex items-center justify-between h-20 mx-auto">
         <div class="flex items-center gap-12">
@@ -16,8 +45,16 @@
             </div>
         </div>
         <div class="flex items-center gap-6">
-            <div class="relative">
-                <form class="peer relative" action="/search" method="get" hx-boost="true">
+            <button id="search-toggle" type="button" class="btn-secondary size-12 md:hidden"
+                aria-label="%navbar_search_toggle" aria-expanded="false">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="m21 21-4.34-4.34" />
+                    <circle cx="11" cy="11" r="8" />
+                </svg>
+            </button>
+            <div id="search-box" class="relative flex-1 min-w-0 md:block md:flex-none md:w-56 lg:w-72 hidden">
+                <form class="relative" action="/search" method="get" hx-boost="true">
                     <span class="absolute left-4 top-1/2 -translate-y-1/2 text-foreground-muted">
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
                             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -27,11 +64,20 @@
                     </span>
                     <input name="q" hx-get="/search" hx-trigger="input changed delay:300ms"
                         hx-target="#search-results" hx-swap="innerHTML"
-                        class="bg-surface border-2 border-secondary/50 focus:border-primary focus:ring-0 rounded-full py-2 pl-12 pr-6 w-72 transition-all outline-none text-sm text-foreground"
+                        class="bg-surface border-2 border-secondary/50 focus:border-primary focus:ring-0 rounded-full py-2 pl-12 pr-6 w-full transition-all outline-none text-sm text-foreground"
                         placeholder="%navbar_search_placeholder" type="text" />
                 </form>
                 <div id="search-results"
-                    class="absolute top-full left-0 mt-2 w-72 max-h-96 overflow-y-auto rounded-xl border border-secondary/70 bg-background shadow-2xl z-50 hidden peer-focus-within:flex flex-col p-2 gap-1">
+                    class="absolute top-full left-0 mt-2 w-full max-h-96 overflow-y-auto rounded-xl border border-secondary/70 bg-background shadow-2xl z-50 hidden flex-col p-2 gap-1">
+                </div>
+                <div id="search-loading"
+                    class="hidden absolute top-full left-0 mt-2 w-full rounded-xl border border-secondary/70 bg-background shadow-2xl p-2 flex items-center gap-2 text-sm text-foreground-muted">
+                    <svg class="size-4 animate-spin" xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                        viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+                    </svg>
+                    <span>%navbar_search_loading</span>
                 </div>
             </div>
             <button class="btn-primary size-12" popovertarget="account-dropdown">
@@ -75,4 +121,69 @@
             </dialog>
         </div>
     </div>
+    <script>
+        (function () {
+            const btn = document.getElementById('search-toggle');
+            const box = document.getElementById('search-box');
+            if (!btn || !box) return;
+            const input = box.querySelector('input[name=q]');
+            const results = document.getElementById('search-results');
+            const indicator = document.getElementById('search-loading');
+            function isOpen() {
+                return !box.classList.contains('hidden');
+            }
+            function setOpen(open) {
+                box.classList.toggle('hidden', !open);
+                box.classList.toggle('open', open);
+                btn.classList.toggle('hidden', open);
+                btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+                if (open) {
+                    input?.focus();
+                } else {
+                    input?.blur();
+                    input.value = '';
+                    results.innerHTML = '';
+                    results.classList.add('hidden');
+                    results.classList.remove('flex');
+                    indicator?.classList.add('hidden');
+                    // cancel any request that is still in flight or queued, so a
+                    // late response cannot repopulate the results after closing
+                    input.dispatchEvent(new Event('htmx:abort'));
+                }
+            }
+            btn.addEventListener('click', function () {
+                setOpen(!isOpen());
+            });
+            // reveal the spinner during the debounce window, before htmx fires
+            input.addEventListener('input', function () {
+                indicator?.classList.toggle('hidden', input.value.trim() === '');
+            });
+            document.addEventListener('click', function (e) {
+                if (isOpen() && !box.contains(e.target) && !btn.contains(e.target)) {
+                    setOpen(false);
+                }
+            });
+            box.addEventListener('keydown', function (e) {
+                if (e.key === 'Escape') setOpen(false);
+            });
+            // show the dropdown only once it has content, so a focused-but-empty
+            // input never displays an empty box; hide the spinner once settled
+            results.addEventListener('htmx:after:settle', function () {
+                indicator?.classList.add('hidden');
+                if (!isOpen()) {
+                    // a response landed after the box was closed; keep it hidden
+                    results.classList.add('hidden');
+                    results.classList.remove('flex');
+                    return;
+                }
+                const hasContent = results.innerHTML.trim() !== '';
+                results.classList.toggle('hidden', !hasContent);
+                results.classList.toggle('flex', hasContent);
+            });
+            // a failed request never settles, so hide the spinner on error too
+            input.addEventListener('htmx:error', function () {
+                indicator?.classList.add('hidden');
+            });
+        })();
+    </script>
 </nav>

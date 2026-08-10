@@ -52,6 +52,9 @@ navbar_search_placeholder
 navbar_search_toggle
 ค้นหา
 -----
+navbar_search_loading
+กำลังค้นหา...
+-----
 cookies
 คุกกี้
 -----

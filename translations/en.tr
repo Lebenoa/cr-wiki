@@ -52,6 +52,9 @@ Search..
 navbar_search_toggle
 Search
 -----
+navbar_search_loading
+Searching...
+-----
 cookies
 Cookies
 -----
