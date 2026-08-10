@@ -119,24 +119,23 @@ pub fn (wapp &App) edit_treasure(mut ctx Context, id int) veb.Result {
 		grades := models.grade_values
 		rd := treasure.release_date
 		state := TreasureForm{
-			edit_mode:        true
-			id:               treasure.treasure_id
-			name:             treasure.name
-			description:      treasure.description
-			grade:            if g := treasure.grade {
+			edit_mode:       true
+			id:              treasure.treasure_id
+			name:            treasure.name
+			description:     treasure.description
+			grade:           if g := treasure.grade {
 				g.str()
 			} else {
 				''
 			}
-			base_treasure_id: treasure.base_treasure_id or { 0 }
-			effects:          database.treasure_effect_lines(wapp.db, ctx.lang, id,
+			effects:         database.treasure_effect_lines(wapp.db, ctx.lang, id,
 				models.EffectState.normal) or { '' }
-			blessed_effects:  database.treasure_effect_lines(wapp.db, ctx.lang, id,
+			blessed_effects: database.treasure_effect_lines(wapp.db, ctx.lang, id,
 				models.EffectState.blessed) or { '' }
-			is_evolved:       treasure.is_evolved
-			release_date:     '${rd.year:04d}-${int(rd.month):02d}-${rd.day:02d}'
-			lang:             treasure.lang
-			image:            treasure.image
+			is_evolved:      treasure.is_evolved
+			release_date:    '${rd.year:04d}-${int(rd.month):02d}-${rd.day:02d}'
+			lang:            treasure.lang
+			image:           treasure.image
 		}
 		return $veb.html('./templates/admin/new_treasure.html')
 	} else if ctx.req.method == .post {

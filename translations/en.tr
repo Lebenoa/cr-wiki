@@ -211,9 +211,6 @@ Blessed Effects
 no_grade
 No grade
 -----
-base_treasure
-Base Treasure ID
------
 effects_hint
 One effect per line, e.g. "DEF increase | 12%" (value optional)
 -----

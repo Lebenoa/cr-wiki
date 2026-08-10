@@ -22,19 +22,17 @@ pub fn update_cookie(conn sqlite.DB, id int, params CreateCookieParams) ! {
 	if existing.len > 0 {
 		sql conn {
 			update models.CookieTranslation set name = params.name, abilities = params.abilities,
-			description = params.description, power_plus = params.power_plus, power_plus_requirement = params.power_plus_requirement,
-			unlock_goal = params.unlock_goal where owner_id == id && lang == params.lang
+			description = params.description, power_plus = params.power_plus where owner_id == id
+			&& lang == params.lang
 		}!
 	} else {
 		new_tr := models.CookieTranslation{
-			owner_id:               id
-			lang:                   params.lang
-			name:                   params.name
-			abilities:              params.abilities
-			description:            params.description
-			power_plus:             params.power_plus
-			power_plus_requirement: params.power_plus_requirement
-			unlock_goal:            params.unlock_goal
+			owner_id:    id
+			lang:        params.lang
+			name:        params.name
+			abilities:   params.abilities
+			description: params.description
+			power_plus:  params.power_plus
 		}
 		sql conn {
 			insert new_tr into models.CookieTranslation
@@ -77,8 +75,8 @@ pub fn update_pet(conn sqlite.DB, id int, params CreatePetParams) ! {
 
 pub fn update_treasure(conn sqlite.DB, id int, params CreateTreasureParams) ! {
 	sql conn {
-		update models.Treasure set grade = params.grade, base_treasure_id = params.base_treasure_id,
-		is_evolved = params.is_evolved, release_date = params.release_date where treasure_id == id
+		update models.Treasure set grade = params.grade, is_evolved = params.is_evolved,
+		release_date = params.release_date where treasure_id == id
 	}!
 
 	if image := params.image {

@@ -1,5 +1,6 @@
 module app
 
+import strconv
 import time
 import database
 import database.models
@@ -19,18 +20,16 @@ fn parse_release_date(mut ctx Context) !time.Time {
 // CookieForm carries the form state shared by the cookie create/edit pages.
 pub struct CookieForm {
 pub:
-	edit_mode              bool
-	id                     int
-	name                   string
-	abilities              string
-	description            string
-	power_plus             string
-	power_plus_requirement string
-	unlock_goal            string
-	grade                  string
-	release_date           string
-	lang                   string
-	image                  ?string
+	edit_mode    bool
+	id           int
+	name         string
+	abilities    string
+	description  string
+	power_plus   string
+	grade        string
+	release_date string
+	lang         string
+	image        ?string
 }
 
 // PetForm carries the form state shared by the pet create/edit pages.
@@ -50,18 +49,17 @@ pub:
 // TreasureForm carries the form state shared by the treasure create/edit pages.
 pub struct TreasureForm {
 pub:
-	edit_mode        bool
-	id               int
-	name             string
-	description      string
-	grade            string // '' = no wiki grade
-	base_treasure_id int    // 0 = none
-	effects          string // one "Name | 12%" per line
-	blessed_effects  string
-	is_evolved       bool
-	release_date     string
-	lang             string
-	image            ?string
+	edit_mode       bool
+	id              int
+	name            string
+	description     string
+	grade           string // '' = no wiki grade
+	effects         string // one "Name | 12%" per line
+	blessed_effects string
+	is_evolved      bool
+	release_date    string
+	lang            string
+	image           ?string
 }
 
 fn parse_cookie_form(mut ctx Context) !database.CreateCookieParams {
@@ -70,20 +68,18 @@ fn parse_cookie_form(mut ctx Context) !database.CreateCookieParams {
 		return error('Invalid grade: expected one of e, c, b, a, s, s_plus, l')
 	}
 	return database.CreateCookieParams{
-		lang:                   ctx.form['lang'] or { ctx.lang }
-		name:                   ctx.form['name']
-		abilities:              ctx.form['abilities']
-		description:            ctx.form['description']
-		grade:                  grade
-		image:                  if image == '' {
+		lang:         ctx.form['lang'] or { ctx.lang }
+		name:         ctx.form['name']
+		abilities:    ctx.form['abilities']
+		description:  ctx.form['description']
+		grade:        grade
+		image:        if image == '' {
 			none
 		} else {
 			image
 		}
-		power_plus:             ctx.form['power_plus']
-		power_plus_requirement: ctx.form['power_plus_requirement']
-		unlock_goal:            ctx.form['unlock_goal']
-		release_date:           parse_release_date(mut ctx)!
+		power_plus:   ctx.form['power_plus']
+		release_date: parse_release_date(mut ctx)!
 	}
 }
 
@@ -133,20 +129,9 @@ fn parse_effect_inputs(s string) ![]database.EffectInput {
 					unit = models.EffectUnit.second
 					num_str = val_str[..val_str.len - 1]
 				}
-				if num_str == '' {
+				value = f32(strconv.atof64(num_str, strconv.AtoF64Param{}) or {
 					return error('Invalid effect value: "${val_str}" (expected e.g. 12%, 3s, or a plain number)')
-				}
-				mut valid := true
-				for c in num_str {
-					if (c < `0` || c > `9`) && c != `.` && c != `-` {
-						valid = false
-						break
-					}
-				}
-				if !valid {
-					return error('Invalid effect value: "${val_str}" (expected e.g. 12%, 3s, or a plain number)')
-				}
-				value = num_str.f32()
+				})
 			}
 		}
 		if name == '' {
@@ -164,33 +149,26 @@ fn parse_effect_inputs(s string) ![]database.EffectInput {
 fn parse_treasure_form(mut ctx Context) !database.CreateTreasureParams {
 	image := upload_image(mut ctx, 'treasures')!
 	// grade is optional: empty means no wiki grade (no badge on the detail page)
+	g := ctx.form['grade'] or { '' }
 	mut grade := ?int(none)
-	if g := ctx.form['grade'] or { '' } {
-		if g != '' {
-			grade = int(models.Grade.from(g) or {
-				return error('Invalid grade: expected one of e, c, b, a, s, s_plus, l')
-			})
-		}
-	}
-	base_id := ctx.form['base_treasure_id']
-	mut base_treasure_id := ?int(none)
-	if base_id != '' {
-		base_treasure_id = base_id.int()
+	if g != '' {
+		grade = int(models.Grade.from(g) or {
+			return error('Invalid grade: expected one of e, c, b, a, s, s_plus, l')
+		})
 	}
 	return database.CreateTreasureParams{
-		lang:             ctx.form['lang'] or { ctx.lang }
-		name:             ctx.form['name']
-		description:      ctx.form['description']
-		image:            if image == '' {
+		lang:            ctx.form['lang'] or { ctx.lang }
+		name:            ctx.form['name']
+		description:     ctx.form['description']
+		image:           if image == '' {
 			none
 		} else {
 			image
 		}
-		grade:            grade
-		base_treasure_id: base_treasure_id
-		is_evolved:       ctx.form['is_evolved'] == 'true'
-		release_date:     parse_release_date(mut ctx)!
-		effects:          parse_effect_inputs(ctx.form['effects'])!
-		blessed_effects:  parse_effect_inputs(ctx.form['blessed_effects'])!
+		grade:           grade
+		is_evolved:      ctx.form['is_evolved'] == 'true'
+		release_date:    parse_release_date(mut ctx)!
+		effects:         parse_effect_inputs(ctx.form['effects'])!
+		blessed_effects: parse_effect_inputs(ctx.form['blessed_effects'])!
 	}
 }

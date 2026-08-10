@@ -21,16 +21,14 @@ pub fn create_user(conn sqlite.DB, username string, password string) !int {
 
 pub struct CreateCookieParams {
 pub:
-	lang                   string
-	name                   string
-	abilities              string
-	description            string
-	grade                  models.Grade
-	image                  ?string
-	power_plus             string
-	power_plus_requirement string
-	unlock_goal            string
-	release_date           time.Time
+	lang         string
+	name         string
+	abilities    string
+	description  string
+	grade        models.Grade
+	image        ?string
+	power_plus   string
+	release_date time.Time
 }
 
 pub fn create_cookie(conn sqlite.DB, params CreateCookieParams) !int {
@@ -55,14 +53,12 @@ pub fn create_cookie(conn sqlite.DB, params CreateCookieParams) !int {
 	}!
 
 	new_translation := models.CookieTranslation{
-		owner_id:               cookie_id
-		lang:                   params.lang
-		name:                   params.name
-		abilities:              params.abilities
-		description:            params.description
-		power_plus:             params.power_plus
-		power_plus_requirement: params.power_plus_requirement
-		unlock_goal:            params.unlock_goal
+		owner_id:    cookie_id
+		lang:        params.lang
+		name:        params.name
+		abilities:   params.abilities
+		description: params.description
+		power_plus:  params.power_plus
 	}
 
 	sql conn {
@@ -131,16 +127,15 @@ pub:
 
 pub struct CreateTreasureParams {
 pub:
-	lang             string
-	name             string
-	description      string
-	image            ?string
-	grade            ?int // models.Grade value; none = no wiki grade
-	base_treasure_id ?int // evolved rows link back to their normal base treasure
-	is_evolved       bool
-	release_date     time.Time
-	effects          []EffectInput
-	blessed_effects  []EffectInput
+	lang            string
+	name            string
+	description     string
+	image           ?string
+	grade           ?int // models.Grade value; none = no wiki grade
+	is_evolved      bool
+	release_date    time.Time
+	effects         []EffectInput
+	blessed_effects []EffectInput
 }
 
 pub fn create_treasure(conn sqlite.DB, params CreateTreasureParams) !int {
@@ -152,11 +147,10 @@ pub fn create_treasure(conn sqlite.DB, params CreateTreasureParams) !int {
 	}
 
 	new_treasure := models.Treasure{
-		image:            params.image
-		grade:            params.grade
-		base_treasure_id: params.base_treasure_id
-		is_evolved:       params.is_evolved
-		release_date:     params.release_date
+		image:        params.image
+		grade:        params.grade
+		is_evolved:   params.is_evolved
+		release_date: params.release_date
 	}
 
 	treasure_id := sql conn {

@@ -800,23 +800,25 @@ pub fn treasure_effect_lines(conn sqlite.DB, lang string, id int, st models.Effe
 			seen[link.effect_id] = true
 		}
 	}
-
 	translations := sql conn {
 		select from models.EffectTranslation where effect_id in effect_ids
 	}!
+	// resolve each effect's name once: user lang > en > any translation
 	mut name_map := map[int]string{}
+	mut rank_map := map[int]int{}
 	for tr in translations {
-		if tr.lang == lang && tr.name != '' {
-			name_map[tr.effect_id] = tr.name
+		if tr.name == '' {
+			continue
 		}
-	}
-	for tr in translations {
-		if tr.lang == 'en' && tr.name != '' && tr.effect_id !in name_map {
-			name_map[tr.effect_id] = tr.name
+		rank := if tr.lang == lang {
+			3
+		} else if tr.lang == 'en' {
+			2
+		} else {
+			1
 		}
-	}
-	for tr in translations {
-		if tr.name != '' && tr.effect_id !in name_map {
+		if rank > (rank_map[tr.effect_id] or { 0 }) {
+			rank_map[tr.effect_id] = rank
 			name_map[tr.effect_id] = tr.name
 		}
 	}
@@ -829,7 +831,7 @@ pub fn treasure_effect_lines(conn sqlite.DB, lang string, id int, st models.Effe
 		}
 		emitted[link.effect_id] = true
 		name := name_map[link.effect_id] or { continue }
-		if name == '' || name.contains('|') {
+		if name.contains('|') {
 			continue
 		}
 		value_display := format_effect_value(link.value, link.unit)
