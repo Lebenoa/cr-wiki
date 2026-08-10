@@ -777,14 +777,66 @@ pub fn search_all(conn sqlite.DB, lang string, q string, limit int) !SearchResul
 
 // treasure_effect_lines renders the treasure's effects for one state as form
 // lines ("Name | 12%" or "Name"), so the edit page can round-trip them.
-pub fn treasure_effect_lines(conn sqlite.DB, lang string, id int, st models.EffectState) string {
-	effects := effects_by_state(conn, lang, id, st) or { return '' }
+// Names resolve with the user's language first, then English, then any
+// translation, so an effect that lacks the current language still shows up
+// and survives a save. Effects whose name cannot be expressed as a line
+// (blank, or containing the '|' separator — e.g. scrape artifacts like
+// "|Blessed Effect") are skipped, so saving drops those junk links instead of
+// failing the whole form. Duplicate links (same effect twice) emit once,
+// matching the detail page.
+pub fn treasure_effect_lines(conn sqlite.DB, lang string, id int, st models.EffectState) !string {
+	links := sql conn {
+		select from models.TreasureEffect where treasure_id == id && state == st order by treasure_effect_id
+	}!
+	if links.len == 0 {
+		return ''
+	}
+
+	mut effect_ids := []int{}
+	mut seen := map[int]bool{}
+	for link in links {
+		if link.effect_id !in seen {
+			effect_ids << link.effect_id
+			seen[link.effect_id] = true
+		}
+	}
+
+	translations := sql conn {
+		select from models.EffectTranslation where effect_id in effect_ids
+	}!
+	mut name_map := map[int]string{}
+	for tr in translations {
+		if tr.lang == lang && tr.name != '' {
+			name_map[tr.effect_id] = tr.name
+		}
+	}
+	for tr in translations {
+		if tr.lang == 'en' && tr.name != '' && tr.effect_id !in name_map {
+			name_map[tr.effect_id] = tr.name
+		}
+	}
+	for tr in translations {
+		if tr.name != '' && tr.effect_id !in name_map {
+			name_map[tr.effect_id] = tr.name
+		}
+	}
+
+	mut emitted := map[int]bool{}
 	mut lines := []string{}
-	for e in effects {
-		lines << if e.value_display != '' {
-			'${e.name} | ${e.value_display}'
+	for link in links {
+		if link.effect_id in emitted {
+			continue
+		}
+		emitted[link.effect_id] = true
+		name := name_map[link.effect_id] or { continue }
+		if name == '' || name.contains('|') {
+			continue
+		}
+		value_display := format_effect_value(link.value, link.unit)
+		lines << if value_display != '' {
+			'${name} | ${value_display}'
 		} else {
-			e.name
+			name
 		}
 	}
 	return lines.join('\n')

@@ -130,9 +130,9 @@ pub fn (wapp &App) edit_treasure(mut ctx Context, id int) veb.Result {
 			}
 			base_treasure_id: treasure.base_treasure_id or { 0 }
 			effects:          database.treasure_effect_lines(wapp.db, ctx.lang, id,
-				models.EffectState.normal)
+				models.EffectState.normal) or { '' }
 			blessed_effects:  database.treasure_effect_lines(wapp.db, ctx.lang, id,
-				models.EffectState.blessed)
+				models.EffectState.blessed) or { '' }
 			is_evolved:       treasure.is_evolved
 			release_date:     '${rd.year:04d}-${int(rd.month):02d}-${rd.day:02d}'
 			lang:             treasure.lang

@@ -185,7 +185,14 @@ pub fn create_treasure(conn sqlite.DB, params CreateTreasureParams) !int {
 // links are dropped and the submitted effects re-created, so the saved order
 // always matches the form. Effect names are matched in the form's language so
 // re-saving an edit reuses the same effect row (translations are per-lang).
+// The delete + re-insert runs in one transaction, so a failed insert cannot
+// leave the treasure with its effects half-removed.
 pub fn replace_effects(conn sqlite.DB, treasure_id int, lang string, effects []EffectInput, state models.EffectState) ! {
+	conn.begin()!
+	defer {
+		conn.rollback() or {}
+	}
+
 	existing := sql conn {
 		select from models.TreasureEffect where treasure_id == treasure_id && state == state
 	}!
@@ -195,8 +202,16 @@ pub fn replace_effects(conn sqlite.DB, treasure_id int, lang string, effects []E
 		}!
 	}
 
+	// duplicate effect names resolve to the same effect row, and the link
+	// table's unique key is (treasure_id, effect_id, state); keep the first
+	// occurrence so a repeated name can't violate the constraint
+	mut linked := map[int]bool{}
 	for e in effects {
 		effect_id := find_or_create_effect(conn, lang, e.name)!
+		if effect_id in linked {
+			continue
+		}
+		linked[effect_id] = true
 		new_link := models.TreasureEffect{
 			treasure_id: treasure_id
 			effect_id:   effect_id
@@ -208,6 +223,8 @@ pub fn replace_effects(conn sqlite.DB, treasure_id int, lang string, effects []E
 			insert new_link into models.TreasureEffect
 		}!
 	}
+
+	conn.commit()!
 }
 
 // find_or_create_effect returns the effect id whose translation in `lang` has
