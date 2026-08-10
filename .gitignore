@@ -38,3 +38,6 @@ Config.toml
 # Python tooling
 __pycache__/
 *.py
+
+# Scraper/seed helper scripts stay local
+scripts/*.v
