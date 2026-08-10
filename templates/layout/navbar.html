@@ -146,9 +146,6 @@
                     results.classList.add('hidden');
                     results.classList.remove('flex');
                     indicator?.classList.add('hidden');
-                    // cancel any request that is still in flight or queued, so a
-                    // late response cannot repopulate the results after closing
-                    input.dispatchEvent(new Event('htmx:abort'));
                 }
             }
             btn.addEventListener('click', function () {
@@ -159,7 +156,9 @@
                 indicator?.classList.toggle('hidden', input.value.trim() === '');
             });
             document.addEventListener('click', function (e) {
-                if (isOpen() && !box.contains(e.target) && !btn.contains(e.target)) {
+                // close only on clicks outside the search control; the toggle's
+                // own click bubbles here and must not close the box it just opened
+                if (isOpen() && !e.target.closest('#search-toggle, #search-box')) {
                     setOpen(false);
                 }
             });
