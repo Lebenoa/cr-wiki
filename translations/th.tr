@@ -10,11 +10,32 @@ register_page_title
 cookies_page_title
 คุกกี้ | คลาสสิค/แฟนวิกิ
 -----
+entity_detail_title
+{name} | คลาสสิค/แฟนวิกิ
+-----
+new_cookie_page_title
+คุกกี้ใหม่ | คลาสสิค/แฟนวิกิ
+-----
+edit_cookie_page_title
+แก้ไข {name} | คลาสสิค/แฟนวิกิ
+-----
 pets_page_title
 เพต | คลาสสิค/แฟนวิกิ
 -----
+new_pet_page_title
+เพตใหม่ | คลาสสิค/แฟนวิกิ
+-----
+edit_pet_page_title
+แก้ไข {name} | คลาสสิค/แฟนวิกิ
+-----
 treasures_page_title
 เทรเชอร์ | คลาสสิค/แฟนวิกิ
+-----
+new_treasure_page_title
+เทรเชอร์ใหม่ | คลาสสิค/แฟนวิกิ
+-----
+edit_treasure_page_title
+แก้ไข {name} | คลาสสิค/แฟนวิกิ
 -----
 pet_page_header
 รายชื่อเพตทั้งหมด
@@ -27,6 +48,9 @@ cookie_page_header
 -----
 navbar_search_placeholder
 ค้นหา..
+-----
+navbar_search_toggle
+ค้นหา
 -----
 cookies
 คุกกี้
@@ -177,6 +201,9 @@ treasure_effects
 -----
 search_page_title
 ค้นหา | คลาสสิค/แฟนวิกิ
+-----
+not_found_title
+ทำไมคุณมาอยู่ที่นี่? แค่มารับความทุกข์?
 -----
 search_hint
 พิมพ์ในช่องค้นหาเพื่อหาคุกกี้ เพต และเทรเชอร์

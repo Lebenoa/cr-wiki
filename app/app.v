@@ -38,14 +38,19 @@ pub fn initialize(conn sqlite.DB) !&App {
 	return new_app
 }
 
-pub fn (mut ctx Context) set_translate_title(key string) {
-	ctx.page_title = veb.tr(ctx.lang, key)
+pub fn (mut ctx Context) set_translate_title(key string, name ?string) {
+	title := veb.tr(ctx.lang, key)
+	ctx.page_title = if n := name {
+		title.replace('{name}', n)
+	} else {
+		title
+	}
 }
 
 pub fn (mut ctx Context) not_found() veb.Result {
 	// set HTTP status 404
 	ctx.res.set_status(.not_found)
-	ctx.page_title = 'Why are you here? Just to suffer?'
+	ctx.set_translate_title('not_found_title')
 	return $veb.html()
 }
 

@@ -10,11 +10,32 @@ Register | Classic/FanWiki
 cookies_page_title
 Cookies | Classic/FanWiki
 -----
+entity_detail_title
+{name} | Classic/FanWiki
+-----
+new_cookie_page_title
+New Cookie | Classic/FanWiki
+-----
+edit_cookie_page_title
+Edit {name} | Classic/FanWiki
+-----
 pets_page_title
 Pets | Classic/FanWiki
 -----
+new_pet_page_title
+New Pet | Classic/FanWiki
+-----
+edit_pet_page_title
+Edit {name} | Classic/FanWiki
+-----
 treasures_page_title
 Treasures | Classic/FanWiki
+-----
+new_treasure_page_title
+New Treasure | Classic/FanWiki
+-----
+edit_treasure_page_title
+Edit {name} | Classic/FanWiki
 -----
 pet_page_header
 All Pets List
@@ -27,6 +48,9 @@ All Cookies List
 -----
 navbar_search_placeholder
 Search..
+-----
+navbar_search_toggle
+Search
 -----
 cookies
 Cookies
@@ -177,6 +201,9 @@ Effects
 -----
 search_page_title
 Search | Classic/FanWiki
+-----
+not_found_title
+Why are you here? Just to suffer?
 -----
 search_hint
 Type in the search box to find cookies, pets, and treasures

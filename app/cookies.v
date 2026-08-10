@@ -39,7 +39,7 @@ pub fn (wapp &App) new_cookie(mut ctx Context) veb.Result {
 	}
 
 	if ctx.req.method == .get {
-		ctx.page_title = 'New Cookie | Classic/FanWiki'
+		ctx.set_translate_title('new_cookie_page_title')
 		languages := api.available_lang()
 		grades := models.grade_values
 		state := CookieForm{
@@ -68,7 +68,7 @@ pub fn (wapp &App) new_cookie(mut ctx Context) veb.Result {
 @['/cookies/:id']
 pub fn (wapp &App) cookie_info(mut ctx Context, id int) veb.Result {
 	cookie := database.get_cookie(wapp.db, ctx.lang, id) or { return ctx.not_found() }
-	ctx.page_title = '${cookie.name} | Classic Fan/Wiki'
+	ctx.set_translate_title('entity_detail_title', cookie.name)
 	is_admin := ctx.is_admin()
 	return $veb.html("./templates/views/cookie.html")
 }
@@ -83,7 +83,7 @@ pub fn (wapp &App) edit_cookie(mut ctx Context, id int) veb.Result {
 	cookie := database.get_cookie(wapp.db, ctx.lang, id) or { return ctx.not_found() }
 
 	if ctx.req.method == .get {
-		ctx.page_title = 'Edit ${cookie.name} | Classic/FanWiki'
+		ctx.set_translate_title('edit_cookie_page_title', cookie.name)
 		languages := api.available_lang()
 		grades := models.grade_values
 		rd := cookie.release_date

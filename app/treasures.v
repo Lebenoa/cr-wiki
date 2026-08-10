@@ -55,7 +55,7 @@ pub fn (wapp &App) new_treasure(mut ctx Context) veb.Result {
 	}
 
 	if ctx.req.method == .get {
-		ctx.page_title = 'New Treasure | Classic/FanWiki'
+		ctx.set_translate_title('new_treasure_page_title')
 		languages := api.available_lang()
 		state := TreasureForm{
 			lang: ctx.lang
@@ -98,7 +98,7 @@ pub fn (wapp &App) treasure_info(mut ctx Context, id int) veb.Result {
 			variant_treasure = e
 		}
 	}
-	ctx.page_title = '${treasure.name} | Classic Fan/Wiki'
+	ctx.set_translate_title('entity_detail_title', treasure.name)
 	is_admin := ctx.is_admin()
 	return $veb.html("./templates/views/treasure.html")
 }
@@ -113,7 +113,7 @@ pub fn (wapp &App) edit_treasure(mut ctx Context, id int) veb.Result {
 	treasure := database.get_treasure(wapp.db, ctx.lang, id) or { return ctx.not_found() }
 
 	if ctx.req.method == .get {
-		ctx.page_title = 'Edit ${treasure.name} | Classic/FanWiki'
+		ctx.set_translate_title('edit_treasure_page_title', treasure.name)
 		languages := api.available_lang()
 		rd := treasure.release_date
 		state := TreasureForm{

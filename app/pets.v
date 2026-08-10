@@ -39,7 +39,7 @@ pub fn (wapp &App) new_pet(mut ctx Context) veb.Result {
 	}
 
 	if ctx.req.method == .get {
-		ctx.page_title = 'New Pet | Classic/FanWiki'
+		ctx.set_translate_title('new_pet_page_title')
 		languages := api.available_lang()
 		grades := models.grade_values
 		state := PetForm{
@@ -67,7 +67,7 @@ pub fn (wapp &App) new_pet(mut ctx Context) veb.Result {
 @['/pets/:id']
 pub fn (wapp &App) pet_info(mut ctx Context, id int) veb.Result {
 	pet := database.get_pet(wapp.db, ctx.lang, id) or { return ctx.not_found() }
-	ctx.page_title = '${pet.name} | Classic Fan/Wiki'
+	ctx.set_translate_title('entity_detail_title', pet.name)
 	is_admin := ctx.is_admin()
 	return $veb.html("./templates/views/pet.html")
 }
@@ -82,7 +82,7 @@ pub fn (wapp &App) edit_pet(mut ctx Context, id int) veb.Result {
 	pet := database.get_pet(wapp.db, ctx.lang, id) or { return ctx.not_found() }
 
 	if ctx.req.method == .get {
-		ctx.page_title = 'Edit ${pet.name} | Classic/FanWiki'
+		ctx.set_translate_title('edit_pet_page_title', pet.name)
 		languages := api.available_lang()
 		grades := models.grade_values
 		rd := pet.release_date
