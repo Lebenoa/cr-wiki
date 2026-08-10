@@ -3,6 +3,25 @@
 
 <head>
     @include 'layout/head.html'
+    <style>
+        .blessed-effect {
+            position: relative;
+            border-left: 4px solid transparent;
+        }
+        .blessed-effect::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            border-radius: inherit;
+            padding-left: 4px;
+            background: linear-gradient(to bottom, #f43f5e, #f97316, #eab308, #22c55e, #3b82f6, #a855f7);
+            -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+            -webkit-mask-composite: xor;
+            mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+            mask-composite: exclude;
+            pointer-events: none;
+        }
+    </style>
 </head>
 
 <body>
@@ -28,22 +47,6 @@
                 @endif
             </div>
             <h1 class="font-headline text-accent text-4xl leading-tight">@treasure.name</h1>
-            @if base := base_treasure
-            <a href="/treasures/@{base.treasure_id}"
-                class="flex items-center gap-3 text-primary font-bold underline underline-offset-4 hover:opacity-80">
-                <img src="@{ctx.img_src('treasures', base.image)}" alt="@base.name"
-                    class="size-10 rounded-lg object-contain border border-secondary">
-                %view_base @base.name
-            </a>
-            @endif
-            @if evo := evo_treasure
-            <a href="/treasures/@{evo.treasure_id}"
-                class="flex items-center gap-3 text-primary font-bold underline underline-offset-4 hover:opacity-80">
-                <img src="@{ctx.img_src('treasures', evo.image)}" alt="@evo.name"
-                    class="size-10 rounded-lg object-contain border border-secondary">
-                %view_evolved @evo.name
-            </a>
-            @endif
             <p class="font-body text-foreground max-w-xl whitespace-pre-line">
                 @if treasure.description != ""
                 @treasure.description
@@ -52,7 +55,7 @@
                 @endif
             </p>
             @if effects.len > 0 || blessed_effects.len > 0
-            <div class="mt-8 w-full">
+            <div id="effects" class="mt-8 w-full">
                 <div class="flex items-center justify-between gap-4 flex-wrap">
                     <span class="text-xs font-label text-foreground-muted uppercase">%treasure_effects</span>
                     @if blessed_effects.len > 0
@@ -77,7 +80,7 @@
                 @if blessed_effects.len > 0
                 <div id="effects-blessed" class="mt-2 flex flex-col gap-2 hidden">
                     @for effect in blessed_effects
-                    <div class="p-4 rounded-xl flex items-center justify-between gap-4 border-l-4 border-tertiary">
+                    <div class="blessed-effect p-4 rounded-xl flex items-center justify-between gap-4">
                         <span class="text-on-surface">@effect.name</span>
                         @if effect.value_display != ""
                         <span class="text-accent font-bold whitespace-nowrap">@effect.value_display</span>
@@ -90,6 +93,28 @@
             @endif
             <!-- Quick Info Panel -->
             <div class="mt-8 grid grid-cols-2 sm:grid-cols-3 gap-4 w-full">
+                @if base := base_treasure
+                <a href="/treasures/@{base.treasure_id}#effects"
+                    class="p-4 rounded-xl flex flex-col gap-1 border-l-4 border-primary">
+                    <span class="text-xs font-label text-foreground-muted uppercase">%base</span>
+                    <span class="text-on-surface font-bold flex items-center gap-2">
+                        <img src="@{ctx.img_src('treasures', base.image)}" alt="@base.name"
+                            class="size-10 rounded-lg object-contain">
+                        @base.name
+                    </span>
+                </a>
+                @endif
+                @if evo := evo_treasure
+                <a href="/treasures/@{evo.treasure_id}#effects"
+                    class="p-4 rounded-xl flex flex-col gap-1 border-l-4 border-primary">
+                    <span class="text-xs font-label text-foreground-muted uppercase">%evolved</span>
+                    <span class="text-on-surface font-bold flex items-center gap-2">
+                        <img src="@{ctx.img_src('treasures', evo.image)}" alt="@evo.name"
+                            class="size-10 rounded-lg object-contain">
+                        @evo.name
+                    </span>
+                </a>
+                @endif
                 <div class="p-4 rounded-xl flex flex-col gap-1 border-l-4 border-tertiary">
                     <span class="text-xs font-label text-foreground-muted uppercase">%release_date</span>
                     <span id="releaseDate" class="text-on-surface font-bold">
