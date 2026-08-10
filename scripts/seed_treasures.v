@@ -400,15 +400,14 @@ fn parse_section(wt string, name string) string {
 	return clean_markup(body).trim_space()
 }
 
-// insert_treasure_row writes one treasure row (normal, or an evolved
-// normal/blessed state) plus its translation and effects; returns the new id
-fn insert_treasure_row(db sqlite.DB, mut effect_ids map[string]int, pt ParsedTreasure, blessed bool, base_id int) !int {
+// insert_treasure_row writes one treasure row plus its translation and
+// normal-state effects; returns the new id
+fn insert_treasure_row(db sqlite.DB, mut effect_ids map[string]int, pt ParsedTreasure, base_id int) !int {
 	tr := models.Treasure{
 		image:            if pt.image == '' { none } else { pt.image }
 		grade:            if g := pt.grade { int(g) } else { none }
 		base_treasure_id: if base_id > 0 { base_id } else { none }
 		is_evolved:       pt.is_evolved
-		is_blessed:       blessed
 		release_date:     pt.release_date
 	}
 	tid := sql db {
@@ -423,9 +422,8 @@ fn insert_treasure_row(db sqlite.DB, mut effect_ids map[string]int, pt ParsedTre
 	sql db {
 		insert ttr into models.TreasureTranslation
 	}!
-	effects := if blessed { pt.blessed_effects } else { pt.normal_effects }
 	mut seen := map[int]bool{}
-	for text in effects {
+	for text in pt.normal_effects {
 		eid := effect_for(db, mut effect_ids, text) or { panic(err) }
 		// a treasure may list the same effect twice; the schema's unique
 		// (treasure_id, effect_id) pair forbids duplicates
@@ -445,6 +443,30 @@ fn insert_treasure_row(db sqlite.DB, mut effect_ids map[string]int, pt ParsedTre
 		}!
 	}
 	return tid
+}
+
+// insert_blessed_effects links the blessed-state effect texts to the
+// treasure, skipping duplicates (the schema's unique (treasure_id, effect_id)
+// pair)
+fn insert_blessed_effects(db sqlite.DB, mut effect_ids map[string]int, tid int, texts []string) ! {
+	mut seen := map[int]bool{}
+	for text in texts {
+		eid := effect_for(db, mut effect_ids, text) or { panic(err) }
+		if eid in seen {
+			continue
+		}
+		seen[eid] = true
+		val, unit := effect_value_unit(text)
+		te := models.TreasureBlessedEffect{
+			treasure_id: tid
+			effect_id:   eid
+			value:       if val == 0 { none } else { val }
+			unit:        unit
+		}
+		sql db {
+			insert te into models.TreasureBlessedEffect
+		}!
+	}
 }
 
 // effect_for returns the effect id for `text`, creating the effect +
@@ -475,6 +497,7 @@ fn main() {
 
 	// re-runnable: clear treasure data from previous runs (FK-safe order)
 	for q in [
+		'DELETE FROM treasure_blessed_effect',
 		'DELETE FROM treasure_effect',
 		'DELETE FROM effect_translation',
 		'DELETE FROM effect',
@@ -578,7 +601,7 @@ fn main() {
 		if pt.is_evolved {
 			continue
 		}
-		tid := insert_treasure_row(db, mut effect_ids, pt, false, 0)!
+		tid := insert_treasure_row(db, mut effect_ids, pt, 0)!
 		title_ids[pt.title] = tid
 		title_ids[pt.page] = tid
 		inserted++
@@ -612,8 +635,8 @@ fn main() {
 		}
 	}
 
-	// pass 2: evolved treasures — a normal-state row and a blessed-state row
-	// (the wiki lists both effects), both pointing at their base
+	// pass 2: evolved treasures — one row with its normal-state effects, and
+	// the blessed-state effects in treasure_blessed_effect, both keyed to it
 	for pt in parsed {
 		if !pt.is_evolved {
 			continue
@@ -626,9 +649,9 @@ fn main() {
 		if base_id == 0 {
 			println('  no base match: ${pt.title} (base ${pt.base})')
 		}
-		insert_treasure_row(db, mut effect_ids, pt, false, base_id)!
-		insert_treasure_row(db, mut effect_ids, pt, true, base_id)!
-		inserted += 2
+		tid := insert_treasure_row(db, mut effect_ids, pt, base_id)!
+		insert_blessed_effects(db, mut effect_ids, tid, pt.blessed_effects)!
+		inserted++
 	}
 	println('treasure rows inserted: ${inserted}, distinct effects: ${effect_ids.len}')
 }

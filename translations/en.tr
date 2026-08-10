@@ -163,6 +163,12 @@ View base:
 view_evolved
 View evolved:
 -----
+state_normal
+Normal
+-----
+state_blessed
+Blessed
+-----
 treasure_effects
 Effects
 -----

@@ -26,21 +26,23 @@
                 <span
                     class="text-primary font-bold uppercase border border-primary/50 rounded-full px-3 py-1">%evolved</span>
                 @endif
-                @if treasure.is_blessed
-                <span
-                    class="text-tertiary font-bold uppercase border border-tertiary/50 rounded-full px-3 py-1">%blessed</span>
-                @endif
             </div>
             <h1 class="font-headline text-accent text-4xl leading-tight">@treasure.name</h1>
             @if base := base_treasure
             <a href="/treasures/@{base.treasure_id}"
-                class="text-primary font-bold underline underline-offset-4 hover:opacity-80">%view_base
-                @base.name</a>
+                class="flex items-center gap-3 text-primary font-bold underline underline-offset-4 hover:opacity-80">
+                <img src="@{ctx.img_src('treasures', base.image)}" alt="@base.name"
+                    class="size-10 rounded-lg object-contain border border-secondary">
+                %view_base @base.name
+            </a>
             @endif
             @if evo := evo_treasure
             <a href="/treasures/@{evo.treasure_id}"
-                class="text-primary font-bold underline underline-offset-4 hover:opacity-80">%view_evolved
-                @evo.name</a>
+                class="flex items-center gap-3 text-primary font-bold underline underline-offset-4 hover:opacity-80">
+                <img src="@{ctx.img_src('treasures', evo.image)}" alt="@evo.name"
+                    class="size-10 rounded-lg object-contain border border-secondary">
+                %view_evolved @evo.name
+            </a>
             @endif
             <p class="font-body text-foreground max-w-xl whitespace-pre-line">
                 @if treasure.description != ""
@@ -49,10 +51,20 @@
                 %missing_description
                 @endif
             </p>
-            @if effects.len > 0
+            @if effects.len > 0 || blessed_effects.len > 0
             <div class="mt-8 w-full">
-                <span class="text-xs font-label text-foreground-muted uppercase">%treasure_effects</span>
-                <div class="mt-2 flex flex-col gap-2">
+                <div class="flex items-center justify-between gap-4 flex-wrap">
+                    <span class="text-xs font-label text-foreground-muted uppercase">%treasure_effects</span>
+                    @if blessed_effects.len > 0
+                    <div id="state-pills" class="flex gap-2">
+                        <button type="button" data-state="normal"
+                            class="rounded-full px-4 py-2 font-bold transition-colors bg-primary text-foreground">%state_normal</button>
+                        <button type="button" data-state="blessed"
+                            class="rounded-full px-4 py-2 font-bold transition-colors border-2 border-secondary/50 text-secondary">%state_blessed</button>
+                    </div>
+                    @endif
+                </div>
+                <div id="effects-normal" class="mt-2 flex flex-col gap-2">
                     @for effect in effects
                     <div class="p-4 rounded-xl flex items-center justify-between gap-4 border-l-4 border-primary">
                         <span class="text-on-surface">@effect.name</span>
@@ -62,6 +74,18 @@
                     </div>
                     @endfor
                 </div>
+                @if blessed_effects.len > 0
+                <div id="effects-blessed" class="mt-2 flex flex-col gap-2 hidden">
+                    @for effect in blessed_effects
+                    <div class="p-4 rounded-xl flex items-center justify-between gap-4 border-l-4 border-tertiary">
+                        <span class="text-on-surface">@effect.name</span>
+                        @if effect.value_display != ""
+                        <span class="text-accent font-bold whitespace-nowrap">@effect.value_display</span>
+                        @endif
+                    </div>
+                    @endfor
+                </div>
+                @endif
             </div>
             @endif
             <!-- Quick Info Panel -->
@@ -77,11 +101,33 @@
     </section>
 
     <script>
-        document.getElementById('releaseDate').textContent = new Intl.DateTimeFormat('@ctx.lang', {
-            month: 'long',
-            day: 'numeric',
-            year: 'numeric',
-        }).format(new Date('@treasure.release_date'));
+        (function () {
+            var pills = document.querySelectorAll('#state-pills button');
+            if (pills.length) {
+                pills.forEach(function (btn) {
+                    btn.addEventListener('click', function () {
+                        var state = btn.getAttribute('data-state');
+                        pills.forEach(function (p) {
+                            var active = p === btn;
+                            p.classList.toggle('bg-primary', active);
+                            p.classList.toggle('text-foreground', active);
+                            p.classList.toggle('border-2', !active);
+                            p.classList.toggle('border-secondary/50', !active);
+                            p.classList.toggle('text-secondary', !active);
+                        });
+                        var normal = document.getElementById('effects-normal');
+                        var blessed = document.getElementById('effects-blessed');
+                        if (normal) normal.classList.toggle('hidden', state !== 'normal');
+                        if (blessed) blessed.classList.toggle('hidden', state !== 'blessed');
+                    });
+                });
+            }
+            document.getElementById('releaseDate').textContent = new Intl.DateTimeFormat('@ctx.lang', {
+                month: 'long',
+                day: 'numeric',
+                year: 'numeric',
+            }).format(new Date('@treasure.release_date'));
+        })();
     </script>
 </body>
 

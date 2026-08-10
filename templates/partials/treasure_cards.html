@@ -7,14 +7,9 @@
     <img src="@{ctx.img_src('treasures', treasure.image)}" alt="@treasure.name"
         class="h-28 w-full object-contain">
     <h2 class="text-xl group-hover:text-primary text-secondary text-center">@treasure.name</h2>
-    <div class="flex gap-2 text-xs mt-1">
-        @if treasure.is_evolved
-        <span class="text-primary font-bold uppercase">%evolved</span>
-        @endif
-        @if treasure.is_blessed
-        <span class="text-tertiary font-bold uppercase">%blessed</span>
-        @endif
-    </div>
+    @if treasure.is_evolved
+    <span class="text-primary font-bold uppercase text-xs mt-1">%evolved</span>
+    @endif
 </a>
 @endfor
 @if next_page > 0

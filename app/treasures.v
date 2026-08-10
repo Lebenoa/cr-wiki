@@ -27,17 +27,8 @@ pub fn (wapp &App) treasures(mut ctx Context) veb.Result {
 		0
 	}
 
-	pill := 'rounded-full px-4 py-2 font-bold transition-colors'
-	normal_cls := if tab == 'normal' {
-		'${pill} bg-primary text-foreground'
-	} else {
-		'${pill} border-2 border-secondary/50 text-secondary'
-	}
-	evo_cls := if tab == 'evo' {
-		'${pill} bg-primary text-foreground'
-	} else {
-		'${pill} border-2 border-secondary/50 text-secondary'
-	}
+	normal_cls := pill_cls(tab == 'normal')
+	evo_cls := pill_cls(tab == 'evo')
 
 	if ctx.is_htmx_request() && !ctx.is_boosted_request() {
 		return $veb.html("./templates/partials/treasure_cards.html")
@@ -46,10 +37,22 @@ pub fn (wapp &App) treasures(mut ctx Context) veb.Result {
 	return $veb.html()
 }
 
+// pill_cls returns the pill button classes for the treasure list tabs
+fn pill_cls(active bool) string {
+	base := 'rounded-full px-4 py-2 font-bold transition-colors'
+	return if active {
+		'${base} bg-primary text-foreground'
+	} else {
+		'${base} border-2 border-secondary/50 text-secondary'
+	}
+}
+
 @['/treasures/:id']
 pub fn (wapp &App) treasure_info(mut ctx Context, id int) veb.Result {
 	treasure := database.get_treasure(wapp.db, ctx.lang, id) or { return ctx.not_found() }
 	effects := database.get_treasure_effects(wapp.db, ctx.lang, id) or { [] }
+	// blessed-state effects live in a separate table; empty for non-evolved
+	blessed_effects := database.get_treasure_blessed_effects(wapp.db, ctx.lang, id) or { [] }
 	// evolved rows link to their base; base treasures with an evolved form link
 	// to it (the normal-state evolved row)
 	mut base_treasure := ?database.TreasureView(none)
@@ -107,7 +110,6 @@ pub fn (wapp &App) new_treasure(mut ctx Context) veb.Result {
 				image
 			}
 			is_evolved:   ctx.form['is_evolved'] == 'true'
-			is_blessed:   ctx.form['is_blessed'] == 'true'
 			release_date: release_date
 		}) or {
 			ctx.res.set_status(.bad_request)

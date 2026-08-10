@@ -25,6 +25,7 @@ pub fn initialize(path string) !sqlite.DB {
 		create table models.Effect
 		create table models.EffectTranslation
 		create table models.TreasureEffect
+		create table models.TreasureBlessedEffect
 	}!
 
 	migrate(conn)!
@@ -47,11 +48,12 @@ pub struct SeedFixture {
 	cookie_translation   []models.CookieTranslation
 	pet                  []models.Pet
 	pet_translation      []models.PetTranslation
-	treasure             []models.Treasure
-	treasure_translation []models.TreasureTranslation
-	effect               []models.Effect
-	effect_translation   []models.EffectTranslation
-	treasure_effect      []models.TreasureEffect
+	treasure              []models.Treasure
+	treasure_translation  []models.TreasureTranslation
+	effect                []models.Effect
+	effect_translation    []models.EffectTranslation
+	treasure_effect       []models.TreasureEffect
+	treasure_blessed_effect []models.TreasureBlessedEffect
 }
 
 // seed_if_empty loads scripts/seed_data.json into a database that has no
@@ -112,6 +114,11 @@ fn seed_if_empty(conn sqlite.DB) ! {
 	for te in fixture.treasure_effect {
 		sql conn {
 			insert te into models.TreasureEffect
+		}!
+	}
+	for te in fixture.treasure_blessed_effect {
+		sql conn {
+			insert te into models.TreasureBlessedEffect
 		}!
 	}
 }
@@ -296,6 +303,40 @@ fn migrate(conn sqlite.DB) ! {
 		result := conn.exec_none(query)
 		if !sqlite_success(result) {
 			return conn.error_message(result, query)
+		}
+	}
+
+	// merge blessed states into their evolved row: move the blessed effects to
+	// treasure_blessed_effect (created by the ORM) keyed by the sibling
+	// normal-state evolved row, drop the blessed treasure rows, then remove the
+	// is_blessed column. Each step is idempotent so a partially-applied
+	// migration recovers on reboot.
+	current_cols := conn.columns('treasure') or { return }
+	if 'is_blessed' in current_cols {
+		mut result := conn.exec_none("
+			INSERT OR IGNORE INTO treasure_blessed_effect (treasure_id, effect_id, value, unit)
+			SELECT e2.treasure_id, te.effect_id, te.value, te.unit
+			FROM treasure t1
+			JOIN treasure_effect te ON te.treasure_id = t1.treasure_id
+			JOIN treasure e2 ON e2.is_evolved = 1 AND e2.is_blessed = 0
+				AND e2.base_treasure_id = t1.base_treasure_id
+			WHERE t1.is_blessed = 1
+		")
+		if !sqlite_success(result) {
+			return conn.error_message(result, 'merge treasure blessed effects')
+		}
+		// translations reference treasure, so drop the orphaned ones first
+		result = conn.exec_none('DELETE FROM treasure_translation WHERE treasure_id IN (SELECT treasure_id FROM treasure WHERE is_blessed = 1)')
+		if !sqlite_success(result) {
+			return conn.error_message(result, 'delete blessed treasure translations')
+		}
+		result = conn.exec_none('DELETE FROM treasure WHERE is_blessed = 1')
+		if !sqlite_success(result) {
+			return conn.error_message(result, 'delete blessed treasure rows')
+		}
+		result = conn.exec_none('ALTER TABLE treasure DROP COLUMN is_blessed')
+		if !sqlite_success(result) {
+			return conn.error_message(result, 'drop treasure is_blessed column')
 		}
 	}
 }

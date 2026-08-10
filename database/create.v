@@ -122,7 +122,6 @@ pub:
 	description  string
 	image        ?string
 	is_evolved   bool
-	is_blessed   bool
 	release_date time.Time
 }
 
@@ -137,7 +136,6 @@ pub fn create_treasure(conn sqlite.DB, params CreateTreasureParams) !int {
 	new_treasure := models.Treasure{
 		image:        params.image
 		is_evolved:   params.is_evolved
-		is_blessed:   params.is_blessed
 		release_date: params.release_date
 	}
 
