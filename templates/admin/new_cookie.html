@@ -87,18 +87,18 @@
             </div>
             <div class="space-y-2">
                 <label class="font-label text-secondary uppercase" for="image">%image</label>
-                <div class="flex items-center gap-4">
-                    <input id="image"
-                        class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground focus:border-primary focus:ring-0 transition-all outline-none file:mr-4 file:rounded-lg file:border-0 file:bg-primary/20 file:px-4 file:py-2 file:font-semibold file:text-foreground"
-                        type="file" name="image" accept="image/*" />
+                <label for="image" class="flex flex-col w-fit gap-2 cursor-pointer group">
                     <img id="imagePreview" alt="%image"
-                        class="size-24 shrink-0 rounded-xl object-contain border-2 border-primary/30 bg-surface
+                        class="size-36 rounded-xl object-contain border-2 border-dashed border-primary/40 bg-surface group-hover:border-primary group-hover:bg-primary/10 transition-all
                         @if !state.edit_mode
                         hidden
                         @endif
                         "
                         src="@{ctx.cookie_img_src(state.image)}" />
-                </div>
+                    <span
+                        class="w-full min-w-40 bg-surface border-2 border-dashed border-primary/40 rounded-xl py-3 px-4 text-sm font-semibold text-foreground-muted group-hover:border-primary group-hover:text-foreground transition-all text-center">%choose_image</span>
+                </label>
+                <input id="image" type="file" name="image" accept="image/*" class="sr-only" />
             </div>
             <script>
                 document.getElementById('image').addEventListener('change', function (e) {
