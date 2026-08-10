@@ -19,6 +19,8 @@ pub fn grade_name(g string) string {
 	return match g {
 		'e' { 'Extra' }
 		'l' { 'Legend' }
-		else { g }
+		's' { 'Super' }
+		's_plus' { 'Super Plus' }
+		else { g.to_upper() }
 	}
 }

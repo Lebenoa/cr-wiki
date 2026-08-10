@@ -17,7 +17,7 @@
                     <line x1="4" x2="20" y1="18" y2="18" />
                 </svg>
             </button>
-            <div class="hidden md:flex gap-8 items-center" hx-boost:inherited="true">
+            <div class="hidden md:flex gap-8 items-center">
                 @{ctx.nav_link('cookies')}
                 @{ctx.nav_link('pets')}
                 @{ctx.nav_link('treasures')}
@@ -69,8 +69,7 @@
                 </svg>
             </button>
             <div id="mobile-nav" popover
-                class="p-4 m-bs-1 inline-64 bg-background text-foreground rounded border border-accent transition-discrete transition-all duration-300 flex-col gap-2 hidden popover-open:flex"
-                hx-boost:inherited="true">
+                class="p-4 m-bs-1 inline-64 bg-background text-foreground rounded border border-accent transition-discrete transition-all duration-300 flex-col gap-2 hidden popover-open:flex">
                 @{ctx.nav_link('cookies')}
                 @{ctx.nav_link('pets')}
                 @{ctx.nav_link('treasures')}
@@ -95,7 +94,7 @@
                 </div>
                 @endif
                 <button class="btn hover:bg-secondary/20" command="show-modal" commandfor="language-dropdown">%language:
-                    <span class="font-bold uppercase">@ctx.lang</span></button>
+                    <span class="font-bold uppercase ml-2">@{ctx.lang_map(ctx.lang)}</span></button>
                 <!-- <button class="btn-warning" popovertarget="account-dropdown" popovertargetaction="close">Close</button> -->
             </div>
             <dialog
