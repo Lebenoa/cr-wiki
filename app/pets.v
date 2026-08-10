@@ -36,7 +36,80 @@ pub fn (wapp &App) pets(mut ctx Context) veb.Result {
 pub fn (wapp &App) pet_info(mut ctx Context, id int) veb.Result {
 	pet := database.get_pet(wapp.db, ctx.lang, id) or { return ctx.not_found() }
 	ctx.page_title = '${pet.name} | Classic Fan/Wiki'
+	mut is_admin := false
+	if user := ctx.user {
+		is_admin = user.is_admin
+	}
 	return $veb.html("./templates/views/pet.html")
+}
+
+@['/pets/:id/edit'; get; post]
+pub fn (wapp &App) edit_pet(mut ctx Context, id int) veb.Result {
+	cur_user := ctx.user or { return ctx.not_found() }
+	if !cur_user.is_admin {
+		return ctx.not_found()
+	}
+
+	pet := database.get_pet(wapp.db, ctx.lang, id) or { return ctx.not_found() }
+
+	if ctx.req.method == .get {
+		ctx.page_title = 'Edit ${pet.name} | Classic/FanWiki'
+		languages := api.available_lang()
+		grades := models.grade_values
+		edit_mode := true
+		entity_id := pet.pet_id
+		entity_name := pet.name
+		entity_abilities := pet.abilities
+		entity_description := pet.description
+		entity_grade := pet.grade.str()
+		rd := pet.release_date
+		entity_release_date := '${rd.year:04d}-${int(rd.month):02d}-${rd.day:02d}'
+		entity_lang := pet.lang
+		return $veb.html("./templates/admin/new_pet.html")
+
+	} else if ctx.req.method == .post {
+		image := upload_image(mut ctx, 'pets') or {
+			ctx.res.set_status(.bad_request)
+			return ctx.text(err.msg())
+		}
+
+		grade := models.Grade.from(ctx.form['grade']) or {
+			ctx.res.set_status(.bad_request)
+			return ctx.text('Invalid grade: expected one of e, c, b, a, s, s_plus, l')
+		}
+
+		date_str := ctx.form['release_date']
+		release_date := if date_str != '' {
+			time.parse('${date_str} 00:00:00') or {
+				ctx.res.set_status(.bad_request)
+				return ctx.text('Invalid release date, expected YYYY-MM-DD')
+			}
+		} else {
+			time.now()
+		}
+
+		lang_str := ctx.form['lang'] or { ctx.lang }
+		database.update_pet(wapp.db, id, database.UpdatePetParams{
+			lang:         lang_str
+			name:         ctx.form['name']
+			abilities:    ctx.form['abilities']
+			description:  ctx.form['description']
+			grade:        grade
+			image:        if image == '' {
+				none
+			} else {
+				image
+			}
+			release_date: release_date
+		}) or {
+			ctx.res.set_status(.bad_request)
+			return ctx.text('Failed to update pet: ${err}')
+		}
+
+		return ctx.redirect('/pets/${id}')
+	}
+
+	return ctx.not_found()
 }
 
 @['/pets/new'; get; post]
@@ -50,6 +123,14 @@ pub fn (wapp &App) new_pet(mut ctx Context) veb.Result {
 		ctx.page_title = 'New Pet | Classic/FanWiki'
 		languages := api.available_lang()
 		grades := models.grade_values
+		edit_mode := false
+		entity_id := 0
+		entity_name := ''
+		entity_abilities := ''
+		entity_description := ''
+		entity_grade := 'c'
+		entity_release_date := ''
+		entity_lang := ctx.lang
 		return $veb.html("./templates/admin/new_pet.html")
 	} else if ctx.req.method == .post {
 		image := upload_image(mut ctx, 'pets') or {

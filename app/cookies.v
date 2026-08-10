@@ -43,6 +43,15 @@ pub fn (wapp &App) new_cookie(mut ctx Context) veb.Result {
 		ctx.page_title = 'New Cookie | Classic/FanWiki'
 		languages := api.available_lang()
 		grades := models.grade_values
+		edit_mode := false
+		entity_id := 0
+		entity_name := ''
+		entity_abilities := ''
+		entity_description := ''
+		entity_power_plus := ''
+		entity_grade := 'c'
+		entity_release_date := ''
+		entity_lang := ctx.lang
 		return $veb.html("./templates/admin/new_cookie.html")
 
 	} else if ctx.req.method == .post {
@@ -95,5 +104,80 @@ pub fn (wapp &App) new_cookie(mut ctx Context) veb.Result {
 pub fn (wapp &App) cookie_info(mut ctx Context, id int) veb.Result {
 	cookie := database.get_cookie(wapp.db, ctx.lang, id) or { return ctx.not_found() }
 	ctx.page_title = '${cookie.name} | Classic Fan/Wiki'
+	mut is_admin := false
+	if user := ctx.user {
+		is_admin = user.is_admin
+	}
 	return $veb.html("./templates/views/cookie.html")
+}
+
+@['/cookies/:id/edit'; get; post]
+pub fn (wapp &App) edit_cookie(mut ctx Context, id int) veb.Result {
+	cur_user := ctx.user or { return ctx.not_found() }
+	if !cur_user.is_admin {
+		return ctx.not_found()
+	}
+
+	cookie := database.get_cookie(wapp.db, ctx.lang, id) or { return ctx.not_found() }
+
+	if ctx.req.method == .get {
+		ctx.page_title = 'Edit ${cookie.name} | Classic/FanWiki'
+		languages := api.available_lang()
+		grades := models.grade_values
+		edit_mode := true
+		entity_id := cookie.cookie_id
+		entity_name := cookie.name
+		entity_abilities := cookie.abilities
+		entity_description := cookie.description
+		entity_power_plus := cookie.power_plus
+		entity_grade := cookie.grade.str()
+		rd := cookie.release_date
+		entity_release_date := '${rd.year:04d}-${int(rd.month):02d}-${rd.day:02d}'
+		entity_lang := cookie.lang
+		return $veb.html("./templates/admin/new_cookie.html")
+
+	} else if ctx.req.method == .post {
+		image := upload_image(mut ctx, 'cookies') or {
+			ctx.res.set_status(.bad_request)
+			return ctx.text(err.msg())
+		}
+
+		grade := models.Grade.from(ctx.form['grade']) or {
+			ctx.res.set_status(.bad_request)
+			return ctx.text('Invalid grade: expected one of e, c, b, a, s, s_plus, l')
+		}
+
+		date_str := ctx.form['release_date']
+		release_date := if date_str != '' {
+			time.parse('${date_str} 00:00:00') or {
+				ctx.res.set_status(.bad_request)
+				return ctx.text('Invalid release date, expected YYYY-MM-DD')
+			}
+		} else {
+			time.now()
+		}
+
+		lang_str := ctx.form['lang'] or { ctx.lang }
+		database.update_cookie(wapp.db, id, database.UpdateCookieParams{
+			lang:         lang_str
+			name:         ctx.form['name']
+			abilities:    ctx.form['abilities']
+			description:  ctx.form['description']
+			grade:        grade
+			image:        if image == '' {
+				none
+			} else {
+				image
+			}
+			power_plus:   ctx.form['power_plus']
+			release_date: release_date
+		}) or {
+			ctx.res.set_status(.bad_request)
+			return ctx.text('Failed to update cookie: ${err}')
+		}
+
+		return ctx.redirect('/cookies/${id}')
+	}
+
+	return ctx.not_found()
 }

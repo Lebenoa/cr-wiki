@@ -68,7 +68,72 @@ pub fn (wapp &App) treasure_info(mut ctx Context, id int) veb.Result {
 		}
 	}
 	ctx.page_title = '${treasure.name} | Classic Fan/Wiki'
+	mut is_admin := false
+	if user := ctx.user {
+		is_admin = user.is_admin
+	}
 	return $veb.html("./templates/views/treasure.html")
+}
+
+@['/treasures/:id/edit'; get; post]
+pub fn (wapp &App) edit_treasure(mut ctx Context, id int) veb.Result {
+	cur_user := ctx.user or { return ctx.not_found() }
+	if !cur_user.is_admin {
+		return ctx.not_found()
+	}
+
+	treasure := database.get_treasure(wapp.db, ctx.lang, id) or { return ctx.not_found() }
+
+	if ctx.req.method == .get {
+		ctx.page_title = 'Edit ${treasure.name} | Classic/FanWiki'
+		languages := api.available_lang()
+		edit_mode := true
+		entity_id := treasure.treasure_id
+		entity_name := treasure.name
+		entity_description := treasure.description
+		entity_is_evolved := treasure.is_evolved
+		rd := treasure.release_date
+		entity_release_date := '${rd.year:04d}-${int(rd.month):02d}-${rd.day:02d}'
+		entity_lang := treasure.lang
+		return $veb.html("./templates/admin/new_treasure.html")
+
+	} else if ctx.req.method == .post {
+		image := upload_image(mut ctx, 'treasures') or {
+			ctx.res.set_status(.bad_request)
+			return ctx.text(err.msg())
+		}
+
+		date_str := ctx.form['release_date']
+		release_date := if date_str != '' {
+			time.parse('${date_str} 00:00:00') or {
+				ctx.res.set_status(.bad_request)
+				return ctx.text('Invalid release date, expected YYYY-MM-DD')
+			}
+		} else {
+			time.now()
+		}
+
+		lang_str := ctx.form['lang'] or { ctx.lang }
+		database.update_treasure(wapp.db, id, database.UpdateTreasureParams{
+			lang:         lang_str
+			name:         ctx.form['name']
+			description:  ctx.form['description']
+			image:        if image == '' {
+				none
+			} else {
+				image
+			}
+			is_evolved:   ctx.form['is_evolved'] == 'true'
+			release_date: release_date
+		}) or {
+			ctx.res.set_status(.bad_request)
+			return ctx.text('Failed to update treasure: ${err}')
+		}
+
+		return ctx.redirect('/treasures/${id}')
+	}
+
+	return ctx.not_found()
 }
 
 @['/treasures/new'; get; post]
@@ -81,6 +146,13 @@ pub fn (wapp &App) new_treasure(mut ctx Context) veb.Result {
 	if ctx.req.method == .get {
 		ctx.page_title = 'New Treasure | Classic/FanWiki'
 		languages := api.available_lang()
+		edit_mode := false
+		entity_id := 0
+		entity_name := ''
+		entity_description := ''
+		entity_is_evolved := false
+		entity_release_date := ''
+		entity_lang := ctx.lang
 		return $veb.html("./templates/admin/new_treasure.html")
 
 	} else if ctx.req.method == .post {

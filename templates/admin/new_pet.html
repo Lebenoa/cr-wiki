@@ -10,16 +10,27 @@
 
     <div class="w-full flex flex-col justify-center items-center py-12 relative">
         <div class="text-center mb-10">
+            @if edit_mode
+            <h1 class="font-headline font-bold text-2xl text-accent mb-2">%edit_pet_page_header</h1>
+            <p class="font-body text-lg text-secondary">%edit_pet_subtitle</p>
+            @else
             <h1 class="font-headline font-bold text-2xl text-accent mb-2">%new_pet_page_header</h1>
             <p class="font-body text-lg text-secondary">%new_pet_subtitle</p>
+            @endif
         </div>
-        <form class="space-y-5 w-full max-w-2xl" method="post" action="/pets/new" enctype="multipart/form-data">
+        <form class="space-y-5 w-full max-w-2xl" method="post"
+            @if edit_mode
+            action="/pets/@entity_id/edit"
+            @else
+            action="/pets/new"
+            @endif
+            enctype="multipart/form-data">
             <div class="space-y-2">
                 <label class="font-label text-secondary uppercase" for="lang">%language</label>
                 <select id="lang" name="lang"
                     class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground focus:border-primary focus:ring-0 transition-all outline-none">
                     @for lang in languages
-                    @if lang == ctx.lang
+                    @if lang == entity_lang
                     <option value="@lang" selected>@{ctx.lang_map(lang)}</option>
                     @else
                     <option value="@lang">@{ctx.lang_map(lang)}</option>
@@ -31,7 +42,7 @@
                 <label class="font-label text-secondary uppercase" for="name">%pet_name</label>
                 <input id="name"
                     class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground placeholder:text-foreground/30 focus:border-primary focus:ring-0 transition-all outline-none"
-                    type="text" name="name" placeholder="GingerBright" required />
+                    type="text" name="name" placeholder="GingerBright" required value="@entity_name" />
             </div>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div class="space-y-2">
@@ -39,7 +50,11 @@
                     <div class="flex flex-wrap gap-3">
                         @for g in grades
                         <label class="cursor-pointer transition-all hover:scale-105" title="@g">
-                            <input class="peer sr-only" type="radio" name="grade" value="@g" required />
+                            <input class="peer sr-only" type="radio" name="grade" value="@g" required
+                                @if g == entity_grade
+                                checked
+                                @endif
+                            />
                             <img src="/img/grades/@{g}.png" alt="@g"
                                 class="size-16 rounded-xl border-2 border-transparent bg-surface peer-checked:border-primary peer-checked:ring-2 peer-checked:ring-primary transition-all" />
                         </label>
@@ -50,19 +65,19 @@
                     <label class="font-label text-secondary uppercase" for="release_date">%release_date</label>
                     <input id="release_date"
                         class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground focus:border-primary focus:ring-0 transition-all outline-none"
-                        type="date" name="release_date" />
+                        type="date" name="release_date" value="@entity_release_date" />
                 </div>
             </div>
             <div class="space-y-2">
                 <label class="font-label text-secondary uppercase" for="abilities">%abilities</label>
                 <textarea id="abilities" name="abilities" rows="4"
                     class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground placeholder:text-foreground/30 focus:border-primary focus:ring-0 transition-all outline-none resize-y"
-                    required></textarea>
+                    required>@entity_abilities</textarea>
             </div>
             <div class="space-y-2">
                 <label class="font-label text-secondary uppercase" for="description">%description</label>
                 <textarea id="description" name="description" rows="4"
-                    class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground placeholder:text-foreground/30 focus:border-primary focus:ring-0 transition-all outline-none resize-y"></textarea>
+                    class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground placeholder:text-foreground/30 focus:border-primary focus:ring-0 transition-all outline-none resize-y">@entity_description</textarea>
             </div>
             <div class="space-y-2">
                 <label class="font-label text-secondary uppercase" for="image">%image</label>
@@ -72,7 +87,11 @@
             </div>
             <button type="submit"
                 class="w-full bg-primary hover:bg-primary/90 text-foreground font-headline py-4 rounded-xl shadow-lg transition-all active:scale-[0.98]">
+                @if edit_mode
+                %save_pet_button
+                @else
                 %create_pet_button
+                @endif
             </button>
         </form>
     </div>

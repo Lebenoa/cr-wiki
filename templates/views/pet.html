@@ -8,7 +8,15 @@
 <body>
     @include 'layout/navbar.html'
 
-    <section class="grid grid-cols-1 md:grid-cols-12 gap-8 my-16">
+    @if is_admin
+<div class="flex justify-end">
+    <a href="/pets/@{pet.pet_id}/edit"
+        class="bg-primary hover:bg-primary/90 text-foreground font-headline px-6 py-2 rounded-xl shadow-lg transition-all text-sm">
+        %edit_button
+    </a>
+</div>
+@endif
+<section class="grid grid-cols-1 md:grid-cols-12 gap-8 my-16">
         <div class="md:col-span-5 relative group">
             <div
                 class="absolute inset-0 bg-primary/20 blur-[60px] scale-75 group-hover:scale-90 transition-transform duration-700 rounded-full">

@@ -196,3 +196,33 @@ Create Pet
 create_treasure_button
 Create Treasure
 -----
+edit_button
+Edit
+-----
+edit_cookie_page_header
+Edit Cookie
+-----
+edit_cookie_subtitle
+Update the cookie's information
+-----
+save_cookie_button
+Save Cookie
+-----
+edit_pet_page_header
+Edit Pet
+-----
+edit_pet_subtitle
+Update the pet's information
+-----
+save_pet_button
+Save Pet
+-----
+edit_treasure_page_header
+Edit Treasure
+-----
+edit_treasure_subtitle
+Update the treasure's information
+-----
+save_treasure_button
+Save Treasure
+-----

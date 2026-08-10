@@ -10,16 +10,27 @@
 
     <div class="w-full flex flex-col justify-center items-center py-12 relative">
         <div class="text-center mb-10">
+            @if edit_mode
+            <h1 class="font-headline font-bold text-2xl text-accent mb-2">%edit_treasure_page_header</h1>
+            <p class="font-body text-lg text-secondary">%edit_treasure_subtitle</p>
+            @else
             <h1 class="font-headline font-bold text-2xl text-accent mb-2">%new_treasure_page_header</h1>
             <p class="font-body text-lg text-secondary">%new_treasure_subtitle</p>
+            @endif
         </div>
-        <form class="space-y-5 w-full max-w-2xl" method="post" action="/treasures/new" enctype="multipart/form-data">
+        <form class="space-y-5 w-full max-w-2xl" method="post"
+            @if edit_mode
+            action="/treasures/@entity_id/edit"
+            @else
+            action="/treasures/new"
+            @endif
+            enctype="multipart/form-data">
             <div class="space-y-2">
                 <label class="font-label text-secondary uppercase" for="lang">%language</label>
                 <select id="lang" name="lang"
                     class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground focus:border-primary focus:ring-0 transition-all outline-none">
                     @for lang in languages
-                    @if lang == ctx.lang
+                    @if lang == entity_lang
                     <option value="@lang" selected>@{ctx.lang_map(lang)}</option>
                     @else
                     <option value="@lang">@{ctx.lang_map(lang)}</option>
@@ -31,28 +42,36 @@
                 <label class="font-label text-secondary uppercase" for="name">%treasure_name</label>
                 <input id="name"
                     class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground placeholder:text-foreground/30 focus:border-primary focus:ring-0 transition-all outline-none"
-                    type="text" name="name" placeholder="Pilgrim's Scroll" required />
+                    type="text" name="name" placeholder="Pilgrim's Scroll" required value="@entity_name" />
             </div>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div class="space-y-2">
                     <label class="font-label text-secondary uppercase" for="release_date">%release_date</label>
                     <input id="release_date"
                         class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground focus:border-primary focus:ring-0 transition-all outline-none"
-                        type="date" name="release_date" />
+                        type="date" name="release_date" value="@entity_release_date" />
                 </div>
                 <div class="space-y-2">
                     <label class="font-label text-secondary uppercase" for="is_evolved">%evolved</label>
                     <select id="is_evolved" name="is_evolved"
                         class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground focus:border-primary focus:ring-0 transition-all outline-none">
-                        <option value="false">No</option>
-                        <option value="true">Yes</option>
+                        <option value="false"
+                            @if !entity_is_evolved
+                            selected
+                            @endif
+                        >No</option>
+                        <option value="true"
+                            @if entity_is_evolved
+                            selected
+                            @endif
+                        >Yes</option>
                     </select>
                 </div>
             </div>
             <div class="space-y-2">
                 <label class="font-label text-secondary uppercase" for="description">%description</label>
                 <textarea id="description" name="description" rows="4"
-                    class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground placeholder:text-foreground/30 focus:border-primary focus:ring-0 transition-all outline-none resize-y"></textarea>
+                    class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground placeholder:text-foreground/30 focus:border-primary focus:ring-0 transition-all outline-none resize-y">@entity_description</textarea>
             </div>
             <div class="space-y-2">
                 <label class="font-label text-secondary uppercase" for="image">%image</label>
@@ -62,7 +81,11 @@
             </div>
             <button type="submit"
                 class="w-full bg-primary hover:bg-primary/90 text-foreground font-headline py-4 rounded-xl shadow-lg transition-all active:scale-[0.98]">
+                @if edit_mode
+                %save_treasure_button
+                @else
                 %create_treasure_button
+                @endif
             </button>
         </form>
     </div>
