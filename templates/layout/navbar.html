@@ -34,7 +34,7 @@
                 </svg>
             </button>
             <div id="search-box"
-                class="md:block md:flex-none md:w-56 lg:w-72 hidden transition-all transition-discrete duration-300 max-md:absolute max-md:inset-y-0 max-md:left-12 max-md:right-0 max-md:z-20 max-md:bg-background max-md:px-2 max-md:items-center max-md:[&.open]:flex max-md:opacity-0 max-md:-translate-y-2 max-md:[&.open]:opacity-100 max-md:[&.open]:translate-y-0 max-md:[&.open]:starting:opacity-0 max-md:[&.open]:starting:-translate-y-2">
+                class="md:block md:flex-none md:w-56 lg:w-72 hidden transition-all transition-discrete duration-300 max-md:absolute max-md:inset-y-0 max-md:left-12 max-md:right-0 max-md:z-20 max-md:bg-background max-md:px-2 max-md:items-center max-md:not-[.hidden]:flex max-md:opacity-0 max-md:-translate-y-2 max-md:not-[.hidden]:opacity-100 max-md:not-[.hidden]:translate-y-0 max-md:not-[.hidden]:starting:opacity-0 max-md:not-[.hidden]:starting:-translate-y-2">
                 <form class="relative max-md:flex-1" action="/search" method="get" hx-boost="true">
                     <span class="absolute left-4 top-1/2 -translate-y-1/2 text-foreground-muted">
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
@@ -132,8 +132,9 @@
                 results.classList.remove('flex');
             }
             function setOpen(open) {
+                // 'hidden' is the single source of truth; the max-md:not-[.hidden]
+                // variants show the box while it lacks the class
                 box.classList.toggle('hidden', !open);
-                box.classList.toggle('open', open);
                 btn.classList.toggle('hidden', open);
                 btn.setAttribute('aria-expanded', open ? 'true' : 'false');
                 if (open) {
