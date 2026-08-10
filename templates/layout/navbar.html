@@ -97,10 +97,10 @@
         (function () {
             const btn = document.getElementById('search-toggle');
             const box = document.getElementById('search-box');
-            if (!btn || !box) return;
-            const input = box.querySelector('input[name=q]');
+            const input = box?.querySelector('input[name=q]');
             const results = document.getElementById('search-results');
             const indicator = document.getElementById('search-loading');
+            if (!btn || !box || !input || !results || !indicator) return;
             // the collapsible state only exists below md: on desktop the box is
             // always visible (md:block) even though the hidden class stays in
             // the markup, so isOpen() must not gate desktop behavior
@@ -110,20 +110,23 @@
             function isOpen() {
                 return !box.classList.contains('hidden');
             }
+            function hideResults() {
+                results.classList.add('hidden');
+                results.classList.remove('flex');
+            }
             function setOpen(open) {
                 box.classList.toggle('hidden', !open);
                 box.classList.toggle('open', open);
                 btn.classList.toggle('hidden', open);
                 btn.setAttribute('aria-expanded', open ? 'true' : 'false');
                 if (open) {
-                    input?.focus();
+                    input.focus();
                 } else {
-                    input?.blur();
+                    input.blur();
                     input.value = '';
                     results.innerHTML = '';
-                    results.classList.add('hidden');
-                    results.classList.remove('flex');
-                    indicator?.classList.add('hidden');
+                    hideResults();
+                    indicator.classList.add('hidden');
                 }
             }
             btn.addEventListener('click', function () {
@@ -131,7 +134,7 @@
             });
             // reveal the spinner during the debounce window, before htmx fires
             input.addEventListener('input', function () {
-                indicator?.classList.toggle('hidden', input.value.trim() === '');
+                indicator.classList.toggle('hidden', input.value.trim() === '');
             });
             document.addEventListener('click', function (e) {
                 // close only on mobile and outside the search control; the toggle's
@@ -146,11 +149,10 @@
             // show the dropdown only once it has content, so a focused-but-empty
             // input never displays an empty box; hide the spinner once settled
             results.addEventListener('htmx:after:settle', function () {
-                indicator?.classList.add('hidden');
+                indicator.classList.add('hidden');
                 if (isMobile() && !isOpen()) {
                     // a response landed after the mobile box was closed; keep it hidden
-                    results.classList.add('hidden');
-                    results.classList.remove('flex');
+                    hideResults();
                     return;
                 }
                 const hasContent = results.innerHTML.trim() !== '';
@@ -159,7 +161,7 @@
             });
             // a failed request never settles, so hide the spinner on error too
             input.addEventListener('htmx:error', function () {
-                indicator?.classList.add('hidden');
+                indicator.classList.add('hidden');
             });
         })();
     </script>
