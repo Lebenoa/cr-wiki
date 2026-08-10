@@ -25,7 +25,6 @@ pub fn initialize(path string) !sqlite.DB {
 		create table models.Effect
 		create table models.EffectTranslation
 		create table models.TreasureEffect
-		create table models.TreasureBlessedEffect
 	}!
 
 	migrate(conn)!
@@ -48,12 +47,11 @@ pub struct SeedFixture {
 	cookie_translation   []models.CookieTranslation
 	pet                  []models.Pet
 	pet_translation      []models.PetTranslation
-	treasure              []models.Treasure
-	treasure_translation  []models.TreasureTranslation
-	effect                []models.Effect
-	effect_translation    []models.EffectTranslation
-	treasure_effect       []models.TreasureEffect
-	treasure_blessed_effect []models.TreasureBlessedEffect
+	treasure             []models.Treasure
+	treasure_translation []models.TreasureTranslation
+	effect               []models.Effect
+	effect_translation   []models.EffectTranslation
+	treasure_effect      []models.TreasureEffect
 }
 
 // seed_if_empty loads scripts/seed_data.json into a database that has no
@@ -114,11 +112,6 @@ fn seed_if_empty(conn sqlite.DB) ! {
 	for te in fixture.treasure_effect {
 		sql conn {
 			insert te into models.TreasureEffect
-		}!
-	}
-	for te in fixture.treasure_blessed_effect {
-		sql conn {
-			insert te into models.TreasureBlessedEffect
 		}!
 	}
 }
@@ -313,7 +306,23 @@ fn migrate(conn sqlite.DB) ! {
 	// migration recovers on reboot.
 	current_cols := conn.columns('treasure') or { return }
 	if 'is_blessed' in current_cols {
+		// this step targets treasure_blessed_effect, which the ORM used to
+		// create from its model; the model is gone (the tables were collapsed
+		// below), so create the transient table here for this migration only
 		mut result := conn.exec_none("
+			CREATE TABLE IF NOT EXISTS treasure_blessed_effect (
+				treasure_blessed_effect_id INTEGER PRIMARY KEY AUTOINCREMENT,
+				treasure_id INTEGER NOT NULL,
+				effect_id INTEGER NOT NULL,
+				value REAL,
+				unit INTEGER NOT NULL,
+				UNIQUE(treasure_id, effect_id)
+			)
+		")
+		if !sqlite_success(result) {
+			return conn.error_message(result, 'create transient treasure_blessed_effect')
+		}
+		result = conn.exec_none("
 			INSERT OR IGNORE INTO treasure_blessed_effect (treasure_id, effect_id, value, unit)
 			SELECT e2.treasure_id, te.effect_id, te.value, te.unit
 			FROM treasure t1
@@ -338,6 +347,61 @@ fn migrate(conn sqlite.DB) ! {
 		if !sqlite_success(result) {
 			return conn.error_message(result, 'drop treasure is_blessed column')
 		}
+	}
+
+	// treasure effects were split across treasure_effect (normal state) and
+	// treasure_blessed_effect (blessed state); collapse to one table with a
+	// state column. The unique key gains `state` (a treasure can list the
+	// same effect in both states), so the table is rebuilt rather than
+	// altered. All steps run in one transaction, so a partial failure rolls
+	// back and the migration retries cleanly on the next boot.
+	if 'state' !in treasure_effect_cols {
+		conn.begin()!
+		mut result := conn.exec_none('ALTER TABLE treasure_effect RENAME TO treasure_effect_old')
+		if !sqlite_success(result) {
+			return conn.error_message(result, 'rename treasure_effect')
+		}
+		// the ORM creates the fresh table from the current model (state
+		// column + the three-column unique key)
+		sql conn {
+			create table models.TreasureEffect
+		}!
+		// only keep effects whose treasure still exists: the blessed-state
+		// merge deleted the blessed treasure rows, orphaning their original
+		// effect rows here (the same effects live on in the blessed state)
+		// ORDER BY preserves the wiki listing order: the new serial ids must
+		// follow the old ones so display stays in the order effects were
+		// scraped (INSERT..SELECT without ORDER BY is not guaranteed ordered)
+		result = conn.exec_none("
+			INSERT INTO treasure_effect (treasure_id, effect_id, value, unit, state)
+			SELECT treasure_id, effect_id, value, unit, 0
+			FROM treasure_effect_old
+			WHERE treasure_id IN (SELECT treasure_id FROM treasure)
+			ORDER BY treasure_effect_id
+		")
+		if !sqlite_success(result) {
+			return conn.error_message(result, 'copy normal treasure effects')
+		}
+		if _ := conn.columns('treasure_blessed_effect') {
+			result = conn.exec_none("
+				INSERT INTO treasure_effect (treasure_id, effect_id, value, unit, state)
+				SELECT treasure_id, effect_id, value, unit, 1
+				FROM treasure_blessed_effect
+				ORDER BY treasure_blessed_effect_id
+			")
+			if !sqlite_success(result) {
+				return conn.error_message(result, 'copy blessed treasure effects')
+			}
+			result = conn.exec_none('DROP TABLE treasure_blessed_effect')
+			if !sqlite_success(result) {
+				return conn.error_message(result, 'drop treasure_blessed_effect')
+			}
+		}
+		result = conn.exec_none('DROP TABLE treasure_effect_old')
+		if !sqlite_success(result) {
+			return conn.error_message(result, 'drop treasure_effect_old')
+		}
+		conn.commit()!
 	}
 }
 

@@ -49,8 +49,15 @@ pub enum EffectUnit {
 	second
 }
 
+// EffectState distinguishes a treasure's normal effects from its blessed
+// (evolved) effects; both live in treasure_effect, one row per state.
+pub enum EffectState {
+	normal
+	blessed
+}
+
 @[table: 'treasure_effect']
-@[unique_key: 'treasure_id, effect_id']
+@[unique_key: 'treasure_id, effect_id, state']
 pub struct TreasureEffect {
 pub:
 	treasure_effect_id ?int @[primary; serial]
@@ -60,19 +67,5 @@ pub:
 
 	value ?f32
 	unit EffectUnit @[required]
-}
-
-// treasure_blessed_effect holds the blessed-state effects of evolved
-// treasures; the normal-state effects live in treasure_effect on the same row
-@[table: 'treasure_blessed_effect']
-@[unique_key: 'treasure_id, effect_id']
-pub struct TreasureBlessedEffect {
-pub:
-	treasure_blessed_effect_id ?int @[primary; serial]
-
-	treasure_id int @[required; references: 'treasure'; index]
-	effect_id int @[required; references: 'effect'; index]
-
-	value ?f32
-	unit EffectUnit @[required]
+	state EffectState @[required]
 }

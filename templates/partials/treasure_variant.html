@@ -1,0 +1,15 @@
+@if variant := variant_treasure
+<a href="/treasures/@{variant.treasure_id}#effects"
+    class="p-4 rounded-xl flex flex-col gap-1 border-l-4 border-primary">
+    @if treasure.is_evolved
+    <span class="text-xs font-label text-foreground-muted uppercase">%base</span>
+    @else
+    <span class="text-xs font-label text-foreground-muted uppercase">%evolved</span>
+    @endif
+    <span class="text-on-surface font-bold flex items-center gap-2">
+        <img src="@{ctx.img_src('treasures', variant.image)}" alt="@variant.name"
+            class="size-10 rounded-lg object-contain">
+        @variant.name
+    </span>
+</a>
+@endif

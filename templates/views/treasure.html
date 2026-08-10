@@ -4,11 +4,11 @@
 <head>
     @include 'layout/head.html'
     <style>
-        .blessed-effect {
+        .blessed-effect .effect-card {
             position: relative;
-            border-left: 4px solid transparent;
+            border-color: transparent;
         }
-        .blessed-effect::before {
+        .blessed-effect .effect-card::before {
             content: "";
             position: absolute;
             inset: 0;
@@ -69,23 +69,13 @@
                 </div>
                 <div id="effects-normal" class="mt-2 flex flex-col gap-2">
                     @for effect in effects
-                    <div class="p-4 rounded-xl flex items-center justify-between gap-4 border-l-4 border-primary">
-                        <span class="text-on-surface">@effect.name</span>
-                        @if effect.value_display != ""
-                        <span class="text-accent font-bold whitespace-nowrap">@effect.value_display</span>
-                        @endif
-                    </div>
+                    @include 'partials/effect_card'
                     @endfor
                 </div>
                 @if blessed_effects.len > 0
-                <div id="effects-blessed" class="mt-2 flex flex-col gap-2 hidden">
+                <div id="effects-blessed" class="blessed-effect mt-2 flex flex-col gap-2 hidden">
                     @for effect in blessed_effects
-                    <div class="blessed-effect p-4 rounded-xl flex items-center justify-between gap-4">
-                        <span class="text-on-surface">@effect.name</span>
-                        @if effect.value_display != ""
-                        <span class="text-accent font-bold whitespace-nowrap">@effect.value_display</span>
-                        @endif
-                    </div>
+                    @include 'partials/effect_card'
                     @endfor
                 </div>
                 @endif
@@ -93,28 +83,7 @@
             @endif
             <!-- Quick Info Panel -->
             <div class="mt-8 grid grid-cols-2 sm:grid-cols-3 gap-4 w-full">
-                @if base := base_treasure
-                <a href="/treasures/@{base.treasure_id}#effects"
-                    class="p-4 rounded-xl flex flex-col gap-1 border-l-4 border-primary">
-                    <span class="text-xs font-label text-foreground-muted uppercase">%base</span>
-                    <span class="text-on-surface font-bold flex items-center gap-2">
-                        <img src="@{ctx.img_src('treasures', base.image)}" alt="@base.name"
-                            class="size-10 rounded-lg object-contain">
-                        @base.name
-                    </span>
-                </a>
-                @endif
-                @if evo := evo_treasure
-                <a href="/treasures/@{evo.treasure_id}#effects"
-                    class="p-4 rounded-xl flex flex-col gap-1 border-l-4 border-primary">
-                    <span class="text-xs font-label text-foreground-muted uppercase">%evolved</span>
-                    <span class="text-on-surface font-bold flex items-center gap-2">
-                        <img src="@{ctx.img_src('treasures', evo.image)}" alt="@evo.name"
-                            class="size-10 rounded-lg object-contain">
-                        @evo.name
-                    </span>
-                </a>
-                @endif
+                @include 'partials/treasure_variant'
                 <div class="p-4 rounded-xl flex flex-col gap-1 border-l-4 border-tertiary">
                     <span class="text-xs font-label text-foreground-muted uppercase">%release_date</span>
                     <span id="releaseDate" class="text-on-surface font-bold">

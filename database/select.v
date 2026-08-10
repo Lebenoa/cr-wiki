@@ -357,17 +357,9 @@ pub fn get_treasure_evo(conn sqlite.DB, lang string, id int) !TreasureView {
 	return treasure_view(e, best_treasure_translation(conn, lang, e.treasure_id or { 0 })!)
 }
 
-// EffectLinkData carries the fields the effect view needs, common to the
-// treasure_effect and treasure_blessed_effect link tables
-struct EffectLinkData {
-	effect_id int
-	value     ?f32
-	unit      models.EffectUnit
-}
-
 // effects_from_links resolves effect translations and formats each link into
 // an EffectView, preserving link order and dropping duplicate effects
-fn effects_from_links(conn sqlite.DB, lang string, links []EffectLinkData) ![]EffectView {
+fn effects_from_links(conn sqlite.DB, lang string, links []models.TreasureEffect) ![]EffectView {
 	if links.len == 0 {
 		return []
 	}
@@ -417,27 +409,28 @@ fn effects_from_links(conn sqlite.DB, lang string, links []EffectLinkData) ![]Ef
 	return result
 }
 
-// get_treasure_effects returns one row per distinct effect of the treasure,
-// in the order the wiki listed them (treasure_effect_id order).
-pub fn get_treasure_effects(conn sqlite.DB, lang string, id int) ![]EffectView {
+// effects_by_state returns the treasure's effects for one state (normal or
+// blessed), in the order the wiki listed them (treasure_effect_id order).
+fn effects_by_state(conn sqlite.DB, lang string, id int, st models.EffectState) ![]EffectView {
 	links := sql conn {
 		select from models.TreasureEffect
-		where treasure_id == id
+		where treasure_id == id && state == st
 		order by treasure_effect_id
 	}!
-	return effects_from_links(conn, lang, links.map(EffectLinkData{ effect_id: it.effect_id, value: it.value, unit: it.unit }))
+	return effects_from_links(conn, lang, links)
+}
+
+// get_treasure_effects returns one row per distinct normal effect of the
+// treasure, in the order the wiki listed them.
+pub fn get_treasure_effects(conn sqlite.DB, lang string, id int) ![]EffectView {
+	return effects_by_state(conn, lang, id, models.EffectState.normal)
 }
 
 // get_treasure_blessed_effects returns the blessed-state effects of an
 // evolved treasure, in the order the wiki listed them; empty when the
 // treasure has no blessed form
 pub fn get_treasure_blessed_effects(conn sqlite.DB, lang string, id int) ![]EffectView {
-	links := sql conn {
-		select from models.TreasureBlessedEffect
-		where treasure_id == id
-		order by treasure_blessed_effect_id
-	}!
-	return effects_from_links(conn, lang, links.map(EffectLinkData{ effect_id: it.effect_id, value: it.value, unit: it.unit }))
+	return effects_by_state(conn, lang, id, models.EffectState.blessed)
 }
 
 // select_treasures lists treasures newest-first; evolved selects only evolved

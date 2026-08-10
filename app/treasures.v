@@ -51,20 +51,19 @@ fn pill_cls(active bool) string {
 pub fn (wapp &App) treasure_info(mut ctx Context, id int) veb.Result {
 	treasure := database.get_treasure(wapp.db, ctx.lang, id) or { return ctx.not_found() }
 	effects := database.get_treasure_effects(wapp.db, ctx.lang, id) or { [] }
-	// blessed-state effects live in a separate table; empty for non-evolved
+	// blessed-state effects (same table, state column); empty for non-evolved
 	blessed_effects := database.get_treasure_blessed_effects(wapp.db, ctx.lang, id) or { [] }
-	// evolved rows link to their base; base treasures with an evolved form link
-	// to it (the normal-state evolved row)
-	mut base_treasure := ?database.TreasureView(none)
+	// the linked variant is the base for evolved rows, the evolved form for
+	// normal rows; the two are mutually exclusive, so a single optional
+	// suffices (the template labels the panel via treasure.is_evolved)
+	mut variant_treasure := ?database.TreasureView(none)
 	if bid := treasure.base_treasure_id {
 		if b := database.get_treasure_base(wapp.db, ctx.lang, bid) {
-			base_treasure = b
+			variant_treasure = b
 		}
-	}
-	mut evo_treasure := ?database.TreasureView(none)
-	if !treasure.is_evolved {
+	} else if !treasure.is_evolved {
 		if e := database.get_treasure_evo(wapp.db, ctx.lang, treasure.treasure_id) {
-			evo_treasure = e
+			variant_treasure = e
 		}
 	}
 	ctx.page_title = '${treasure.name} | Classic Fan/Wiki'
