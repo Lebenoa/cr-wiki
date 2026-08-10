@@ -1,6 +1,6 @@
 <nav class="sticky top-0 w-full z-50 bg-background/80 backdrop-blur-md border-b border-secondary/50 shadow-xl px-2">
     <div class="flex items-center justify-between h-20 mx-auto">
-        <div class="flex items-center gap-12">
+        <div class="flex items-center gap-12 max-md:gap-3">
             <a class="font-bold text-2xl tracking-tight text-primary flex items-center gap-2 font-headline" href="/"
                 hx-boost="true">
                 <img class="size-10" src="/favicon.avif" alt="home icon">
@@ -8,14 +8,23 @@
                     COOKIE//ARCHIVE
                 </span>
             </a>
-            <div class="hidden lg:flex gap-8 items-center" hx-boost:inherited="true">
+            <button id="nav-toggle" type="button" class="btn-secondary size-12 md:hidden"
+                popovertarget="mobile-nav" aria-label="%navbar_nav_toggle">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="4" x2="20" y1="6" y2="6" />
+                    <line x1="4" x2="20" y1="12" y2="12" />
+                    <line x1="4" x2="20" y1="18" y2="18" />
+                </svg>
+            </button>
+            <div class="hidden md:flex gap-8 items-center" hx-boost:inherited="true">
                 @{ctx.nav_link('cookies')}
                 @{ctx.nav_link('pets')}
                 @{ctx.nav_link('treasures')}
                 @{ctx.nav_link('builds')}
             </div>
         </div>
-        <div class="flex items-center gap-6">
+        <div class="flex items-center gap-6 max-md:gap-3">
             <button id="search-toggle" type="button" class="btn-secondary size-12 md:hidden"
                 aria-label="%navbar_search_toggle" aria-expanded="false">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
@@ -25,8 +34,8 @@
                 </svg>
             </button>
             <div id="search-box"
-                class="relative flex-1 min-w-0 md:block md:flex-none md:w-56 lg:w-72 hidden transition-all transition-discrete duration-300 max-md:opacity-0 max-md:-translate-y-2 max-md:[&.open]:opacity-100 max-md:[&.open]:translate-y-0 max-md:[&.open]:starting:opacity-0 max-md:[&.open]:starting:-translate-y-2">
-                <form class="relative" action="/search" method="get" hx-boost="true">
+                class="md:block md:flex-none md:w-56 lg:w-72 hidden transition-all transition-discrete duration-300 max-md:absolute max-md:inset-y-0 max-md:left-12 max-md:right-0 max-md:z-20 max-md:bg-background max-md:px-2 max-md:items-center max-md:[&.open]:flex max-md:opacity-0 max-md:-translate-y-2 max-md:[&.open]:opacity-100 max-md:[&.open]:translate-y-0 max-md:[&.open]:starting:opacity-0 max-md:[&.open]:starting:-translate-y-2">
+                <form class="relative max-md:flex-1" action="/search" method="get" hx-boost="true">
                     <span class="absolute left-4 top-1/2 -translate-y-1/2 text-foreground-muted">
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
                             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -59,6 +68,14 @@
                     <circle cx="12" cy="7" r="4" />
                 </svg>
             </button>
+            <div id="mobile-nav" popover
+                class="p-4 bg-background text-foreground rounded border border-secondary/70 shadow-2xl transition-discrete transition-all duration-300 flex-col gap-2 hidden popover-open:flex fixed top-20 left-2 right-2 w-[calc(100%-1rem)]"
+                hx-boost:inherited="true">
+                @{ctx.nav_link('cookies')}
+                @{ctx.nav_link('pets')}
+                @{ctx.nav_link('treasures')}
+                @{ctx.nav_link('builds')}
+            </div>
             <div id="account-dropdown"
                 class="p-4 m-bs-1 inline-64 bg-background text-foreground rounded border border-accent transition-discrete transition-all duration-300 flex-col gap-2 hidden popover-open:flex"
                 popover>
