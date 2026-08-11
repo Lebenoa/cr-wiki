@@ -67,6 +67,12 @@ pub fn (wapp &App) new_pet(mut ctx Context) veb.Result {
 @['/pets/:id']
 pub fn (wapp &App) pet_info(mut ctx Context, id int) veb.Result {
 	pet := database.get_pet(wapp.db, ctx.lang, id) or { return ctx.not_found() }
+	// the treasure unlocked by upgrading this pet to max level (none for pets
+	// without one)
+	mut unlocked_treasure := ?database.TreasureView(none)
+	if t := database.get_unlocked_treasure(wapp.db, ctx.lang, 'pet', pet.pet_id) {
+		unlocked_treasure = t
+	}
 	ctx.set_translate_title('entity_detail_title', pet.name)
 	is_admin := ctx.is_admin()
 	return $veb.html("./templates/views/pet.html")

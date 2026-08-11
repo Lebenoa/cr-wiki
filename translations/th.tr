@@ -283,3 +283,15 @@ edit_treasure_subtitle
 save_treasure_button
 บันทึกสมบัติ
 -----
+treasure_unlock_title
+การปลดล็อก
+-----
+treasure_unlock_prefix
+อัปเกรด
+-----
+treasure_unlock_suffix
+ถึงเลเวลสูงสุด
+-----
+unlocks_treasure_title
+ปลดล็อกสมบัติ
+-----

@@ -8,6 +8,8 @@ pub:
 	image ?string
 	grade ?int // models.Grade value; none = no wiki grade (no badge)
 	base_treasure_id ?int // evolved rows point at their normal base treasure
+	unlock_cookie_id ?int // treasure unlocked by upgrading this cookie to max level
+	unlock_pet_id ?int // treasure unlocked by upgrading this pet to max level
 	is_evolved bool
 	release_date time.Time
 }

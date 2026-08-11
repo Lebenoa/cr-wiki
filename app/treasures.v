@@ -100,6 +100,12 @@ pub fn (wapp &App) treasure_info(mut ctx Context, id int) veb.Result {
 			variant_treasure = e
 		}
 	}
+	// the cookie/pet whose max-level upgrade unlocks this treasure (none for
+	// chest/event treasures)
+	mut unlock_entity := ?database.TreasureUnlock(none)
+	if u := database.get_treasure_unlock(wapp.db, ctx.lang, treasure) {
+		unlock_entity = u
+	}
 	ctx.set_translate_title('entity_detail_title', treasure.name)
 	is_admin := ctx.is_admin()
 	return $veb.html('./templates/views/treasure.html')

@@ -93,6 +93,14 @@
             <!-- Quick Info Panel -->
             <div class="mt-8 grid grid-cols-2 sm:grid-cols-3 gap-4 w-full">
                 @include 'components/treasure_variant'
+                @if unlock := unlock_entity
+                <div class="p-4 rounded-xl flex flex-col gap-1 border-l-4 border-secondary">
+                    <span class="text-xs font-label text-foreground-muted uppercase">%treasure_unlock_title</span>
+                    <a href="/@{unlock.kind}s/@{unlock.id}"
+                        class="text-on-surface font-bold underline decoration-primary decoration-2 underline-offset-4 hover:text-primary transition-colors">%treasure_unlock_prefix
+                        @unlock.name %treasure_unlock_suffix</a>
+                </div>
+                @endif
                 <div class="p-4 rounded-xl flex flex-col gap-1 border-l-4 border-tertiary">
                     <span class="text-xs font-label text-foreground-muted uppercase">%release_date</span>
                     <span id="releaseDate" class="text-on-surface font-bold">

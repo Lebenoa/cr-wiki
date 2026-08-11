@@ -207,6 +207,8 @@ pub:
 	image            ?string
 	grade            ?models.Grade
 	base_treasure_id ?int
+	unlock_cookie_id ?int
+	unlock_pet_id    ?int
 	is_evolved       bool
 	release_date     time.Time
 
@@ -222,6 +224,8 @@ fn treasure_view(t models.Treasure, tr models.TreasureTranslation) TreasureView 
 		image:            t.image
 		grade:            treasure_grade(t.grade)
 		base_treasure_id: t.base_treasure_id
+		unlock_cookie_id: t.unlock_cookie_id
+		unlock_pet_id:    t.unlock_pet_id
 		is_evolved:       t.is_evolved
 		release_date:     t.release_date
 		lang:             tr.lang
@@ -343,6 +347,84 @@ pub fn get_treasure_evo(conn sqlite.DB, lang string, id int) !TreasureView {
 	}
 	e := evos.first()
 	return treasure_view(e, best_treasure_translation(conn, lang, e.treasure_id or { 0 })!)
+}
+
+// TreasureUnlock describes the cookie or pet whose max-level upgrade unlocks
+// the treasure, for the detail page's unlock panel.
+pub struct TreasureUnlock {
+pub:
+	kind string // 'cookie' | 'pet'
+	id   int
+	name string
+}
+
+// get_treasure_unlock resolves the treasure's unlock entity (cookie or pet)
+// in the user's language; error when the treasure isn't unlocked by an
+// upgrade, so callers can treat it as "no unlock panel".
+pub fn get_treasure_unlock(conn sqlite.DB, lang string, t TreasureView) !TreasureUnlock {
+	user_lang := lang
+	if cid := t.unlock_cookie_id {
+		trs := sql conn {
+			select from models.CookieTranslation where owner_id == cid
+			&& (lang == user_lang || lang == 'en')
+		}!
+		if trs.len == 0 {
+			return error('unlock cookie (${cid}) has no translation')
+		}
+		mut tr := trs.first()
+		for x in trs {
+			if x.lang == user_lang {
+				tr = x
+				break
+			}
+		}
+		return TreasureUnlock{
+			kind: 'cookie'
+			id:   cid
+			name: tr.name
+		}
+	}
+	if pid := t.unlock_pet_id {
+		trs := sql conn {
+			select from models.PetTranslation where pet_id == pid && (lang == user_lang || lang == 'en')
+		}!
+		if trs.len == 0 {
+			return error('unlock pet (${pid}) has no translation')
+		}
+		mut tr := trs.first()
+		for x in trs {
+			if x.lang == user_lang {
+				tr = x
+				break
+			}
+		}
+		return TreasureUnlock{
+			kind: 'pet'
+			id:   pid
+			name: tr.name
+		}
+	}
+	return error('treasure has no cookie/pet unlock')
+}
+
+// get_unlocked_treasure returns the treasure unlocked by upgrading the given
+// cookie or pet to max level; error when the entity unlocks no treasure.
+pub fn get_unlocked_treasure(conn sqlite.DB, lang string, kind string, id int) !TreasureView {
+	mut ts := []models.Treasure{}
+	if kind == 'cookie' {
+		ts = sql conn {
+			select from models.Treasure where unlock_cookie_id == id
+		}!
+	} else if kind == 'pet' {
+		ts = sql conn {
+			select from models.Treasure where unlock_pet_id == id
+		}!
+	}
+	if ts.len == 0 {
+		return error('${kind} (${id}) unlocks no treasure')
+	}
+	t := ts.first()
+	return treasure_view(t, best_treasure_translation(conn, lang, t.treasure_id or { 0 })!)
 }
 
 // effects_from_links resolves effect translations and formats each link into

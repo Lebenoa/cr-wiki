@@ -67,6 +67,12 @@ pub fn (wapp &App) new_cookie(mut ctx Context) veb.Result {
 @['/cookies/:id']
 pub fn (wapp &App) cookie_info(mut ctx Context, id int) veb.Result {
 	cookie := database.get_cookie(wapp.db, ctx.lang, id) or { return ctx.not_found() }
+	// the treasure unlocked by upgrading this cookie to max level (none for
+	// cookies without one)
+	mut unlocked_treasure := ?database.TreasureView(none)
+	if t := database.get_unlocked_treasure(wapp.db, ctx.lang, 'cookie', cookie.cookie_id) {
+		unlocked_treasure = t
+	}
 	ctx.set_translate_title('entity_detail_title', cookie.name)
 	is_admin := ctx.is_admin()
 	return $veb.html('./templates/views/cookie.html')

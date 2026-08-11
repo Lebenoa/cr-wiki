@@ -283,3 +283,15 @@ Update the treasure's information
 save_treasure_button
 Save Treasure
 -----
+treasure_unlock_title
+Unlock
+-----
+treasure_unlock_prefix
+Upgrading
+-----
+treasure_unlock_suffix
+to max level
+-----
+unlocks_treasure_title
+Unlocks treasure
+-----

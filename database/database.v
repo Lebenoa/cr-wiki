@@ -298,6 +298,23 @@ fn migrate(conn sqlite.DB) ! {
 			return conn.error_message(result, query)
 		}
 	}
+	// treasure.unlock_cookie_id / unlock_pet_id added so treasures unlocked by
+	// upgrading a cookie or pet to max level can link back to it; nullable
+	// because most treasures come from chests or events instead
+	if 'unlock_cookie_id' !in treasure_cols {
+		query := 'ALTER TABLE treasure ADD COLUMN unlock_cookie_id INTEGER'
+		result := conn.exec_none(query)
+		if !sqlite_success(result) {
+			return conn.error_message(result, query)
+		}
+	}
+	if 'unlock_pet_id' !in treasure_cols {
+		query := 'ALTER TABLE treasure ADD COLUMN unlock_pet_id INTEGER'
+		result := conn.exec_none(query)
+		if !sqlite_success(result) {
+			return conn.error_message(result, query)
+		}
+	}
 
 	// merge blessed states into their evolved row: move the blessed effects to
 	// treasure_blessed_effect (created by the ORM) keyed by the sibling
