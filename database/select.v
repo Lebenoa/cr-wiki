@@ -353,9 +353,10 @@ pub fn get_treasure_evo(conn sqlite.DB, lang string, id int) !TreasureView {
 // the treasure, for the detail page's unlock panel.
 pub struct TreasureUnlock {
 pub:
-	kind string // 'cookie' | 'pet'
-	id   int
-	name string
+	kind  string // 'cookie' | 'pet'
+	id    int
+	name  string
+	image ?string
 }
 
 // get_treasure_unlock resolves the treasure's unlock entity (cookie or pet)
@@ -378,10 +379,12 @@ pub fn get_treasure_unlock(conn sqlite.DB, lang string, t TreasureView) !Treasur
 				break
 			}
 		}
+		img := unlock_entity_image(conn, 'cookie', cid)
 		return TreasureUnlock{
-			kind: 'cookie'
-			id:   cid
-			name: tr.name
+			kind:  'cookie'
+			id:    cid
+			name:  tr.name
+			image: img
 		}
 	}
 	if pid := t.unlock_pet_id {
@@ -398,13 +401,37 @@ pub fn get_treasure_unlock(conn sqlite.DB, lang string, t TreasureView) !Treasur
 				break
 			}
 		}
+		img := unlock_entity_image(conn, 'pet', pid)
 		return TreasureUnlock{
-			kind: 'pet'
-			id:   pid
-			name: tr.name
+			kind:  'pet'
+			id:    pid
+			name:  tr.name
+			image: img
 		}
 	}
 	return error('treasure has no cookie/pet unlock')
+}
+
+// unlock_entity_image returns the cookie/pet sprite filename; none when the
+// row is missing (the template falls back to a placeholder URL).
+fn unlock_entity_image(conn sqlite.DB, kind string, id int) ?string {
+	mut img := ?string(none)
+	if kind == 'cookie' {
+		rows := sql conn {
+			select from models.Cookie where cookie_id == id
+		} or { return none }
+		if rows.len > 0 {
+			img = rows.first().image
+		}
+	} else if kind == 'pet' {
+		rows := sql conn {
+			select from models.Pet where pet_id == id
+		} or { return none }
+		if rows.len > 0 {
+			img = rows.first().image
+		}
+	}
+	return img
 }
 
 // get_unlocked_treasure returns the treasure unlocked by upgrading the given

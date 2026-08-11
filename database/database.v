@@ -52,6 +52,7 @@ pub struct SeedFixture {
 	effect               []models.Effect
 	effect_translation   []models.EffectTranslation
 	treasure_effect      []models.TreasureEffect
+	combi_bonus          []models.CombiBonus
 }
 
 // seed_if_empty loads scripts/seed_data.json into a database that has no
@@ -112,6 +113,11 @@ fn seed_if_empty(conn sqlite.DB) ! {
 	for te in fixture.treasure_effect {
 		sql conn {
 			insert te into models.TreasureEffect
+		}!
+	}
+	for cb in fixture.combi_bonus {
+		sql conn {
+			insert cb into models.CombiBonus
 		}!
 	}
 }

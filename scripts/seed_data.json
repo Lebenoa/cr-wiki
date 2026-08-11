@@ -5622,7 +5622,7 @@
    "is_evolved": false,
    "release_date": "2014-10-30T00:00:00Z",
    "unlock_cookie_id": null,
-   "unlock_pet_id": null
+   "unlock_pet_id": 41
   },
   {
    "treasure_id": 76,
@@ -5712,7 +5712,7 @@
    "is_evolved": false,
    "release_date": "2015-03-13T00:00:00Z",
    "unlock_cookie_id": null,
-   "unlock_pet_id": null
+   "unlock_pet_id": 32
   },
   {
    "treasure_id": 85,
@@ -6992,7 +6992,7 @@
    "is_evolved": false,
    "release_date": "1970-01-01T00:00:00Z",
    "unlock_cookie_id": null,
-   "unlock_pet_id": null
+   "unlock_pet_id": 21
   },
   {
    "treasure_id": 213,
@@ -7331,7 +7331,7 @@
    "base_treasure_id": null,
    "is_evolved": false,
    "release_date": "2014-12-24T00:00:00Z",
-   "unlock_cookie_id": null,
+   "unlock_cookie_id": 26,
    "unlock_pet_id": null
   },
   {
@@ -10563,6 +10563,426 @@
    "release_date": "2014-12-18T00:00:00Z",
    "unlock_cookie_id": null,
    "unlock_pet_id": null
+  },
+  {
+   "treasure_id": 777,
+   "image": null,
+   "grade": 4,
+   "base_treasure_id": null,
+   "is_evolved": false,
+   "release_date": "2016-12-21T17:00:00Z",
+   "unlock_cookie_id": 71,
+   "unlock_pet_id": null
+  },
+  {
+   "treasure_id": 778,
+   "image": "Strawberry Shortcake Cookie's Cookie Cushion.png",
+   "grade": 4,
+   "base_treasure_id": null,
+   "is_evolved": false,
+   "release_date": "2024-04-01T17:00:00Z",
+   "unlock_cookie_id": 72,
+   "unlock_pet_id": null
+  },
+  {
+   "treasure_id": 779,
+   "image": "Gleaming Earrings.png",
+   "grade": 4,
+   "base_treasure_id": null,
+   "is_evolved": false,
+   "release_date": "2024-12-10T17:00:00Z",
+   "unlock_cookie_id": 74,
+   "unlock_pet_id": null
+  },
+  {
+   "treasure_id": 780,
+   "image": "Marshmallow Bunny Cookie's Keyring of Happiness.png",
+   "grade": 4,
+   "base_treasure_id": null,
+   "is_evolved": false,
+   "release_date": "2025-03-26T17:00:00Z",
+   "unlock_cookie_id": 76,
+   "unlock_pet_id": null
+  },
+  {
+   "treasure_id": 781,
+   "image": null,
+   "grade": 4,
+   "base_treasure_id": null,
+   "is_evolved": false,
+   "release_date": "2025-03-26T17:00:00Z",
+   "unlock_cookie_id": 77,
+   "unlock_pet_id": null
+  },
+  {
+   "treasure_id": 782,
+   "image": "Sujeonggwa Cookie's Go Beginner Textbook.png",
+   "grade": 4,
+   "base_treasure_id": null,
+   "is_evolved": false,
+   "release_date": "2025-05-28T17:00:00Z",
+   "unlock_cookie_id": 78,
+   "unlock_pet_id": null
+  },
+  {
+   "treasure_id": 783,
+   "image": "Sikhye Cookie's Cookie's most popular! Brave Go King.png",
+   "grade": 4,
+   "base_treasure_id": null,
+   "is_evolved": false,
+   "release_date": "2025-05-28T17:00:00Z",
+   "unlock_cookie_id": 79,
+   "unlock_pet_id": null
+  },
+  {
+   "treasure_id": 784,
+   "image": "Barley Soldier Cookie's Barley Scented Baby Gown.png",
+   "grade": 4,
+   "base_treasure_id": null,
+   "is_evolved": false,
+   "release_date": "2025-06-29T17:00:00Z",
+   "unlock_cookie_id": 80,
+   "unlock_pet_id": null
+  },
+  {
+   "treasure_id": 785,
+   "image": null,
+   "grade": 4,
+   "base_treasure_id": null,
+   "is_evolved": false,
+   "release_date": "2025-07-30T17:00:00Z",
+   "unlock_cookie_id": 81,
+   "unlock_pet_id": null
+  },
+  {
+   "treasure_id": 786,
+   "image": null,
+   "grade": 4,
+   "base_treasure_id": null,
+   "is_evolved": false,
+   "release_date": "2025-08-27T17:00:00Z",
+   "unlock_cookie_id": 82,
+   "unlock_pet_id": null
+  },
+  {
+   "treasure_id": 787,
+   "image": "White Kimchi Cookie's Talisman Storage Box.png",
+   "grade": 4,
+   "base_treasure_id": null,
+   "is_evolved": false,
+   "release_date": "2025-09-28T17:00:00Z",
+   "unlock_cookie_id": 83,
+   "unlock_pet_id": null
+  },
+  {
+   "treasure_id": 788,
+   "image": "Green Onion Kimchi Cookie's Noise-Cutting Earplugs.png",
+   "grade": 4,
+   "base_treasure_id": null,
+   "is_evolved": false,
+   "release_date": "2025-09-28T17:00:00Z",
+   "unlock_cookie_id": 84,
+   "unlock_pet_id": null
+  },
+  {
+   "treasure_id": 789,
+   "image": null,
+   "grade": 4,
+   "base_treasure_id": null,
+   "is_evolved": false,
+   "release_date": "2016-12-21T17:00:00Z",
+   "unlock_cookie_id": null,
+   "unlock_pet_id": 74
+  },
+  {
+   "treasure_id": 790,
+   "image": "Desi Delight Drop's Delightful Chocolates.png",
+   "grade": 1,
+   "base_treasure_id": null,
+   "is_evolved": false,
+   "release_date": "2025-01-14T17:00:00Z",
+   "unlock_cookie_id": null,
+   "unlock_pet_id": 79
+  },
+  {
+   "treasure_id": 791,
+   "image": "Delightful Snack.png",
+   "grade": 4,
+   "base_treasure_id": null,
+   "is_evolved": false,
+   "release_date": "1970-01-01T00:00:00Z",
+   "unlock_cookie_id": 73,
+   "unlock_pet_id": null
+  },
+  {
+   "treasure_id": 792,
+   "image": "Admiral's Paper Boat.png",
+   "grade": 4,
+   "base_treasure_id": null,
+   "is_evolved": false,
+   "release_date": "1970-01-01T00:00:00Z",
+   "unlock_cookie_id": 86,
+   "unlock_pet_id": null
+  },
+  {
+   "treasure_id": 793,
+   "image": "Manggae Fruit Hairpin.png",
+   "grade": 4,
+   "base_treasure_id": null,
+   "is_evolved": false,
+   "release_date": "1970-01-01T00:00:00Z",
+   "unlock_cookie_id": 87,
+   "unlock_pet_id": null
+  },
+  {
+   "treasure_id": 794,
+   "image": "Underground General's Sausage.png",
+   "grade": 4,
+   "base_treasure_id": null,
+   "is_evolved": false,
+   "release_date": "1970-01-01T00:00:00Z",
+   "unlock_cookie_id": 88,
+   "unlock_pet_id": null
+  },
+  {
+   "treasure_id": 795,
+   "image": "Blooming Dancheong Jewel.png",
+   "grade": 4,
+   "base_treasure_id": null,
+   "is_evolved": false,
+   "release_date": "1970-01-01T00:00:00Z",
+   "unlock_cookie_id": 89,
+   "unlock_pet_id": null
+  },
+  {
+   "treasure_id": 796,
+   "image": "Pistachio Spread.png",
+   "grade": 4,
+   "base_treasure_id": null,
+   "is_evolved": false,
+   "release_date": "1970-01-01T00:00:00Z",
+   "unlock_cookie_id": 90,
+   "unlock_pet_id": null
+  },
+  {
+   "treasure_id": 797,
+   "image": "Spring Scent Flower Tea.png",
+   "grade": 4,
+   "base_treasure_id": null,
+   "is_evolved": false,
+   "release_date": "1970-01-01T00:00:00Z",
+   "unlock_cookie_id": 91,
+   "unlock_pet_id": null
+  },
+  {
+   "treasure_id": 798,
+   "image": "Cloud Boots.png",
+   "grade": 4,
+   "base_treasure_id": null,
+   "is_evolved": false,
+   "release_date": "1970-01-01T00:00:00Z",
+   "unlock_cookie_id": 92,
+   "unlock_pet_id": null
+  },
+  {
+   "treasure_id": 799,
+   "image": "Noble Scripture.png",
+   "grade": 4,
+   "base_treasure_id": null,
+   "is_evolved": false,
+   "release_date": "1970-01-01T00:00:00Z",
+   "unlock_cookie_id": 93,
+   "unlock_pet_id": null
+  },
+  {
+   "treasure_id": 800,
+   "image": "Braised Lotus Root Face Pack.png",
+   "grade": 4,
+   "base_treasure_id": null,
+   "is_evolved": false,
+   "release_date": "1970-01-01T00:00:00Z",
+   "unlock_cookie_id": 94,
+   "unlock_pet_id": null
+  },
+  {
+   "treasure_id": 801,
+   "image": "Coin Flower Seed.png",
+   "grade": 4,
+   "base_treasure_id": null,
+   "is_evolved": false,
+   "release_date": "1970-01-01T00:00:00Z",
+   "unlock_cookie_id": null,
+   "unlock_pet_id": 25
+  },
+  {
+   "treasure_id": 802,
+   "image": "Parrot's Feather Fan.png",
+   "grade": 4,
+   "base_treasure_id": null,
+   "is_evolved": false,
+   "release_date": "1970-01-01T00:00:00Z",
+   "unlock_cookie_id": null,
+   "unlock_pet_id": 78
+  },
+  {
+   "treasure_id": 803,
+   "image": "Soft Egg Basket Bed.png",
+   "grade": 4,
+   "base_treasure_id": null,
+   "is_evolved": false,
+   "release_date": "1970-01-01T00:00:00Z",
+   "unlock_cookie_id": null,
+   "unlock_pet_id": 80
+  },
+  {
+   "treasure_id": 804,
+   "image": "Recycled Fishing Bag.png",
+   "grade": 4,
+   "base_treasure_id": null,
+   "is_evolved": false,
+   "release_date": "1970-01-01T00:00:00Z",
+   "unlock_cookie_id": null,
+   "unlock_pet_id": 81
+  },
+  {
+   "treasure_id": 805,
+   "image": "Practical Spork.png",
+   "grade": 4,
+   "base_treasure_id": null,
+   "is_evolved": false,
+   "release_date": "1970-01-01T00:00:00Z",
+   "unlock_cookie_id": null,
+   "unlock_pet_id": 82
+  },
+  {
+   "treasure_id": 806,
+   "image": "Baduk Stone Jade Bowl.png",
+   "grade": 4,
+   "base_treasure_id": null,
+   "is_evolved": false,
+   "release_date": "1970-01-01T00:00:00Z",
+   "unlock_cookie_id": null,
+   "unlock_pet_id": 83
+  },
+  {
+   "treasure_id": 807,
+   "image": "Golden Barley Bundle.png",
+   "grade": 4,
+   "base_treasure_id": null,
+   "is_evolved": false,
+   "release_date": "1970-01-01T00:00:00Z",
+   "unlock_cookie_id": null,
+   "unlock_pet_id": 85
+  },
+  {
+   "treasure_id": 808,
+   "image": "Ghoul Cake's Milk Bath.png",
+   "grade": 4,
+   "base_treasure_id": null,
+   "is_evolved": false,
+   "release_date": "1970-01-01T00:00:00Z",
+   "unlock_cookie_id": null,
+   "unlock_pet_id": 86
+  },
+  {
+   "treasure_id": 809,
+   "image": "Bread Bag Clip.png",
+   "grade": 4,
+   "base_treasure_id": null,
+   "is_evolved": false,
+   "release_date": "1970-01-01T00:00:00Z",
+   "unlock_cookie_id": null,
+   "unlock_pet_id": 87
+  },
+  {
+   "treasure_id": 810,
+   "image": "Sparkling Rice Juice.png",
+   "grade": 4,
+   "base_treasure_id": null,
+   "is_evolved": false,
+   "release_date": "1970-01-01T00:00:00Z",
+   "unlock_cookie_id": null,
+   "unlock_pet_id": 88
+  },
+  {
+   "treasure_id": 811,
+   "image": "Cabbage Cone Cap.png",
+   "grade": 4,
+   "base_treasure_id": null,
+   "is_evolved": false,
+   "release_date": "1970-01-01T00:00:00Z",
+   "unlock_cookie_id": null,
+   "unlock_pet_id": 89
+  },
+  {
+   "treasure_id": 812,
+   "image": "Sea Ink Brush.png",
+   "grade": 1,
+   "base_treasure_id": null,
+   "is_evolved": false,
+   "release_date": "1970-01-01T00:00:00Z",
+   "unlock_cookie_id": null,
+   "unlock_pet_id": 91
+  },
+  {
+   "treasure_id": 813,
+   "image": "Snail's Dewdrop Snack.png",
+   "grade": 4,
+   "base_treasure_id": null,
+   "is_evolved": false,
+   "release_date": "1970-01-01T00:00:00Z",
+   "unlock_cookie_id": null,
+   "unlock_pet_id": 93
+  },
+  {
+   "treasure_id": 814,
+   "image": "Baby Sotdae.png",
+   "grade": 4,
+   "base_treasure_id": null,
+   "is_evolved": false,
+   "release_date": "1970-01-01T00:00:00Z",
+   "unlock_cookie_id": null,
+   "unlock_pet_id": 94
+  },
+  {
+   "treasure_id": 815,
+   "image": "Cozy Luxury Hedgehog Case.png",
+   "grade": 4,
+   "base_treasure_id": null,
+   "is_evolved": false,
+   "release_date": "1970-01-01T00:00:00Z",
+   "unlock_cookie_id": null,
+   "unlock_pet_id": 95
+  },
+  {
+   "treasure_id": 816,
+   "image": "Fluttering Pinwheel.png",
+   "grade": 4,
+   "base_treasure_id": null,
+   "is_evolved": false,
+   "release_date": "1970-01-01T00:00:00Z",
+   "unlock_cookie_id": null,
+   "unlock_pet_id": 96
+  },
+  {
+   "treasure_id": 817,
+   "image": "Golden Besswax Stopper.png",
+   "grade": 4,
+   "base_treasure_id": null,
+   "is_evolved": false,
+   "release_date": "1970-01-01T00:00:00Z",
+   "unlock_cookie_id": null,
+   "unlock_pet_id": 97
+  },
+  {
+   "treasure_id": 818,
+   "image": "Lotus Seed Rattle.png",
+   "grade": 4,
+   "base_treasure_id": null,
+   "is_evolved": false,
+   "release_date": "1970-01-01T00:00:00Z",
+   "unlock_cookie_id": null,
+   "unlock_pet_id": 98
   }
  ],
  "treasure_translation": [
@@ -18531,6 +18951,594 @@
    "lang": "th",
    "name": "แป้งออร์แกนิกผสมน้ำตาล",
    "description": "This organic wheat was mixed with sugar to make a new type of delicacy."
+  },
+  {
+   "treasure_translation_id": 1346,
+   "treasure_id": 777,
+   "lang": "en",
+   "name": "Moon Rabbit Cookie's Colorful Rice Cake",
+   "description": "Moon Rabbit Cookie's favorite rice cakes combined into one super rice cake!"
+  },
+  {
+   "treasure_translation_id": 1347,
+   "treasure_id": 777,
+   "lang": "th",
+   "name": "เค้กข้าวหลากสีของคุกกี้กระต่ายบนดวงจันทร์",
+   "description": ""
+  },
+  {
+   "treasure_translation_id": 1348,
+   "treasure_id": 778,
+   "lang": "en",
+   "name": "Strawberry Shortcake Cookie's Cookie Cushion",
+   "description": "A Cushion gifted by their owner, it smells like strawberry shortcake, they must have carried it for a while."
+  },
+  {
+   "treasure_translation_id": 1349,
+   "treasure_id": 778,
+   "lang": "th",
+   "name": "หมอนรองของคุกกี้สตรอว์เบอร์รีชอร์ตเค้ก",
+   "description": ""
+  },
+  {
+   "treasure_translation_id": 1350,
+   "treasure_id": 779,
+   "lang": "en",
+   "name": "Gleaming Earrings",
+   "description": ""
+  },
+  {
+   "treasure_translation_id": 1351,
+   "treasure_id": 779,
+   "lang": "th",
+   "name": "ต่างหูระยิบระยับของคุกกี้กุแลปจามุน",
+   "description": ""
+  },
+  {
+   "treasure_translation_id": 1352,
+   "treasure_id": 780,
+   "lang": "en",
+   "name": "Marshmallow Bunny Cookie's Keyring of Happiness",
+   "description": ""
+  },
+  {
+   "treasure_translation_id": 1353,
+   "treasure_id": 780,
+   "lang": "th",
+   "name": "พวงกุญแจแห่งความสุขของคุกกี้กระต่ายมาร์ชแมลโลว์",
+   "description": ""
+  },
+  {
+   "treasure_translation_id": 1354,
+   "treasure_id": 781,
+   "lang": "en",
+   "name": "Cucumber Cookie's Dearly Cherished Cucumber Float",
+   "description": ""
+  },
+  {
+   "treasure_translation_id": 1355,
+   "treasure_id": 781,
+   "lang": "th",
+   "name": "ลูกลอยแตงกวาอันเป็นที่รักของคุกกี้แตงกวา",
+   "description": ""
+  },
+  {
+   "treasure_translation_id": 1356,
+   "treasure_id": 782,
+   "lang": "en",
+   "name": "Sujeonggwa Cookie's Go Beginner Textbook",
+   "description": ""
+  },
+  {
+   "treasure_translation_id": 1357,
+   "treasure_id": 782,
+   "lang": "th",
+   "name": "หนังสือเรียนโกะฉบับเริ่มต้นของคุกกี้ซูจองกวา",
+   "description": ""
+  },
+  {
+   "treasure_translation_id": 1358,
+   "treasure_id": 783,
+   "lang": "en",
+   "name": "Sikhye Cookie's Cookie's most popular! Brave Go King",
+   "description": ""
+  },
+  {
+   "treasure_translation_id": 1359,
+   "treasure_id": 783,
+   "lang": "th",
+   "name": "ราชาโกะยอดนิยมของคุกกี้ซิกเค",
+   "description": ""
+  },
+  {
+   "treasure_translation_id": 1360,
+   "treasure_id": 784,
+   "lang": "en",
+   "name": "Barley Soldier Cookie's Barley Scented Baby Gown",
+   "description": ""
+  },
+  {
+   "treasure_translation_id": 1361,
+   "treasure_id": 784,
+   "lang": "th",
+   "name": "ชุดทารกกลิ่นข้าวบาร์เลย์ของคุกกี้ยามข้าวบาร์เลย์",
+   "description": ""
+  },
+  {
+   "treasure_translation_id": 1362,
+   "treasure_id": 785,
+   "lang": "en",
+   "name": "Princess Bari Cookie's Shaman Bell",
+   "description": ""
+  },
+  {
+   "treasure_translation_id": 1363,
+   "treasure_id": 785,
+   "lang": "th",
+   "name": "กระดิ่งหมอผีของคุกกี้เจ้าหญิงบารี",
+   "description": ""
+  },
+  {
+   "treasure_translation_id": 1364,
+   "treasure_id": 786,
+   "lang": "en",
+   "name": "Potato Salad Cookie's Tasting Spoon",
+   "description": ""
+  },
+  {
+   "treasure_translation_id": 1365,
+   "treasure_id": 786,
+   "lang": "th",
+   "name": "ช้อนชิมของคุกกี้สลัดมันฝรั่ง",
+   "description": ""
+  },
+  {
+   "treasure_translation_id": 1366,
+   "treasure_id": 787,
+   "lang": "en",
+   "name": "White Kimchi Cookie's Talisman Storage Box",
+   "description": ""
+  },
+  {
+   "treasure_translation_id": 1367,
+   "treasure_id": 787,
+   "lang": "th",
+   "name": "กล่องเก็บเครื่องรางของคุกกี้กิมจิขาว",
+   "description": ""
+  },
+  {
+   "treasure_translation_id": 1368,
+   "treasure_id": 788,
+   "lang": "en",
+   "name": "Green Onion Kimchi Cookie's Noise-Cutting Earplugs",
+   "description": ""
+  },
+  {
+   "treasure_translation_id": 1369,
+   "treasure_id": 788,
+   "lang": "th",
+   "name": "ที่อุดหูลดเสียงของคุกกี้กิมจิต้นหอม",
+   "description": ""
+  },
+  {
+   "treasure_translation_id": 1370,
+   "treasure_id": 789,
+   "lang": "en",
+   "name": "Moon Mortar's Perfect Crescent Moon Rice Cake",
+   "description": "Moon Mortar believes that is necessary to learn about various aspects of an object to fully understand it."
+  },
+  {
+   "treasure_translation_id": 1371,
+   "treasure_id": 789,
+   "lang": "th",
+   "name": "เค้กข้าวพระจันทร์เสี้ยวอันสมบูรณ์แบบของครกดวงจันทร์",
+   "description": ""
+  },
+  {
+   "treasure_translation_id": 1372,
+   "treasure_id": 790,
+   "lang": "en",
+   "name": "Desi Delight Drop's Delightful Chocolates",
+   "description": "Tri-colored chocolates carefully picked and packed by Desi Delight Drop!"
+  },
+  {
+   "treasure_translation_id": 1373,
+   "treasure_id": 790,
+   "lang": "th",
+   "name": "ช็อกโกแลตแสนอร่อยของเดซีเดไลต์ดรอป",
+   "description": ""
+  },
+  {
+   "treasure_translation_id": 1374,
+   "treasure_id": 791,
+   "lang": "en",
+   "name": "Delightful Snack",
+   "description": ""
+  },
+  {
+   "treasure_translation_id": 1375,
+   "treasure_id": 791,
+   "lang": "th",
+   "name": "ของว่างแสนอร่อยของคุกกี้กาจูแคตลี",
+   "description": "รสชาติเข้มข้นและละลายในปากจนต้องบอกว่าไม่เคยหายไปจากถุงของ Kaju Katli Cookie เลย"
+  },
+  {
+   "treasure_translation_id": 1376,
+   "treasure_id": 792,
+   "lang": "en",
+   "name": "Admiral's Paper Boat",
+   "description": ""
+  },
+  {
+   "treasure_translation_id": 1377,
+   "treasure_id": 792,
+   "lang": "th",
+   "name": "เรือกระดาษของคุกกี้พลเรือเอกคิมบับ",
+   "description": "จานรูปเรือกระดาษที่บรรทุกทั้งสุขและทุกข์ของเหล่าคุกกี้ที่ใช้ชีวิตอยู่กลางทะเล แม้ท่ามกลางคลื่นลมโหมกระหน่ำ ภูมิปัญญาของคุกกี้รุ่นก่อนก็ยังคงทำให้ทุกมื้ออาหารมั่นคงไม่หกเลอะเทอะ ข้าวปั้นที่วางอยู่บนจานว่ากันว่าอัดแน่นไปด้วยคำอธิษฐานจากใจของคุกกี้บนฝั่งที่หวังให้กะลาสีทุกคนเดินทางกลับมาอย่างปลอดภัย"
+  },
+  {
+   "treasure_translation_id": 1378,
+   "treasure_id": 793,
+   "lang": "en",
+   "name": "Manggae Fruit Hairpin",
+   "description": ""
+  },
+  {
+   "treasure_translation_id": 1379,
+   "treasure_id": 793,
+   "lang": "th",
+   "name": "กิ๊บติดผมผลไม้มังกึดของคุกกี้มังกึดต็อก",
+   "description": "กิ๊บที่ทำจากผลแมงเก้ที่ Manggaetteok Cookie ค้นพบระหว่างการผจญภัยครั้งแรกในป่า ด้วยความช่วยเหลือจาก Manggae Snail มันจึงถูกขัดเงาจนกลายเป็นรูปทรงเรียบเนียนสวยงาม และครองตำแหน่งเทรเชอร์อันดับหนึ่งของ Manggaetteok Cookie มาโดยตลอด!"
+  },
+  {
+   "treasure_translation_id": 1380,
+   "treasure_id": 794,
+   "lang": "en",
+   "name": "Underground General's Sausage",
+   "description": ""
+  },
+  {
+   "treasure_translation_id": 1381,
+   "treasure_id": 794,
+   "lang": "th",
+   "name": "ไส้กรอกของแม่ทัพใต้ดินของคุกกี้การัตต็อก",
+   "description": "ของขวัญจากใจจริงที่เหล่าคุกกี้ในหมู่บ้านมอบให้ Garaetteok Cookie ผู้ไม่เคยหยุดพักในการปกป้องทุกคน ถูกปั้นแต่งเป็นรูปทรงของนายพลผู้พิทักษ์ในตำนาน แค่กัดคำเดียวก็รู้สึกได้ถึงพลังปกป้องที่พลุ่งพล่านขึ้นมาในทันที!"
+  },
+  {
+   "treasure_translation_id": 1382,
+   "treasure_id": 795,
+   "lang": "en",
+   "name": "Blooming Dancheong Jewel",
+   "description": ""
+  },
+  {
+   "treasure_translation_id": 1383,
+   "treasure_id": 795,
+   "lang": "th",
+   "name": "อัญมณีดันชองผลิบานของคุกกี้ดันชองผลิบาน",
+   "description": "ลูกแก้วสมปรารถนาที่ Dancheong Dragon ของ Blooming Dancheong Cookie โอบอุ้มไว้ ก่อร่างขึ้นจากดอกพลัมหายากยิ่งที่บานท่ามกลางความหนาวเหน็บของฤดูหนาว ยิ่งทำให้ลูกแก้วดันช็องเปล่งประกายงดงามยิ่งขึ้นไปอีก เล่าลือกันว่ามันมีพลังทำให้คำอธิษฐานใดๆ เป็นจริงได้ แต่ไม่มีคุกกี้ตัวไหนกล้าเอื้อมมือไปแตะต้องมันเลย"
+  },
+  {
+   "treasure_translation_id": 1384,
+   "treasure_id": 796,
+   "lang": "en",
+   "name": "Pistachio Spread",
+   "description": ""
+  },
+  {
+   "treasure_translation_id": 1385,
+   "treasure_id": 796,
+   "lang": "th",
+   "name": "สเปรดพิสตาชิโอของคุกกี้ช็อกโกพิสตาชิโอ",
+   "description": "สเปรดพิสตาชิโอเกรดพรีเมียมที่ทำจากพิสตาชิโอชั้นเลิศซึ่งเก็บเกี่ยวจากโอเอซิสส่วนตัวของ Choco Pistachio Cookie ผสมปั่นอย่างประณีตจนเนียนนุ่ม ขึ้นชื่อเรื่องรสชาติเนียนละมุนที่หยุดไม่ได้!"
+  },
+  {
+   "treasure_translation_id": 1386,
+   "treasure_id": 797,
+   "lang": "en",
+   "name": "Spring Scent Flower Tea",
+   "description": ""
+  },
+  {
+   "treasure_translation_id": 1387,
+   "treasure_id": 797,
+   "lang": "th",
+   "name": "ชาดอกไม้กลิ่นหอมแห่งฤดูใบไม้ผลิของคุกกี้นางฟ้าแดนดิไลออน",
+   "description": "ชาดอกแดนดิไลออนที่ชงจากกลีบดอกตากแห้งอย่างพิถีพิถัน ให้รสหวานอมมันแบบถั่ว ตกแต่งด้วยดอกแดนดิไลออนบานสวยเพิ่มความสวยงาม สูตรนี้เกิดจากน้ำใจของนางฟ้าแดนดิไลออน เพื่อให้แม้แต่คุกกี้ที่อาศัยอยู่ในที่ที่ดอกไม้ไม่บานก็รู้สึกถึงความสุขของฤดูใบไม้ผลิได้"
+  },
+  {
+   "treasure_translation_id": 1388,
+   "treasure_id": 798,
+   "lang": "en",
+   "name": "Cloud Boots",
+   "description": ""
+  },
+  {
+   "treasure_translation_id": 1389,
+   "treasure_id": 798,
+   "lang": "th",
+   "name": "รองเท้าบู๊ตเมฆของคุกกี้ไคมัก",
+   "description": "รองเท้าบู๊ตเมฆของ Kaymak Cookie ทำให้เขาก้าวเหยียบบนเมฆที่นุ่มและบอบบางได้อย่างง่ายดาย เป็นไอเทมสำคัญเวลาบินอยู่บนเมฆนม ภาพของ Kaymak Cookie ที่ทะยานอย่างสง่างามเหนือเมฆนมลอยฟ่องนั้นสวยงามเสมอ!"
+  },
+  {
+   "treasure_translation_id": 1390,
+   "treasure_id": 799,
+   "lang": "en",
+   "name": "Noble Scripture",
+   "description": ""
+  },
+  {
+   "treasure_translation_id": 1391,
+   "treasure_id": 799,
+   "lang": "th",
+   "name": "คัมภีร์อันสูงส่งของคุกกี้พระสน",
+   "description": "ม้วนคัมภีร์ที่เล่าลือกันว่าจะเปิดดวงตาแห่งปัญญาให้ผู้พิทักษ์มัน ทำให้มองเห็น รู้สึก และเข้าใจได้มากขึ้น ห่อหุ้มด้วยผ้าไหมสีแดง เปล่งออร่าอันสูงส่ง ในสายตาคุกกี้ทั่วไป ม้วนคัมภีร์นี้ดูว่างเปล่าอย่างสิ้นเชิง แต่ว่ากันว่าตัวอักษรที่ซ่อนอยู่จะปรากฏให้เห็นเฉพาะผู้ที่พิสูจน์ตนเองด้วยเส้นทางแห่งการบำเพ็ญตบะอันยาวนานเท่านั้น"
+  },
+  {
+   "treasure_translation_id": 1392,
+   "treasure_id": 800,
+   "lang": "en",
+   "name": "Braised Lotus Root Face Pack",
+   "description": ""
+  },
+  {
+   "treasure_translation_id": 1393,
+   "treasure_id": 800,
+   "lang": "th",
+   "name": "มาส์กหน้ารากบัวตุ๋นของคุกกี้ผีรากบัว",
+   "description": "แผ่นพอกหน้าเผือกตุ๋นสุดลึกลับที่อาบไปด้วยพลังเวทของ Lotus Root Phantom Cookie การใช้แผ่นพอกนี้จะช่วยรักษาผิวให้ชุ่มชื้นและเรียบเนียนอยู่เสมอ ว่ากันว่านี่คือความลับที่ทำให้ Lotus Root Phantom Cookie มีผิวเรียบเนียนได้แม้ต้องเผชิญแดดทะเลทรายอันแผดเผา"
+  },
+  {
+   "treasure_translation_id": 1394,
+   "treasure_id": 801,
+   "lang": "en",
+   "name": "Coin Flower Seed",
+   "description": ""
+  },
+  {
+   "treasure_translation_id": 1395,
+   "treasure_id": 801,
+   "lang": "th",
+   "name": "เมล็ดดอกไม้เหรียญของกระเป๋านำโชค",
+   "description": "เมล็ดเล็กๆ นี้ร้อยเรียงเหมือนเหรียญเก่าบนเส้นด้าย และจะเบ่งบานเป็นดอกไม้ที่ทำจากคอยน์จริงๆ"
+  },
+  {
+   "treasure_translation_id": 1396,
+   "treasure_id": 802,
+   "lang": "en",
+   "name": "Parrot's Feather Fan",
+   "description": ""
+  },
+  {
+   "treasure_translation_id": 1397,
+   "treasure_id": 802,
+   "lang": "th",
+   "name": "พัดขนนกของนกแก้วดาดา",
+   "description": "พัดที่เย็บขึ้นทีละขนอย่างพิถีพิถันจากขนแท้ ๆ ของ Parrot Dada เอง แผ่รังสีแห่งความภาคภูมิใจในทุกเส้นใย โบกทีเดียวคุณอาจได้สัมผัสกับสายลมที่แรงกว่าที่เคยรู้สึกมา!"
+  },
+  {
+   "treasure_translation_id": 1398,
+   "treasure_id": 803,
+   "lang": "en",
+   "name": "Soft Egg Basket Bed",
+   "description": ""
+  },
+  {
+   "treasure_translation_id": 1399,
+   "treasure_id": 803,
+   "lang": "th",
+   "name": "ตะกร้าเตียงไข่นุ่มของกระต่ายไข่นุ่ม",
+   "description": "เตียงตะกร้าที่ยัดไส้ด้วยเบาะมาร์ชเมลโลว์นุ่มหวาน จุดที่สมบูรณ์แบบให้ Soft Egg Bunny งีบหลับได้โดยไม่ต้องกังวลว่าเปลือกบอบบางจะแตก!"
+  },
+  {
+   "treasure_translation_id": 1400,
+   "treasure_id": 804,
+   "lang": "en",
+   "name": "Recycled Fishing Bag",
+   "description": ""
+  },
+  {
+   "treasure_translation_id": 1401,
+   "treasure_id": 804,
+   "lang": "th",
+   "name": "กระเป๋าชาวประมงรีไซเคิลของคิวคัพดิ้ง",
+   "description": "กระเป๋าตกปลาที่ทำจากภาชนะที่พบใกล้จุดตกปลาแล้วขัดจนสะอาด ว่ากันว่ามันเก็บปลาทุกตัวที่ Cucumber Cookie จับได้..."
+  },
+  {
+   "treasure_translation_id": 1402,
+   "treasure_id": 805,
+   "lang": "en",
+   "name": "Practical Spork",
+   "description": ""
+  },
+  {
+   "treasure_translation_id": 1403,
+   "treasure_id": 805,
+   "lang": "th",
+   "name": "ช้อนส้อมอเนกประสงค์ของข้าวขาวผู้อาวุโส",
+   "description": "ใช้ตักได้ ใช้จิ้มได้ แถมยังใช้เกาตรงที่คันเข้าถึงยากได้อีก น่าทึ่งใช่ไหมล่ะ? มันเปี่ยมไปด้วยภูมิปัญญาของผู้ที่รู้จักใช้ชีวิตแบบสบาย ๆ!"
+  },
+  {
+   "treasure_translation_id": 1404,
+   "treasure_id": 806,
+   "lang": "en",
+   "name": "Baduk Stone Jade Bowl",
+   "description": ""
+  },
+  {
+   "treasure_translation_id": 1405,
+   "treasure_id": 806,
+   "lang": "th",
+   "name": "ถ้วยหยกหินโกะของข้าวดำผู้อาวุโส",
+   "description": "กล่องหมากล้อมสีดำที่สงวนไว้สำหรับการแข่งขันสำคัญที่สุดเท่านั้น หมากแต่ละเม็ดถูกขัดเงาอย่างพิถีพิถันจนประกายเงียบ ๆ ของมันดูเหมือนจะสะท้อนปรัชญาการเล่นเกมของคุกกี้บางตัว"
+  },
+  {
+   "treasure_translation_id": 1406,
+   "treasure_id": 807,
+   "lang": "en",
+   "name": "Golden Barley Bundle",
+   "description": ""
+  },
+  {
+   "treasure_translation_id": 1407,
+   "treasure_id": 807,
+   "lang": "th",
+   "name": "มัดข้าวบาร์เลย์ทองคำของเพกาพลัช",
+   "description": "มัดฟางข้าวบาร์เลย์สีทองที่ทำจากลำต้นที่แข็งแรงที่สุดเท่านั้น คัดสรรอย่างพิถีพิถันสำหรับ Pegaplush มันจะไม่กระจัดกระจายง่าย ๆ ไม่ว่าลมจะแรงแค่ไหน!"
+  },
+  {
+   "treasure_translation_id": 1408,
+   "treasure_id": 808,
+   "lang": "en",
+   "name": "Ghoul Cake's Milk Bath",
+   "description": ""
+  },
+  {
+   "treasure_translation_id": 1409,
+   "treasure_id": 808,
+   "lang": "th",
+   "name": "อ่างอาบน้ำนมของเค้กผี",
+   "description": "อ่างอาบน้ำนมครีมที่ช่วยปลอบประโลมทุกรอยไหม้และรอยเกรียมที่ Ghoul Cake ต้องเผชิญมา"
+  },
+  {
+   "treasure_translation_id": 1410,
+   "treasure_id": 809,
+   "lang": "en",
+   "name": "Bread Bag Clip",
+   "description": ""
+  },
+  {
+   "treasure_translation_id": 1411,
+   "treasure_id": 809,
+   "lang": "th",
+   "name": "คลิปหนีบถุงขนมปังของพ่อค้ามัน",
+   "description": "มีข่าวลือว่าเคล็ดลับความเงางามอันเป็นเอกลักษณ์ของ Tater Trader ถูกเก็บซ่อนอยู่ในคลิปตัวจิ๋วนี้เอง เป็นไอเทมที่ต้องมีติดตัวเพื่อความสดใหม่เสมอ"
+  },
+  {
+   "treasure_translation_id": 1412,
+   "treasure_id": 810,
+   "lang": "en",
+   "name": "Sparkling Rice Juice",
+   "description": ""
+  },
+  {
+   "treasure_translation_id": 1413,
+   "treasure_id": 810,
+   "lang": "th",
+   "name": "น้ำข้าวซ่าของท่านหญิงมูดัง",
+   "description": "น้ำข้าวหมักที่ Lady Mudang กลั่นเองจากเมล็ดข้าวที่เธอเก็บสะสมอย่างขยันขันแข็งระหว่างการบินหลายครั้ง สดชื่นและซาบซ่าพอที่จะช่วยฟื้นฟูคุกกี้ที่อ่อนล้าที่สุดได้ รสชาติเรียกได้ว่าเยี่ยมที่สุด"
+  },
+  {
+   "treasure_translation_id": 1414,
+   "treasure_id": 811,
+   "lang": "en",
+   "name": "Cabbage Cone Cap",
+   "description": ""
+  },
+  {
+   "treasure_translation_id": 1415,
+   "treasure_id": 811,
+   "lang": "th",
+   "name": "หมวกทรงโคนกะหล่ำปลีของกระดิ่งกิมจิ",
+   "description": "หมวกกะหล่ำปลีทรงโคนที่ White Kimchi Cookie ทำขึ้นด้วยมือ เปล่งประกายนุ่มนวลสีขาวราวกับสามารถชำระล้างทุกสิ่งได้ มันมีค่ามากจนไม่มีใครกล้าใช้จริง ๆ จึงถูกพับเก็บอย่างทะนุถนอมไว้ตลอดมา"
+  },
+  {
+   "treasure_translation_id": 1416,
+   "treasure_id": 812,
+   "lang": "en",
+   "name": "Sea Ink Brush",
+   "description": ""
+  },
+  {
+   "treasure_translation_id": 1417,
+   "treasure_id": 812,
+   "lang": "th",
+   "name": "พู่กันหมึกทะเลของรันจุงอิลกี",
+   "description": "พู่กันที่แช่อยู่ในทะเลสาหร่ายทะเลสีเข้มนาน 100 วัน ทำให้มันแข็งแรงและยืดหยุ่นอย่างน่าทึ่ง ซึมซับพลังของคลื่นทะเลอันมืดมิด ทำให้ทุกลายเส้นยัง…"
+  },
+  {
+   "treasure_translation_id": 1418,
+   "treasure_id": 813,
+   "lang": "en",
+   "name": "Snail's Dewdrop Snack",
+   "description": ""
+  },
+  {
+   "treasure_translation_id": 1419,
+   "treasure_id": 813,
+   "lang": "th",
+   "name": "ของว่างหยดน้ำค้างของหอยทากมังกึด",
+   "description": "ต้องใช้น้ำค้างยามเช้าใสบริสุทธิ์สามหยด ครีมหอยทากหนึ่งช้อน และสายลมเย็นที่พอเหมาะ เพื่อทำขนมน้ำค้างสูตรเฉพาะของ Manggae Snail เบา กรอบ และเยี่ยมที่สุดจริง ๆ เท่าที่ผ่านมา มีเพียง Manggaetteok Cookie เท่านั้นที่เคยได้ลิ้มลอง!"
+  },
+  {
+   "treasure_translation_id": 1420,
+   "treasure_id": 814,
+   "lang": "en",
+   "name": "Baby Sotdae",
+   "description": ""
+  },
+  {
+   "treasure_translation_id": 1421,
+   "treasure_id": 814,
+   "lang": "th",
+   "name": "ซอดแดน้อยของฝูงซอดแด",
+   "description": "ทำจากอัลมอนด์อ่อนเม็ดเล็ก ๆ Sotdae ตัวน้อยนี้กลมกลึงสมบูรณ์แบบและปกคลุมด้วยขนนุ่มที่สุด ยังเล็กเกินกว่าจะกระพือปีกเองได้ จึงซุกตัวอยู่ในอ้อมกอดของครอบครัวและมองดูโลกทั้งใบจากตรงนั้น เติบโตขึ้นทีละนิดในทุก ๆ วัน เบ่งบานด้วยความรักที่ Sotdae Flock มอบให้"
+  },
+  {
+   "treasure_translation_id": 1422,
+   "treasure_id": 815,
+   "lang": "en",
+   "name": "Cozy Luxury Hedgehog Case",
+   "description": ""
+  },
+  {
+   "treasure_translation_id": 1423,
+   "treasure_id": 815,
+   "lang": "th",
+   "name": "กล่องหรูแสนอบอุ่นของเม่นช็อกโก",
+   "description": "Choco Hedgehog มีนิสัยชอบกลิ้งหนีทันทีที่หยุดเคลื่อนไหว Choco Pistachio Cookie เลยสั่งทำเคสหรูสุดพิเศษนี้ขึ้นมาโดยเฉพาะ! บุด้วยเบาะมาร์ชเมลโลว์ฟูนุ่มและผ้าห่มนุ่ม ๆ เป็นจุดพักผ่อนที่แสนอบอุ่นได้ทุกเมื่อ"
+  },
+  {
+   "treasure_translation_id": 1424,
+   "treasure_id": 816,
+   "lang": "en",
+   "name": "Fluttering Pinwheel",
+   "description": ""
+  },
+  {
+   "treasure_translation_id": 1425,
+   "treasure_id": 816,
+   "lang": "th",
+   "name": "กังหันกระดาษพลิ้วไหวของสปอร์น้อย",
+   "description": "กังหันลมที่นางฟ้าแดนดิไลออนสร้างขึ้นด้วยเวทมนตร์พิเศษ เพื่อสานฝันของ Baby Spore ที่อยากเห็นสายลมด้วยตาตัวเอง เสน่ห์ของมันอยู่ที่กลิ่นหอมอ่อน ๆ ของดอกไม้ป่าที่ลอยกระจายทุกครั้งที่กังหันหมุนตามสายลม"
+  },
+  {
+   "treasure_translation_id": 1426,
+   "treasure_id": 817,
+   "lang": "en",
+   "name": "Golden Besswax Stopper",
+   "description": ""
+  },
+  {
+   "treasure_translation_id": 1427,
+   "treasure_id": 817,
+   "lang": "th",
+   "name": "จุกขี้ผึ้งทองคำของน้ำเต้าน้ำผึ้ง",
+   "description": "จุกขี้ผึ้งที่แข็งแรงทนทานมาก ทนแรงดูดมหาศาลภายในน้ำเต้าได้สบาย ทำจากขี้ผึ้งของผึ้งที่กินน้ำผึ้งล้ำค่าเพียงอย่างเดียว จึงเปล่งประกายสดใส เชื่อมต่อด้วยเส้นด้ายน้ำผึ้งที่ทำให้เปิดปิด Honey Gourd ได้อย่างสะดวกตามใจชอบ"
+  },
+  {
+   "treasure_translation_id": 1428,
+   "treasure_id": 818,
+   "lang": "en",
+   "name": "Lotus Seed Rattle",
+   "description": ""
+  },
+  {
+   "treasure_translation_id": 1429,
+   "treasure_id": 818,
+   "lang": "th",
+   "name": "กระดิ่งเม็ดบัวของที่นั่งดอกบัว",
+   "description": "ของเล่นเขย่านี้แสดงให้เห็นถึงฝีมือการเลี้ยงดูอันเชี่ยวชาญของ Lotus Sitter ของเล่นแฮนด์เมดชิ้นนี้ทำจากใบบัวนุ่ม ๆ เพื่อไม่ให้คุกกี้ตัวน้อยได้รับบาดเจ็บ และเมล็ดบัวที่ทาสีสันสดใสที่สุด ว่ากันว่าเคยเป็นของเล่นชิ้นโปรดของ Lotus Root Cookie ตอนยังเป็นแป้งตัวน้อย"
   }
  ],
  "effect": [
@@ -41900,6 +42908,113 @@
    "value": null,
    "unit": "flat",
    "state": "blessed"
+  }
+ ],
+ "combi_bonus": [
+  {
+   "id": 1,
+   "cookie_id": 86,
+   "pet_id": 91,
+   "effect": "",
+   "is_hidden": false
+  },
+  {
+   "id": 2,
+   "cookie_id": 91,
+   "pet_id": 96,
+   "effect": "",
+   "is_hidden": false
+  },
+  {
+   "id": 3,
+   "cookie_id": 88,
+   "pet_id": 94,
+   "effect": "",
+   "is_hidden": false
+  },
+  {
+   "id": 4,
+   "cookie_id": 73,
+   "pet_id": 78,
+   "effect": "",
+   "is_hidden": false
+  },
+  {
+   "id": 5,
+   "cookie_id": 94,
+   "pet_id": 98,
+   "effect": "",
+   "is_hidden": false
+  },
+  {
+   "id": 6,
+   "cookie_id": 87,
+   "pet_id": 93,
+   "effect": "",
+   "is_hidden": false
+  },
+  {
+   "id": 7,
+   "cookie_id": 90,
+   "pet_id": 95,
+   "effect": "",
+   "is_hidden": false
+  },
+  {
+   "id": 8,
+   "cookie_id": 77,
+   "pet_id": 81,
+   "effect": "",
+   "is_hidden": false
+  },
+  {
+   "id": 9,
+   "cookie_id": 81,
+   "pet_id": 86,
+   "effect": "",
+   "is_hidden": false
+  },
+  {
+   "id": 10,
+   "cookie_id": 92,
+   "pet_id": 97,
+   "effect": "",
+   "is_hidden": false
+  },
+  {
+   "id": 11,
+   "cookie_id": 83,
+   "pet_id": 89,
+   "effect": "",
+   "is_hidden": false
+  },
+  {
+   "id": 12,
+   "cookie_id": 84,
+   "pet_id": 88,
+   "effect": "",
+   "is_hidden": false
+  },
+  {
+   "id": 13,
+   "cookie_id": 80,
+   "pet_id": 85,
+   "effect": "",
+   "is_hidden": false
+  },
+  {
+   "id": 14,
+   "cookie_id": 76,
+   "pet_id": 80,
+   "effect": "",
+   "is_hidden": false
+  },
+  {
+   "id": 15,
+   "cookie_id": 82,
+   "pet_id": 87,
+   "effect": "",
+   "is_hidden": false
   }
  ]
 }

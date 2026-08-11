@@ -47,8 +47,12 @@
                 @if ut := unlocked_treasure
                 <div class="p-4 rounded-xl flex flex-col gap-1 border-l-4 border-tertiary">
                     <span class="text-xs font-label text-foreground-muted uppercase">%unlocks_treasure_title</span>
-                    <a href="/treasures/@ut.treasure_id"
-                        class="text-on-surface font-bold underline decoration-primary decoration-2 underline-offset-4 hover:text-primary transition-colors">@ut.name</a>
+                    <a href="/treasures/@ut.treasure_id" class="group flex items-center gap-2">
+                        <img src="@{ctx.img_src('treasures', ut.image)}" alt=""
+                            class="size-8 shrink-0 rounded object-contain">
+                        <span
+                            class="text-on-surface font-bold underline decoration-primary decoration-2 underline-offset-4 group-hover:text-primary transition-colors">@ut.name</span>
+                    </a>
                 </div>
                 @endif
                 <div class="p-4 rounded-xl flex flex-col gap-1 border-l-4 border-tertiary">

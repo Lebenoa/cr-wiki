@@ -7,6 +7,7 @@
 <a href="/cookies/@cookie.cookie_id"
     class="flex items-center gap-2 px-2 py-1.5 rounded text-sm text-foreground hover:bg-secondary/20">
     <img src="/img/grades/@{cookie.grade}.png" alt="" class="size-5 shrink-0">
+    <img src="@{ctx.cookie_img_src(cookie.image)}" alt="" class="size-8 shrink-0 rounded object-contain">
     <span class="truncate">@cookie.name</span>
 </a>
 @endfor
@@ -17,6 +18,7 @@
 <a href="/pets/@pet.pet_id"
     class="flex items-center gap-2 px-2 py-1.5 rounded text-sm text-foreground hover:bg-secondary/20">
     <img src="/img/grades/@{pet.grade}.png" alt="" class="size-5 shrink-0">
+    <img src="@{ctx.img_src('pets', pet.image)}" alt="" class="size-8 shrink-0 rounded object-contain">
     <span class="truncate">@pet.name</span>
 </a>
 @endfor
@@ -29,6 +31,7 @@
     @if grade := treasure.grade
     <img src="/img/grades/@{grade}.png" alt="" class="size-5 shrink-0">
     @endif
+    <img src="@{ctx.img_src('treasures', treasure.image)}" alt="" class="size-8 shrink-0 rounded object-contain">
     <span class="truncate">@treasure.name</span>
     @if treasure.is_evolved
     <span

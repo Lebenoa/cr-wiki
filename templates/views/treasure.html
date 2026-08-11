@@ -96,9 +96,13 @@
                 @if unlock := unlock_entity
                 <div class="p-4 rounded-xl flex flex-col gap-1 border-l-4 border-secondary">
                     <span class="text-xs font-label text-foreground-muted uppercase">%treasure_unlock_title</span>
-                    <a href="/@{unlock.kind}s/@{unlock.id}"
-                        class="text-on-surface font-bold underline decoration-primary decoration-2 underline-offset-4 hover:text-primary transition-colors">%treasure_unlock_prefix
-                        @unlock.name %treasure_unlock_suffix</a>
+                    <a href="/@{unlock.kind}s/@{unlock.id}" class="group flex items-center gap-2">
+                        <img src="@{ctx.img_src(unlock.kind + 's', unlock.image)}" alt=""
+                            class="size-8 shrink-0 rounded object-contain">
+                        <span
+                            class="text-on-surface font-bold underline decoration-primary decoration-2 underline-offset-4 group-hover:text-primary transition-colors">%treasure_unlock_prefix
+                            @unlock.name %treasure_unlock_suffix</span>
+                    </a>
                 </div>
                 @endif
                 <div class="p-4 rounded-xl flex flex-col gap-1 border-l-4 border-tertiary">
