@@ -563,10 +563,27 @@ fn like_owner_ids(conn sqlite.DB, translation_table string, owner_col string, co
 	return ids
 }
 
+// fts_rank_clause returns the ORDER BY expression for `fts_table`, weighting
+// columns so title matches beat body-text mentions regardless of description
+// length (bm25's length normalization otherwise lets a "chocolate" mention in
+// a short description outrank "Mint Choco" in a long one). The lang column is
+// weighted 0 so language tags never affect relevance.
+fn fts_rank_clause(fts_table string) string {
+	return match fts_table {
+		'cookie_translation_fts' { 'bm25(${fts_table}, 10.0, 2.0, 1.0, 0.0)' }
+		'pet_translation_fts', 'treasure_translation_fts', 'effect_translation_fts' {
+			'bm25(${fts_table}, 10.0, 1.0, 0.0)'
+		}
+		else { 'rank' }
+	}
+}
+
 // fts_owner_ids returns the entity ids whose translations (in fts_table)
-// match `q`. Rowids of the FTS table are translation ids, which are mapped
-// back to entity ids via the translation table. Thai queries bypass FTS (see
-// like_owner_ids) since the tokenizer can't segment Thai.
+// match `q`, in FTS5 rank order. Rowids of the FTS table are translation ids,
+// which are mapped back to entity ids via the translation table; the ranked
+// rowid list is walked in order because a plain `WHERE id IN (...)` returns
+// rows in table order, silently dropping the ranking. Thai queries bypass FTS
+// (see like_owner_ids) since the tokenizer can't segment Thai.
 fn fts_owner_ids(conn sqlite.DB, fts_table string, translation_table string, translation_id_col string, owner_col string, q string, limit int) ![]int {
 	if has_thai(q) {
 		cols := thai_search_cols(translation_table)
@@ -579,7 +596,7 @@ fn fts_owner_ids(conn sqlite.DB, fts_table string, translation_table string, tra
 	if match_expr == '' {
 		return []
 	}
-	query := "SELECT rowid FROM ${fts_table} WHERE ${fts_table} MATCH '${match_expr.replace("'", "''")}' ORDER BY rank LIMIT ${limit}"
+	query := "SELECT rowid FROM ${fts_table} WHERE ${fts_table} MATCH '${match_expr.replace("'", "''")}' ORDER BY ${fts_rank_clause(fts_table)} LIMIT ${limit}"
 	rows := conn.exec(query) or { return [] }
 	if rows.len == 0 {
 		return []
@@ -588,13 +605,17 @@ fn fts_owner_ids(conn sqlite.DB, fts_table string, translation_table string, tra
 	for r in rows {
 		in_list << r.get_int('rowid').str()
 	}
-	owner_rows := conn.exec('SELECT ${owner_col} AS owner_id FROM ${translation_table} WHERE ${translation_id_col} IN (${in_list.join(', ')})') or {
+	owner_rows := conn.exec('SELECT ${translation_id_col} AS tid, ${owner_col} AS owner_id FROM ${translation_table} WHERE ${translation_id_col} IN (${in_list.join(', ')})') or {
 		return []
+	}
+	mut owner_by_tid := map[int]int{}
+	for r in owner_rows {
+		owner_by_tid[r.get_int('tid')] = r.get_int('owner_id')
 	}
 	mut ids := []int{}
 	mut seen := map[int]bool{}
-	for r in owner_rows {
-		id := r.get_int('owner_id')
+	for tid_s in in_list {
+		id := owner_by_tid[tid_s.int()] or { continue }
 		if id !in seen {
 			ids << id
 			seen[id] = true
