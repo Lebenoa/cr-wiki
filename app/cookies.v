@@ -73,6 +73,8 @@ pub fn (wapp &App) cookie_info(mut ctx Context, id int) veb.Result {
 	if t := database.get_unlocked_treasure(wapp.db, ctx.lang, 'cookie', cookie.cookie_id) {
 		unlocked_treasure = t
 	}
+	// combo bonuses pairing this cookie with a pet (empty when it has none)
+	combi_bonus := database.get_combi_bonus(wapp.db, ctx.lang, 'cookie', cookie.cookie_id) or { [] }
 	ctx.set_translate_title('entity_detail_title', cookie.name)
 	is_admin := ctx.is_admin()
 	return $veb.html('./templates/views/cookie.html')

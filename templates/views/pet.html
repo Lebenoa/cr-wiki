@@ -55,6 +55,22 @@
                     </a>
                 </div>
                 @endif
+                @if combi_bonus.len > 0
+                <div class="p-4 rounded-xl flex flex-col gap-1 border-l-4 border-secondary">
+                    <span class="text-xs font-label text-foreground-muted uppercase">%combo_bonus_title</span>
+                    @for cb in combi_bonus
+                    <a href="/@{cb.partner_kind}s/@{cb.partner_id}" class="group flex items-center gap-2">
+                        <img src="@{ctx.img_src(cb.partner_kind + 's', cb.partner_image)}" alt=""
+                            class="size-8 shrink-0 rounded object-contain">
+                        <span
+                            class="text-on-surface font-bold underline decoration-primary decoration-2 underline-offset-4 group-hover:text-primary transition-colors">@cb.partner_name</span>
+                    </a>
+                    @if cb.effect != ""
+                    <span class="text-on-surface text-sm">@cb.effect</span>
+                    @endif
+                    @endfor
+                </div>
+                @endif
                 <div class="p-4 rounded-xl flex flex-col gap-1 border-l-4 border-tertiary">
                     <span class="text-xs font-label text-foreground-muted uppercase">%release_date</span>
                     <span id="releaseDate" class="text-on-surface font-bold">

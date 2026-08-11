@@ -434,6 +434,86 @@ fn unlock_entity_image(conn sqlite.DB, kind string, id int) ?string {
 	return img
 }
 
+// CombiBonusView is one combo-bonus row rendered on a cookie/pet detail page:
+// the partner entity (the other half of the pair) plus the bonus effect text.
+pub struct CombiBonusView {
+pub:
+	partner_kind  string // 'cookie' | 'pet'
+	partner_id    int
+	partner_name  string
+	partner_image ?string
+	effect        string
+}
+
+// get_combi_bonus returns the combo bonuses involving `kind` (cookie or pet)
+// with id `id`, resolving each partner's name (user lang, en fallback) and
+// sprite; hidden rows are skipped. Empty when the entity has no combos.
+pub fn get_combi_bonus(conn sqlite.DB, lang string, kind string, id int) ![]CombiBonusView {
+	mut rows := []models.CombiBonus{}
+	if kind == 'cookie' {
+		rows = sql conn {
+			select from models.CombiBonus where cookie_id == id && is_hidden == false
+		}!
+	} else if kind == 'pet' {
+		rows = sql conn {
+			select from models.CombiBonus where pet_id == id && is_hidden == false
+		}!
+	} else {
+		return error('invalid combi kind')
+	}
+	if rows.len == 0 {
+		return []
+	}
+
+	user_lang := lang
+	mut result := []CombiBonusView{}
+	for row in rows {
+		partner_kind := if kind == 'cookie' { 'pet' } else { 'cookie' }
+		pid := if kind == 'cookie' { row.pet_id } else { row.cookie_id }
+		mut name := ''
+		if partner_kind == 'pet' {
+			trs := sql conn {
+				select from models.PetTranslation where pet_id == pid && (lang == user_lang || lang == 'en')
+			}!
+			if trs.len == 0 {
+				continue
+			}
+			mut tr := trs.first()
+			for x in trs {
+				if x.lang == user_lang {
+					tr = x
+					break
+				}
+			}
+			name = tr.name
+		} else {
+			trs := sql conn {
+				select from models.CookieTranslation where owner_id == pid
+				&& (lang == user_lang || lang == 'en')
+			}!
+			if trs.len == 0 {
+				continue
+			}
+			mut tr := trs.first()
+			for x in trs {
+				if x.lang == user_lang {
+					tr = x
+					break
+				}
+			}
+			name = tr.name
+		}
+		result << CombiBonusView{
+			partner_kind:  partner_kind
+			partner_id:    pid
+			partner_name:  name
+			partner_image: unlock_entity_image(conn, partner_kind, pid)
+			effect:        row.effect
+		}
+	}
+	return result
+}
+
 // get_unlocked_treasure returns the treasure unlocked by upgrading the given
 // cookie or pet to max level; error when the entity unlocks no treasure.
 pub fn get_unlocked_treasure(conn sqlite.DB, lang string, kind string, id int) !TreasureView {
