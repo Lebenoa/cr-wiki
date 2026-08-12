@@ -78,12 +78,18 @@
                 <div class="p-4 rounded-xl flex flex-col gap-1 border-l-4 border-secondary">
                     <span class="text-xs font-label text-foreground-muted uppercase">%combo_bonus_title</span>
                     @for cb in combi_bonus
-                    <a href="/@{cb.partner_kind}s/@{cb.partner_id}" class="group flex items-center gap-2">
-                        <img src="@{ctx.img_src(cb.partner_kind + 's', cb.partner_image)}" alt=""
-                            class="size-8 shrink-0 rounded object-contain">
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <a href="/@{cb.partner_kind}s/@{cb.partner_id}" class="group flex items-center gap-2">
+                            <img src="@{ctx.img_src(cb.partner_kind + 's', cb.partner_image)}" alt=""
+                                class="size-8 shrink-0 rounded object-contain">
+                            <span
+                                class="text-on-surface font-bold underline decoration-primary decoration-2 underline-offset-4 group-hover:text-primary transition-colors">@cb.partner_name</span>
+                        </a>
+                        @if cb.is_hidden
                         <span
-                            class="text-on-surface font-bold underline decoration-primary decoration-2 underline-offset-4 group-hover:text-primary transition-colors">@cb.partner_name</span>
-                    </a>
+                            class="font-bold text-accent uppercase border border-accent/50 rounded-full px-3 py-1 text-xs">%combi_hidden_badge</span>
+                        @endif
+                    </div>
                     @if cb.effect != ""
                     <span class="text-on-surface text-sm">@cb.effect</span>
                     @endif

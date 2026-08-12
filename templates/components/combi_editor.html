@@ -1,0 +1,119 @@
+<div class="space-y-2">
+    <label class="font-label text-secondary uppercase">%combi_section_title</label>
+    <div id="combi-rows" class="space-y-2">
+        @for cb in state.combis
+        <div class="combi-row bg-surface border-2 border-primary/30 rounded-xl p-3 space-y-2"
+            data-combi-row="@cb.id">
+            <input type="hidden" name="combi_id_@cb.id" value="@cb.id" />
+            <div class="flex items-center gap-2 flex-wrap">
+                <img src="@{ctx.img_src(state.partner_kind + 's', cb.partner_image)}" alt="@cb.partner_name"
+                    class="size-8 shrink-0 rounded object-contain" />
+                <span class="font-bold text-foreground">@cb.partner_name</span>
+                <button type="button" data-combi-remove
+                    class="ml-auto btn-warning text-sm py-1 px-3">%combi_remove_button</button>
+            </div>
+            <div class="relative" data-combobox data-cb-mode="name">
+                <input type="text" data-cb-input autocomplete="off" value="@cb.effect"
+                    class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground placeholder:text-foreground/30 focus:border-primary focus:ring-0 transition-all outline-none"
+                    placeholder="%combi_effect_hint" />
+                <input type="hidden" data-cb-hidden data-field="effect" name="combi_effect_@cb.id"
+                    value="@cb.effect" />
+                <ul data-cb-list
+                    class="hidden absolute z-10 left-0 right-0 top-full mt-1 max-h-60 overflow-y-auto bg-surface border-2 border-primary/30 rounded-xl shadow-lg">
+                    @for n in state.effect_names
+                    <li data-cb-value="@n" class="px-4 py-2 cursor-pointer hover:bg-primary/10 text-sm text-foreground">@n</li>
+                    @endfor
+                    <li data-cb-value="__new__"
+                        class="px-4 py-2 cursor-pointer text-accent font-semibold border-t-2 border-primary/20 text-sm">+ %new_effect</li>
+                </ul>
+            </div>
+            <label class="flex items-center gap-2 cursor-pointer text-sm text-foreground">
+                <input type="checkbox" name="combi_hidden_@cb.id" value="true" class="size-5"
+                    @if cb.is_hidden
+                    checked
+                    @end
+                />
+                <span class="font-label text-secondary uppercase">%combi_hidden_label</span>
+            </label>
+        </div>
+        @endfor
+    </div>
+    <div id="combi-new-rows" class="space-y-2"></div>
+    <template id="combi-new-template">
+        <div class="combi-new-row bg-surface border-2 border-dashed border-primary/40 rounded-xl p-3 space-y-2">
+            <div class="relative" data-combobox data-cb-mode="select">
+                <input type="text" data-cb-input autocomplete="off"
+                    class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground placeholder:text-foreground/30 focus:border-primary focus:ring-0 transition-all outline-none"
+                    placeholder="%combi_partner_hint" />
+                <input type="hidden" data-cb-hidden data-field="partner" name="new_combi_partner_0" value="" />
+                <ul data-cb-list
+                    class="hidden absolute z-10 left-0 right-0 top-full mt-1 max-h-60 overflow-y-auto bg-surface border-2 border-primary/30 rounded-xl shadow-lg">
+                    @for p in state.partners
+                    <li data-cb-value="@p.id"
+                        class="px-4 py-2 cursor-pointer hover:bg-primary/10 text-sm text-foreground flex items-center gap-2">
+                        <img src="@{ctx.img_src(state.partner_kind + 's', p.image)}" alt="@p.name"
+                            class="size-5 shrink-0 object-contain" />
+                        @p.name
+                    </li>
+                    @endfor
+                </ul>
+            </div>
+            <div class="relative" data-combobox data-cb-mode="name">
+                <input type="text" data-cb-input autocomplete="off"
+                    class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground placeholder:text-foreground/30 focus:border-primary focus:ring-0 transition-all outline-none"
+                    placeholder="%combi_effect_hint" />
+                <input type="hidden" data-cb-hidden data-field="effect" name="new_combi_effect_0" value="" />
+                <ul data-cb-list
+                    class="hidden absolute z-10 left-0 right-0 top-full mt-1 max-h-60 overflow-y-auto bg-surface border-2 border-primary/30 rounded-xl shadow-lg">
+                    @for n in state.effect_names
+                    <li data-cb-value="@n" class="px-4 py-2 cursor-pointer hover:bg-primary/10 text-sm text-foreground">@n</li>
+                    @endfor
+                    <li data-cb-value="__new__"
+                        class="px-4 py-2 cursor-pointer text-accent font-semibold border-t-2 border-primary/20 text-sm">+ %new_effect</li>
+                </ul>
+            </div>
+            <label class="flex items-center gap-2 cursor-pointer text-sm text-foreground">
+                <input type="checkbox" data-field="hidden" name="new_combi_hidden_0" value="true" class="size-5" />
+                <span class="font-label text-secondary uppercase">%combi_hidden_label</span>
+            </label>
+            <button type="button" data-combi-remove
+                class="w-full btn-warning text-sm py-1">%combi_remove_button</button>
+        </div>
+    </template>
+    <button type="button" data-combi-add
+        class="w-full bg-surface border-2 border-dashed border-primary/40 rounded-xl py-3 px-4 text-sm font-semibold text-foreground-muted hover:border-primary hover:text-foreground transition-all text-center">+ %combi_add_button</button>
+</div>
+<script>
+    (function () {
+        function renumber() {
+            var rows = document.querySelectorAll('.combi-new-row');
+            rows.forEach(function (row, i) {
+                row.querySelector('[data-field="partner"]').name = 'new_combi_partner_' + i;
+                row.querySelector('[data-field="effect"]').name = 'new_combi_effect_' + i;
+                row.querySelector('[data-field="hidden"]').name = 'new_combi_hidden_' + i;
+            });
+        }
+        var tpl = document.getElementById('combi-new-template');
+        var container = document.getElementById('combi-new-rows');
+        var addBtn = document.querySelector('[data-combi-add]');
+        if (!tpl || !container || !addBtn) return;
+        addBtn.addEventListener('click', function () {
+            var row = tpl.content.firstElementChild.cloneNode(true);
+            container.appendChild(row);
+            renumber();
+            var cb = row.querySelector('[data-combobox]');
+            if (cb && window.Combobox) window.Combobox.init(cb);
+        });
+        document.addEventListener('click', function (e) {
+            var btn = e.target.closest('[data-combi-remove]');
+            if (!btn) return;
+            var row = btn.closest('.combi-row, .combi-new-row');
+            if (!row) return;
+            row.remove();
+            // removing a new row leaves a gap in the new_combi_*_<i> indices;
+            // renumber so the server parses every remaining row
+            if (row.classList.contains('combi-new-row')) renumber();
+        });
+        renumber();
+    })();
+</script>

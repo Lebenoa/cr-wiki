@@ -93,20 +93,14 @@
                     </select>
                 </div>
                 <div class="space-y-2">
-                    <label class="font-label text-secondary uppercase" for="is_evolved">%evolved</label>
-                    <select id="is_evolved" name="is_evolved"
-                        class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground focus:border-primary focus:ring-0 transition-all outline-none">
-                        <option value="false"
-                            @if !state.is_evolved
-                            selected
-                            @endif
-                        >No</option>
-                        <option value="true"
+                    <label class="flex items-center gap-2 cursor-pointer min-h-12">
+                        <input id="is_evolved" type="checkbox" name="is_evolved" value="true" class="size-5"
                             @if state.is_evolved
-                            selected
-                            @endif
-                        >Yes</option>
-                    </select>
+                            checked
+                            @end
+                        />
+                        <span class="font-label text-secondary uppercase">%evolved</span>
+                    </label>
                 </div>
                 <div class="space-y-2">
                     <label class="font-label text-secondary uppercase" for="release_date">%release_date</label>
@@ -163,7 +157,11 @@
                 <button type="button" data-add-effect="effects"
                     class="w-full bg-surface border-2 border-dashed border-primary/40 rounded-xl py-3 px-4 text-sm font-semibold text-foreground-muted hover:border-primary hover:text-foreground transition-all text-center">+ %add_effect</button>
             </div>
-            <div class="space-y-2">
+            <div id="blessed-section" class="space-y-2"
+                @if !state.is_evolved
+                hidden
+                @end
+            >
                 <label class="font-label text-secondary uppercase">%blessed_effects</label>
                 <div id="blessed_effects-rows" class="space-y-2">
                     @for i, e in state.blessed_effects
@@ -227,6 +225,16 @@
                             renumber(document.getElementById(prefix + '-rows'), prefix);
                         });
                     });
+                    // evolved checkbox controls the blessed-effects section
+                    var evolved = document.getElementById('is_evolved');
+                    var blessedSection = document.getElementById('blessed-section');
+                    if (evolved && blessedSection) {
+                        function syncBlessed() {
+                            blessedSection.hidden = !evolved.checked;
+                        }
+                        evolved.addEventListener('change', syncBlessed);
+                        syncBlessed();
+                    }
                 })();
             </script>
             <div class="space-y-2">

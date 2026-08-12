@@ -91,6 +91,10 @@ pub fn run_test_session() {
 			run:  test_combi_bonus_resolves
 		},
 		TestCase{
+			name: 'effect value parsing'
+			run:  test_effect_value_parse
+		},
+		TestCase{
 			name: 'public pages render'
 			run:  test_public_pages
 		},
@@ -125,6 +129,10 @@ pub fn run_test_session() {
 		TestCase{
 			name: 'admin creates pet with new treasure'
 			run:  test_admin_create_pet_new_treasure
+		},
+		TestCase{
+			name: 'admin combi bonus edit form'
+			run:  test_admin_combi_edit_form
 		},
 	]
 
@@ -255,6 +263,43 @@ fn test_combi_bonus_resolves(mut tc TestContext) ! {
 	bad := tc.db.exec('SELECT COUNT(*) AS n FROM combi_bonus cb WHERE cb.cookie_id NOT IN (SELECT cookie_id FROM cookie) OR cb.pet_id NOT IN (SELECT pet_id FROM pet)')![0].get_int('n')
 	if bad > 0 {
 		return error('${bad} combi bonus rows reference missing cookie/pet')
+	}
+	// effect links must resolve too (effect text is shared/translatable)
+	bad_effect := tc.db.exec('SELECT COUNT(*) AS n FROM combi_bonus cb LEFT JOIN effect e ON e.effect_id = cb.effect_id WHERE cb.effect_id IS NOT NULL AND e.effect_id IS NULL')![0].get_int('n')
+	if bad_effect > 0 {
+		return error('${bad_effect} combi bonus rows reference missing effects')
+	}
+	// the fixture's combi effect must have both languages (the shared table
+	// invariant the treasure side enforces too)
+	no_th := tc.db.exec('SELECT COUNT(*) AS n FROM effect e WHERE e.effect_id IN (SELECT DISTINCT effect_id FROM combi_bonus WHERE effect_id IS NOT NULL) AND NOT EXISTS (SELECT 1 FROM effect_translation et WHERE et.effect_id = e.effect_id AND et.lang = "th")')![0].get_int('n')
+	if no_th > 0 {
+		return error('${no_th} combi effect rows lack a th translation')
+	}
+}
+
+fn test_effect_value_parse(mut tc TestContext) ! {
+	// round-trip: parse(raw) -> format_effect_value(...) must reproduce raw
+	for raw in ['12%', '2-3%', '-2%', '-2--3%', '2--3%', '-2-3%', '-5-10s', '500000', ''] {
+		parts := parse_effect_value(raw) or { return error('parse ${raw}: ${err}') }
+		got := database.format_effect_value(parts.value, parts.value_min, parts.value_max, parts.unit)
+		if got != raw {
+			return error('parse ${raw}: round-trip mismatch, got ${got}')
+		}
+	}
+	// unit detection
+	pct := parse_effect_value('-2--3%')!
+	if pct.unit != models.EffectUnit.percent {
+		return error('parse -2--3%: expected percent unit')
+	}
+	sec := parse_effect_value('-5-10s')!
+	if sec.unit != models.EffectUnit.second {
+		return error('parse -5-10s: expected second unit')
+	}
+	// malformed inputs must error
+	for bad in ['abc', '1-2-3', '-', '12-', '2..3', '%', '--2'] {
+		if _ := parse_effect_value(bad) {
+			return error('parse ${bad}: expected an error')
+		}
 	}
 }
 
@@ -397,6 +442,7 @@ fn test_admin_create_pet_new_treasure(mut tc TestContext) ! {
 			'name':               'Test Pet'
 			'abilities':          'Test abilities'
 			'grade':              'c'
+			'release_date':       '2024-01-15'
 			'unlock_treasure_id': '__new__'
 			'new_treasure_name':  'Test New Treasure'
 		})
@@ -420,5 +466,131 @@ fn test_admin_create_pet_new_treasure(mut tc TestContext) ! {
 	linked := tc.db.exec('SELECT COUNT(*) AS n FROM treasure WHERE treasure_id = ${tid} AND unlock_pet_id = ${pid}')![0].get_int('n')
 	if linked == 0 {
 		return error('create pet: new treasure not linked to pet')
+	}
+	// a treasure created from the combobox inherits the pet's release date
+	expected := tc.db.exec("SELECT CAST(strftime('%s', '2024-01-15 00:00:00') AS INT) AS ts")![0].get_int('ts')
+	rel := tc.db.exec('SELECT release_date FROM treasure WHERE treasure_id = ${tid}')![0].get_int('release_date')
+	if rel != expected {
+		return error('create pet: new treasure release_date ${rel} != pet release_date ${expected}')
+	}
+}
+
+fn test_admin_combi_edit_form(mut tc TestContext) ! {
+	if tc.session_cookie == '' {
+		return error('run admin login first')
+	}
+	tid := tc.db.exec('SELECT treasure_id FROM treasure ORDER BY treasure_id LIMIT 1')![0].get_int('treasure_id')
+	pid := tc.db.exec('SELECT pet_id FROM pet ORDER BY pet_id LIMIT 1')![0].get_int('pet_id')
+
+	// create a throwaway cookie to attach combos to
+	resp := http.fetch(
+		method: .post
+		url:    '${tc.base}/cookies/new'
+		header: http.new_header(key: .content_type, value: 'application/x-www-form-urlencoded')
+		data:   http.url_encode_form_data({
+			'name':               'Combi Test Cookie'
+			'abilities':          'Test abilities'
+			'grade':              'c'
+			'unlock_treasure_id': '${tid}'
+		})
+		cookies: {
+			session_cookie_key: tc.session_cookie
+		}
+	) or { return error('combi test: create cookie POST: ${err}') }
+	if resp.status_code != 200 {
+		return error('combi test: create cookie expected 200, got ${resp.status_code}')
+	}
+	cid := tc.db.exec("SELECT owner_id FROM cookie_translation WHERE name = 'Combi Test Cookie' AND lang = 'en'")![0].get_int('owner_id')
+
+	pid2 := tc.db.exec('SELECT pet_id FROM pet ORDER BY pet_id DESC LIMIT 1')![0].get_int('pet_id')
+
+	// add combos via the edit form; indices 0 and 2 are deliberately sent with
+	// a gap (index 1 missing) to prove the parser tolerates holes left by a
+	// removed row instead of silently dropping the later ones
+	mut form := {
+		'name':                'Combi Test Cookie'
+		'abilities':           'Test abilities'
+		'grade':               'c'
+		'unlock_treasure_id':  '${tid}'
+		'new_combi_partner_0': '${pid}'
+		'new_combi_effect_0':  'Combo test A'
+		'new_combi_hidden_0':  'true'
+		'new_combi_partner_2': '${pid2}'
+		'new_combi_effect_2':  'Combo test B'
+	}
+	http.fetch(
+		method: .post
+		url:    '${tc.base}/cookies/${cid}/edit'
+		header: http.new_header(key: .content_type, value: 'application/x-www-form-urlencoded')
+		data:   http.url_encode_form_data(form)
+		cookies: {
+			session_cookie_key: tc.session_cookie
+		}
+	) or { return error('combi test: add POST: ${err}') }
+	rows := tc.db.exec('SELECT cb.id, cb.is_hidden, e.effect_id FROM combi_bonus cb JOIN effect_translation e ON e.effect_id = cb.effect_id WHERE cb.cookie_id = ${cid} AND cb.pet_id = ${pid} AND e.lang = "en" AND e.name = "Combo test A"')!
+	if rows.len == 0 {
+		return error('combi test: added row not found')
+	}
+	row_id := rows[0].get_int('id')
+	if rows[0].get_int('is_hidden') != 1 {
+		return error('combi test: hidden flag not stored')
+	}
+	// the gapped index 2 must have landed too
+	second := tc.db.exec('SELECT cb.id FROM combi_bonus cb JOIN effect_translation e ON e.effect_id = cb.effect_id WHERE cb.cookie_id = ${cid} AND cb.pet_id = ${pid2} AND e.lang = "en" AND e.name = "Combo test B"')!
+	if second.len == 0 {
+		return error('combi test: row after index gap not created')
+	}
+	second_id := second[0].get_int('id')
+
+	// update the first row: new effect text, unhidden; keep the second too
+	form = {
+		'name':               'Combi Test Cookie'
+		'abilities':          'Test abilities'
+		'grade':              'c'
+		'unlock_treasure_id': '${tid}'
+		'combi_id_${row_id}': '${row_id}'
+		'combi_effect_${row_id}': 'Combo test C'
+		'combi_id_${second_id}': '${second_id}'
+	}
+	http.fetch(
+		method: .post
+		url:    '${tc.base}/cookies/${cid}/edit'
+		header: http.new_header(key: .content_type, value: 'application/x-www-form-urlencoded')
+		data:   http.url_encode_form_data(form)
+		cookies: {
+			session_cookie_key: tc.session_cookie
+		}
+	) or { return error('combi test: update POST: ${err}') }
+	updated := tc.db.exec('SELECT cb.is_hidden, e.name FROM combi_bonus cb JOIN effect_translation e ON e.effect_id = cb.effect_id WHERE cb.id = ${row_id} AND e.lang = "en"')!
+	if updated.len == 0 || updated[0].get_string('name') != 'Combo test C' {
+		return error('combi test: effect text not updated')
+	}
+	if updated[0].get_int('is_hidden') != 0 {
+		return error('combi test: hidden flag not cleared')
+	}
+
+	// remove: markers absent, so the diff deletes both rows
+	form = {
+		'name':               'Combi Test Cookie'
+		'abilities':          'Test abilities'
+		'grade':              'c'
+		'unlock_treasure_id': '${tid}'
+	}
+	http.fetch(
+		method: .post
+		url:    '${tc.base}/cookies/${cid}/edit'
+		header: http.new_header(key: .content_type, value: 'application/x-www-form-urlencoded')
+		data:   http.url_encode_form_data(form)
+		cookies: {
+			session_cookie_key: tc.session_cookie
+		}
+	) or { return error('combi test: remove POST: ${err}') }
+	gone := tc.db.exec('SELECT COUNT(*) AS n FROM combi_bonus WHERE id = ${row_id}')![0].get_int('n')
+	if gone != 0 {
+		return error('combi test: removed row still present')
+	}
+	gone2 := tc.db.exec('SELECT COUNT(*) AS n FROM combi_bonus WHERE id = ${second_id}')![0].get_int('n')
+	if gone2 != 0 {
+		return error('combi test: second removed row still present')
 	}
 }

@@ -31,6 +31,71 @@ pub:
 	release_date       time.Time
 	unlock_treasure_id ?int // treasure this cookie unlocks at max level
 	new_treasure_name  string // non-empty: create this treasure, then link it
+	combi_keep         map[int]CombiRowUpdate // existing combi rows to keep (id -> effect/hidden)
+	combi_new          []CombiNewRow          // brand-new combi rows to create
+}
+
+// CombiRowUpdate is the submitted state of one existing combi row on the
+// cookie/pet edit form: the effect name (in the form's language) and whether
+// it is hidden from... nothing — wiki readers see everything, the flag just
+// marks the row for the badge.
+pub struct CombiRowUpdate {
+pub:
+	effect    string
+	is_hidden bool
+}
+
+// CombiNewRow is one new combi row added on the cookie/pet form: the partner
+// id (the other half of the pair) plus effect name and hidden flag.
+pub struct CombiNewRow {
+pub:
+	partner_id int
+	effect     string
+	is_hidden  bool
+}
+
+// combi_effect_id resolves a combi effect name into the shared effect table
+// (creating the effect when new); 0 for an empty name (no effect).
+fn combi_effect_id(conn sqlite.DB, lang string, name string) !int {
+	n := name.trim_space()
+	if n == '' {
+		return 0
+	}
+	return find_or_create_effect(conn, lang, n)
+}
+
+// add_combi_rows inserts new combi rows where one side is fixed (the cookie
+// or pet being edited, `cookie_side`/`pet_side`; exactly one is non-zero) and
+// the other comes from the form. Duplicate pairs are skipped.
+fn add_combi_rows(conn sqlite.DB, cookie_side int, pet_side int, rows []CombiNewRow, lang string) ! {
+	for nr in rows {
+		pid := nr.partner_id
+		if pid <= 0 {
+			continue
+		}
+		cid := if cookie_side > 0 { cookie_side } else { pid }
+		pid2 := if pet_side > 0 { pet_side } else { pid }
+		dup := sql conn {
+			select from models.CombiBonus where cookie_id == cid && pet_id == pid2
+		}!
+		if dup.len > 0 {
+			continue
+		}
+		eid := combi_effect_id(conn, lang, nr.effect)!
+		new_row := models.CombiBonus{
+			cookie_id: cid
+			pet_id:    pid2
+			effect_id: if eid > 0 {
+				eid
+			} else {
+				none
+			}
+			is_hidden: nr.is_hidden
+		}
+		sql conn {
+			insert new_row into models.CombiBonus
+		}!
+	}
 }
 
 pub fn create_cookie(conn sqlite.DB, params CreateCookieParams) !int {
@@ -73,7 +138,7 @@ pub fn create_cookie(conn sqlite.DB, params CreateCookieParams) !int {
 		tid := create_treasure(conn, CreateTreasureParams{
 			lang:         params.lang
 			name:         params.new_treasure_name
-			release_date: time.now()
+			release_date: params.release_date // treasure released together with its cookie
 		})!
 		sql conn {
 			update models.Treasure set unlock_cookie_id = cookie_id where treasure_id == tid
@@ -82,6 +147,10 @@ pub fn create_cookie(conn sqlite.DB, params CreateCookieParams) !int {
 		sql conn {
 			update models.Treasure set unlock_cookie_id = cookie_id where treasure_id == utid
 		}!
+	}
+
+	if params.combi_new.len > 0 {
+		add_combi_rows(conn, cookie_id, 0, params.combi_new, params.lang)!
 	}
 
 	return cookie_id
@@ -98,6 +167,8 @@ pub:
 	release_date       time.Time
 	unlock_treasure_id ?int // treasure this pet unlocks at max level
 	new_treasure_name  string // non-empty: create this treasure, then link it
+	combi_keep         map[int]CombiRowUpdate
+	combi_new          []CombiNewRow
 }
 
 pub fn create_pet(conn sqlite.DB, params CreatePetParams) !int {
@@ -139,7 +210,7 @@ pub fn create_pet(conn sqlite.DB, params CreatePetParams) !int {
 		tid := create_treasure(conn, CreateTreasureParams{
 			lang:         params.lang
 			name:         params.new_treasure_name
-			release_date: time.now()
+			release_date: params.release_date // treasure released together with its pet
 		})!
 		sql conn {
 			update models.Treasure set unlock_pet_id = pet_id where treasure_id == tid
@@ -148,6 +219,10 @@ pub fn create_pet(conn sqlite.DB, params CreatePetParams) !int {
 		sql conn {
 			update models.Treasure set unlock_pet_id = pet_id where treasure_id == utid
 		}!
+	}
+
+	if params.combi_new.len > 0 {
+		add_combi_rows(conn, 0, pet_id, params.combi_new, params.lang)!
 	}
 
 	return pet_id
@@ -294,3 +369,4 @@ fn find_or_create_effect(conn sqlite.DB, lang string, name string) !int {
 	}!
 	return effect_id
 }
+

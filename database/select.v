@@ -439,8 +439,64 @@ fn unlock_entity_image(conn sqlite.DB, kind string, id int) ?string {
 	return img
 }
 
+// resolve_entity_name returns the localized name of a cookie or pet (user
+// lang with en fallback); '' when no translation exists.
+fn resolve_entity_name(conn sqlite.DB, kind string, id int, lang string) string {
+	user_lang := lang
+	if kind == 'pet' {
+		trs := sql conn {
+			select from models.PetTranslation where pet_id == id && (lang == user_lang || lang == 'en')
+		} or { return '' }
+		if trs.len == 0 {
+			return ''
+		}
+		mut tr := trs.first()
+		for x in trs {
+			if x.lang == user_lang {
+				tr = x
+				break
+			}
+		}
+		return tr.name
+	}
+	trs := sql conn {
+		select from models.CookieTranslation where owner_id == id && (lang == user_lang || lang == 'en')
+	} or { return '' }
+	if trs.len == 0 {
+		return ''
+	}
+	mut tr := trs.first()
+	for x in trs {
+		if x.lang == user_lang {
+			tr = x
+			break
+		}
+	}
+	return tr.name
+}
+
+// combi_effect_text returns the localized name of a combo bonus's linked
+// effect (user lang, en fallback, '' when the combo has no effect).
+fn combi_effect_text(conn sqlite.DB, effect_id ?int, lang string) string {
+	eid := effect_id or { return '' }
+	user_lang := lang
+	trs := sql conn {
+		select from models.EffectTranslation where effect_id == eid && (lang == user_lang || lang == 'en')
+	} or { return '' }
+	for tr in trs {
+		if tr.lang == user_lang {
+			return tr.name
+		}
+	}
+	if trs.len > 0 {
+		return trs.first().name
+	}
+	return ''
+}
+
 // CombiBonusView is one combo-bonus row rendered on a cookie/pet detail page:
-// the partner entity (the other half of the pair) plus the bonus effect text.
+// the partner entity (the other half of the pair) plus the localized bonus
+// effect text.
 pub struct CombiBonusView {
 pub:
 	partner_kind  string // 'cookie' | 'pet'
@@ -448,20 +504,22 @@ pub:
 	partner_name  string
 	partner_image ?string
 	effect        string
+	is_hidden     bool
 }
 
 // get_combi_bonus returns the combo bonuses involving `kind` (cookie or pet)
-// with id `id`, resolving each partner's name (user lang, en fallback) and
-// sprite; hidden rows are skipped. Empty when the entity has no combos.
+// with id `id`, resolving each partner's name and the effect text in the
+// user's language (en fallback). Hidden rows are listed too — this is a wiki,
+// readers see everything. Empty when the entity has no combos.
 pub fn get_combi_bonus(conn sqlite.DB, lang string, kind string, id int) ![]CombiBonusView {
 	mut rows := []models.CombiBonus{}
 	if kind == 'cookie' {
 		rows = sql conn {
-			select from models.CombiBonus where cookie_id == id && is_hidden == false
+			select from models.CombiBonus where cookie_id == id
 		}!
 	} else if kind == 'pet' {
 		rows = sql conn {
-			select from models.CombiBonus where pet_id == id && is_hidden == false
+			select from models.CombiBonus where pet_id == id
 		}!
 	} else {
 		return error('invalid combi kind')
@@ -470,50 +528,71 @@ pub fn get_combi_bonus(conn sqlite.DB, lang string, kind string, id int) ![]Comb
 		return []
 	}
 
-	user_lang := lang
 	mut result := []CombiBonusView{}
 	for row in rows {
 		partner_kind := if kind == 'cookie' { 'pet' } else { 'cookie' }
 		pid := if kind == 'cookie' { row.pet_id } else { row.cookie_id }
-		mut name := ''
-		if partner_kind == 'pet' {
-			trs := sql conn {
-				select from models.PetTranslation where pet_id == pid && (lang == user_lang || lang == 'en')
-			}!
-			if trs.len == 0 {
-				continue
-			}
-			mut tr := trs.first()
-			for x in trs {
-				if x.lang == user_lang {
-					tr = x
-					break
-				}
-			}
-			name = tr.name
-		} else {
-			trs := sql conn {
-				select from models.CookieTranslation where owner_id == pid
-				&& (lang == user_lang || lang == 'en')
-			}!
-			if trs.len == 0 {
-				continue
-			}
-			mut tr := trs.first()
-			for x in trs {
-				if x.lang == user_lang {
-					tr = x
-					break
-				}
-			}
-			name = tr.name
+		name := resolve_entity_name(conn, partner_kind, pid, lang)
+		if name == '' {
+			continue
 		}
 		result << CombiBonusView{
 			partner_kind:  partner_kind
 			partner_id:    pid
 			partner_name:  name
 			partner_image: unlock_entity_image(conn, partner_kind, pid)
-			effect:        row.effect
+			effect:        combi_effect_text(conn, row.effect_id, lang)
+			is_hidden:     row.is_hidden
+		}
+	}
+	return result
+}
+
+// CombiEditRow is one combo bonus of a cookie/pet rendered on the cookie/pet
+// admin form: the partner entity (the other half of the pair) plus the
+// editable effect name (resolved for the form's language) and hidden flag.
+pub struct CombiEditRow {
+pub:
+	id            int
+	partner_id    int
+	partner_name  string
+	partner_image ?string
+	effect        string
+	is_hidden     bool
+}
+
+// combi_edit_rows returns the combo bonuses of `kind` (cookie or pet) with id
+// `id` for the admin edit form, resolving the partner name/sprite and the
+// effect text in the given language (en fallback).
+pub fn combi_edit_rows(conn sqlite.DB, lang string, kind string, id int) ![]CombiEditRow {
+	mut rows := []models.CombiBonus{}
+	if kind == 'cookie' {
+		rows = sql conn {
+			select from models.CombiBonus where cookie_id == id
+		}!
+	} else if kind == 'pet' {
+		rows = sql conn {
+			select from models.CombiBonus where pet_id == id
+		}!
+	} else {
+		return error('invalid combi kind')
+	}
+	if rows.len == 0 {
+		return []
+	}
+
+	mut result := []CombiEditRow{}
+	for row in rows {
+		partner_kind := if kind == 'cookie' { 'pet' } else { 'cookie' }
+		pid := if kind == 'cookie' { row.pet_id } else { row.cookie_id }
+		rid := row.id or { continue }
+		result << CombiEditRow{
+			id:            rid
+			partner_id:    pid
+			partner_name:  resolve_entity_name(conn, partner_kind, pid, lang)
+			partner_image: unlock_entity_image(conn, partner_kind, pid)
+			effect:        combi_effect_text(conn, row.effect_id, lang)
+			is_hidden:     row.is_hidden
 		}
 	}
 	return result
@@ -598,8 +677,9 @@ pub fn cookie_options(conn sqlite.DB, lang string) ![]IdNameOption {
 		cid := c.cookie_id or { continue }
 		if tr := tmap[cid] {
 			out << IdNameOption{
-				id:   cid
-				name: tr.name
+				id:    cid
+				name:  tr.name
+				image: c.image
 			}
 		}
 	}
@@ -641,8 +721,9 @@ pub fn pet_options(conn sqlite.DB, lang string) ![]IdNameOption {
 		pid := p.pet_id or { continue }
 		if tr := tmap[pid] {
 			out << IdNameOption{
-				id:   pid
-				name: tr.name
+				id:    pid
+				name:  tr.name
+				image: p.image
 			}
 		}
 	}

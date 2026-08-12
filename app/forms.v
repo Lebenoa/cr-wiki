@@ -31,6 +31,10 @@ pub:
 	image             ?string
 	unlock_treasure_id int // 0 = none; the treasure this cookie unlocks at max level
 	treasures         []database.IdNameOption
+	combis            []database.CombiEditRow // this cookie's combo bonuses (edit mode)
+	partners          []database.IdNameOption // pickable pets for a new combo
+	partner_kind      string                  // 'pet' — sprite dir for partner images
+	effect_names      []string                // shared effect-name suggestions
 }
 
 // PetForm carries the form state shared by the pet create/edit pages.
@@ -47,7 +51,13 @@ pub:
 	image             ?string
 	unlock_treasure_id int // 0 = none; the treasure this pet unlocks at max level
 	treasures         []database.IdNameOption
-}	// EffectRow carries one effect row in the treasure form's structured editor.
+	combis            []database.CombiEditRow // this pet's combo bonuses (edit mode)
+	partners          []database.IdNameOption // pickable cookies for a new combo
+	partner_kind      string                  // 'cookie' — sprite dir for partner images
+	effect_names      []string                // shared effect-name suggestions
+}
+
+// EffectRow carries one effect row in the treasure form's structured editor.
 pub struct EffectRow {
 pub:
 	name  string
@@ -96,22 +106,41 @@ fn parse_effect_value(raw string) !EffectValueParts {
 		unit = models.EffectUnit.second
 		s = s[..s.len - 1]
 	}
-	parts := s.split('-')
-	if parts.len > 2 {
+	if s == '' {
 		return error('expected a number or range like 12% or 2-3%')
 	}
+	// scan signed integers: '12' | '2-3' | '-2' | '-2--3' (one or two values).
+	// A single '-' after a number is the range separator; the next number
+	// consumes its own optional sign, so '-2--3' means min -2, max -3.
 	mut nums := []int{}
-	for part in parts {
-		p := part.trim_space()
-		if p == '' {
+	mut i := 0
+	for i < s.len {
+		// one number: optional sign then digits
+		mut j := i
+		if s[j] == `-` {
+			j++
+		}
+		if j >= s.len || !s[j].is_digit() {
 			return error('expected a number or range like 12% or 2-3%')
 		}
-		for c in p {
-			if !c.is_digit() {
+		for j < s.len && s[j].is_digit() {
+			j++
+		}
+		nums << s[i..j].int()
+		i = j
+		// separator: exactly one '-' before the next number
+		if i < s.len {
+			if s[i] != `-` {
+				return error('expected a number or range like 12% or 2-3%')
+			}
+			i++
+			if i >= s.len {
 				return error('expected a number or range like 12% or 2-3%')
 			}
 		}
-		nums << p.int()
+	}
+	if nums.len > 2 {
+		return error('expected a number or range like 12% or 2-3%')
 	}
 	if nums.len == 1 {
 		return EffectValueParts{
@@ -148,6 +177,58 @@ pub:
 	pets            []database.IdNameOption
 }
 
+// parse_combi_editor reads the combi-bonus section of the cookie/pet form:
+// existing rows are identified by a `combi_id_<id>` marker (their effect text
+// + hidden flag come from `combi_effect_<id>` / `combi_hidden_<id>`); new rows
+// come from the renumbered `new_combi_partner_<i>` / `new_combi_effect_<i>` /
+// `new_combi_hidden_<i>` inputs. Rows whose marker is missing are deleted
+// server-side (the form's remove button just drops the row from the DOM).
+fn parse_combi_editor(mut ctx Context) !(map[int]database.CombiRowUpdate, []database.CombiNewRow) {
+	mut keep := map[int]database.CombiRowUpdate{}
+	for k, _ in ctx.form {
+		if !k.starts_with('combi_id_') {
+			continue
+		}
+		id := k.all_after('combi_id_').int()
+		if id <= 0 {
+			continue
+		}
+		keep[id] = database.CombiRowUpdate{
+			effect:    ctx.form['combi_effect_${id}'] or { '' }
+			is_hidden: (ctx.form['combi_hidden_${id}'] or { '' }) == 'true'
+		}
+	}
+	// new rows: collect by index from the form (gap-tolerant — a removed row
+	// can leave a hole if the editor's JS didn't renumber), then emit in index
+	// order; rows without a picked partner are skipped.
+	mut new_by_index := map[int]database.CombiNewRow{}
+	for k, v in ctx.form {
+		if !k.starts_with('new_combi_partner_') {
+			continue
+		}
+		idx := k.all_after('new_combi_partner_').int()
+		if idx < 0 {
+			continue
+		}
+		new_by_index[idx] = database.CombiNewRow{
+			partner_id: v.int()
+			effect:     ctx.form['new_combi_effect_${idx}'] or { '' }
+			is_hidden:  (ctx.form['new_combi_hidden_${idx}'] or { '' }) == 'true'
+		}
+	}
+	mut new_rows := []database.CombiNewRow{}
+	mut indices := new_by_index.keys()
+	indices.sort()
+	for idx in indices {
+		nr := new_by_index[idx]
+		if nr.partner_id <= 0 {
+			continue
+		}
+		new_rows << nr
+	}
+	return keep, new_rows
+}
+
 // parse_optional_id reads an optional entity-id form field: empty/absent -> none.
 fn parse_optional_id(mut ctx Context, field string) ?int {
 	raw := ctx.form[field] or { return none }
@@ -163,6 +244,7 @@ fn parse_cookie_form(mut ctx Context) !database.CreateCookieParams {
 		return error('Invalid grade: expected one of e, c, b, a, s, s_plus, l')
 	}
 	choice := parse_unlock_treasure(mut ctx)!
+	combi_keep, combi_new := parse_combi_editor(mut ctx)!
 	return database.CreateCookieParams{
 		lang:               ctx.form['lang'] or { ctx.lang }
 		name:               ctx.form['name']
@@ -178,6 +260,8 @@ fn parse_cookie_form(mut ctx Context) !database.CreateCookieParams {
 		release_date:       parse_release_date(mut ctx)!
 		unlock_treasure_id: choice.treasure_id
 		new_treasure_name:  choice.new_name
+		combi_keep:         combi_keep
+		combi_new:          combi_new
 	}
 }
 
@@ -187,6 +271,7 @@ fn parse_pet_form(mut ctx Context) !database.CreatePetParams {
 		return error('Invalid grade: expected one of e, c, b, a, s, s_plus, l')
 	}
 	choice := parse_unlock_treasure(mut ctx)!
+	combi_keep, combi_new := parse_combi_editor(mut ctx)!
 	return database.CreatePetParams{
 		lang:               ctx.form['lang'] or { ctx.lang }
 		name:               ctx.form['name']
@@ -201,6 +286,8 @@ fn parse_pet_form(mut ctx Context) !database.CreatePetParams {
 		release_date:       parse_release_date(mut ctx)!
 		unlock_treasure_id: choice.treasure_id
 		new_treasure_name:  choice.new_name
+		combi_keep:         combi_keep
+		combi_new:          combi_new
 	}
 }
 

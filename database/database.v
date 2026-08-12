@@ -452,6 +452,39 @@ fn migrate(conn sqlite.DB) ! {
 		}
 		conn.commit()!
 	}
+
+	// combi_bonus.effect text moved to a reference into the shared effect
+	// table (effect_id); the effect text was English, so find-or-create an
+	// effect row by the English name and link it. Idempotent: once the
+	// column is gone the guards skip. The effect_id column is added first
+	// (the model now carries it) so the link UPDATE works on existing dbs.
+	combi_cols := conn.columns('combi_bonus') or { return }
+	if 'effect_id' !in combi_cols {
+		result := conn.exec_none('ALTER TABLE combi_bonus ADD COLUMN effect_id INTEGER')
+		if !sqlite_success(result) {
+			return conn.error_message(result, 'add combi_bonus effect_id column')
+		}
+	}
+	combi_cols2 := conn.columns('combi_bonus') or { return }
+	if 'effect' in combi_cols2 {
+		rows := conn.exec('SELECT id, effect FROM combi_bonus') or { [] }
+		for r in rows {
+			cb_id := r.get_int('id')
+			eff := r.get_string('effect').trim_space()
+			if eff == '' {
+				continue
+			}
+			effect_id := find_or_create_effect(conn, 'en', eff)!
+			result := conn.exec_none('UPDATE combi_bonus SET effect_id = ${effect_id} WHERE id = ${cb_id}')
+			if !sqlite_success(result) {
+				return conn.error_message(result, 'link combi bonus effect')
+			}
+		}
+		result := conn.exec_none('ALTER TABLE combi_bonus DROP COLUMN effect')
+		if !sqlite_success(result) {
+			return conn.error_message(result, 'drop combi_bonus effect column')
+		}
+	}
 }
 
 @[inline]

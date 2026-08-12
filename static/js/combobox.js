@@ -2,7 +2,7 @@
 //
 // Markup (server-rendered inside a `data-combobox` root):
 //
-//   <div class="relative" data-combobox data-cb-mode="treasure|name">
+//   <div class="relative" data-combobox data-cb-mode="treasure|name|select">
 //     <input type="text" data-cb-input autocomplete="off" ...>
 //     <input type="hidden" data-cb-hidden name="..." value="...">
 //     <ul class="hidden ..." data-cb-list>
@@ -17,6 +17,8 @@
 //     value = its data-cb-value), a non-match is treated as "new"
 //     (treasure mode: hidden = '__new__' with the visible input submitted
 //     as the new name; name mode: hidden = the typed text itself).
+//     select mode has no new-item concept: a non-match clears the
+//     selection (hidden value = '') and the footer item must be omitted.
 //   - empty text clears the selection (hidden value = '').
 //   - the '__new__' footer item confirms the typed text as a new value.
 //   - ArrowDown/ArrowUp navigate, Enter selects, Escape closes.
@@ -110,9 +112,10 @@
             if (text === '') {
                 hidden.value = '';
             } else {
-                var match = exactValue(list, text);
-                hidden.value = match !== null ? match
-                    : (mode === 'treasure' ? '__new__' : text);
+            var match = exactValue(list, text);
+            hidden.value = match !== null ? match
+                : (mode === 'select' ? ''
+                    : (mode === 'treasure' ? '__new__' : text));
             }
             open();
         });
@@ -153,7 +156,7 @@
 
         // initial state: reflect the server-rendered hidden value
         if (hidden.value !== '' && hidden.value !== '__new__') {
-            if (mode === 'treasure') {
+            if (mode !== 'name') {
                 items.forEach(function (li) {
                     if (li.getAttribute('data-cb-value') === hidden.value) input.value = label(li);
                 });

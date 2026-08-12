@@ -325,3 +325,24 @@ New Treasure
 new_treasure_hint
 Name of the new treasure
 -----
+combi_section_title
+Combo bonuses
+-----
+combi_partner_hint
+Type or pick a partner
+-----
+combi_effect_hint
+Bonus effect (type or pick an existing one)
+-----
+combi_hidden_label
+Hidden
+-----
+combi_add_button
+Add combo
+-----
+combi_remove_button
+Remove
+-----
+combi_hidden_badge
+Hidden
+-----

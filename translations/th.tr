@@ -325,3 +325,24 @@ new_treasure
 new_treasure_hint
 ชื่อสมบัติใหม่
 -----
+combi_section_title
+โบนัสคอมโบ
+-----
+combi_partner_hint
+พิมพ์หรือเลือกคู่หู
+-----
+combi_effect_hint
+เอฟเฟกต์ (พิมพ์หรือเลือกที่มีอยู่)
+-----
+combi_hidden_label
+ซ่อน
+-----
+combi_add_button
+เพิ่มคอมโบ
+-----
+combi_remove_button
+ลบ
+-----
+combi_hidden_badge
+ซ่อนอยู่
+-----

@@ -49,7 +49,7 @@ pub fn update_cookie(conn sqlite.DB, id int, params CreateCookieParams) ! {
 		target_id = create_treasure(conn, CreateTreasureParams{
 			lang:         params.lang
 			name:         params.new_treasure_name
-			release_date: time.now()
+			release_date: params.release_date // treasure released together with its cookie
 		})!
 	}
 	prev := sql conn {
@@ -74,6 +74,8 @@ pub fn update_cookie(conn sqlite.DB, id int, params CreateCookieParams) ! {
 			update models.Treasure set unlock_cookie_id = id where treasure_id == tid
 		}!
 	}
+
+	apply_combi_diff(conn, 'cookie', id, params.combi_keep, params.combi_new, params.lang)!
 }
 
 pub fn update_pet(conn sqlite.DB, id int, params CreatePetParams) ! {
@@ -115,7 +117,7 @@ pub fn update_pet(conn sqlite.DB, id int, params CreatePetParams) ! {
 		target_id = create_treasure(conn, CreateTreasureParams{
 			lang:         params.lang
 			name:         params.new_treasure_name
-			release_date: time.now()
+			release_date: params.release_date // treasure released together with its pet
 		})!
 	}
 	prev := sql conn {
@@ -140,6 +142,8 @@ pub fn update_pet(conn sqlite.DB, id int, params CreatePetParams) ! {
 			update models.Treasure set unlock_pet_id = id where treasure_id == tid
 		}!
 	}
+
+	apply_combi_diff(conn, 'pet', id, params.combi_keep, params.combi_new, params.lang)!
 }
 
 pub fn update_treasure(conn sqlite.DB, id int, params CreateTreasureParams) ! {
@@ -177,4 +181,47 @@ pub fn update_treasure(conn sqlite.DB, id int, params CreateTreasureParams) ! {
 
 	replace_effects(conn, id, params.lang, params.effects, models.EffectState.normal)!
 	replace_effects(conn, id, params.lang, params.blessed_effects, models.EffectState.blessed)!
+}
+
+// apply_combi_diff reconciles the combi rows of one entity (cookie or pet,
+// `kind`) against the form submission: kept rows get their effect and hidden
+// flag updated (the effect name resolves into the shared effect table in the
+// form's language), rows missing from the submission are deleted, and new rows
+// are created. Effect rows are never deleted here: other combos and treasures
+// may share them.
+fn apply_combi_diff(conn sqlite.DB, kind string, id int, keep map[int]CombiRowUpdate, new_rows []CombiNewRow, lang string) ! {
+	mut cur := []models.CombiBonus{}
+	if kind == 'cookie' {
+		cur = sql conn {
+			select from models.CombiBonus where cookie_id == id
+		}!
+	} else {
+		cur = sql conn {
+			select from models.CombiBonus where pet_id == id
+		}!
+	}
+	for row in cur {
+		rid := row.id or { continue }
+		if rid in keep {
+			upd := keep[rid]
+			eid := combi_effect_id(conn, lang, upd.effect)!
+			new_effect := if eid > 0 {
+				eid
+			} else {
+				none
+			}
+			sql conn {
+				update models.CombiBonus set effect_id = new_effect, is_hidden = upd.is_hidden where id == rid
+			}!
+		} else {
+			sql conn {
+				delete from models.CombiBonus where id == rid
+			}!
+		}
+	}
+	if new_rows.len > 0 {
+		cookie_side := if kind == 'cookie' { id } else { 0 }
+		pet_side := if kind == 'pet' { id } else { 0 }
+		add_combi_rows(conn, cookie_side, pet_side, new_rows, lang)!
+	}
 }

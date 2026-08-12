@@ -21806,6 +21806,9 @@
   },
   {
    "effect_id": 848
+  },
+  {
+   "effect_id": 849
   }
  ],
  "effect_translation": [
@@ -32378,6 +32381,20 @@
    "lang": "th",
    "name": "สัตว์เลี้ยงโตขึ้น 2 เท่าในโบนัสไทม์",
    "description": "สัตว์เลี้ยงโตขึ้น 2 เท่าในโบนัสไทม์"
+  },
+  {
+   "effect_translation_id": 1697,
+   "effect_id": 849,
+   "lang": "en",
+   "name": "1200 Bonus Points for all Jellies",
+   "description": "1200 Bonus Points for all Jellies"
+  },
+  {
+   "effect_translation_id": 1698,
+   "effect_id": 849,
+   "lang": "th",
+   "name": "คะแนนพิเศษ 1200 สำหรับเยลลี่ทั้งหมด",
+   "description": "คะแนนพิเศษ 1200 สำหรับเยลลี่ทั้งหมด"
   }
  ],
  "treasure_effect": [
@@ -43527,105 +43544,103 @@
    "id": 1,
    "cookie_id": 86,
    "pet_id": 91,
-   "effect": "",
    "is_hidden": false
   },
   {
    "id": 2,
    "cookie_id": 91,
    "pet_id": 96,
-   "effect": "",
    "is_hidden": false
   },
   {
    "id": 3,
    "cookie_id": 88,
    "pet_id": 94,
-   "effect": "",
    "is_hidden": false
   },
   {
    "id": 4,
    "cookie_id": 73,
    "pet_id": 78,
-   "effect": "",
    "is_hidden": false
   },
   {
    "id": 5,
    "cookie_id": 94,
    "pet_id": 98,
-   "effect": "",
    "is_hidden": false
   },
   {
    "id": 6,
    "cookie_id": 87,
    "pet_id": 93,
-   "effect": "",
    "is_hidden": false
   },
   {
    "id": 7,
    "cookie_id": 90,
    "pet_id": 95,
-   "effect": "",
    "is_hidden": false
   },
   {
    "id": 8,
    "cookie_id": 77,
    "pet_id": 81,
-   "effect": "",
    "is_hidden": false
   },
   {
    "id": 9,
    "cookie_id": 81,
    "pet_id": 86,
-   "effect": "",
    "is_hidden": false
   },
   {
    "id": 10,
    "cookie_id": 92,
    "pet_id": 97,
-   "effect": "",
    "is_hidden": false
   },
   {
    "id": 11,
    "cookie_id": 83,
    "pet_id": 89,
-   "effect": "",
    "is_hidden": false
   },
   {
    "id": 12,
    "cookie_id": 84,
    "pet_id": 88,
-   "effect": "",
    "is_hidden": false
   },
   {
    "id": 13,
    "cookie_id": 80,
    "pet_id": 85,
-   "effect": "",
    "is_hidden": false
   },
   {
    "id": 14,
    "cookie_id": 76,
    "pet_id": 80,
-   "effect": "",
    "is_hidden": false
   },
   {
    "id": 15,
    "cookie_id": 82,
    "pet_id": 87,
-   "effect": "",
+   "is_hidden": false
+  },
+  {
+   "id": 16,
+   "cookie_id": 23,
+   "pet_id": 58,
+   "is_hidden": true,
+   "effect_id": 849
+  },
+  {
+   "id": 17,
+   "cookie_id": 23,
+   "pet_id": 35,
    "is_hidden": false
   }
  ]
