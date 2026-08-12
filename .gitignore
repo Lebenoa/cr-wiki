@@ -1,6 +1,7 @@
 # Binaries for programs and plugins
 main
 cookierun
+cr-wiki
 *.exe
 *.exe~
 *.so
