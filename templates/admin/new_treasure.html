@@ -153,41 +153,26 @@
                     </select>
                 </div>
             </div>
-            <datalist id="effect-names">
-                @for n in state.effect_names
-                <option value="@n"></option>
-                @endfor
-            </datalist>
             <div class="space-y-2">
                 <label class="font-label text-secondary uppercase">%treasure_effects</label>
                 <div id="effects-rows" class="space-y-2">
                     @for i, e in state.effects
                     <div class="effect-row rounded-xl border-2 border-primary/20 bg-surface/50 p-3 space-y-2">
-                        <input type="text" list="effect-names" data-field="name"
-                            class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground placeholder:text-foreground/30 focus:border-primary focus:ring-0 transition-all outline-none"
-                            name="effects_name_@i" placeholder="%effects_hint" value="@e.name" />
-                        <div class="grid gap-2 items-center" style="grid-template-columns: 1fr 1fr auto;">
-                            <input type="number" step="any" data-field="value"
+                        <select data-effect-select
+                            class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground focus:border-primary focus:ring-0 transition-all outline-none">
+                            <option value="">%effects_hint</option>
+                            @for n in state.effect_names
+                            <option value="@n">@n</option>
+                            @endfor
+                            <option value="__new__">%new_effect</option>
+                        </select>
+                        <div class="grid gap-2 items-center" style="grid-template-columns: 1fr auto;">
+                            <input type="text" data-field="name"
                                 class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground placeholder:text-foreground/30 focus:border-primary focus:ring-0 transition-all outline-none"
-                                name="effects_value_@i" placeholder="%effect_value" value="@e.value" />
-                            <select data-field="unit" name="effects_unit_@i"
-                                class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground focus:border-primary focus:ring-0 transition-all outline-none">
-                                <option value="percent"
-                                    @if e.unit == 'percent'
-                                    selected
-                                    @endif
-                                >&#37;</option>
-                                <option value="second"
-                                    @if e.unit == 'second'
-                                    selected
-                                    @endif
-                                >s</option>
-                                <option value="flat"
-                                    @if e.unit == 'flat'
-                                    selected
-                                    @endif
-                                >%unit_flat</option>
-                            </select>
+                                name="effects_name_@i" placeholder="%new_effect_hint" value="@e.name" />
+                            <input type="text" data-field="value"
+                                class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground placeholder:text-foreground/30 focus:border-primary focus:ring-0 transition-all outline-none"
+                                name="effects_value_@i" placeholder="%effect_value_hint" value="@e.value" />
                             <button type="button" data-remove-effect aria-label="%remove_effect"
                                 class="size-11 rounded-xl border-2 border-primary/30 text-foreground-muted hover:border-primary hover:text-foreground transition-all">×</button>
                         </div>
@@ -202,31 +187,21 @@
                 <div id="blessed_effects-rows" class="space-y-2">
                     @for i, e in state.blessed_effects
                     <div class="effect-row rounded-xl border-2 border-primary/20 bg-surface/50 p-3 space-y-2">
-                        <input type="text" list="effect-names" data-field="name"
-                            class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground placeholder:text-foreground/30 focus:border-primary focus:ring-0 transition-all outline-none"
-                            name="blessed_effects_name_@i" placeholder="%effects_hint" value="@e.name" />
-                        <div class="grid gap-2 items-center" style="grid-template-columns: 1fr 1fr auto;">
-                            <input type="number" step="any" data-field="value"
+                        <select data-effect-select
+                            class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground focus:border-primary focus:ring-0 transition-all outline-none">
+                            <option value="">%effects_hint</option>
+                            @for n in state.effect_names
+                            <option value="@n">@n</option>
+                            @endfor
+                            <option value="__new__">%new_effect</option>
+                        </select>
+                        <div class="grid gap-2 items-center" style="grid-template-columns: 1fr auto;">
+                            <input type="text" data-field="name"
                                 class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground placeholder:text-foreground/30 focus:border-primary focus:ring-0 transition-all outline-none"
-                                name="blessed_effects_value_@i" placeholder="%effect_value" value="@e.value" />
-                            <select data-field="unit" name="blessed_effects_unit_@i"
-                                class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground focus:border-primary focus:ring-0 transition-all outline-none">
-                                <option value="percent"
-                                    @if e.unit == 'percent'
-                                    selected
-                                    @endif
-                                >&#37;</option>
-                                <option value="second"
-                                    @if e.unit == 'second'
-                                    selected
-                                    @endif
-                                >s</option>
-                                <option value="flat"
-                                    @if e.unit == 'flat'
-                                    selected
-                                    @endif
-                                >%unit_flat</option>
-                            </select>
+                                name="blessed_effects_name_@i" placeholder="%new_effect_hint" value="@e.name" />
+                            <input type="text" data-field="value"
+                                class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground placeholder:text-foreground/30 focus:border-primary focus:ring-0 transition-all outline-none"
+                                name="blessed_effects_value_@i" placeholder="%effect_value_hint" value="@e.value" />
                             <button type="button" data-remove-effect aria-label="%remove_effect"
                                 class="size-11 rounded-xl border-2 border-primary/30 text-foreground-muted hover:border-primary hover:text-foreground transition-all">×</button>
                         </div>
@@ -238,19 +213,21 @@
             </div>
             <template id="effect-row-template">
                 <div class="effect-row rounded-xl border-2 border-primary/20 bg-surface/50 p-3 space-y-2">
-                    <input type="text" list="effect-names" data-field="name"
-                        class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground placeholder:text-foreground/30 focus:border-primary focus:ring-0 transition-all outline-none"
-                        name="effects_name_x" placeholder="%effects_hint" value="" />
-                    <div class="grid gap-2 items-center" style="grid-template-columns: 1fr 1fr auto;">
-                        <input type="number" step="any" data-field="value"
+                    <select data-effect-select
+                        class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground focus:border-primary focus:ring-0 transition-all outline-none">
+                        <option value="">%effects_hint</option>
+                        @for n in state.effect_names
+                        <option value="@n">@n</option>
+                        @endfor
+                        <option value="__new__">%new_effect</option>
+                    </select>
+                    <div class="grid gap-2 items-center" style="grid-template-columns: 1fr auto;">
+                        <input type="text" data-field="name"
                             class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground placeholder:text-foreground/30 focus:border-primary focus:ring-0 transition-all outline-none"
-                            name="effects_value_x" placeholder="%effect_value" value="" />
-                        <select data-field="unit" name="effects_unit_x"
-                            class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground focus:border-primary focus:ring-0 transition-all outline-none">
-                            <option value="percent">&#37;</option>
-                            <option value="second">s</option>
-                            <option value="flat" selected>%unit_flat</option>
-                        </select>
+                            name="effects_name_x" placeholder="%new_effect_hint" value="" />
+                        <input type="text" data-field="value"
+                            class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground placeholder:text-foreground/30 focus:border-primary focus:ring-0 transition-all outline-none"
+                            name="effects_value_x" placeholder="%effect_value_hint" value="" />
                         <button type="button" data-remove-effect aria-label="%remove_effect"
                             class="size-11 rounded-xl border-2 border-primary/30 text-foreground-muted hover:border-primary hover:text-foreground transition-all">×</button>
                     </div>
@@ -263,7 +240,41 @@
                         rows.forEach(function (row, i) {
                             row.querySelector('[data-field="name"]').name = prefix + '_name_' + i;
                             row.querySelector('[data-field="value"]').name = prefix + '_value_' + i;
-                            row.querySelector('[data-field="unit"]').name = prefix + '_unit_' + i;
+                        });
+                    }
+                    // initEffectRow wires a row's combobox: an existing effect
+                    // name from the list hides the name input (its value is
+                    // submitted for reuse), "New Effect" shows it for typing a
+                    // fresh name, and the blank option keeps the input visible.
+                    function initEffectRow(row) {
+                        var sel = row.querySelector('[data-effect-select]');
+                        var input = row.querySelector('[data-field="name"]');
+                        if (!sel || !input) return;
+                        var val = input.value;
+                        var found = false;
+                        for (var i = 0; i < sel.options.length; i++) {
+                            if (sel.options[i].value === val && val !== '') {
+                                sel.selectedIndex = i;
+                                found = true;
+                                break;
+                            }
+                        }
+                        if (found) {
+                            input.classList.add('hidden');
+                        } else {
+                            sel.value = '__new__';
+                            input.classList.remove('hidden');
+                        }
+                        sel.addEventListener('change', function () {
+                            if (sel.value === '__new__') {
+                                input.classList.remove('hidden');
+                                input.focus();
+                            } else if (sel.value === '') {
+                                input.classList.remove('hidden');
+                            } else {
+                                input.value = sel.value;
+                                input.classList.add('hidden');
+                            }
                         });
                     }
                     var tpl = document.getElementById('effect-row-template');
@@ -274,6 +285,7 @@
                             var row = tpl.content.firstElementChild.cloneNode(true);
                             container.appendChild(row);
                             renumber(container, prefix);
+                            initEffectRow(row);
                         });
                     });
                     document.addEventListener('click', function (e) {
@@ -286,6 +298,8 @@
                             renumber(container, prefix);
                         }
                     });
+                    // init server-rendered rows (edit mode)
+                    document.querySelectorAll('.effect-row').forEach(initEffectRow);
                     document.querySelector('form').addEventListener('submit', function () {
                         document.querySelectorAll('[data-add-effect]').forEach(function (btn) {
                             var prefix = btn.getAttribute('data-add-effect');

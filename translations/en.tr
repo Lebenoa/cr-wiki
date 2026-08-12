@@ -226,6 +226,15 @@ Value
 unit_flat
 plain
 -----
+new_effect
+New Effect
+-----
+new_effect_hint
+Name of the new effect
+-----
+effect_value_hint
+e.g. 12%, 2-3%, 3s
+-----
 search_page_title
 Search | Classic/FanWiki
 -----
@@ -309,4 +318,10 @@ Unlocked by pet
 -----
 none_option
 None
+-----
+new_treasure
+New Treasure
+-----
+new_treasure_hint
+Name of the new treasure
 -----

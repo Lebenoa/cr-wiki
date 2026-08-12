@@ -289,20 +289,25 @@ fn treasure_grade(g ?int) ?models.Grade {
 	return none
 }
 
-// format_effect_value renders the extracted numeric value with its unit
-// suffix ("12%", "3s", "5000"); empty when the text carried no single value
-// (e.g. ranges like "5-6%").
-fn format_effect_value(value ?f32, unit models.EffectUnit) string {
-	val := value or { return '' }
-	mut s := val.str()
-	if s.contains('.') {
-		s = s.trim_right('0').trim_right('.')
+// format_effect_value renders the numeric value with its unit suffix
+// ("12%", "3s", "5000", "2-3%"); empty when the effect has no stored value
+// (legacy names carry their own numbers).
+pub fn format_effect_value(value ?int, value_min ?int, value_max ?int, unit models.EffectUnit) string {
+	suffix := match unit {
+		.percent { '%' }
+		.second { 's' }
+		.flat { '' }
 	}
-	return match unit {
-		.percent { '${s}%' }
-		.second { '${s}s' }
-		.flat { s }
+	if mn := value_min {
+		if mx := value_max {
+			return '${mn}-${mx}${suffix}'
+		}
+		return '${mn}${suffix}'
 	}
+	if v := value {
+		return '${v}${suffix}'
+	}
+	return ''
 }
 
 pub fn get_treasure(conn sqlite.DB, lang string, id int) !TreasureView {
@@ -715,7 +720,7 @@ fn effects_from_links(conn sqlite.DB, lang string, links []models.TreasureEffect
 			result << EffectView{
 				effect_id:     link.effect_id
 				name:          tr.name
-				value_display: format_effect_value(link.value, link.unit)
+				value_display: format_effect_value(link.value, link.value_min, link.value_max, link.unit)
 			}
 		}
 	}
@@ -1124,9 +1129,11 @@ pub fn search_all(conn sqlite.DB, lang string, q string, limit int) !SearchResul
 // numeric value and unit, ready for the admin form's structured editor.
 pub struct EffectRowData {
 pub:
-	name  string
-	value ?f32
-	unit  models.EffectUnit
+	name      string
+	value     ?int
+	value_min ?int
+	value_max ?int
+	unit      models.EffectUnit
 }
 
 // treasure_effect_rows returns the treasure's effects for one state as
@@ -1183,9 +1190,11 @@ pub fn treasure_effect_rows(conn sqlite.DB, lang string, id int, st models.Effec
 		emitted[link.effect_id] = true
 		name := name_map[link.effect_id] or { continue }
 		rows << EffectRowData{
-			name:  name
-			value: link.value
-			unit:  link.unit
+			name:      name
+			value:     link.value
+			value_min: link.value_min
+			value_max: link.value_max
+			unit:      link.unit
 		}
 	}
 	return rows

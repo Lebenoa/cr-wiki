@@ -67,7 +67,12 @@ pub:
 	treasure_id int @[required; references: 'treasure'; index]
 	effect_id int @[required; references: 'effect'; index]
 
-	value ?f32
-	unit EffectUnit @[required]
-	state EffectState @[required]
+	// value holds a single number (12 -> "12%"); value_min/value_max hold a
+	// range (2, 3 -> "2-3%"). All are optional so effects whose text carries
+	// its own numbers (legacy names like "drain 5-6% slower") store none.
+	value     ?int
+	value_min ?int
+	value_max ?int
+	unit      EffectUnit @[required]
+	state     EffectState @[required]
 }

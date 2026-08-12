@@ -113,8 +113,26 @@
                         @endif
                     >@t.name</option>
                     @endfor
+                    <option value="__new__">%new_treasure</option>
                 </select>
+                <input id="new_treasure_name" type="text" name="new_treasure_name"
+                    class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground placeholder:text-foreground/30 focus:border-primary focus:ring-0 transition-all outline-none hidden"
+                    placeholder="%new_treasure_hint" />
             </div>
+            <script>
+                (function () {
+                    var sel = document.getElementById('unlock_treasure_id');
+                    var input = document.getElementById('new_treasure_name');
+                    sel.addEventListener('change', function () {
+                        if (sel.value === '__new__') {
+                            input.classList.remove('hidden');
+                            input.focus();
+                        } else {
+                            input.classList.add('hidden');
+                        }
+                    });
+                })();
+            </script>
             <div class="space-y-2">
                 <label class="font-label text-secondary uppercase" for="abilities">%abilities</label>
                 <textarea id="abilities" name="abilities" rows="4"

@@ -226,6 +226,15 @@ effect_value
 unit_flat
 ค่าคงที่
 -----
+new_effect
+เอฟเฟกต์ใหม่
+-----
+new_effect_hint
+ชื่อเอฟเฟกต์ใหม่
+-----
+effect_value_hint
+เช่น 12%, 2-3%, 3s
+-----
 search_page_title
 ค้นหา | คลาสสิค/แฟนวิกิ
 -----
@@ -309,4 +318,10 @@ unlock_pet_label
 -----
 none_option
 ไม่มี
+-----
+new_treasure
+สมบัติใหม่
+-----
+new_treasure_hint
+ชื่อสมบัติใหม่
 -----

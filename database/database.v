@@ -284,6 +284,19 @@ fn migrate(conn sqlite.DB) ! {
 			return conn.error_message(result, query)
 		}
 	}
+	// treasure_effect value ranges: value_min/value_max added so the value
+	// column can express "2-3%" ranges (previously the range was baked into
+	// the effect name, fragmenting the effect namespace); nullable because a
+	// single value or no value at all are both valid.
+	for col in ['value_min', 'value_max'] {
+		if col !in conn.columns('treasure_effect') or { [] } {
+			query := 'ALTER TABLE treasure_effect ADD COLUMN ${col} INTEGER'
+			result := conn.exec_none(query)
+			if !sqlite_success(result) {
+				return conn.error_message(result, query)
+			}
+		}
+	}
 
 	// treasure.grade added after the table shipped; nullable so special
 	// treasures without a wiki grade stay badge-less

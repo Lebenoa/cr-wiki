@@ -1,6 +1,5 @@
 module app
 
-import strconv
 import time
 import database
 import database.models
@@ -54,32 +53,78 @@ pub:
 pub struct EffectRow {
 pub:
 	name  string
-	value string // plain number, '' = no value
-	unit  string // 'percent' | 'second' | 'flat'
+	value string // display text: "12%", "2-3%", "3s", "500000", '' = none
 }
 
 // effect_rows_from_db maps the treasure's stored effect rows to form rows,
-// formatting the numeric value for the editor's number input.
+// formatting the numeric value with its unit suffix for the editor.
 fn effect_rows_from_db(rows []database.EffectRowData) []EffectRow {
 	mut out := []EffectRow{}
 	for r in rows {
-		value_str := if v := r.value {
-			s := v.str()
-			if s.contains('.') {
-				s.trim_right('0').trim_right('.')
-			} else {
-				s
-			}
-		} else {
-			''
-		}
 		out << EffectRow{
 			name:  r.name
-			value: value_str
-			unit:  r.unit.str()
+			value: database.format_effect_value(r.value, r.value_min, r.value_max, r.unit)
 		}
 	}
 	return out
+}
+
+// EffectValueParts is the parsed form of an effect's value text.
+pub struct EffectValueParts {
+pub:
+	value     ?int
+	value_min ?int
+	value_max ?int
+	unit      models.EffectUnit
+}
+
+// parse_effect_value splits the effect value text into its numeric parts and
+// the unit derived from the suffix: "12%" -> value 12 percent, "2-3%" ->
+// min 2 max 3 percent, "3s" -> value 3 second, "500000" -> value 500000
+// flat, "" -> no value. Anything else is rejected here at submit time.
+fn parse_effect_value(raw string) !EffectValueParts {
+	mut s := raw.trim_space()
+	if s == '' {
+		return EffectValueParts{
+			unit: models.EffectUnit.flat
+		}
+	}
+	mut unit := models.EffectUnit.flat
+	if s.ends_with('%') {
+		unit = models.EffectUnit.percent
+		s = s[..s.len - 1]
+	} else if s.ends_with('s') {
+		unit = models.EffectUnit.second
+		s = s[..s.len - 1]
+	}
+	parts := s.split('-')
+	if parts.len > 2 {
+		return error('expected a number or range like 12% or 2-3%')
+	}
+	mut nums := []int{}
+	for part in parts {
+		p := part.trim_space()
+		if p == '' {
+			return error('expected a number or range like 12% or 2-3%')
+		}
+		for c in p {
+			if !c.is_digit() {
+				return error('expected a number or range like 12% or 2-3%')
+			}
+		}
+		nums << p.int()
+	}
+	if nums.len == 1 {
+		return EffectValueParts{
+			value: nums[0]
+			unit:  unit
+		}
+	}
+	return EffectValueParts{
+		value_min: nums[0]
+		value_max: nums[1]
+		unit:      unit
+	}
 }
 
 // TreasureForm carries the form state shared by the treasure create/edit pages.
@@ -117,20 +162,22 @@ fn parse_cookie_form(mut ctx Context) !database.CreateCookieParams {
 	grade := models.Grade.from(ctx.form['grade']) or {
 		return error('Invalid grade: expected one of e, c, b, a, s, s_plus, l')
 	}
+	choice := parse_unlock_treasure(mut ctx)!
 	return database.CreateCookieParams{
-		lang:              ctx.form['lang'] or { ctx.lang }
-		name:              ctx.form['name']
-		abilities:         ctx.form['abilities']
-		description:       ctx.form['description']
-		grade:             grade
-		image:             if image == '' {
+		lang:               ctx.form['lang'] or { ctx.lang }
+		name:               ctx.form['name']
+		abilities:          ctx.form['abilities']
+		description:        ctx.form['description']
+		grade:              grade
+		image:              if image == '' {
 			none
 		} else {
 			image
 		}
-		power_plus:        ctx.form['power_plus']
-		release_date:      parse_release_date(mut ctx)!
-		unlock_treasure_id: parse_optional_id(mut ctx, 'unlock_treasure_id')
+		power_plus:         ctx.form['power_plus']
+		release_date:       parse_release_date(mut ctx)!
+		unlock_treasure_id: choice.treasure_id
+		new_treasure_name:  choice.new_name
 	}
 }
 
@@ -139,27 +186,29 @@ fn parse_pet_form(mut ctx Context) !database.CreatePetParams {
 	grade := models.Grade.from(ctx.form['grade']) or {
 		return error('Invalid grade: expected one of e, c, b, a, s, s_plus, l')
 	}
+	choice := parse_unlock_treasure(mut ctx)!
 	return database.CreatePetParams{
-		lang:              ctx.form['lang'] or { ctx.lang }
-		name:              ctx.form['name']
-		abilities:         ctx.form['abilities']
-		description:       ctx.form['description']
-		grade:             grade
-		image:             if image == '' {
+		lang:               ctx.form['lang'] or { ctx.lang }
+		name:               ctx.form['name']
+		abilities:          ctx.form['abilities']
+		description:        ctx.form['description']
+		grade:              grade
+		image:              if image == '' {
 			none
 		} else {
 			image
 		}
-		release_date:      parse_release_date(mut ctx)!
-		unlock_treasure_id: parse_optional_id(mut ctx, 'unlock_treasure_id')
+		release_date:       parse_release_date(mut ctx)!
+		unlock_treasure_id: choice.treasure_id
+		new_treasure_name:  choice.new_name
 	}
 }
 
 // parse_effect_inputs reads the treasure form's structured effect rows for
-// one state (indexed fields `${prefix}_name_N`, `${prefix}_value_N`,
-// `${prefix}_unit_N`) into EffectInputs in submitted order. Rows with a blank
-// name and value are skipped (the trailing blank "add row"); a value without
-// a name is an error.
+// one state (indexed fields `${prefix}_name_N` and `${prefix}_value_N`) into
+// EffectInputs in submitted order, validating each value at submit. Rows
+// with a blank name and value are skipped (the trailing blank "add row"); a
+// value without a name is an error.
 fn parse_effect_inputs(mut ctx Context, prefix string) ![]database.EffectInput {
 	mut effects := []database.EffectInput{}
 	mut i := 0
@@ -167,31 +216,56 @@ fn parse_effect_inputs(mut ctx Context, prefix string) ![]database.EffectInput {
 		mut name := ctx.form['${prefix}_name_${i}'] or { break }
 		name = name.trim_space()
 		value_str := ctx.form['${prefix}_value_${i}'] or { '' }
-		unit_str := ctx.form['${prefix}_unit_${i}'] or { 'flat' }
 		if name == '' {
-			if value_str != '' {
+			if value_str.trim_space() != '' {
 				return error('Effect ${i + 1}: name is required')
 			}
 			i++
 			continue
 		}
-		mut value := ?f32(none)
-		if value_str != '' {
-			value = f32(strconv.atof64(value_str, strconv.AtoF64Param{}) or {
-				return error('Effect ${i + 1}: invalid value "${value_str}" (expected a number)')
-			})
-		}
-		unit := models.EffectUnit.from(unit_str) or {
-			return error('Effect ${i + 1}: invalid unit "${unit_str}"')
+		parts := parse_effect_value(value_str) or {
+			return error('Effect ${i + 1}: ${err.msg()}')
 		}
 		effects << database.EffectInput{
-			name:  name
-			value: value
-			unit:  unit
+			name:      name
+			value:     parts.value
+			value_min: parts.value_min
+			value_max: parts.value_max
+			unit:      parts.unit
 		}
 		i++
 	}
 	return effects
+}
+
+// UnlockTreasureChoice is the parsed treasure combobox value from the
+// cookie/pet forms: an existing treasure id, or a name for a new treasure.
+pub struct UnlockTreasureChoice {
+pub:
+	treasure_id ?int
+	new_name    string
+}
+
+// parse_unlock_treasure reads the cookie/pet form's treasure combobox: an
+// existing treasure id, '__new__' (whose name must be non-empty and creates
+// the treasure at submit), or no selection.
+fn parse_unlock_treasure(mut ctx Context) !UnlockTreasureChoice {
+	raw := ctx.form['unlock_treasure_id'] or { '' }
+	if raw == '__new__' {
+		name := (ctx.form['new_treasure_name'] or { '' }).trim_space()
+		if name == '' {
+			return error('New treasure name is required')
+		}
+		return UnlockTreasureChoice{
+			new_name: name
+		}
+	}
+	if raw == '' {
+		return UnlockTreasureChoice{}
+	}
+	return UnlockTreasureChoice{
+		treasure_id: raw.int()
+	}
 }
 
 fn parse_treasure_form(mut ctx Context) !database.CreateTreasureParams {

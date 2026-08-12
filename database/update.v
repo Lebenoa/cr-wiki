@@ -2,6 +2,7 @@ module database
 
 import db.sqlite
 import models
+import time
 
 pub fn update_cookie(conn sqlite.DB, id int, params CreateCookieParams) ! {
 	sql conn {
@@ -41,15 +42,24 @@ pub fn update_cookie(conn sqlite.DB, id int, params CreateCookieParams) ! {
 
 	// keep the treasure-unlock link in sync: clear the treasure this cookie
 	// previously unlocked (if it differs from the newly chosen one), then point
-	// the chosen treasure at this cookie
+	// the chosen treasure at this cookie. A "new treasure" name creates the
+	// treasure first, then links it.
+	mut target_id := params.unlock_treasure_id
+	if params.new_treasure_name != '' {
+		target_id = create_treasure(conn, CreateTreasureParams{
+			lang:         params.lang
+			name:         params.new_treasure_name
+			release_date: time.now()
+		})!
+	}
 	prev := sql conn {
 		select from models.Treasure where unlock_cookie_id == id
 	}!
 	if prev.len > 0 {
 		prev_id := prev.first().treasure_id or { 0 }
 		mut should_clear := true
-		if utid := params.unlock_treasure_id {
-			if utid == prev_id {
+		if tid := target_id {
+			if tid == prev_id {
 				should_clear = false
 			}
 		}
@@ -59,9 +69,9 @@ pub fn update_cookie(conn sqlite.DB, id int, params CreateCookieParams) ! {
 			}!
 		}
 	}
-	if utid := params.unlock_treasure_id {
+	if tid := target_id {
 		sql conn {
-			update models.Treasure set unlock_cookie_id = id where treasure_id == utid
+			update models.Treasure set unlock_cookie_id = id where treasure_id == tid
 		}!
 	}
 }
@@ -98,15 +108,24 @@ pub fn update_pet(conn sqlite.DB, id int, params CreatePetParams) ! {
 		}!
 	}
 
-	// keep the treasure-unlock link in sync (see update_cookie)
+	// keep the treasure-unlock link in sync (see update_cookie); a "new
+	// treasure" name creates the treasure first, then links it
+	mut target_id := params.unlock_treasure_id
+	if params.new_treasure_name != '' {
+		target_id = create_treasure(conn, CreateTreasureParams{
+			lang:         params.lang
+			name:         params.new_treasure_name
+			release_date: time.now()
+		})!
+	}
 	prev := sql conn {
 		select from models.Treasure where unlock_pet_id == id
 	}!
 	if prev.len > 0 {
 		prev_id := prev.first().treasure_id or { 0 }
 		mut should_clear := true
-		if utid := params.unlock_treasure_id {
-			if utid == prev_id {
+		if tid := target_id {
+			if tid == prev_id {
 				should_clear = false
 			}
 		}
@@ -116,9 +135,9 @@ pub fn update_pet(conn sqlite.DB, id int, params CreatePetParams) ! {
 			}!
 		}
 	}
-	if utid := params.unlock_treasure_id {
+	if tid := target_id {
 		sql conn {
-			update models.Treasure set unlock_pet_id = id where treasure_id == utid
+			update models.Treasure set unlock_pet_id = id where treasure_id == tid
 		}!
 	}
 }

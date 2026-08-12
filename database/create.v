@@ -21,15 +21,16 @@ pub fn create_user(conn sqlite.DB, username string, password string) !int {
 
 pub struct CreateCookieParams {
 pub:
-	lang              string
-	name              string
-	abilities         string
-	description       string
-	grade             models.Grade
-	image             ?string
-	power_plus        string
-	release_date      time.Time
+	lang               string
+	name               string
+	abilities          string
+	description        string
+	grade              models.Grade
+	image              ?string
+	power_plus         string
+	release_date       time.Time
 	unlock_treasure_id ?int // treasure this cookie unlocks at max level
+	new_treasure_name  string // non-empty: create this treasure, then link it
 }
 
 pub fn create_cookie(conn sqlite.DB, params CreateCookieParams) !int {
@@ -66,8 +67,18 @@ pub fn create_cookie(conn sqlite.DB, params CreateCookieParams) !int {
 		insert new_translation into models.CookieTranslation
 	}!
 
-	// link the chosen treasure to this cookie (the unlock lives on the treasure)
-	if utid := params.unlock_treasure_id {
+	// link the chosen treasure to this cookie (the unlock lives on the treasure);
+	// a "new treasure" name creates the treasure first, then links it
+	if params.new_treasure_name != '' {
+		tid := create_treasure(conn, CreateTreasureParams{
+			lang:         params.lang
+			name:         params.new_treasure_name
+			release_date: time.now()
+		})!
+		sql conn {
+			update models.Treasure set unlock_cookie_id = cookie_id where treasure_id == tid
+		}!
+	} else if utid := params.unlock_treasure_id {
 		sql conn {
 			update models.Treasure set unlock_cookie_id = cookie_id where treasure_id == utid
 		}!
@@ -78,14 +89,15 @@ pub fn create_cookie(conn sqlite.DB, params CreateCookieParams) !int {
 
 pub struct CreatePetParams {
 pub:
-	lang              string
-	name              string
-	abilities         string
-	description       string
-	grade             models.Grade
-	image             ?string
-	release_date      time.Time
+	lang               string
+	name               string
+	abilities          string
+	description        string
+	grade              models.Grade
+	image              ?string
+	release_date       time.Time
 	unlock_treasure_id ?int // treasure this pet unlocks at max level
+	new_treasure_name  string // non-empty: create this treasure, then link it
 }
 
 pub fn create_pet(conn sqlite.DB, params CreatePetParams) !int {
@@ -121,8 +133,18 @@ pub fn create_pet(conn sqlite.DB, params CreatePetParams) !int {
 		insert new_translation into models.PetTranslation
 	}!
 
-	// link the chosen treasure to this pet (the unlock lives on the treasure)
-	if utid := params.unlock_treasure_id {
+	// link the chosen treasure to this pet (the unlock lives on the treasure);
+	// a "new treasure" name creates the treasure first, then links it
+	if params.new_treasure_name != '' {
+		tid := create_treasure(conn, CreateTreasureParams{
+			lang:         params.lang
+			name:         params.new_treasure_name
+			release_date: time.now()
+		})!
+		sql conn {
+			update models.Treasure set unlock_pet_id = pet_id where treasure_id == tid
+		}!
+	} else if utid := params.unlock_treasure_id {
 		sql conn {
 			update models.Treasure set unlock_pet_id = pet_id where treasure_id == utid
 		}!
@@ -132,13 +154,16 @@ pub fn create_pet(conn sqlite.DB, params CreatePetParams) !int {
 }
 
 // EffectInput is one effect entered in the treasure form: a display name plus
-// an optional numeric value whose unit comes from the value's suffix (12%,
-// 3s, or a bare number).
+// an optional numeric value. The value is a single number, a min/max range
+// ("2-3%"), or absent (legacy names carry their own numbers); the unit comes
+// from the typed suffix (%, s, or a bare number) and is validated at submit.
 pub struct EffectInput {
 pub:
-	name  string
-	value ?f32
-	unit  models.EffectUnit
+	name      string
+	value     ?int
+	value_min ?int
+	value_max ?int
+	unit      models.EffectUnit
 }
 
 pub struct CreateTreasureParams {
@@ -230,6 +255,8 @@ pub fn replace_effects(conn sqlite.DB, treasure_id int, lang string, effects []E
 			treasure_id: treasure_id
 			effect_id:   effect_id
 			value:       e.value
+			value_min:   e.value_min
+			value_max:   e.value_max
 			unit:        e.unit
 			state:       state
 		}
