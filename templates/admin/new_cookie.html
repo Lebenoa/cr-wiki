@@ -40,6 +40,7 @@
                 </label>
                 <input id="image" type="file" name="image" accept="image/*" class="sr-only" />
             </div>
+            <script src="/js/combobox.js"></script>
             <script>
                 document.getElementById('image').addEventListener('change', function (e) {
                     var file = e.target.files && e.target.files[0];
@@ -103,42 +104,7 @@
                         type="date" name="release_date" value="@state.release_date" />
                 </div>
             </div>
-            <div class="space-y-2">
-                <label class="font-label text-secondary uppercase" for="unlock_treasure_id">%unlock_treasure_label</label>
-                <select id="unlock_treasure_id" name="unlock_treasure_id"
-                    class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground focus:border-primary focus:ring-0 transition-all outline-none">
-                    <option value=""
-                        @if state.unlock_treasure_id == 0
-                        selected
-                        @endif
-                    >%none_option</option>
-                    @for t in state.treasures
-                    <option value="@t.id"
-                        @if t.id == state.unlock_treasure_id
-                        selected
-                        @endif
-                    >@t.name</option>
-                    @endfor
-                    <option value="__new__">%new_treasure</option>
-                </select>
-                <input id="new_treasure_name" type="text" name="new_treasure_name"
-                    class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground placeholder:text-foreground/30 focus:border-primary focus:ring-0 transition-all outline-none hidden"
-                    placeholder="%new_treasure_hint" />
-            </div>
-            <script>
-                (function () {
-                    var sel = document.getElementById('unlock_treasure_id');
-                    var input = document.getElementById('new_treasure_name');
-                    sel.addEventListener('change', function () {
-                        if (sel.value === '__new__') {
-                            input.classList.remove('hidden');
-                            input.focus();
-                        } else {
-                            input.classList.add('hidden');
-                        }
-                    });
-                })();
-            </script>
+            @include 'components/treasure_combobox.html'
             <div class="space-y-2">
                 <label class="font-label text-secondary uppercase" for="abilities">%abilities</label>
                 <textarea id="abilities" name="abilities" rows="4"

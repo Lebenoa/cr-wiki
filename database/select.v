@@ -519,11 +519,13 @@ pub fn get_combi_bonus(conn sqlite.DB, lang string, kind string, id int) ![]Comb
 	return result
 }
 
-// IdNameOption is a lightweight (id, name) pair for admin-form dropdowns.
+// IdNameOption is a lightweight (id, name) pair for admin-form dropdowns;
+// image is populated for treasure options so the combobox can show sprites.
 pub struct IdNameOption {
 pub:
-	id   int
-	name string
+	id    int
+	name  string
+	image ?string
 }
 
 // treasure_options lists every treasure's id and localized name for the
@@ -552,8 +554,9 @@ pub fn treasure_options(conn sqlite.DB, lang string) ![]IdNameOption {
 		tid := t.treasure_id or { continue }
 		if tr := tmap[tid] {
 			out << IdNameOption{
-				id:   tid
-				name: tr.name
+				id:    tid
+				name:  tr.name
+				image: t.image
 			}
 		}
 	}

@@ -157,26 +157,7 @@
                 <label class="font-label text-secondary uppercase">%treasure_effects</label>
                 <div id="effects-rows" class="space-y-2">
                     @for i, e in state.effects
-                    <div class="effect-row rounded-xl border-2 border-primary/20 bg-surface/50 p-3 space-y-2">
-                        <select data-effect-select
-                            class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground focus:border-primary focus:ring-0 transition-all outline-none">
-                            <option value="">%effects_hint</option>
-                            @for n in state.effect_names
-                            <option value="@n">@n</option>
-                            @endfor
-                            <option value="__new__">%new_effect</option>
-                        </select>
-                        <div class="grid gap-2 items-center" style="grid-template-columns: 1fr auto;">
-                            <input type="text" data-field="name"
-                                class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground placeholder:text-foreground/30 focus:border-primary focus:ring-0 transition-all outline-none"
-                                name="effects_name_@i" placeholder="%new_effect_hint" value="@e.name" />
-                            <input type="text" data-field="value"
-                                class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground placeholder:text-foreground/30 focus:border-primary focus:ring-0 transition-all outline-none"
-                                name="effects_value_@i" placeholder="%effect_value_hint" value="@e.value" />
-                            <button type="button" data-remove-effect aria-label="%remove_effect"
-                                class="size-11 rounded-xl border-2 border-primary/30 text-foreground-muted hover:border-primary hover:text-foreground transition-all">×</button>
-                        </div>
-                    </div>
+                    @include 'components/effect_row.html'
                     @endfor
                 </div>
                 <button type="button" data-add-effect="effects"
@@ -186,53 +167,18 @@
                 <label class="font-label text-secondary uppercase">%blessed_effects</label>
                 <div id="blessed_effects-rows" class="space-y-2">
                     @for i, e in state.blessed_effects
-                    <div class="effect-row rounded-xl border-2 border-primary/20 bg-surface/50 p-3 space-y-2">
-                        <select data-effect-select
-                            class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground focus:border-primary focus:ring-0 transition-all outline-none">
-                            <option value="">%effects_hint</option>
-                            @for n in state.effect_names
-                            <option value="@n">@n</option>
-                            @endfor
-                            <option value="__new__">%new_effect</option>
-                        </select>
-                        <div class="grid gap-2 items-center" style="grid-template-columns: 1fr auto;">
-                            <input type="text" data-field="name"
-                                class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground placeholder:text-foreground/30 focus:border-primary focus:ring-0 transition-all outline-none"
-                                name="blessed_effects_name_@i" placeholder="%new_effect_hint" value="@e.name" />
-                            <input type="text" data-field="value"
-                                class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground placeholder:text-foreground/30 focus:border-primary focus:ring-0 transition-all outline-none"
-                                name="blessed_effects_value_@i" placeholder="%effect_value_hint" value="@e.value" />
-                            <button type="button" data-remove-effect aria-label="%remove_effect"
-                                class="size-11 rounded-xl border-2 border-primary/30 text-foreground-muted hover:border-primary hover:text-foreground transition-all">×</button>
-                        </div>
-                    </div>
+                    @include 'components/effect_row.html'
                     @endfor
                 </div>
                 <button type="button" data-add-effect="blessed_effects"
                     class="w-full bg-surface border-2 border-dashed border-primary/40 rounded-xl py-3 px-4 text-sm font-semibold text-foreground-muted hover:border-primary hover:text-foreground transition-all text-center">+ %add_effect</button>
             </div>
             <template id="effect-row-template">
-                <div class="effect-row rounded-xl border-2 border-primary/20 bg-surface/50 p-3 space-y-2">
-                    <select data-effect-select
-                        class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground focus:border-primary focus:ring-0 transition-all outline-none">
-                        <option value="">%effects_hint</option>
-                        @for n in state.effect_names
-                        <option value="@n">@n</option>
-                        @endfor
-                        <option value="__new__">%new_effect</option>
-                    </select>
-                    <div class="grid gap-2 items-center" style="grid-template-columns: 1fr auto;">
-                        <input type="text" data-field="name"
-                            class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground placeholder:text-foreground/30 focus:border-primary focus:ring-0 transition-all outline-none"
-                            name="effects_name_x" placeholder="%new_effect_hint" value="" />
-                        <input type="text" data-field="value"
-                            class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground placeholder:text-foreground/30 focus:border-primary focus:ring-0 transition-all outline-none"
-                            name="effects_value_x" placeholder="%effect_value_hint" value="" />
-                        <button type="button" data-remove-effect aria-label="%remove_effect"
-                            class="size-11 rounded-xl border-2 border-primary/30 text-foreground-muted hover:border-primary hover:text-foreground transition-all">×</button>
-                    </div>
-                </div>
+                @for i, e in [state.empty_effect]
+                @include 'components/effect_row.html'
+                @end
             </template>
+            <script src="/js/combobox.js"></script>
             <script>
                 (function () {
                     function renumber(container, prefix) {
@@ -242,40 +188,9 @@
                             row.querySelector('[data-field="value"]').name = prefix + '_value_' + i;
                         });
                     }
-                    // initEffectRow wires a row's combobox: an existing effect
-                    // name from the list hides the name input (its value is
-                    // submitted for reuse), "New Effect" shows it for typing a
-                    // fresh name, and the blank option keeps the input visible.
                     function initEffectRow(row) {
-                        var sel = row.querySelector('[data-effect-select]');
-                        var input = row.querySelector('[data-field="name"]');
-                        if (!sel || !input) return;
-                        var val = input.value;
-                        var found = false;
-                        for (var i = 0; i < sel.options.length; i++) {
-                            if (sel.options[i].value === val && val !== '') {
-                                sel.selectedIndex = i;
-                                found = true;
-                                break;
-                            }
-                        }
-                        if (found) {
-                            input.classList.add('hidden');
-                        } else {
-                            sel.value = '__new__';
-                            input.classList.remove('hidden');
-                        }
-                        sel.addEventListener('change', function () {
-                            if (sel.value === '__new__') {
-                                input.classList.remove('hidden');
-                                input.focus();
-                            } else if (sel.value === '') {
-                                input.classList.remove('hidden');
-                            } else {
-                                input.value = sel.value;
-                                input.classList.add('hidden');
-                            }
-                        });
+                        var cb = row.querySelector('[data-combobox]');
+                        if (cb && window.Combobox) window.Combobox.init(cb);
                     }
                     var tpl = document.getElementById('effect-row-template');
                     document.querySelectorAll('[data-add-effect]').forEach(function (btn) {
@@ -298,7 +213,13 @@
                             renumber(container, prefix);
                         }
                     });
-                    // init server-rendered rows (edit mode)
+                    // init server-rendered rows (edit mode): the effect-row
+                    // component carries no static name attributes, so assign
+                    // them here (submit also renumbers before POST)
+                    document.querySelectorAll('[data-add-effect]').forEach(function (btn) {
+                        var prefix = btn.getAttribute('data-add-effect');
+                        renumber(document.getElementById(prefix + '-rows'), prefix);
+                    });
                     document.querySelectorAll('.effect-row').forEach(initEffectRow);
                     document.querySelector('form').addEventListener('submit', function () {
                         document.querySelectorAll('[data-add-effect]').forEach(function (btn) {

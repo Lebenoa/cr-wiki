@@ -68,6 +68,21 @@ fn seed_if_empty(conn sqlite.DB) ! {
 		return
 	}
 	fixture := json2.decode[SeedFixture](os.read_file(path)!)!
+	// One transaction around the whole fixture: with per-statement autocommit
+	// the ~5800 ORM inserts plus their FTS triggers turn a fresh seed into a
+	// multi-minute slog (and make the test session unusable). A single commit
+	// brings it back to a couple of seconds.
+	conn.exec('BEGIN')!
+	insert_fixture(conn, fixture) or {
+		conn.exec('ROLLBACK')!
+		return err
+	}
+	conn.exec('COMMIT')!
+}
+
+// insert_fixture inserts every roster row from the fixture in FK order;
+// explicit ids are preserved so the treasure_effect links stay valid.
+fn insert_fixture(conn sqlite.DB, fixture SeedFixture) ! {
 	for c in fixture.cookie {
 		sql conn {
 			insert c into models.Cookie
@@ -88,8 +103,6 @@ fn seed_if_empty(conn sqlite.DB) ! {
 			insert tr into models.PetTranslation
 		}!
 	}
-	// treasure/effect rows in FK order; explicit ids preserved so the
-	// treasure_effect links stay valid
 	for t in fixture.treasure {
 		sql conn {
 			insert t into models.Treasure

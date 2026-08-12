@@ -47,14 +47,13 @@ pub:
 	image             ?string
 	unlock_treasure_id int // 0 = none; the treasure this pet unlocks at max level
 	treasures         []database.IdNameOption
-}
-
-// EffectRow carries one effect row in the treasure form's structured editor.
+}	// EffectRow carries one effect row in the treasure form's structured editor.
 pub struct EffectRow {
 pub:
 	name  string
 	value string // display text: "12%", "2-3%", "3s", "500000", '' = none
 }
+
 
 // effect_rows_from_db maps the treasure's stored effect rows to form rows,
 // formatting the numeric value with its unit suffix for the editor.
@@ -137,7 +136,8 @@ pub:
 	grade           string // '' = no wiki grade
 	effects         []EffectRow
 	blessed_effects []EffectRow
-	effect_names    []string // suggestions for the effect name input
+	effect_names []string  // suggestions for the effect name input
+	empty_effect EffectRow // blank row for the clone template loop
 	is_evolved      bool
 	release_date    string
 	lang            string
@@ -261,7 +261,7 @@ fn parse_unlock_treasure(mut ctx Context) !UnlockTreasureChoice {
 		}
 	}
 	if raw == '' {
-		return UnlockTreasureChoice{}
+		return error('A treasure is required: every cookie/pet gives one at max level')
 	}
 	return UnlockTreasureChoice{
 		treasure_id: raw.int()

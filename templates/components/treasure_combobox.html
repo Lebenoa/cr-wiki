@@ -1,0 +1,28 @@
+                <div class="space-y-2">
+                    <label class="font-label text-secondary uppercase" for="unlock_treasure_id">%unlock_treasure_label</label>
+                    <div class="relative" data-combobox data-cb-mode="treasure">
+                        <input type="text" data-cb-input name="new_treasure_name" autocomplete="off"
+                            class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground placeholder:text-foreground/30 focus:border-primary focus:ring-0 transition-all outline-none"
+                            placeholder="%new_treasure_hint" />
+                        <input type="hidden" data-cb-hidden name="unlock_treasure_id"
+                            @if state.unlock_treasure_id == 0
+                            value=""
+                            @else
+                            value="@state.unlock_treasure_id"
+                            @end
+                        />
+                        <ul data-cb-list
+                            class="hidden absolute z-10 left-0 right-0 top-full mt-1 max-h-60 overflow-y-auto bg-surface border-2 border-primary/30 rounded-xl shadow-lg">
+                            @for t in state.treasures
+                            <li data-cb-value="@t.id"
+                                class="px-4 py-2 cursor-pointer hover:bg-primary/10 text-sm text-foreground flex items-center gap-2">
+                                <img src="@{ctx.img_src('treasures', t.image)}" alt="@t.name"
+                                    class="size-5 shrink-0 object-contain" />
+                                @t.name
+                            </li>
+                            @endfor
+                            <li data-cb-value="__new__"
+                                class="px-4 py-2 cursor-pointer text-accent font-semibold border-t-2 border-primary/20 text-sm">+ %new_treasure</li>
+                        </ul>
+                    </div>
+                </div>

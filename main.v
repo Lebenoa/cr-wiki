@@ -1,5 +1,6 @@
 module main
 
+import os
 import veb
 import config
 import app
@@ -10,6 +11,13 @@ $if sqlite_fts5 ? {
 }
 
 fn main() {
+	// Test session (debug builds only): fresh throwaway db + integration suite.
+	$if debug ? {
+		if os.getenv('CR_TEST') != '' {
+			app.run_test_session()
+			return
+		}
+	}
 	loaded_config := config.load() or {
 		println("Failed to load `Config.toml`; using default config; ${err}")
 		config.Config{}

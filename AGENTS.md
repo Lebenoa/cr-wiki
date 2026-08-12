@@ -29,6 +29,7 @@ The repository implements a web platform written in V (V Language) using a speci
 - **Run:** `v -d sqlite_fts5 -d new_veb -enable-globals run .` — all three flags are required: `-d sqlite_fts5` enables SQLITE_ENABLE_FTS5, `-d new_veb` selects the new veb backend, `-enable-globals` for app globals. Omitting `-d new_veb` falls back to the legacy veb backend.
 - **Build/typecheck:** `v -d sqlite_fts5 -d new_veb -enable-globals -o /tmp/cr_test.exe .` — exit 0 means clean. Name ad-hoc test binaries `cr_test(.exe)` (user preference). V "notice:" messages (e.g. implicit slice clone in `database/select.v`) are warnings, not errors; silence with an explicit `.clone()` or `unsafe{a[..]}`.
 - **Server:** binds 0.0.0.0:6785 (`Config.toml`). Restart detached: kill the old PID, then `(v -d sqlite_fts5 -d new_veb -enable-globals run . > /tmp/cr_server.log 2>&1 &)`. Replacing a registered preview stops the old server.
+- **Test session (debug builds only):** `CR_TEST=1 v -d sqlite_fts5 -d new_veb -d debug -enable-globals run .` — boots against a fresh throwaway `sqlite_test.db` on port 6798 (`CR_TEST_PORT`/`CR_TEST_DB` overridable), runs the data-integrity + HTTP suite, exits 0 on pass / 1 on fail. The session is compiled out unless `-d debug` is passed, so release binaries never contain it.
 - **Package manager:** use bun/bunx, never node/npm/npx (user preference).
 
 ## Code Conventions & Common Patterns

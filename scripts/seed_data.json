@@ -20638,9 +20638,6 @@
    "effect_id": 395
   },
   {
-   "effect_id": 398
-  },
-  {
    "effect_id": 399
   },
   {
@@ -24366,13 +24363,6 @@
    "lang": "en",
    "name": "With upgrades 3-5% slower Energy Drain",
    "description": "With upgrades 3-5% slower Energy Drain"
-  },
-  {
-   "effect_translation_id": 398,
-   "effect_id": 398,
-   "lang": "en",
-   "name": "|",
-   "description": "|"
   },
   {
    "effect_translation_id": 399,
@@ -40185,16 +40175,6 @@
    "treasure_effect_id": 1148,
    "treasure_id": 402,
    "effect_id": 25,
-   "value": null,
-   "value_min": null,
-   "value_max": null,
-   "unit": "flat",
-   "state": "blessed"
-  },
-  {
-   "treasure_effect_id": 1149,
-   "treasure_id": 402,
-   "effect_id": 398,
    "value": null,
    "value_min": null,
    "value_max": null,

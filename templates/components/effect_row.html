@@ -1,0 +1,23 @@
+                <div class="effect-row rounded-xl border-2 border-primary/20 bg-surface/50 p-3 space-y-2">
+                    <div class="relative" data-combobox data-cb-mode="name">
+                        <input type="text" data-cb-input autocomplete="off"
+                            class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground placeholder:text-foreground/30 focus:border-primary focus:ring-0 transition-all outline-none"
+                            placeholder="%effects_hint" value="@e.name" />
+                        <input type="hidden" data-cb-hidden data-field="name" value="@e.name" />
+                        <ul data-cb-list
+                            class="hidden absolute z-10 left-0 right-0 top-full mt-1 max-h-60 overflow-y-auto bg-surface border-2 border-primary/30 rounded-xl shadow-lg">
+                            @for n in state.effect_names
+                            <li data-cb-value="@n" class="px-4 py-2 cursor-pointer hover:bg-primary/10 text-sm text-foreground">@n</li>
+                            @endfor
+                            <li data-cb-value="__new__"
+                                class="px-4 py-2 cursor-pointer text-accent font-semibold border-t-2 border-primary/20 text-sm">+ %new_effect</li>
+                        </ul>
+                    </div>
+                    <div class="grid gap-2 items-center" style="grid-template-columns: 1fr auto;">
+                        <input type="text" data-field="value"
+                            class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground placeholder:text-foreground/30 focus:border-primary focus:ring-0 transition-all outline-none"
+                            placeholder="%effect_value_hint" value="@e.value" />
+                        <button type="button" data-remove-effect aria-label="%remove_effect"
+                            class="size-11 rounded-xl border-2 border-primary/30 text-foreground-muted hover:border-primary hover:text-foreground transition-all">×</button>
+                    </div>
+                </div>
