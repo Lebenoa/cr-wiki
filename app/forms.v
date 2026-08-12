@@ -20,30 +20,34 @@ fn parse_release_date(mut ctx Context) !time.Time {
 // CookieForm carries the form state shared by the cookie create/edit pages.
 pub struct CookieForm {
 pub:
-	edit_mode    bool
-	id           int
-	name         string
-	abilities    string
-	description  string
-	power_plus   string
-	grade        string
-	release_date string
-	lang         string
-	image        ?string
+	edit_mode         bool
+	id                int
+	name              string
+	abilities         string
+	description       string
+	power_plus        string
+	grade             string
+	release_date      string
+	lang              string
+	image             ?string
+	unlock_treasure_id int // 0 = none; the treasure this cookie unlocks at max level
+	treasures         []database.IdNameOption
 }
 
 // PetForm carries the form state shared by the pet create/edit pages.
 pub struct PetForm {
 pub:
-	edit_mode    bool
-	id           int
-	name         string
-	abilities    string
-	description  string
-	grade        string
-	release_date string
-	lang         string
-	image        ?string
+	edit_mode         bool
+	id                int
+	name              string
+	abilities         string
+	description       string
+	grade             string
+	release_date      string
+	lang              string
+	image             ?string
+	unlock_treasure_id int // 0 = none; the treasure this pet unlocks at max level
+	treasures         []database.IdNameOption
 }
 
 // EffectRow carries one effect row in the treasure form's structured editor.
@@ -93,6 +97,19 @@ pub:
 	release_date    string
 	lang            string
 	image           ?string
+	unlock_cookie_id int // 0 = none; cookie whose max-level upgrade unlocks this treasure
+	unlock_pet_id    int // 0 = none; pet whose max-level upgrade unlocks this treasure
+	cookies         []database.IdNameOption
+	pets            []database.IdNameOption
+}
+
+// parse_optional_id reads an optional entity-id form field: empty/absent -> none.
+fn parse_optional_id(mut ctx Context, field string) ?int {
+	raw := ctx.form[field] or { return none }
+	if raw == '' {
+		return none
+	}
+	return raw.int()
 }
 
 fn parse_cookie_form(mut ctx Context) !database.CreateCookieParams {
@@ -101,18 +118,19 @@ fn parse_cookie_form(mut ctx Context) !database.CreateCookieParams {
 		return error('Invalid grade: expected one of e, c, b, a, s, s_plus, l')
 	}
 	return database.CreateCookieParams{
-		lang:         ctx.form['lang'] or { ctx.lang }
-		name:         ctx.form['name']
-		abilities:    ctx.form['abilities']
-		description:  ctx.form['description']
-		grade:        grade
-		image:        if image == '' {
+		lang:              ctx.form['lang'] or { ctx.lang }
+		name:              ctx.form['name']
+		abilities:         ctx.form['abilities']
+		description:       ctx.form['description']
+		grade:             grade
+		image:             if image == '' {
 			none
 		} else {
 			image
 		}
-		power_plus:   ctx.form['power_plus']
-		release_date: parse_release_date(mut ctx)!
+		power_plus:        ctx.form['power_plus']
+		release_date:      parse_release_date(mut ctx)!
+		unlock_treasure_id: parse_optional_id(mut ctx, 'unlock_treasure_id')
 	}
 }
 
@@ -122,17 +140,18 @@ fn parse_pet_form(mut ctx Context) !database.CreatePetParams {
 		return error('Invalid grade: expected one of e, c, b, a, s, s_plus, l')
 	}
 	return database.CreatePetParams{
-		lang:         ctx.form['lang'] or { ctx.lang }
-		name:         ctx.form['name']
-		abilities:    ctx.form['abilities']
-		description:  ctx.form['description']
-		grade:        grade
-		image:        if image == '' {
+		lang:              ctx.form['lang'] or { ctx.lang }
+		name:              ctx.form['name']
+		abilities:         ctx.form['abilities']
+		description:       ctx.form['description']
+		grade:             grade
+		image:             if image == '' {
 			none
 		} else {
 			image
 		}
-		release_date: parse_release_date(mut ctx)!
+		release_date:      parse_release_date(mut ctx)!
+		unlock_treasure_id: parse_optional_id(mut ctx, 'unlock_treasure_id')
 	}
 }
 
@@ -186,18 +205,20 @@ fn parse_treasure_form(mut ctx Context) !database.CreateTreasureParams {
 		})
 	}
 	return database.CreateTreasureParams{
-		lang:            ctx.form['lang'] or { ctx.lang }
-		name:            ctx.form['name']
-		description:     ctx.form['description']
-		image:           if image == '' {
+		lang:             ctx.form['lang'] or { ctx.lang }
+		name:             ctx.form['name']
+		description:      ctx.form['description']
+		image:            if image == '' {
 			none
 		} else {
 			image
 		}
-		grade:           grade
-		is_evolved:      ctx.form['is_evolved'] == 'true'
-		release_date:    parse_release_date(mut ctx)!
-		effects:         parse_effect_inputs(mut ctx, 'effects')!
-		blessed_effects: parse_effect_inputs(mut ctx, 'blessed_effects')!
+		grade:            grade
+		is_evolved:       ctx.form['is_evolved'] == 'true'
+		release_date:     parse_release_date(mut ctx)!
+		effects:          parse_effect_inputs(mut ctx, 'effects')!
+		blessed_effects:  parse_effect_inputs(mut ctx, 'blessed_effects')!
+		unlock_cookie_id: parse_optional_id(mut ctx, 'unlock_cookie_id')
+		unlock_pet_id:    parse_optional_id(mut ctx, 'unlock_pet_id')
 	}
 }

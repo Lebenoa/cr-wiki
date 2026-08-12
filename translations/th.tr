@@ -298,3 +298,15 @@ unlocks_treasure_title
 combo_bonus_title
 โบนัสคอมโบ
 -----
+unlock_treasure_label
+สมบัติที่ปลดล็อกเมื่อถึงเลเวลสูงสุด
+-----
+unlock_cookie_label
+ปลดล็อกโดยคุกกี้
+-----
+unlock_pet_label
+ปลดล็อกโดยสัตว์เลี้ยง
+-----
+none_option
+ไม่มี
+-----

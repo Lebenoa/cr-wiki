@@ -104,6 +104,24 @@
                 </div>
             </div>
             <div class="space-y-2">
+                <label class="font-label text-secondary uppercase" for="unlock_treasure_id">%unlock_treasure_label</label>
+                <select id="unlock_treasure_id" name="unlock_treasure_id"
+                    class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground focus:border-primary focus:ring-0 transition-all outline-none">
+                    <option value=""
+                        @if state.unlock_treasure_id == 0
+                        selected
+                        @endif
+                    >%none_option</option>
+                    @for t in state.treasures
+                    <option value="@t.id"
+                        @if t.id == state.unlock_treasure_id
+                        selected
+                        @endif
+                    >@t.name</option>
+                    @endfor
+                </select>
+            </div>
+            <div class="space-y-2">
                 <label class="font-label text-secondary uppercase" for="abilities">%abilities</label>
                 <textarea id="abilities" name="abilities" rows="4"
                     class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground placeholder:text-foreground/30 focus:border-primary focus:ring-0 transition-all outline-none resize-y"

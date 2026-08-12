@@ -298,3 +298,15 @@ Unlocks treasure
 combo_bonus_title
 Combo bonus
 -----
+unlock_treasure_label
+Treasure unlocked at max level
+-----
+unlock_cookie_label
+Unlocked by cookie
+-----
+unlock_pet_label
+Unlocked by pet
+-----
+none_option
+None
+-----

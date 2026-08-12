@@ -38,6 +38,32 @@ pub fn update_cookie(conn sqlite.DB, id int, params CreateCookieParams) ! {
 			insert new_tr into models.CookieTranslation
 		}!
 	}
+
+	// keep the treasure-unlock link in sync: clear the treasure this cookie
+	// previously unlocked (if it differs from the newly chosen one), then point
+	// the chosen treasure at this cookie
+	prev := sql conn {
+		select from models.Treasure where unlock_cookie_id == id
+	}!
+	if prev.len > 0 {
+		prev_id := prev.first().treasure_id or { 0 }
+		mut should_clear := true
+		if utid := params.unlock_treasure_id {
+			if utid == prev_id {
+				should_clear = false
+			}
+		}
+		if should_clear {
+			sql conn {
+				update models.Treasure set unlock_cookie_id = none where treasure_id == prev_id
+			}!
+		}
+	}
+	if utid := params.unlock_treasure_id {
+		sql conn {
+			update models.Treasure set unlock_cookie_id = id where treasure_id == utid
+		}!
+	}
 }
 
 pub fn update_pet(conn sqlite.DB, id int, params CreatePetParams) ! {
@@ -71,12 +97,37 @@ pub fn update_pet(conn sqlite.DB, id int, params CreatePetParams) ! {
 			insert new_tr into models.PetTranslation
 		}!
 	}
+
+	// keep the treasure-unlock link in sync (see update_cookie)
+	prev := sql conn {
+		select from models.Treasure where unlock_pet_id == id
+	}!
+	if prev.len > 0 {
+		prev_id := prev.first().treasure_id or { 0 }
+		mut should_clear := true
+		if utid := params.unlock_treasure_id {
+			if utid == prev_id {
+				should_clear = false
+			}
+		}
+		if should_clear {
+			sql conn {
+				update models.Treasure set unlock_pet_id = none where treasure_id == prev_id
+			}!
+		}
+	}
+	if utid := params.unlock_treasure_id {
+		sql conn {
+			update models.Treasure set unlock_pet_id = id where treasure_id == utid
+		}!
+	}
 }
 
 pub fn update_treasure(conn sqlite.DB, id int, params CreateTreasureParams) ! {
 	sql conn {
 		update models.Treasure set grade = params.grade, is_evolved = params.is_evolved,
-		release_date = params.release_date where treasure_id == id
+		release_date = params.release_date, unlock_cookie_id = params.unlock_cookie_id,
+		unlock_pet_id = params.unlock_pet_id where treasure_id == id
 	}!
 
 	if image := params.image {

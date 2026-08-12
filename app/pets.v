@@ -43,8 +43,9 @@ pub fn (wapp &App) new_pet(mut ctx Context) veb.Result {
 		languages := api.available_lang()
 		grades := models.grade_values
 		state := PetForm{
-			lang:  ctx.lang
-			grade: 'c'
+			lang:      ctx.lang
+			grade:     'c'
+			treasures: database.treasure_options(wapp.db, ctx.lang) or { [] }
 		}
 		return $veb.html("./templates/admin/new_pet.html")
 	} else if ctx.req.method == .post {
@@ -94,16 +95,24 @@ pub fn (wapp &App) edit_pet(mut ctx Context, id int) veb.Result {
 		languages := api.available_lang()
 		grades := models.grade_values
 		rd := pet.release_date
+		unlock_tid := if ut := database.get_unlocked_treasure(wapp.db, ctx.lang, 'pet',
+			pet.pet_id) {
+			ut.treasure_id
+		} else {
+			0
+		}
 		state := PetForm{
-			edit_mode:    true
-			id:           pet.pet_id
-			name:         pet.name
-			abilities:    pet.abilities
-			description:  pet.description
-			grade:        pet.grade.str()
-			release_date: '${rd.year:04d}-${int(rd.month):02d}-${rd.day:02d}'
-			lang:         pet.lang
-			image:        pet.image
+			edit_mode:         true
+			id:                pet.pet_id
+			name:              pet.name
+			abilities:         pet.abilities
+			description:       pet.description
+			grade:             pet.grade.str()
+			release_date:      '${rd.year:04d}-${int(rd.month):02d}-${rd.day:02d}'
+			lang:              pet.lang
+			image:             pet.image
+			unlock_treasure_id: unlock_tid
+			treasures:         database.treasure_options(wapp.db, ctx.lang) or { [] }
 		}
 		return $veb.html("./templates/admin/new_pet.html")
 

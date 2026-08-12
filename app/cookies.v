@@ -43,8 +43,9 @@ pub fn (wapp &App) new_cookie(mut ctx Context) veb.Result {
 		languages := api.available_lang()
 		grades := models.grade_values
 		state := CookieForm{
-			lang:  ctx.lang
-			grade: 'c'
+			lang:      ctx.lang
+			grade:     'c'
+			treasures: database.treasure_options(wapp.db, ctx.lang) or { [] }
 		}
 		return $veb.html('./templates/admin/new_cookie.html')
 	} else if ctx.req.method == .post {
@@ -94,17 +95,25 @@ pub fn (wapp &App) edit_cookie(mut ctx Context, id int) veb.Result {
 		languages := api.available_lang()
 		grades := models.grade_values
 		rd := cookie.release_date
+		unlock_tid := if ut := database.get_unlocked_treasure(wapp.db, ctx.lang, 'cookie',
+			cookie.cookie_id) {
+			ut.treasure_id
+		} else {
+			0
+		}
 		state := CookieForm{
-			edit_mode:    true
-			id:           cookie.cookie_id
-			name:         cookie.name
-			abilities:    cookie.abilities
-			description:  cookie.description
-			power_plus:   cookie.power_plus
-			grade:        cookie.grade.str()
-			release_date: '${rd.year:04d}-${int(rd.month):02d}-${rd.day:02d}'
-			lang:         cookie.lang
-			image:        cookie.image
+			edit_mode:         true
+			id:                cookie.cookie_id
+			name:              cookie.name
+			abilities:         cookie.abilities
+			description:       cookie.description
+			power_plus:        cookie.power_plus
+			grade:             cookie.grade.str()
+			release_date:      '${rd.year:04d}-${int(rd.month):02d}-${rd.day:02d}'
+			lang:              cookie.lang
+			image:             cookie.image
+			unlock_treasure_id: unlock_tid
+			treasures:         database.treasure_options(wapp.db, ctx.lang) or { [] }
 		}
 		return $veb.html('./templates/admin/new_cookie.html')
 	} else if ctx.req.method == .post {

@@ -514,6 +514,142 @@ pub fn get_combi_bonus(conn sqlite.DB, lang string, kind string, id int) ![]Comb
 	return result
 }
 
+// IdNameOption is a lightweight (id, name) pair for admin-form dropdowns.
+pub struct IdNameOption {
+pub:
+	id   int
+	name string
+}
+
+// treasure_options lists every treasure's id and localized name for the
+// cookie/pet admin forms' "unlocks treasure" selector.
+pub fn treasure_options(conn sqlite.DB, lang string) ![]IdNameOption {
+	treasures := sql conn {
+		select from models.Treasure
+	}!
+	user_lang := lang
+	translations := sql conn {
+		select from models.TreasureTranslation where lang == user_lang || lang == 'en'
+	}!
+	mut tmap := map[int]models.TreasureTranslation{}
+	for tr in translations {
+		if tr.lang == user_lang {
+			tmap[tr.treasure_id] = tr
+		}
+	}
+	for tr in translations {
+		if tr.treasure_id !in tmap {
+			tmap[tr.treasure_id] = tr
+		}
+	}
+	mut out := []IdNameOption{}
+	for t in treasures {
+		tid := t.treasure_id or { continue }
+		if tr := tmap[tid] {
+			out << IdNameOption{
+				id:   tid
+				name: tr.name
+			}
+		}
+	}
+	out.sort_with_compare(fn (a &IdNameOption, b &IdNameOption) int {
+		if a.name < b.name {
+			return -1
+		}
+		if a.name > b.name {
+			return 1
+		}
+		return 0
+	})
+	return out
+}
+
+// cookie_options lists every cookie's id and localized name for the treasure
+// admin form's "unlocked by cookie" selector.
+pub fn cookie_options(conn sqlite.DB, lang string) ![]IdNameOption {
+	cookies := sql conn {
+		select from models.Cookie
+	}!
+	user_lang := lang
+	translations := sql conn {
+		select from models.CookieTranslation where lang == user_lang || lang == 'en'
+	}!
+	mut tmap := map[int]models.CookieTranslation{}
+	for tr in translations {
+		if tr.lang == user_lang {
+			tmap[tr.owner_id] = tr
+		}
+	}
+	for tr in translations {
+		if tr.owner_id !in tmap {
+			tmap[tr.owner_id] = tr
+		}
+	}
+	mut out := []IdNameOption{}
+	for c in cookies {
+		cid := c.cookie_id or { continue }
+		if tr := tmap[cid] {
+			out << IdNameOption{
+				id:   cid
+				name: tr.name
+			}
+		}
+	}
+	out.sort_with_compare(fn (a &IdNameOption, b &IdNameOption) int {
+		if a.name < b.name {
+			return -1
+		}
+		if a.name > b.name {
+			return 1
+		}
+		return 0
+	})
+	return out
+}
+
+// pet_options lists every pet's id and localized name for the treasure admin
+// form's "unlocked by pet" selector.
+pub fn pet_options(conn sqlite.DB, lang string) ![]IdNameOption {
+	pets := sql conn {
+		select from models.Pet
+	}!
+	user_lang := lang
+	translations := sql conn {
+		select from models.PetTranslation where lang == user_lang || lang == 'en'
+	}!
+	mut tmap := map[int]models.PetTranslation{}
+	for tr in translations {
+		if tr.lang == user_lang {
+			tmap[tr.pet_id] = tr
+		}
+	}
+	for tr in translations {
+		if tr.pet_id !in tmap {
+			tmap[tr.pet_id] = tr
+		}
+	}
+	mut out := []IdNameOption{}
+	for p in pets {
+		pid := p.pet_id or { continue }
+		if tr := tmap[pid] {
+			out << IdNameOption{
+				id:   pid
+				name: tr.name
+			}
+		}
+	}
+	out.sort_with_compare(fn (a &IdNameOption, b &IdNameOption) int {
+		if a.name < b.name {
+			return -1
+		}
+		if a.name > b.name {
+			return 1
+		}
+		return 0
+	})
+	return out
+}
+
 // get_unlocked_treasure returns the treasure unlocked by upgrading the given
 // cookie or pet to max level; error when the entity unlocks no treasure.
 pub fn get_unlocked_treasure(conn sqlite.DB, lang string, kind string, id int) !TreasureView {

@@ -21,14 +21,15 @@ pub fn create_user(conn sqlite.DB, username string, password string) !int {
 
 pub struct CreateCookieParams {
 pub:
-	lang         string
-	name         string
-	abilities    string
-	description  string
-	grade        models.Grade
-	image        ?string
-	power_plus   string
-	release_date time.Time
+	lang              string
+	name              string
+	abilities         string
+	description       string
+	grade             models.Grade
+	image             ?string
+	power_plus        string
+	release_date      time.Time
+	unlock_treasure_id ?int // treasure this cookie unlocks at max level
 }
 
 pub fn create_cookie(conn sqlite.DB, params CreateCookieParams) !int {
@@ -65,18 +66,26 @@ pub fn create_cookie(conn sqlite.DB, params CreateCookieParams) !int {
 		insert new_translation into models.CookieTranslation
 	}!
 
+	// link the chosen treasure to this cookie (the unlock lives on the treasure)
+	if utid := params.unlock_treasure_id {
+		sql conn {
+			update models.Treasure set unlock_cookie_id = cookie_id where treasure_id == utid
+		}!
+	}
+
 	return cookie_id
 }
 
 pub struct CreatePetParams {
 pub:
-	lang         string
-	name         string
-	abilities    string
-	description  string
-	grade        models.Grade
-	image        ?string
-	release_date time.Time
+	lang              string
+	name              string
+	abilities         string
+	description       string
+	grade             models.Grade
+	image             ?string
+	release_date      time.Time
+	unlock_treasure_id ?int // treasure this pet unlocks at max level
 }
 
 pub fn create_pet(conn sqlite.DB, params CreatePetParams) !int {
@@ -112,6 +121,13 @@ pub fn create_pet(conn sqlite.DB, params CreatePetParams) !int {
 		insert new_translation into models.PetTranslation
 	}!
 
+	// link the chosen treasure to this pet (the unlock lives on the treasure)
+	if utid := params.unlock_treasure_id {
+		sql conn {
+			update models.Treasure set unlock_pet_id = pet_id where treasure_id == utid
+		}!
+	}
+
 	return pet_id
 }
 
@@ -136,6 +152,8 @@ pub:
 	release_date    time.Time
 	effects         []EffectInput
 	blessed_effects []EffectInput
+	unlock_cookie_id ?int // cookie whose max-level upgrade unlocks this treasure
+	unlock_pet_id    ?int // pet whose max-level upgrade unlocks this treasure
 }
 
 pub fn create_treasure(conn sqlite.DB, params CreateTreasureParams) !int {
@@ -147,10 +165,12 @@ pub fn create_treasure(conn sqlite.DB, params CreateTreasureParams) !int {
 	}
 
 	new_treasure := models.Treasure{
-		image:        params.image
-		grade:        params.grade
-		is_evolved:   params.is_evolved
-		release_date: params.release_date
+		image:            params.image
+		grade:            params.grade
+		is_evolved:       params.is_evolved
+		release_date:     params.release_date
+		unlock_cookie_id: params.unlock_cookie_id
+		unlock_pet_id:    params.unlock_pet_id
 	}
 
 	treasure_id := sql conn {

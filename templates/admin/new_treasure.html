@@ -115,6 +115,44 @@
                         type="date" name="release_date" value="@state.release_date" />
                 </div>
             </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div class="space-y-2">
+                    <label class="font-label text-secondary uppercase" for="unlock_cookie_id">%unlock_cookie_label</label>
+                    <select id="unlock_cookie_id" name="unlock_cookie_id"
+                        class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground focus:border-primary focus:ring-0 transition-all outline-none">
+                        <option value=""
+                            @if state.unlock_cookie_id == 0
+                            selected
+                            @endif
+                        >%none_option</option>
+                        @for c in state.cookies
+                        <option value="@c.id"
+                            @if c.id == state.unlock_cookie_id
+                            selected
+                            @endif
+                        >@c.name</option>
+                        @endfor
+                    </select>
+                </div>
+                <div class="space-y-2">
+                    <label class="font-label text-secondary uppercase" for="unlock_pet_id">%unlock_pet_label</label>
+                    <select id="unlock_pet_id" name="unlock_pet_id"
+                        class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground focus:border-primary focus:ring-0 transition-all outline-none">
+                        <option value=""
+                            @if state.unlock_pet_id == 0
+                            selected
+                            @endif
+                        >%none_option</option>
+                        @for p in state.pets
+                        <option value="@p.id"
+                            @if p.id == state.unlock_pet_id
+                            selected
+                            @endif
+                        >@p.name</option>
+                        @endfor
+                    </select>
+                </div>
+            </div>
             <datalist id="effect-names">
                 @for n in state.effect_names
                 <option value="@n"></option>

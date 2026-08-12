@@ -62,6 +62,8 @@ pub fn (wapp &App) new_treasure(mut ctx Context) veb.Result {
 		state := TreasureForm{
 			lang:         ctx.lang
 			effect_names: database.effect_names(wapp.db, ctx.lang) or { [] }
+			cookies:      database.cookie_options(wapp.db, ctx.lang) or { [] }
+			pets:         database.pet_options(wapp.db, ctx.lang) or { [] }
 		}
 		return $veb.html('./templates/admin/new_treasure.html')
 	} else if ctx.req.method == .post {
@@ -144,6 +146,18 @@ pub fn (wapp &App) edit_treasure(mut ctx Context, id int) veb.Result {
 			release_date:    '${rd.year:04d}-${int(rd.month):02d}-${rd.day:02d}'
 			lang:            treasure.lang
 			image:           treasure.image
+			unlock_cookie_id: if cid := treasure.unlock_cookie_id {
+				cid
+			} else {
+				0
+			}
+			unlock_pet_id:    if pid := treasure.unlock_pet_id {
+				pid
+			} else {
+				0
+			}
+			cookies:          database.cookie_options(wapp.db, ctx.lang) or { [] }
+			pets:             database.pet_options(wapp.db, ctx.lang) or { [] }
 		}
 		return $veb.html('./templates/admin/new_treasure.html')
 	} else if ctx.req.method == .post {
