@@ -33,7 +33,7 @@
             <h1 class="font-headline text-accent text-4xl leading-tight">@pet.name</h1>
             <p class="font-body text-foreground max-w-xl whitespace-pre-line">
                 @if pet.description != ""
-                @pet.description
+                @description_html
                 @else
                 %missing_description
                 @endif

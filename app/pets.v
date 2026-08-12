@@ -81,6 +81,8 @@ pub fn (wapp &App) pet_info(mut ctx Context, id int) veb.Result {
 	combi_bonus := database.get_combi_bonus(wapp.db, ctx.lang, 'pet', pet.pet_id) or { [] }
 	ctx.set_translate_title('entity_detail_title', pet.name)
 	is_admin := ctx.is_admin()
+	// rich text: [[Cookie Name]] links + {color:x} spans in prose fields
+	description_html := render_rich_text(wapp.db, ctx.lang, pet.description)
 	return $veb.html("./templates/views/pet.html")
 }
 

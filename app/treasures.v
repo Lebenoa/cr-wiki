@@ -110,6 +110,8 @@ pub fn (wapp &App) treasure_info(mut ctx Context, id int) veb.Result {
 	}
 	ctx.set_translate_title('entity_detail_title', treasure.name)
 	is_admin := ctx.is_admin()
+	// rich text: [[Cookie Name]] links + {color:x} spans in the description
+	description_html := render_rich_text(wapp.db, ctx.lang, treasure.description)
 	return $veb.html('./templates/views/treasure.html')
 }
 

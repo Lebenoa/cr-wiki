@@ -81,6 +81,11 @@ pub fn (wapp &App) cookie_info(mut ctx Context, id int) veb.Result {
 	combi_bonus := database.get_combi_bonus(wapp.db, ctx.lang, 'cookie', cookie.cookie_id) or { [] }
 	ctx.set_translate_title('entity_detail_title', cookie.name)
 	is_admin := ctx.is_admin()
+	// rich text: [[Cookie Name]] links + {color:x} spans in prose fields
+	description_html := render_rich_text(wapp.db, ctx.lang, cookie.description)
+	power_plus_html := render_rich_text(wapp.db, ctx.lang, cookie.power_plus)
+	power_plus_requirement_html := render_rich_text(wapp.db, ctx.lang, cookie.power_plus_requirement)
+	unlock_goal_html := render_rich_text(wapp.db, ctx.lang, cookie.unlock_goal)
 	return $veb.html('./templates/views/cookie.html')
 }
 

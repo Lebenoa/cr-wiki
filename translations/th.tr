@@ -346,3 +346,6 @@ combi_remove_button
 combi_hidden_badge
 ซ่อนอยู่
 -----
+rich_text_hint
+รองรับลิงก์ [[ชื่อคุกกี้]] และ {color:red}ข้อความสี{/color}
+-----

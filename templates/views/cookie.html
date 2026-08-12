@@ -36,7 +36,7 @@
             <h1 class="font-headline text-accent text-4xl leading-tight">@cookie.name</h1>
             <p class="font-body text-foreground max-w-xl whitespace-pre-line">
                 @if cookie.description != ""
-                @cookie.description
+                @description_html
                 @else
                 %missing_description
                 @endif
@@ -44,10 +44,10 @@
             @if cookie.power_plus != ""
             <div class="p-4 rounded-xl flex flex-col gap-1 border-l-4 border-accent w-full">
                 <span class="text-xs font-label text-foreground-muted uppercase">%power_plus</span>
-                <span class="text-on-surface font-bold">@cookie.power_plus</span>
+                <span class="text-on-surface font-bold">@power_plus_html</span>
                 @if cookie.power_plus_requirement != ""
                 <span class="text-xs font-label text-foreground-muted uppercase mt-2">%power_plus_requirement</span>
-                <span class="text-on-surface">@cookie.power_plus_requirement</span>
+                <span class="text-on-surface">@power_plus_requirement_html</span>
                 @endif
             </div>
             @endif
@@ -60,7 +60,7 @@
                 @if cookie.unlock_goal != ""
                 <div class="p-4 rounded-xl flex flex-col gap-1 border-l-4 border-secondary">
                     <span class="text-xs font-label text-foreground-muted uppercase">%unlock_goal</span>
-                    <span class="text-on-surface font-bold whitespace-pre-line">@cookie.unlock_goal</span>
+                    <span class="text-on-surface font-bold whitespace-pre-line">@unlock_goal_html</span>
                 </div>
                 @endif
                 @if ut := unlocked_treasure

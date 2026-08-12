@@ -95,6 +95,10 @@ pub fn run_test_session() {
 			run:  test_effect_value_parse
 		},
 		TestCase{
+			name: 'rich text rendering'
+			run:  test_rich_text
+		},
+		TestCase{
 			name: 'public pages render'
 			run:  test_public_pages
 		},
@@ -300,6 +304,48 @@ fn test_effect_value_parse(mut tc TestContext) ! {
 		if _ := parse_effect_value(bad) {
 			return error('parse ${bad}: expected an error')
 		}
+	}
+}
+
+fn test_rich_text(mut tc TestContext) ! {
+	// resolve a real seed cookie name for the link test
+	row := tc.db.exec('SELECT name, owner_id FROM cookie_translation WHERE lang = "en" LIMIT 1')![0]
+	name := row.get_string('name')
+	// [[Name]] -> link to the cookie page
+	html1 := render_rich_text(tc.db, 'en', 'see [[${name}]] here')
+	expected := '<a href="/cookies/${row.get_string('owner_id')}"'
+	if !html1.contains(expected) {
+		return error('rich text: [[name]] did not become a cookie link, got: ${html1}')
+	}
+	// {color:x}text{/color} -> colored span
+	html2 := render_rich_text(tc.db, 'en', 'a {color:red}red{/color} word')
+	if !html2.contains('<span style="color:red">red</span>') {
+		return error('rich text: color span missing, got: ${html2}')
+	}
+	// rgb() with spaces (standard CSS) must pass the charset check
+	html2b := render_rich_text(tc.db, 'en', '{color:rgb(255, 0, 0)}x{/color}')
+	if !html2b.contains('<span style="color:rgb(255, 0, 0)">x</span>') {
+		return error('rich text: rgb() with spaces rejected, got: ${html2b}')
+	}
+	// plain text is escaped
+	html3 := render_rich_text(tc.db, 'en', '<script>alert(1)</script>')
+	if html3.contains('<script>') {
+		return error('rich text: script tag not escaped, got: ${html3}')
+	}
+	// unresolvable name stays literal (no link, still escaped)
+	html4 := render_rich_text(tc.db, 'en', '[[No Such Cookie Ever]]')
+	if html4.contains('<a href=') {
+		return error('rich text: unresolvable name became a link, got: ${html4}')
+	}
+	// color injection is rejected: no span is emitted, the literal text stays
+	html5 := render_rich_text(tc.db, 'en', '{color:red" onclick="x}y{/color}')
+	if html5.contains('<span') || !html5.contains('{/color}') {
+		return error('rich text: color injection not rejected, got: ${html5}')
+	}
+	// missing close tag leaves the markup literal
+	html6 := render_rich_text(tc.db, 'en', '{color:blue}never closed')
+	if html6.contains('<span') {
+		return error('rich text: unclosed color span emitted, got: ${html6}')
 	}
 }
 

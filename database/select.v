@@ -441,6 +441,25 @@ fn unlock_entity_image(conn sqlite.DB, kind string, id int) ?string {
 
 // resolve_entity_name returns the localized name of a cookie or pet (user
 // lang with en fallback); '' when no translation exists.
+// cookie_id_by_name resolves a cookie by its localized name (exact match in
+// the requested language, then en); 0 when no cookie has that name. Used by
+// the rich-text [[Cookie Name]] link renderer.
+pub fn cookie_id_by_name(conn sqlite.DB, user_lang string, cookie_name string) int {
+	trs := sql conn {
+		select from models.CookieTranslation where name == cookie_name && (lang == user_lang || lang == 'en')
+	} or { return 0 }
+	if trs.len == 0 {
+		return 0
+	}
+	// prefer the requested language over en
+	for tr in trs {
+		if tr.lang == user_lang {
+			return tr.owner_id
+		}
+	}
+	return trs.first().owner_id
+}
+
 fn resolve_entity_name(conn sqlite.DB, kind string, id int, lang string) string {
 	user_lang := lang
 	if kind == 'pet' {
