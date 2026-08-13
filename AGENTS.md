@@ -22,14 +22,15 @@ The repository implements a web platform written in V (V Language) using a speci
 - **`database/`**: Contains database schema definitions and model mappings.
 - **`app/`**: Controllers and high‑level request handlers.
 - **`templates/`**: `views/` full pages, `components/` shared partials (cards, effect cards, treasure variants, search results), `layout/` navbar/head, `admin/` forms. The shared-partials dir was renamed from `partials/` to `components/`.
-- **`scripts/seed_data.json`**: The only tracked file in `scripts/` — a committed DB fixture. A fresh DB seeds itself from it via `seed_if_empty()` in `database/database.v`, so regenerate it whenever data or DB translations change. All other files in `scripts/` are untracked scraper/seed scripts — never commit them (user preference). Wiki data is fetched with `curl` via the MediaWiki API (`action=query&prop=revisions&rvprop=content`), not the fetch tool.
+- **`scripts/seed_data.json`**: The only tracked file in `scripts/` — a committed DB fixture. A fresh DB seeds itself from it via `seed_if_empty()` in `database/database.v`, so regenerate it whenever data or DB translations change. All other files in `scripts/` are untracked scraper/seed scripts — never commit them (user preference). Wiki data is fetched with `curl` via the MediaWiki API (`action=query&prop=revisions&rvprop=content`), not the fetch tool. Test/admin POST round-trips mutate the live DB — when regenerating the fixture, diff against HEAD so only intended changes land (test drift has been baked in twice).
 - **`translations/{en,th}.tr`**: Translation keys consumed via `ctx.tr()`.
 
 ## Development Commands
 - **Run:** `v -d sqlite_fts5 -d new_veb -enable-globals run .` — all three flags are required: `-d sqlite_fts5` enables SQLITE_ENABLE_FTS5, `-d new_veb` selects the new veb backend, `-enable-globals` for app globals. Omitting `-d new_veb` falls back to the legacy veb backend.
-- **Build/typecheck:** `v -d sqlite_fts5 -d new_veb -enable-globals -o /tmp/cr_test.exe .` — exit 0 means clean. Name ad-hoc test binaries `cr_test(.exe)` (user preference). V "notice:" messages (e.g. implicit slice clone in `database/select.v`) are warnings, not errors; silence with an explicit `.clone()` or `unsafe{a[..]}`.
+- **Build/typecheck:** `v -d sqlite_fts5 -d new_veb -enable-globals -o /tmp/cr_test.exe .` — exit 0 means clean. Name ad-hoc test binaries `cr_test(.exe)` (user preference). V "notice:" messages (e.g. implicit slice clone in `database/select.v`) are warnings, not errors; silence with an explicit `.clone()` or `unsafe{a[..]}`. The running dev server (`watch run`) locks `cookierun.exe` — always build to `/tmp` (`-o /tmp/cr_test.exe`), or ld fails with `Permission denied`.
 - **Server:** binds 0.0.0.0:6785 (`Config.toml`). Restart detached: kill the old PID, then `(v -d sqlite_fts5 -d new_veb -enable-globals run . > /tmp/cr_server.log 2>&1 &)`. Replacing a registered preview stops the old server.
 - **Test session (debug builds only):** `CR_TEST=1 v -d sqlite_fts5 -d new_veb -d debug -enable-globals run .` — boots against a fresh throwaway `sqlite_test.db` on port 6798 (`CR_TEST_PORT`/`CR_TEST_DB` overridable), runs the data-integrity + HTTP suite, exits 0 on pass / 1 on fail. The session is compiled out unless `-d debug` is passed, so release binaries never contain it.
+- **V comptime gates (this fork):** `$if x` checks *builtin* flags (needs `-g`/`-debug`); `-d` defines use `$if x ?` — the session gate is `$if debug ?`. `-prod` is inert for comptime (`$if prod` stays false even with `-prod`), so gate debug-only features with `-d debug` + `$if debug ?`.
 - **Package manager:** use bun/bunx, never node/npm/npx (user preference).
 
 ## Code Conventions & Common Patterns
@@ -41,12 +42,14 @@ The repository implements a web platform written in V (V Language) using a speci
 - **Grade model** (`database/models/grade.v`): `enum Grade as u8` ordered `e, c, b, a, s, s_plus, l` — E ("Extra") ranks ABOVE L ("Legend"). Ordering/tooltips come from `grade_values` + `grade_name()`. V enums convert via `.from('x')` / `.from(1)` and `.str()`. `treasure.grade` is `?int` — `none` means no wiki grade, no badge.
 - **List pages** (cookies/pets/treasures): server-paginated infinite scroll (htmx `revealed`) + client-side filters; filters must re-apply to newly fetched content. Ordered by id, newest first; unknown release dates sort last (sentinel date + name tie-break).
 - **Treasure effects**: stored in one table with a `state` column (normal/evo/blessed) — not separate tables. Base/evo variants are linked and rendered from shared `templates/components/` partials; the list page has all/normal/evolved tabs (default All) with a prominent "evolved" badge.
+- **Combi bonus effects reuse the same `effect` table** via `combi_bonus.effect_id` (`find_or_create_effect` dedupes) — combo phrases are mostly treasure phrases, so no separate text column.
+- **veb `@include` takes no params** — shared form components read the caller's `@for` scope (e.g. `@e.name`); clone `<template>`s loop a typed one-element array (e.g. `[state.empty_effect]`). Static `name` attrs live in a JS `renumber()` that runs on init/add/remove/submit so one component serves several containers.
 
 ## Important Files
 - **`database/models/*.v`**: Source of truth for schema definition and invariants.
 - **`app/cookies.v`**: Example controller handling GET (view) vs POST (submission).
 - **`app/app.v`**: `img_src()` returns the local image path or a `placehold.co` placeholder URL when missing — templates must use it, never build image paths directly.
-- **`app/update.v` / `database/update.v`**: the detail-page edit feature. Admin routes (`/new/*`) are admin-only; test admin credentials are `test`/`test`.
+- **`app/update.v` / `database/update.v`**: the detail-page edit feature. Admin routes (`/new/*`) are admin-only; test admin credentials are `test`/`test`. Unauthenticated access to admin routes returns **404**, not 401/403 — tests assert this.
 - **`templates/views/cookies.html`**: Entry point for cookie management UI.
 - **`README.md`** (if present): Project setup instructions.
 
@@ -64,6 +67,8 @@ The repository implements a web platform written in V (V Language) using a speci
   - htmx's `changed` trigger dedupes identical input values — re-typing the same query won't re-fire; use a fresh value or reload.
   - Search debounce is `hx-trigger="input changed delay:300ms"`; the loading indicator uses `hx-indicator` + `not-[.hidden]` classes.
   - Default FTS5 doesn't tokenize Thai — Thai queries in the search box are a known gap; a Thai-aware tokenizer/search path is still pending.
+  - Repeated `veb_livereload` hot reloads eventually inject the checker twice (`SyntaxError: Identifier 'veb_livereload_checker' has already been declared`), breaking page JS/htmx — a hard reload fixes it.
+  - The preview browser keeps its own session — curl cookie jars don't transfer; log in through the preview UI. The login POST sets `wikilang` *before* `CRSESSID`, so match the session cookie by name, not by order.
 
 ## Testing & QA
 - Test frameworks: None currently defined; a default test suite will be added after initial development.

@@ -310,6 +310,22 @@ pub fn format_effect_value(value ?int, value_min ?int, value_max ?int, unit mode
 	return ''
 }
 
+// format_effect_bare_value renders the bare number/range without a unit
+// suffix ("5", "2-3") for substitution into {value} placeholders — the unit
+// word/symbol lives in each language's translation text.
+pub fn format_effect_bare_value(value ?int, value_min ?int, value_max ?int) string {
+	if mn := value_min {
+		if mx := value_max {
+			return '${mn}-${mx}'
+		}
+		return '${mn}'
+	}
+	if v := value {
+		return '${v}'
+	}
+	return ''
+}
+
 pub fn get_treasure(conn sqlite.DB, lang string, id int) !TreasureView {
 	if id <= 0 {
 		return error('invalid treasure id')
@@ -820,10 +836,21 @@ fn effects_from_links(conn sqlite.DB, lang string, links []models.TreasureEffect
 		}
 		emitted[link.effect_id] = true
 		if tr := translation_map[link.effect_id] {
+			value := format_effect_bare_value(link.value, link.value_min, link.value_max)
+			mut name := tr.name
+			// {value}-placeholder names substitute the link's own structured
+			// value (unit stays in the text), and drop the duplicate badge.
+			mut value_display := format_effect_value(link.value, link.value_min, link.value_max, link.unit)
+			if tr.name.contains('{value}') {
+				if value != '' {
+					name = tr.name.replace('{value}', value)
+				}
+				value_display = ''
+			}
 			result << EffectView{
 				effect_id:     link.effect_id
-				name:          tr.name
-				value_display: format_effect_value(link.value, link.value_min, link.value_max, link.unit)
+				name:          name
+				value_display: value_display
 			}
 		}
 	}

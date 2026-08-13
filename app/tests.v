@@ -95,6 +95,10 @@ pub fn run_test_session() {
 			run:  test_effect_value_parse
 		},
 		TestCase{
+			name: 'effect {value} placeholder substitution'
+			run:  test_effect_placeholder
+		},
+		TestCase{
 			name: 'rich text rendering'
 			run:  test_rich_text
 		},
@@ -125,6 +129,10 @@ pub fn run_test_session() {
 		TestCase{
 			name: 'admin login'
 			run:  test_admin_login
+		},
+		TestCase{
+			name: 'effect {value} placeholder submission guards'
+			run:  test_placeholder_submission_guards
 		},
 		TestCase{
 			name: 'admin creates cookie with treasure'
@@ -304,6 +312,126 @@ fn test_effect_value_parse(mut tc TestContext) ! {
 		if _ := parse_effect_value(bad) {
 			return error('parse ${bad}: expected an error')
 		}
+	}
+}
+
+fn test_effect_placeholder(mut tc TestContext) ! {
+	// invariant: every effect whose links carry a structured value must have
+	// {value} in its translations — numbers live on the link (per treasure/
+	// per state), not baked into the text, so identical effects dedupe
+	// no GROUP BY: COUNT always yields a row, even when the invariant holds
+	// (zero offending translations) — `[0]` on an empty result would panic
+	bad := tc.db.exec('SELECT COUNT(*) AS n FROM effect_translation et JOIN treasure_effect te ON te.effect_id = et.effect_id WHERE (te.value IS NOT NULL OR te.value_min IS NOT NULL OR te.value_max IS NOT NULL) AND et.name NOT LIKE "%{value}%"')![0].get_int('n')
+	if bad > 0 {
+		return error('${bad} structured-value effect translations lack the {value} placeholder')
+	}
+	// substitution: the merged Base-speed effect (496) renders its per-state
+	// value — treasure 482 normal is 6%, blessed 8% — with no literal token
+	effects := database.get_treasure_effects(tc.db, 'en', 482)!
+	mut saw := false
+	for e in effects {
+		if e.name.contains('{value}') {
+			return error('placeholder token leaked into rendered name: ${e.name}')
+		}
+		if e.name == 'Base speed 6%' {
+			saw = true
+		}
+		// the value badge must be suppressed: the name already carries it
+		if e.name.contains('Base speed') && e.value_display != '' {
+			return error('duplicate value badge on placeholder effect: ${e.value_display}')
+		}
+	}
+	if !saw {
+		return error('expected "Base speed 6%" on treasure 482, got ${effects}')
+	}
+	// th renders the unit in Thai word order
+	th := database.get_treasure_effects(tc.db, 'th', 482)!
+	mut saw_th := false
+	for e in th {
+		if e.name == 'ความเร็วพื้นฐาน 6%' {
+			saw_th = true
+		}
+	}
+	if !saw_th {
+		return error('expected th "ความเร็วพื้นฐาน 6%" on treasure 482, got ${th}')
+	}
+	// bare formatter: no unit suffix — the unit lives in the translation text
+	bare := database.format_effect_bare_value(6, none, none)
+	if bare != '6' {
+		return error('format_effect_bare_value(6) = ${bare}, want 6')
+	}
+	rng := database.format_effect_bare_value(none, 2, 3)
+	if rng != '2-3' {
+		return error('format_effect_bare_value range = ${rng}, want 2-3')
+	}
+}
+
+fn test_placeholder_submission_guards(mut tc TestContext) ! {
+	if tc.session_cookie == '' {
+		return error('run admin login first')
+	}
+	// a {value}-placeholder treasure effect submitted without a value would
+	// render a literal "{value}" token on the page — reject at submit
+	resp := http.fetch(
+		method: .post
+		url:    '${tc.base}/treasures/new'
+		header: http.new_header(key: .content_type, value: 'application/x-www-form-urlencoded')
+		data:   http.url_encode_form_data({
+			'name':            'Guard Test Treasure'
+			'effects_name_0':  'Base speed increased by {value}%'
+			'effects_value_0': ''
+		})
+		cookies: {
+			session_cookie_key: tc.session_cookie
+		}
+	) or { return error('guard test: treasure POST: ${err}') }
+	if resp.status_code != 400 {
+		return error('guard test: placeholder treasure effect without value expected 400, got ${resp.status_code}')
+	}
+	// same name WITH a value is the normal flow — must still be accepted
+	ok := http.fetch(
+		method: .post
+		url:    '${tc.base}/treasures/new'
+		header: http.new_header(key: .content_type, value: 'application/x-www-form-urlencoded')
+		data:   http.url_encode_form_data({
+			'name':            'Guard Test Treasure'
+			'effects_name_0':  'Base speed increased by {value}%'
+			'effects_value_0': '7%'
+		})
+		cookies: {
+			session_cookie_key: tc.session_cookie
+		}
+	) or { return error('guard test: valid treasure POST: ${err}') }
+	if ok.status_code != 200 {
+		return error('guard test: placeholder effect WITH value expected 200, got ${ok.status_code}')
+	}
+	// a combo bonus has no per-link value, so a placeholder name must be
+	// rejected there outright
+	tid := tc.db.exec('SELECT treasure_id FROM treasure ORDER BY treasure_id LIMIT 1')![0].get_int('treasure_id')
+	pid := tc.db.exec('SELECT pet_id FROM pet ORDER BY pet_id LIMIT 1')![0].get_int('pet_id')
+	resp2 := http.fetch(
+		method: .post
+		url:    '${tc.base}/cookies/new'
+		header: http.new_header(key: .content_type, value: 'application/x-www-form-urlencoded')
+		data:   http.url_encode_form_data({
+			'name':                'Guard Test Cookie'
+			'abilities':           'Test abilities'
+			'grade':               'c'
+			'unlock_treasure_id':  '${tid}'
+			'new_combi_partner_0': '${pid}'
+			'new_combi_effect_0':  'Base speed increased by {value}%'
+		})
+		cookies: {
+			session_cookie_key: tc.session_cookie
+		}
+	) or { return error('guard test: cookie POST: ${err}') }
+	if resp2.status_code != 400 {
+		return error('guard test: placeholder combi effect expected 400, got ${resp2.status_code}')
+	}
+	// and the treasure POST must not have leaked a row through the failed guard
+	n := tc.db.exec("SELECT COUNT(*) AS n FROM treasure_translation WHERE name = 'Guard Test Treasure'")![0].get_int('n')
+	if n != 1 {
+		return error('guard test: valid placeholder treasure created ${n} rows, want 1')
 	}
 }
 

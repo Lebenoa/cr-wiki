@@ -20749,9 +20749,6 @@
    "effect_id": 437
   },
   {
-   "effect_id": 438
-  },
-  {
    "effect_id": 439
   },
   {
@@ -20906,9 +20903,6 @@
   },
   {
    "effect_id": 497
-  },
-  {
-   "effect_id": 498
   },
   {
    "effect_id": 499
@@ -21658,9 +21652,6 @@
    "effect_id": 790
   },
   {
-   "effect_id": 791
-  },
-  {
    "effect_id": 792
   },
   {
@@ -21886,36 +21877,36 @@
    "effect_translation_id": 12,
    "effect_id": 12,
    "lang": "en",
-   "name": "'S': Gains 5000 Experience Points upon use",
-   "description": "'S': Gains 5000 Experience Points upon use"
+   "name": "'S': Gains {value} Experience Points upon use",
+   "description": "'S': Gains {value} Experience Points upon use"
   },
   {
    "effect_translation_id": 13,
    "effect_id": 13,
    "lang": "en",
-   "name": "'M': Gains 9000 Experience Points upon use",
-   "description": "'M': Gains 9000 Experience Points upon use"
+   "name": "'M': Gains {value} Experience Points upon use",
+   "description": "'M': Gains {value} Experience Points upon use"
   },
   {
    "effect_translation_id": 14,
    "effect_id": 14,
    "lang": "en",
-   "name": "'L': Gains 13000 Experience Points upon use",
-   "description": "'L': Gains 13000 Experience Points upon use"
+   "name": "'L': Gains {value} Experience Points upon use",
+   "description": "'L': Gains {value} Experience Points upon use"
   },
   {
    "effect_translation_id": 15,
    "effect_id": 15,
    "lang": "en",
-   "name": "'XL': Gains 30000 Experience Points upon use",
-   "description": "'XL': Gains 30000 Experience Points upon use"
+   "name": "'XL': Gains {value} Experience Points upon use",
+   "description": "'XL': Gains {value} Experience Points upon use"
   },
   {
    "effect_translation_id": 16,
    "effect_id": 16,
    "lang": "en",
-   "name": "'XXL': Gains 50000 Experience Points upon use",
-   "description": "'XXL': Gains 50000 Experience Points upon use"
+   "name": "'XXL': Gains {value} Experience Points upon use",
+   "description": "'XXL': Gains {value} Experience Points upon use"
   },
   {
    "effect_translation_id": 17,
@@ -21935,8 +21926,8 @@
    "effect_translation_id": 20,
    "effect_id": 20,
    "lang": "en",
-   "name": "Base speed increased by 5%",
-   "description": "Base speed increased by 5%"
+   "name": "Base speed increased by {value}%",
+   "description": "Base speed increased by {value}%"
   },
   {
    "effect_translation_id": 21,
@@ -22152,8 +22143,8 @@
    "effect_translation_id": 57,
    "effect_id": 57,
    "lang": "en",
-   "name": "Jumps 1 more time",
-   "description": "Jumps 1 more time"
+   "name": "Jumps {value} more time",
+   "description": "Jumps {value} more time"
   },
   {
    "effect_translation_id": 58,
@@ -22194,8 +22185,8 @@
    "effect_translation_id": 64,
    "effect_id": 64,
    "lang": "en",
-   "name": "2 seconds of Blast after taking Sun Jelly",
-   "description": "2 seconds of Blast after taking Sun Jelly"
+   "name": "{value} seconds of Blast after taking Sun Jelly",
+   "description": "{value} seconds of Blast after taking Sun Jelly"
   },
   {
    "effect_translation_id": 65,
@@ -22404,8 +22395,8 @@
    "effect_translation_id": 96,
    "effect_id": 96,
    "lang": "en",
-   "name": "5% more energy from Potions",
-   "description": "5% more energy from Potions"
+   "name": "{value}% more energy from Potions",
+   "description": "{value}% more energy from Potions"
   },
   {
    "effect_translation_id": 97,
@@ -22418,8 +22409,8 @@
    "effect_translation_id": 98,
    "effect_id": 98,
    "lang": "en",
-   "name": "Energy drains 5% slower",
-   "description": "Energy drains 5% slower"
+   "name": "Energy drains {value}% slower",
+   "description": "Energy drains {value}% slower"
   },
   {
    "effect_translation_id": 99,
@@ -22957,8 +22948,8 @@
    "effect_translation_id": 181,
    "effect_id": 181,
    "lang": "en",
-   "name": "10% extra XP",
-   "description": "10% extra XP"
+   "name": "{value}% extra XP",
+   "description": "{value}% extra XP"
   },
   {
    "effect_translation_id": 182,
@@ -23202,8 +23193,8 @@
    "effect_translation_id": 219,
    "effect_id": 219,
    "lang": "en",
-   "name": "With upgrades Energy drains 1% slower",
-   "description": "With upgrades Energy drains 1% slower"
+   "name": "With upgrades Energy drains {value}% slower",
+   "description": "With upgrades Energy drains {value}% slower"
   },
   {
    "effect_translation_id": 220,
@@ -23216,8 +23207,8 @@
    "effect_translation_id": 221,
    "effect_id": 221,
    "lang": "en",
-   "name": "1 lift from a hole",
-   "description": "1 lift from a hole"
+   "name": "{value} lift from a hole",
+   "description": "{value} lift from a hole"
   },
   {
    "effect_translation_id": 222,
@@ -23244,8 +23235,8 @@
    "effect_translation_id": 225,
    "effect_id": 225,
    "lang": "en",
-   "name": "Eliminates all obstacles prior to hit: 1 time",
-   "description": "Eliminates all obstacles prior to hit: 1 time"
+   "name": "Eliminates all obstacles prior to hit: {value} time",
+   "description": "Eliminates all obstacles prior to hit: {value} time"
   },
   {
    "effect_translation_id": 227,
@@ -23272,8 +23263,8 @@
    "effect_translation_id": 230,
    "effect_id": 230,
    "lang": "en",
-   "name": "Recovers Energy if hit an obstacle: 1 time",
-   "description": "Recovers Energy if hit an obstacle: 1 time"
+   "name": "Recovers Energy if hit an obstacle: {value} time",
+   "description": "Recovers Energy if hit an obstacle: {value} time"
   },
   {
    "effect_translation_id": 231,
@@ -23314,8 +23305,8 @@
    "effect_translation_id": 236,
    "effect_id": 236,
    "lang": "en",
-   "name": "2 seconds of Giant mode after taking a Potion",
-   "description": "2 seconds of Giant mode after taking a Potion"
+   "name": "{value} seconds of Giant mode after taking a Potion",
+   "description": "{value} seconds of Giant mode after taking a Potion"
   },
   {
    "effect_translation_id": 237,
@@ -23923,8 +23914,8 @@
    "effect_translation_id": 328,
    "effect_id": 328,
    "lang": "en",
-   "name": "Revives or lifts from holes once with 50 Energy",
-   "description": "Revives or lifts from holes once with 50 Energy"
+   "name": "Revives or lifts from holes once with {value} Energy",
+   "description": "Revives or lifts from holes once with {value} Energy"
   },
   {
    "effect_translation_id": 329,
@@ -23979,8 +23970,8 @@
    "effect_translation_id": 337,
    "effect_id": 337,
    "lang": "en",
-   "name": "5% chance of a Jellyco Missile falling",
-   "description": "5% chance of a Jellyco Missile falling"
+   "name": "{value}% chance of a Jellyco Missile falling",
+   "description": "{value}% chance of a Jellyco Missile falling"
   },
   {
    "effect_translation_id": 338,
@@ -24056,8 +24047,8 @@
    "effect_translation_id": 350,
    "effect_id": 350,
    "lang": "en",
-   "name": "10% extra Blast speed",
-   "description": "10% extra Blast speed"
+   "name": "{value}% extra Blast speed",
+   "description": "{value}% extra Blast speed"
   },
   {
    "effect_translation_id": 351,
@@ -24084,8 +24075,8 @@
    "effect_translation_id": 354,
    "effect_id": 354,
    "lang": "en",
-   "name": "Revives once with 20 energy",
-   "description": "Revives once with 20 energy"
+   "name": "Revives once with {value} energy",
+   "description": "Revives once with {value} energy"
   },
   {
    "effect_translation_id": 355,
@@ -24098,15 +24089,15 @@
    "effect_translation_id": 356,
    "effect_id": 356,
    "lang": "en",
-   "name": "Revives twice with 20 energy",
-   "description": "Revives twice with 20 energy"
+   "name": "Revives twice with {value} energy",
+   "description": "Revives twice with {value} energy"
   },
   {
    "effect_translation_id": 357,
    "effect_id": 357,
    "lang": "en",
-   "name": "Blast Speed increased by 10%",
-   "description": "Blast Speed increased by 10%"
+   "name": "Blast Speed increased by {value}%",
+   "description": "Blast Speed increased by {value}%"
   },
   {
    "effect_translation_id": 358,
@@ -24385,8 +24376,8 @@
    "effect_translation_id": 401,
    "effect_id": 401,
    "lang": "en",
-   "name": "2 seconds extra Bonus Time",
-   "description": "2 seconds extra Bonus Time"
+   "name": "{value} seconds extra Bonus Time",
+   "description": "{value} seconds extra Bonus Time"
   },
   {
    "effect_translation_id": 402,
@@ -24595,8 +24586,8 @@
    "effect_translation_id": 433,
    "effect_id": 433,
    "lang": "en",
-   "name": "Giant Jelly lasts 10% longer",
-   "description": "Giant Jelly lasts 10% longer"
+   "name": "Giant Jelly lasts {value}% longer",
+   "description": "Giant Jelly lasts {value}% longer"
   },
   {
    "effect_translation_id": 434,
@@ -24616,22 +24607,15 @@
    "effect_translation_id": 436,
    "effect_id": 436,
    "lang": "en",
-   "name": "With upgrades gives 500 extra points for Macaron Parade Jelly",
-   "description": "With upgrades gives 500 extra points for Macaron Parade Jelly"
+   "name": "With upgrades gives {value} extra points for Macaron Parade Jelly",
+   "description": "With upgrades gives {value} extra points for Macaron Parade Jelly"
   },
   {
    "effect_translation_id": 437,
    "effect_id": 437,
    "lang": "en",
-   "name": "With upgrades revives once with 50 energy",
-   "description": "With upgrades revives once with 50 energy"
-  },
-  {
-   "effect_translation_id": 438,
-   "effect_id": 438,
-   "lang": "en",
-   "name": "With upgrades revives once with 60 energy",
-   "description": "With upgrades revives once with 60 energy"
+   "name": "With upgrades revives once with {value} energy",
+   "description": "With upgrades revives once with {value} energy"
   },
   {
    "effect_translation_id": 439,
@@ -24763,8 +24747,8 @@
    "effect_translation_id": 461,
    "effect_id": 461,
    "lang": "en",
-   "name": "Power Jellies last 10% longer",
-   "description": "Power Jellies last 10% longer"
+   "name": "Power Jellies last {value}% longer",
+   "description": "Power Jellies last {value}% longer"
   },
   {
    "effect_translation_id": 462,
@@ -24987,8 +24971,8 @@
    "effect_translation_id": 496,
    "effect_id": 496,
    "lang": "en",
-   "name": "Base speed 6%",
-   "description": "Base speed 6%"
+   "name": "Base speed {value}%",
+   "description": "Base speed {value}%"
   },
   {
    "effect_translation_id": 497,
@@ -24996,13 +24980,6 @@
    "lang": "en",
    "name": "With upgrades 30-75 extra Energy during Cookie Relays",
    "description": "With upgrades 30-75 extra Energy during Cookie Relays"
-  },
-  {
-   "effect_translation_id": 498,
-   "effect_id": 498,
-   "lang": "en",
-   "name": "Base speed 8%",
-   "description": "Base speed 8%"
   },
   {
    "effect_translation_id": 499,
@@ -25386,8 +25363,8 @@
    "effect_translation_id": 558,
    "effect_id": 558,
    "lang": "en",
-   "name": "2 lifts from a hole",
-   "description": "2 lifts from a hole"
+   "name": "{value} lifts from a hole",
+   "description": "{value} lifts from a hole"
   },
   {
    "effect_translation_id": 559,
@@ -26170,8 +26147,8 @@
    "effect_translation_id": 690,
    "effect_id": 690,
    "lang": "en",
-   "name": "Lifts from hole 3 times",
-   "description": "Lifts from hole 3 times"
+   "name": "Lifts from hole {value} times",
+   "description": "Lifts from hole {value} times"
   },
   {
    "effect_translation_id": 691,
@@ -26233,8 +26210,8 @@
    "effect_translation_id": 702,
    "effect_id": 702,
    "lang": "en",
-   "name": "Eliminates all obstacles 2 times prior to collision",
-   "description": "Eliminates all obstacles 2 times prior to collision"
+   "name": "Eliminates all obstacles {value} times prior to collision",
+   "description": "Eliminates all obstacles {value} times prior to collision"
   },
   {
    "effect_translation_id": 703,
@@ -26247,15 +26224,15 @@
    "effect_translation_id": 704,
    "effect_id": 704,
    "lang": "en",
-   "name": "Recovers Energy 2 times when colliding with an obstacle",
-   "description": "Recovers Energy 2 times when colliding with an obstacle"
+   "name": "Recovers Energy {value} times when colliding with an obstacle",
+   "description": "Recovers Energy {value} times when colliding with an obstacle"
   },
   {
    "effect_translation_id": 707,
    "effect_id": 707,
    "lang": "en",
-   "name": "10% Base speed decrease during Cookie Relay",
-   "description": "10% Base speed decrease during Cookie Relay"
+   "name": "{value}% Base speed decrease during Cookie Relay",
+   "description": "{value}% Base speed decrease during Cookie Relay"
   },
   {
    "effect_translation_id": 708,
@@ -26317,15 +26294,15 @@
    "effect_translation_id": 720,
    "effect_id": 720,
    "lang": "en",
-   "name": "With upgrades, Energy drain 5% slower",
-   "description": "With upgrades, Energy drain 5% slower"
+   "name": "With upgrades, Energy drain {value}% slower",
+   "description": "With upgrades, Energy drain {value}% slower"
   },
   {
    "effect_translation_id": 721,
    "effect_id": 721,
    "lang": "en",
-   "name": "With upgrades, 13% more Energy recovery",
-   "description": "With upgrades, 13% more Energy recovery"
+   "name": "With upgrades, {value}% more Energy recovery",
+   "description": "With upgrades, {value}% more Energy recovery"
   },
   {
    "effect_translation_id": 722,
@@ -26506,8 +26483,8 @@
    "effect_translation_id": 750,
    "effect_id": 750,
    "lang": "en",
-   "name": "1 Revive with X HP",
-   "description": "1 Revive with X HP"
+   "name": "{value} Revive with X HP",
+   "description": "{value} Revive with X HP"
   },
   {
    "effect_translation_id": 751,
@@ -26555,8 +26532,8 @@
    "effect_translation_id": 759,
    "effect_id": 759,
    "lang": "en",
-   "name": "1 second extra in Bonus Time",
-   "description": "1 second extra in Bonus Time"
+   "name": "{value} second extra in Bonus Time",
+   "description": "{value} second extra in Bonus Time"
   },
   {
    "effect_translation_id": 761,
@@ -26723,8 +26700,8 @@
    "effect_translation_id": 787,
    "effect_id": 787,
    "lang": "en",
-   "name": "Jumps 2 times more",
-   "description": "Jumps 2 times more"
+   "name": "Jumps {value} times more",
+   "description": "Jumps {value} times more"
   },
   {
    "effect_translation_id": 788,
@@ -26744,15 +26721,8 @@
    "effect_translation_id": 790,
    "effect_id": 790,
    "lang": "en",
-   "name": "40 extra Energy",
-   "description": "40 extra Energy"
-  },
-  {
-   "effect_translation_id": 791,
-   "effect_id": 791,
-   "lang": "en",
-   "name": "60 extra Energy",
-   "description": "60 extra Energy"
+   "name": "{value} extra Energy",
+   "description": "{value} extra Energy"
   },
   {
    "effect_translation_id": 792,
@@ -26786,8 +26756,8 @@
    "effect_translation_id": 796,
    "effect_id": 796,
    "lang": "en",
-   "name": "With upgrades gives 1 extra seconds in Bonus Time",
-   "description": "With upgrades gives 1 extra seconds in Bonus Time"
+   "name": "With upgrades gives {value} extra seconds in Bonus Time",
+   "description": "With upgrades gives {value} extra seconds in Bonus Time"
   },
   {
    "effect_translation_id": 797,
@@ -26954,8 +26924,8 @@
    "effect_translation_id": 822,
    "effect_id": 822,
    "lang": "en",
-   "name": "10% longer Blasts",
-   "description": "10% longer Blasts"
+   "name": "{value}% longer Blasts",
+   "description": "{value}% longer Blasts"
   },
   {
    "effect_translation_id": 823,
@@ -27010,8 +26980,8 @@
    "effect_translation_id": 831,
    "effect_id": 831,
    "lang": "en",
-   "name": "Pet grows 2x bigger during Bonus Time",
-   "description": "Pet grows 2x bigger during Bonus Time"
+   "name": "Pet grows {value}x bigger during Bonus Time",
+   "description": "Pet grows {value}x bigger during Bonus Time"
   },
   {
    "effect_translation_id": 832,
@@ -27171,36 +27141,36 @@
    "effect_translation_id": 861,
    "effect_id": 12,
    "lang": "th",
-   "name": "'S': รับคะแนนประสบการณ์ 5000 เมื่อใช้",
-   "description": "'S': รับคะแนนประสบการณ์ 5000 เมื่อใช้"
+   "name": "'S': รับคะแนนประสบการณ์ {value} เมื่อใช้",
+   "description": "'S': รับคะแนนประสบการณ์ {value} เมื่อใช้"
   },
   {
    "effect_translation_id": 862,
    "effect_id": 13,
    "lang": "th",
-   "name": "'M': รับคะแนนประสบการณ์ 9000 เมื่อใช้",
-   "description": "'M': รับคะแนนประสบการณ์ 9000 เมื่อใช้"
+   "name": "'M': รับคะแนนประสบการณ์ {value} เมื่อใช้",
+   "description": "'M': รับคะแนนประสบการณ์ {value} เมื่อใช้"
   },
   {
    "effect_translation_id": 863,
    "effect_id": 14,
    "lang": "th",
-   "name": "'L': รับคะแนนประสบการณ์ 13000 เมื่อใช้",
-   "description": "'L': รับคะแนนประสบการณ์ 13000 เมื่อใช้"
+   "name": "'L': รับคะแนนประสบการณ์ {value} เมื่อใช้",
+   "description": "'L': รับคะแนนประสบการณ์ {value} เมื่อใช้"
   },
   {
    "effect_translation_id": 864,
    "effect_id": 15,
    "lang": "th",
-   "name": "'XL': รับคะแนนประสบการณ์ 30000 เมื่อใช้",
-   "description": "'XL': รับคะแนนประสบการณ์ 30000 เมื่อใช้"
+   "name": "'XL': รับคะแนนประสบการณ์ {value} เมื่อใช้",
+   "description": "'XL': รับคะแนนประสบการณ์ {value} เมื่อใช้"
   },
   {
    "effect_translation_id": 865,
    "effect_id": 16,
    "lang": "th",
-   "name": "'XXL': รับคะแนนประสบการณ์ 50000 เมื่อใช้",
-   "description": "'XXL': รับคะแนนประสบการณ์ 50000 เมื่อใช้"
+   "name": "'XXL': รับคะแนนประสบการณ์ {value} เมื่อใช้",
+   "description": "'XXL': รับคะแนนประสบการณ์ {value} เมื่อใช้"
   },
   {
    "effect_translation_id": 866,
@@ -27220,8 +27190,8 @@
    "effect_translation_id": 869,
    "effect_id": 20,
    "lang": "th",
-   "name": "ความเร็วพื้นฐานเพิ่มขึ้น 5%",
-   "description": "ความเร็วพื้นฐานเพิ่มขึ้น 5%"
+   "name": "ความเร็วพื้นฐานเพิ่มขึ้น {value}%",
+   "description": "ความเร็วพื้นฐานเพิ่มขึ้น {value}%"
   },
   {
    "effect_translation_id": 870,
@@ -27402,8 +27372,8 @@
    "effect_translation_id": 900,
    "effect_id": 57,
    "lang": "th",
-   "name": "กระโดดเพิ่ม 1 ครั้ง",
-   "description": "กระโดดเพิ่ม 1 ครั้ง"
+   "name": "กระโดดเพิ่ม {value} ครั้ง",
+   "description": "กระโดดเพิ่ม {value} ครั้ง"
   },
   {
    "effect_translation_id": 901,
@@ -27444,8 +27414,8 @@
    "effect_translation_id": 907,
    "effect_id": 64,
    "lang": "th",
-   "name": "บลาสต์ 2 วินาทีหลังกินซันเยลลี่",
-   "description": "บลาสต์ 2 วินาทีหลังกินซันเยลลี่"
+   "name": "บลาสต์ {value} วินาทีหลังกินซันเยลลี่",
+   "description": "บลาสต์ {value} วินาทีหลังกินซันเยลลี่"
   },
   {
    "effect_translation_id": 908,
@@ -27633,15 +27603,15 @@
    "effect_translation_id": 936,
    "effect_id": 96,
    "lang": "th",
-   "name": "พลังงานเพิ่มขึ้น 5% จากโพชัน",
-   "description": "พลังงานเพิ่มขึ้น 5% จากโพชัน"
+   "name": "พลังงานเพิ่มขึ้น {value}% จากโพชัน",
+   "description": "พลังงานเพิ่มขึ้น {value}% จากโพชัน"
   },
   {
    "effect_translation_id": 937,
    "effect_id": 98,
    "lang": "th",
-   "name": "พลังงานลดลงช้าลง 5%",
-   "description": "พลังงานลดลงช้าลง 5%"
+   "name": "พลังงานลดลงช้าลง {value}%",
+   "description": "พลังงานลดลงช้าลง {value}%"
   },
   {
    "effect_translation_id": 938,
@@ -28053,8 +28023,8 @@
    "effect_translation_id": 1001,
    "effect_id": 181,
    "lang": "th",
-   "name": "เอ็กซ์พีพิเศษ 10%",
-   "description": "เอ็กซ์พีพิเศษ 10%"
+   "name": "เอ็กซ์พีพิเศษ {value}%",
+   "description": "เอ็กซ์พีพิเศษ {value}%"
   },
   {
    "effect_translation_id": 1002,
@@ -28179,8 +28149,8 @@
    "effect_translation_id": 1022,
    "effect_id": 219,
    "lang": "th",
-   "name": "อัปเกรดแล้ว พลังงานลดลงช้าลง 1%",
-   "description": "อัปเกรดแล้ว พลังงานลดลงช้าลง 1%"
+   "name": "อัปเกรดแล้ว พลังงานลดลงช้าลง {value}%",
+   "description": "อัปเกรดแล้ว พลังงานลดลงช้าลง {value}%"
   },
   {
    "effect_translation_id": 1023,
@@ -28193,8 +28163,8 @@
    "effect_translation_id": 1024,
    "effect_id": 221,
    "lang": "th",
-   "name": "ยกขึ้นจากหลุม 1 ครั้ง",
-   "description": "ยกขึ้นจากหลุม 1 ครั้ง"
+   "name": "ยกขึ้นจากหลุม {value} ครั้ง",
+   "description": "ยกขึ้นจากหลุม {value} ครั้ง"
   },
   {
    "effect_translation_id": 1025,
@@ -28690,15 +28660,15 @@
    "effect_translation_id": 1102,
    "effect_id": 356,
    "lang": "th",
-   "name": "ฟื้นคืนชีพสองครั้งด้วยพลังงาน 20",
-   "description": "ฟื้นคืนชีพสองครั้งด้วยพลังงาน 20"
+   "name": "ฟื้นคืนชีพสองครั้งด้วยพลังงาน {value}",
+   "description": "ฟื้นคืนชีพสองครั้งด้วยพลังงาน {value}"
   },
   {
    "effect_translation_id": 1103,
    "effect_id": 357,
    "lang": "th",
-   "name": "ความเร็วบลาสต์เพิ่มขึ้น 10%",
-   "description": "ความเร็วบลาสต์เพิ่มขึ้น 10%"
+   "name": "ความเร็วบลาสต์เพิ่มขึ้น {value}%",
+   "description": "ความเร็วบลาสต์เพิ่มขึ้น {value}%"
   },
   {
    "effect_translation_id": 1104,
@@ -29117,15 +29087,8 @@
    "effect_translation_id": 1168,
    "effect_id": 437,
    "lang": "th",
-   "name": "อัปเกรดแล้ว ฟื้นคืนชีพครั้งเดียวด้วยพลังงาน 50",
-   "description": "อัปเกรดแล้ว ฟื้นคืนชีพครั้งเดียวด้วยพลังงาน 50"
-  },
-  {
-   "effect_translation_id": 1169,
-   "effect_id": 438,
-   "lang": "th",
-   "name": "อัปเกรดแล้ว ฟื้นคืนชีพครั้งเดียวด้วยพลังงาน 60",
-   "description": "อัปเกรดแล้ว ฟื้นคืนชีพครั้งเดียวด้วยพลังงาน 60"
+   "name": "อัปเกรดแล้ว ฟื้นคืนชีพครั้งเดียวด้วยพลังงาน {value}",
+   "description": "อัปเกรดแล้ว ฟื้นคืนชีพครั้งเดียวด้วยพลังงาน {value}"
   },
   {
    "effect_translation_id": 1170,
@@ -29236,8 +29199,8 @@
    "effect_translation_id": 1186,
    "effect_id": 461,
    "lang": "th",
-   "name": "พาวเวอร์เยลลี่คงอยู่นานขึ้น 10%",
-   "description": "พาวเวอร์เยลลี่คงอยู่นานขึ้น 10%"
+   "name": "พาวเวอร์เยลลี่คงอยู่นานขึ้น {value}%",
+   "description": "พาวเวอร์เยลลี่คงอยู่นานขึ้น {value}%"
   },
   {
    "effect_translation_id": 1187,
@@ -29453,8 +29416,8 @@
    "effect_translation_id": 1220,
    "effect_id": 496,
    "lang": "th",
-   "name": "ความเร็วพื้นฐาน 6%",
-   "description": "ความเร็วพื้นฐาน 6%"
+   "name": "ความเร็วพื้นฐาน {value}%",
+   "description": "ความเร็วพื้นฐาน {value}%"
   },
   {
    "effect_translation_id": 1221,
@@ -29462,13 +29425,6 @@
    "lang": "th",
    "name": "อัปเกรดแล้ว พลังงานพิเศษ 30-75 ระหว่างรีเลย์คุกกี้",
    "description": "อัปเกรดแล้ว พลังงานพิเศษ 30-75 ระหว่างรีเลย์คุกกี้"
-  },
-  {
-   "effect_translation_id": 1222,
-   "effect_id": 498,
-   "lang": "th",
-   "name": "ความเร็วพื้นฐาน 8%",
-   "description": "ความเร็วพื้นฐาน 8%"
   },
   {
    "effect_translation_id": 1223,
@@ -29796,8 +29752,8 @@
    "effect_translation_id": 1274,
    "effect_id": 558,
    "lang": "th",
-   "name": "ยกขึ้นจากหลุม 2 ครั้ง",
-   "description": "ยกขึ้นจากหลุม 2 ครั้ง"
+   "name": "ยกขึ้นจากหลุม {value} ครั้ง",
+   "description": "ยกขึ้นจากหลุม {value} ครั้ง"
   },
   {
    "effect_translation_id": 1275,
@@ -30370,8 +30326,8 @@
    "effect_translation_id": 1372,
    "effect_id": 690,
    "lang": "th",
-   "name": "ยกขึ้นจากหลุม 3 ครั้ง",
-   "description": "ยกขึ้นจากหลุม 3 ครั้ง"
+   "name": "ยกขึ้นจากหลุม {value} ครั้ง",
+   "description": "ยกขึ้นจากหลุม {value} ครั้ง"
   },
   {
    "effect_translation_id": 1373,
@@ -30475,15 +30431,15 @@
    "effect_translation_id": 1395,
    "effect_id": 720,
    "lang": "th",
-   "name": "อัปเกรดแล้ว พลังงานลดลงช้าลง 5%",
-   "description": "อัปเกรดแล้ว พลังงานลดลงช้าลง 5%"
+   "name": "อัปเกรดแล้ว พลังงานลดลงช้าลง {value}%",
+   "description": "อัปเกรดแล้ว พลังงานลดลงช้าลง {value}%"
   },
   {
    "effect_translation_id": 1396,
    "effect_id": 721,
    "lang": "th",
-   "name": "อัปเกรดแล้ว ฟื้นฟูพลังงานเพิ่มขึ้น 13%",
-   "description": "อัปเกรดแล้ว ฟื้นฟูพลังงานเพิ่มขึ้น 13%"
+   "name": "อัปเกรดแล้ว ฟื้นฟูพลังงานเพิ่มขึ้น {value}%",
+   "description": "อัปเกรดแล้ว ฟื้นฟูพลังงานเพิ่มขึ้น {value}%"
   },
   {
    "effect_translation_id": 1397,
@@ -30657,8 +30613,8 @@
    "effect_translation_id": 1423,
    "effect_id": 759,
    "lang": "th",
-   "name": "โบนัสไทม์เพิ่ม 1 วินาที",
-   "description": "โบนัสไทม์เพิ่ม 1 วินาที"
+   "name": "โบนัสไทม์เพิ่ม {value} วินาที",
+   "description": "โบนัสไทม์เพิ่ม {value} วินาที"
   },
   {
    "effect_translation_id": 1424,
@@ -30811,15 +30767,8 @@
    "effect_translation_id": 1448,
    "effect_id": 790,
    "lang": "th",
-   "name": "พลังงานพิเศษ 40",
-   "description": "พลังงานพิเศษ 40"
-  },
-  {
-   "effect_translation_id": 1449,
-   "effect_id": 791,
-   "lang": "th",
-   "name": "พลังงานพิเศษ 60",
-   "description": "พลังงานพิเศษ 60"
+   "name": "พลังงานพิเศษ {value}",
+   "description": "พลังงานพิเศษ {value}"
   },
   {
    "effect_translation_id": 1450,
@@ -30853,8 +30802,8 @@
    "effect_translation_id": 1454,
    "effect_id": 796,
    "lang": "th",
-   "name": "อัปเกรดแล้ว โบนัสไทม์เพิ่ม 1 วินาที",
-   "description": "อัปเกรดแล้ว โบนัสไทม์เพิ่ม 1 วินาที"
+   "name": "อัปเกรดแล้ว โบนัสไทม์เพิ่ม {value} วินาที",
+   "description": "อัปเกรดแล้ว โบนัสไทม์เพิ่ม {value} วินาที"
   },
   {
    "effect_translation_id": 1455,
@@ -31476,8 +31425,8 @@
    "effect_translation_id": 1552,
    "effect_id": 225,
    "lang": "th",
-   "name": "กำจัดอุปสรรคทั้งหมดก่อนการชน: 1 ครั้ง",
-   "description": "กำจัดอุปสรรคทั้งหมดก่อนการชน: 1 ครั้ง"
+   "name": "กำจัดอุปสรรคทั้งหมดก่อนการชน: {value} ครั้ง",
+   "description": "กำจัดอุปสรรคทั้งหมดก่อนการชน: {value} ครั้ง"
   },
   {
    "effect_translation_id": 1553,
@@ -31497,8 +31446,8 @@
    "effect_translation_id": 1555,
    "effect_id": 230,
    "lang": "th",
-   "name": "ฟื้นฟูพลังงานเมื่อชนอุปสรรค: 1 ครั้ง",
-   "description": "ฟื้นฟูพลังงานเมื่อชนอุปสรรค: 1 ครั้ง"
+   "name": "ฟื้นฟูพลังงานเมื่อชนอุปสรรค: {value} ครั้ง",
+   "description": "ฟื้นฟูพลังงานเมื่อชนอุปสรรค: {value} ครั้ง"
   },
   {
    "effect_translation_id": 1556,
@@ -31518,8 +31467,8 @@
    "effect_translation_id": 1558,
    "effect_id": 236,
    "lang": "th",
-   "name": "โหมดไจแอนท์ 2 วินาทีหลังใช้โพชัน",
-   "description": "โหมดไจแอนท์ 2 วินาทีหลังใช้โพชัน"
+   "name": "โหมดไจแอนท์ {value} วินาทีหลังใช้โพชัน",
+   "description": "โหมดไจแอนท์ {value} วินาทีหลังใช้โพชัน"
   },
   {
    "effect_translation_id": 1559,
@@ -31777,8 +31726,8 @@
    "effect_translation_id": 1597,
    "effect_id": 328,
    "lang": "th",
-   "name": "ฟื้นคืนชีพหรือยกขึ้นจากหลุมครั้งเดียวด้วยพลังงาน 50",
-   "description": "ฟื้นคืนชีพหรือยกขึ้นจากหลุมครั้งเดียวด้วยพลังงาน 50"
+   "name": "ฟื้นคืนชีพหรือยกขึ้นจากหลุมครั้งเดียวด้วยพลังงาน {value}",
+   "description": "ฟื้นคืนชีพหรือยกขึ้นจากหลุมครั้งเดียวด้วยพลังงาน {value}"
   },
   {
    "effect_translation_id": 1598,
@@ -31812,8 +31761,8 @@
    "effect_translation_id": 1602,
    "effect_id": 337,
    "lang": "th",
-   "name": "โอกาส 5% ที่มิสไซล์เจลลีโคจะหล่น",
-   "description": "โอกาส 5% ที่มิสไซล์เจลลีโคจะหล่น"
+   "name": "โอกาส {value}% ที่มิสไซล์เจลลีโคจะหล่น",
+   "description": "โอกาส {value}% ที่มิสไซล์เจลลีโคจะหล่น"
   },
   {
    "effect_translation_id": 1603,
@@ -31833,15 +31782,15 @@
    "effect_translation_id": 1605,
    "effect_id": 350,
    "lang": "th",
-   "name": "ความเร็วบลาสต์พิเศษ 10%",
-   "description": "ความเร็วบลาสต์พิเศษ 10%"
+   "name": "ความเร็วบลาสต์พิเศษ {value}%",
+   "description": "ความเร็วบลาสต์พิเศษ {value}%"
   },
   {
    "effect_translation_id": 1606,
    "effect_id": 354,
    "lang": "th",
-   "name": "ฟื้นคืนชีพครั้งเดียวด้วยพลังงาน 20",
-   "description": "ฟื้นคืนชีพครั้งเดียวด้วยพลังงาน 20"
+   "name": "ฟื้นคืนชีพครั้งเดียวด้วยพลังงาน {value}",
+   "description": "ฟื้นคืนชีพครั้งเดียวด้วยพลังงาน {value}"
   },
   {
    "effect_translation_id": 1607,
@@ -31896,8 +31845,8 @@
    "effect_translation_id": 1614,
    "effect_id": 401,
    "lang": "th",
-   "name": "โบนัสไทม์เพิ่ม 2 วินาที",
-   "description": "โบนัสไทม์เพิ่ม 2 วินาที"
+   "name": "โบนัสไทม์เพิ่ม {value} วินาที",
+   "description": "โบนัสไทม์เพิ่ม {value} วินาที"
   },
   {
    "effect_translation_id": 1615,
@@ -31917,8 +31866,8 @@
    "effect_translation_id": 1617,
    "effect_id": 433,
    "lang": "th",
-   "name": "เยลลี่ไจแอนท์คงอยู่นานขึ้น 10%",
-   "description": "เยลลี่ไจแอนท์คงอยู่นานขึ้น 10%"
+   "name": "เยลลี่ไจแอนท์คงอยู่นานขึ้น {value}%",
+   "description": "เยลลี่ไจแอนท์คงอยู่นานขึ้น {value}%"
   },
   {
    "effect_translation_id": 1618,
@@ -31938,8 +31887,8 @@
    "effect_translation_id": 1620,
    "effect_id": 436,
    "lang": "th",
-   "name": "อัปเกรดแล้ว คะแนนพิเศษ 500 สำหรับเยลลี่ขบวนมาการอง",
-   "description": "อัปเกรดแล้ว คะแนนพิเศษ 500 สำหรับเยลลี่ขบวนมาการอง"
+   "name": "อัปเกรดแล้ว คะแนนพิเศษ {value} สำหรับเยลลี่ขบวนมาการอง",
+   "description": "อัปเกรดแล้ว คะแนนพิเศษ {value} สำหรับเยลลี่ขบวนมาการอง"
   },
   {
    "effect_translation_id": 1624,
@@ -32253,22 +32202,22 @@
    "effect_translation_id": 1673,
    "effect_id": 702,
    "lang": "th",
-   "name": "กำจัดอุปสรรคทั้งหมด 2 ครั้งก่อนการชน",
-   "description": "กำจัดอุปสรรคทั้งหมด 2 ครั้งก่อนการชน"
+   "name": "กำจัดอุปสรรคทั้งหมด {value} ครั้งก่อนการชน",
+   "description": "กำจัดอุปสรรคทั้งหมด {value} ครั้งก่อนการชน"
   },
   {
    "effect_translation_id": 1674,
    "effect_id": 704,
    "lang": "th",
-   "name": "ฟื้นฟูพลังงาน 2 ครั้งเมื่อชนอุปสรรค",
-   "description": "ฟื้นฟูพลังงาน 2 ครั้งเมื่อชนอุปสรรค"
+   "name": "ฟื้นฟูพลังงาน {value} ครั้งเมื่อชนอุปสรรค",
+   "description": "ฟื้นฟูพลังงาน {value} ครั้งเมื่อชนอุปสรรค"
   },
   {
    "effect_translation_id": 1675,
    "effect_id": 707,
    "lang": "th",
-   "name": "ความเร็วพื้นฐานลดลง 10% ระหว่างรีเลย์คุกกี้",
-   "description": "ความเร็วพื้นฐานลดลง 10% ระหว่างรีเลย์คุกกี้"
+   "name": "ความเร็วพื้นฐานลดลง {value}% ระหว่างรีเลย์คุกกี้",
+   "description": "ความเร็วพื้นฐานลดลง {value}% ระหว่างรีเลย์คุกกี้"
   },
   {
    "effect_translation_id": 1676,
@@ -32323,8 +32272,8 @@
    "effect_translation_id": 1686,
    "effect_id": 750,
    "lang": "th",
-   "name": "ฟื้นคืนชีพ 1 ครั้งด้วยพลังชีวิต X",
-   "description": "ฟื้นคืนชีพ 1 ครั้งด้วยพลังชีวิต X"
+   "name": "ฟื้นคืนชีพ {value} ครั้งด้วยพลังชีวิต X",
+   "description": "ฟื้นคืนชีพ {value} ครั้งด้วยพลังชีวิต X"
   },
   {
    "effect_translation_id": 1687,
@@ -32365,22 +32314,22 @@
    "effect_translation_id": 1693,
    "effect_id": 787,
    "lang": "th",
-   "name": "กระโดดเพิ่ม 2 ครั้ง",
-   "description": "กระโดดเพิ่ม 2 ครั้ง"
+   "name": "กระโดดเพิ่ม {value} ครั้ง",
+   "description": "กระโดดเพิ่ม {value} ครั้ง"
   },
   {
    "effect_translation_id": 1694,
    "effect_id": 822,
    "lang": "th",
-   "name": "บลาสต์ยาวนานขึ้น 10%",
-   "description": "บลาสต์ยาวนานขึ้น 10%"
+   "name": "บลาสต์ยาวนานขึ้น {value}%",
+   "description": "บลาสต์ยาวนานขึ้น {value}%"
   },
   {
    "effect_translation_id": 1696,
    "effect_id": 831,
    "lang": "th",
-   "name": "สัตว์เลี้ยงโตขึ้น 2 เท่าในโบนัสไทม์",
-   "description": "สัตว์เลี้ยงโตขึ้น 2 เท่าในโบนัสไทม์"
+   "name": "สัตว์เลี้ยงโตขึ้น {value} เท่าในโบนัสไทม์",
+   "description": "สัตว์เลี้ยงโตขึ้น {value} เท่าในโบนัสไทม์"
   },
   {
    "effect_translation_id": 1697,
@@ -40491,7 +40440,7 @@
   {
    "treasure_effect_id": 1179,
    "treasure_id": 436,
-   "effect_id": 438,
+   "effect_id": 437,
    "value": 60,
    "value_min": null,
    "value_max": null,
@@ -40901,7 +40850,7 @@
   {
    "treasure_effect_id": 1220,
    "treasure_id": 482,
-   "effect_id": 498,
+   "effect_id": 496,
    "value": 8,
    "value_min": null,
    "value_max": null,
@@ -43071,7 +43020,7 @@
   {
    "treasure_effect_id": 1437,
    "treasure_id": 718,
-   "effect_id": 791,
+   "effect_id": 790,
    "value": 60,
    "value_min": null,
    "value_max": null,

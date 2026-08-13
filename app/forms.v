@@ -313,6 +313,12 @@ fn parse_effect_inputs(mut ctx Context, prefix string) ![]database.EffectInput {
 		parts := parse_effect_value(value_str) or {
 			return error('Effect ${i + 1}: ${err.msg()}')
 		}
+		// {value}-placeholder names must carry a value on the link — the page
+		// substitutes it into the text, so a placeholder without a value would
+		// render as a literal "{value}" token
+		if name.contains('{value}') && parts.value == none && parts.value_min == none && parts.value_max == none {
+			return error('Effect ${i + 1}: name uses a {value} placeholder but no value was entered')
+		}
 		effects << database.EffectInput{
 			name:      name
 			value:     parts.value

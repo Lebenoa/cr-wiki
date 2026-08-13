@@ -61,6 +61,12 @@ fn combi_effect_id(conn sqlite.DB, lang string, name string) !int {
 	if n == '' {
 		return 0
 	}
+	// {value}-placeholder names need a per-link value (substituted at render),
+	// which a combo bonus has no field for — reject so the raw token can never
+	// reach readers
+	if n.contains('{value}') {
+		return error('combi effect "${n}" uses a {value} placeholder, which needs a per-link value a combo bonus does not carry')
+	}
 	return find_or_create_effect(conn, lang, n)
 }
 
