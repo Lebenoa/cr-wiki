@@ -56,14 +56,24 @@ fn value_delta(normal string, blessed string) string {
 		return ''
 	}
 	d := bn - nn
+	// snap binary-float noise to 3 decimals: 1.2 - 1.0 computes as
+	// 0.19999999999999996 and V prints the full expansion, so the rounded
+	// value is formatted instead (the data carries at most 2 dp)
+	mut d2 := d * 1000
+	d2 = if d2 >= 0 {
+		f64(int(d2 + 0.5))
+	} else {
+		f64(int(d2 - 0.5))
+	}
+	d2 /= 1000
 	unit := if nunit != '' { nunit } else { bunit }
 	mut txt := ''
-	if d == f64(int(d)) {
-		txt = '${int(d)}'
+	if d2 == f64(int(d2)) {
+		txt = '${int(d2)}'
 	} else {
-		txt = '${d}'
+		txt = '${d2}'
 	}
-	if d > 0 {
+	if d2 > 0 {
 		txt = '+' + txt
 	}
 	return txt + unit

@@ -490,6 +490,17 @@ fn test_effect_pairs(mut tc TestContext) ! {
 	if one[0].value0 != '' || one[0].value9 != '' {
 		return error('treasure 1 values = ${one[0].value0}/${one[0].value9}, want empty/empty')
 	}
+	// binary-float noise: 0.5 - 0.3 computes as 0.19999999999999996;
+	// the delta must snap to a clean +0.2, not the full f64 expansion
+	// (values are name-baked: "0.3-0.8" normal -> "0.5-1.0" blessed, row 1)
+	d432 := util.blessed_diffs(database.get_treasure_effects(tc.db, 'en', 432)!,
+		database.get_treasure_blessed_effects(tc.db, 'en', 432)!)
+	if d432[0].diff0 != '0%' || d432[0].diff9 != '0%' {
+		return error('432 same-text delta = ${d432[0].diff0}/${d432[0].diff9}, want 0%/0%')
+	}
+	if d432[1].diff0 != '+0.2' || d432[1].diff9 != '+0.2' {
+		return error('432 blessed delta = ${d432[1].diff0}/${d432[1].diff9}, want +0.2/+0.2')
+	}
 }
 
 fn test_placeholder_submission_guards(mut tc TestContext) ! {
