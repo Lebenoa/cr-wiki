@@ -4,6 +4,7 @@ import veb
 import api
 import database
 import database.models
+import app.util
 
 pub fn (wapp &App) treasures(mut ctx Context) veb.Result {
 	ctx.set_translate_title('treasures_page_title')
@@ -89,7 +90,7 @@ pub fn (wapp &App) treasure_info(mut ctx Context, id int) veb.Result {
 	effects := database.get_treasure_effects(wapp.db, ctx.lang, id) or { [] }
 	// blessed-state effects (same table, state column); empty for non-evolved.
 	// Their columns carry the per-level delta vs the normal state.
-	blessed_effects := database.blessed_diffs(effects,
+	blessed_effects := util.blessed_diffs(effects,
 		database.get_treasure_blessed_effects(wapp.db, ctx.lang, id) or { [] })
 	// the linked variant is the base for evolved rows, the evolved form for
 	// normal rows; the two are mutually exclusive, so a single optional

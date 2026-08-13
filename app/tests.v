@@ -7,6 +7,7 @@ import db.sqlite
 import veb
 import database
 import database.models
+import app.util
 
 // TestContext carries the shared state of one test session: the server base
 // URL and the fresh test database. The session cookie is captured by the
@@ -377,7 +378,7 @@ fn test_effect_pairs(mut tc TestContext) ! {
 	if effects[0].name != 'Base speed' || effects[0].value0 != '6%' || effects[0].value9 != '6%' {
 		return error('482 effect0 = ${effects[0]}, want Base speed 6%/6%')
 	}
-	if effects[1].name != 'With upgrades extra Energy during Cookie Relays' {
+	if effects[1].name != 'extra Energy during Cookie Relays' {
 		return error('482 effect1 name = ${effects[1].name}, want stripped text')
 	}
 	if effects[1].value0 != '30' || effects[1].value9 != '75' {
@@ -393,7 +394,7 @@ fn test_effect_pairs(mut tc TestContext) ! {
 	}
 	// blessed tab shows the per-column delta vs the normal state: 6%->8% and
 	// 30->40 / 75->85; raw values stay available on the same rows
-	diffs := database.blessed_diffs(effects, blessed)
+	diffs := util.blessed_diffs(effects, blessed)
 	if diffs[0].diff0 != '+2%' || diffs[0].diff9 != '+2%' {
 		return error('482 blessed delta0 = ${diffs[0].diff0}/${diffs[0].diff9}, want +2%/+2%')
 	}
@@ -404,7 +405,7 @@ fn test_effect_pairs(mut tc TestContext) ! {
 		return error('482 blessed delta1 = ${diffs[1].diff0}/${diffs[1].diff9}, want +10/+10')
 	}
 	// unchanged values delta to 0; missing normal counterpart keeps its value
-	d398 := database.blessed_diffs(database.get_treasure_effects(tc.db, 'en', 398)!,
+	d398 := util.blessed_diffs(database.get_treasure_effects(tc.db, 'en', 398)!,
 		database.get_treasure_blessed_effects(tc.db, 'en', 398)!)
 	if d398[0].diff0 != '0' || d398[0].diff9 != '0' {
 		return error('398 blessed delta0 = ${d398[0].diff0}/${d398[0].diff9}, want 0/0')
@@ -412,8 +413,22 @@ fn test_effect_pairs(mut tc TestContext) ! {
 	if d398[1].diff0 != '' || d398[1].diff9 != '' {
 		return error('398 unpaired blessed = ${d398[1].diff0}/${d398[1].diff9}, want no diff')
 	}
+	// same value but different text: the blessed text carries a word diff
+	d434 := util.blessed_diffs(database.get_treasure_effects(tc.db, 'en', 434)!,
+		database.get_treasure_blessed_effects(tc.db, 'en', 434)!)
+	if d434[1].diff0 != '0' || d434[1].diff9 != '0' {
+		return error('434 blessed values = ${d434[1].diff0}/${d434[1].diff9}, want 0/0')
+	}
+	dh := d434[1].name_html.str()
+	if !dh.contains('<del') || !dh.contains('>Intermediate<') || !dh.contains('<ins') || !dh.contains('>Advanced<') {
+		return error('434 blessed text diff = ${dh}, want Intermediate struck + Advanced added')
+	}
+	// identical texts carry no diff HTML
+	if d434[0].name_html.str() != '' {
+		return error('434 same-text blessed = ${d434[0].name_html.str()}, want empty')
+	}
 	// Thai values parse the same way (suffix-aware, byte-safe)
-	thd := database.blessed_diffs(database.get_treasure_effects(tc.db, 'th', 482)!,
+	thd := util.blessed_diffs(database.get_treasure_effects(tc.db, 'th', 482)!,
 		database.get_treasure_blessed_effects(tc.db, 'th', 482)!)
 	if thd[0].diff0 != '+2%' || thd[1].diff0 != '+10' {
 		return error('482 th blessed deltas = ${thd[0].diff0}/${thd[1].diff0}, want +2%/+10')
@@ -437,7 +452,7 @@ fn test_effect_pairs(mut tc TestContext) ! {
 	if q[0].value0 != '3%' || q[0].value9 != '4%' {
 		return error('390 effect0 values = ${q[0].value0}/${q[0].value9}, want 3%/4%')
 	}
-	if q[0].name != 'With upgrades, Energy drain slower' {
+	if q[0].name != 'Energy Drain slower' {
 		return error('390 effect0 name = ${q[0].name}, want stripped text')
 	}
 	// dangling preposition: the value stays in the text instead of dangling
@@ -453,7 +468,7 @@ fn test_effect_pairs(mut tc TestContext) ! {
 	if th[0].name != 'ความเร็วพื้นฐาน' || th[0].value0 != '6%' {
 		return error('482 th effect0 = ${th[0]}, want "ความเร็วพื้นฐาน" 6%')
 	}
-	if th[1].name != 'อัปเกรดแล้ว พลังงานพิเศษ ระหว่างรีเลย์คุกกี้' {
+	if th[1].name != 'พลังงานพิเศษ ระหว่างรีเลย์คุกกี้' {
 		return error('482 th effect1 name = ${th[1].name}, want intact Thai text')
 	}
 	if th[1].value0 != '30' || th[1].value9 != '75' {
@@ -464,8 +479,8 @@ fn test_effect_pairs(mut tc TestContext) ! {
 	if one.len != 1 {
 		return error('treasure 1 effects = ${one.len}, want 1')
 	}
-	if one[0].name != 'With upgrades get more and more performance points' {
-		return error('treasure 1 name = ${one[0].name}, want untouched')
+	if one[0].name != 'get more and more performance points' {
+		return error('treasure 1 name = ${one[0].name}, want upgraded prefix stripped')
 	}
 	if one[0].value0 != '' || one[0].value9 != '' {
 		return error('treasure 1 values = ${one[0].value0}/${one[0].value9}, want empty/empty')

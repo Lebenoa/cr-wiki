@@ -77,9 +77,10 @@
                     @endif
                 </div>
                 <div id="effects-normal" class="mt-2">
-                    <div class="grid grid-cols-2 px-4 py-1.5 rounded-t-xl bg-secondary/10">
+                    <div class="grid grid-cols-[4rem_4rem_1fr] px-4 py-1.5 rounded-t-xl bg-secondary/10">
                         <span class="text-center text-xs font-label text-foreground-muted uppercase">+0</span>
                         <span class="text-center text-xs font-label text-foreground-muted uppercase">+9</span>
+                        <span></span>
                     </div>
                     <div class="mt-2 flex flex-col gap-2">
                         @for effect in effects
@@ -89,9 +90,10 @@
                 </div>
                 @if blessed_effects.len > 0
                 <div id="effects-blessed" class="blessed-effect mt-2 hidden">
-                    <div class="grid grid-cols-2 px-4 py-1.5 rounded-t-xl bg-secondary/10">
+                    <div class="grid grid-cols-[4rem_4rem_1fr] px-4 py-1.5 rounded-t-xl bg-secondary/10">
                         <span class="text-center text-xs font-label text-foreground-muted uppercase">Δ+0</span>
                         <span class="text-center text-xs font-label text-foreground-muted uppercase">Δ+9</span>
+                        <span></span>
                     </div>
                     <div class="mt-2 flex flex-col gap-2">
                         @for effect in blessed_effects

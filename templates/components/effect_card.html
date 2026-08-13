@@ -1,17 +1,19 @@
-<div class="effect-card p-4 rounded-xl border-l-4 border-primary">
-    <div class="grid grid-cols-2 gap-2 text-center">
-        <span class="text-accent font-bold">
-            @effect.value0
-            @if effect.diff0 != ''
-            <span class="text-foreground-muted">(@effect.diff0)</span>
-            @endif
-        </span>
-        <span class="text-accent font-bold">
-            @effect.value9
-            @if effect.diff9 != ''
-            <span class="text-foreground-muted">(@effect.diff9)</span>
-            @endif
-        </span>
-    </div>
-    <p class="mt-1 text-center text-on-surface">@effect.name</p>
+<div class="effect-card grid grid-cols-[4rem_4rem_1fr] items-center gap-2 p-4 rounded-xl border-l-4 border-primary">
+    <span class="text-center text-accent font-bold">
+        @effect.value0
+        @if effect.diff0 != ''
+        <span class="text-foreground-muted">(@effect.diff0)</span>
+        @endif
+    </span>
+    <span class="text-center text-accent font-bold">
+        @effect.value9
+        @if effect.diff9 != ''
+        <span class="text-foreground-muted">(@effect.diff9)</span>
+        @endif
+    </span>
+    @if effect.name_html != ''
+    <p class="text-on-surface">@effect.name_html</p>
+    @else
+    <p class="text-on-surface">@effect.name</p>
+    @endif
 </div>
