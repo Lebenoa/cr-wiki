@@ -467,13 +467,48 @@ fn unlock_entity_image(conn sqlite.DB, kind string, id int) ?string {
 // the requested language, then en); 0 when no cookie has that name. Used by
 // the rich-text [[Cookie Name]] link renderer.
 pub fn cookie_id_by_name(conn sqlite.DB, user_lang string, cookie_name string) int {
+	return entity_id_by_name(conn, 'cookie', user_lang, cookie_name)
+}
+
+// entity_id_by_name resolves any linkable entity by its localized name (exact
+// match in the requested language, then en fallback); 0 when nothing matches.
+// kind is 'cookie' | 'pet' | 'treasure' — the rich-text [[kind:Name]] syntax.
+pub fn entity_id_by_name(conn sqlite.DB, kind string, user_lang string, name string) int {
+	nname := name
+	if kind == 'pet' {
+		trs := sql conn {
+			select from models.PetTranslation where name == nname && (lang == user_lang || lang == 'en')
+		} or { return 0 }
+		if trs.len == 0 {
+			return 0
+		}
+		for tr in trs {
+			if tr.lang == user_lang {
+				return tr.pet_id
+			}
+		}
+		return trs.first().pet_id
+	}
+	if kind == 'treasure' {
+		trs := sql conn {
+			select from models.TreasureTranslation where name == nname && (lang == user_lang || lang == 'en')
+		} or { return 0 }
+		if trs.len == 0 {
+			return 0
+		}
+		for tr in trs {
+			if tr.lang == user_lang {
+				return tr.treasure_id
+			}
+		}
+		return trs.first().treasure_id
+	}
 	trs := sql conn {
-		select from models.CookieTranslation where name == cookie_name && (lang == user_lang || lang == 'en')
+		select from models.CookieTranslation where name == nname && (lang == user_lang || lang == 'en')
 	} or { return 0 }
 	if trs.len == 0 {
 		return 0
 	}
-	// prefer the requested language over en
 	for tr in trs {
 		if tr.lang == user_lang {
 			return tr.owner_id
@@ -1545,25 +1580,69 @@ pub fn effect_names(conn sqlite.DB, lang string) ![]string {
 	return names
 }
 
-// cookie_richtext_names lists the distinct cookie names that render_rich_text
-// can resolve for `lang`: that language's names plus the en fallback (the same
-// match set cookie_id_by_name uses). It feeds the `[[` autocomplete in the
-// admin rich-text fields.
-pub fn cookie_richtext_names(conn sqlite.DB, lang string) []string {
-	plang := lang
-	translations := sql conn {
-		select from models.CookieTranslation where lang == plang || lang == 'en' order by name
-	} or { return [] }
+// sort_dedupe_names orders options by name (ties by id) and keeps only the
+// first option per name. The rich-text resolver resolves ambiguous names to
+// its first match, so the autocomplete and preview offer the same one.
+fn sort_dedupe_names(opts []IdNameOption) []IdNameOption {
+	mut sorted := opts.clone()
+	sorted.sort_with_compare(fn (a &IdNameOption, b &IdNameOption) int {
+		if a.name < b.name {
+			return -1
+		}
+		if a.name > b.name {
+			return 1
+		}
+		if a.id < b.id {
+			return -1
+		}
+		if a.id > b.id {
+			return 1
+		}
+		return 0
+	})
 	mut seen := map[string]bool{}
-	mut names := []string{}
-	for tr in translations {
-		n := tr.name.trim_space()
-		if n != '' && n !in seen {
-			names << n
-			seen[n] = true
+	mut out := []IdNameOption{}
+	for o in sorted {
+		if o.name != '' && o.name !in seen {
+			out << o
+			seen[o.name] = true
 		}
 	}
-	return names
+	return out
+}
+
+// richtext_names lists the id + localized name of every linkable entity of one
+// kind that render_rich_text can resolve for `lang`: that language's rows plus
+// the en fallback (the same match set entity_id_by_name uses — a th form can
+// link en-named entities and vice versa). It feeds the `[[kind:Name]]`
+// autocomplete and the live rich-text preview; the ids let the preview build
+// real hrefs. kind defaults to 'cookie'.
+pub fn richtext_names(conn sqlite.DB, lang string, kind string) []IdNameOption {
+	plang := lang
+	mut opts := []IdNameOption{}
+	if kind == 'pet' {
+		rows := sql conn {
+			select from models.PetTranslation where lang == plang || lang == 'en'
+		} or { return [] }
+		for r in rows {
+			opts << IdNameOption{id: r.pet_id, name: r.name.trim_space()}
+		}
+	} else if kind == 'treasure' {
+		rows := sql conn {
+			select from models.TreasureTranslation where lang == plang || lang == 'en'
+		} or { return [] }
+		for r in rows {
+			opts << IdNameOption{id: r.treasure_id, name: r.name.trim_space()}
+		}
+	} else {
+		rows := sql conn {
+			select from models.CookieTranslation where lang == plang || lang == 'en'
+		} or { return [] }
+		for r in rows {
+			opts << IdNameOption{id: r.owner_id, name: r.name.trim_space()}
+		}
+	}
+	return sort_dedupe_names(opts)
 }
 
 pub fn get_cookie(conn sqlite.DB, lang string, id int) !CookieView {

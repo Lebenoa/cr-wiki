@@ -23,7 +23,8 @@ pub fn (wapp &App) available_lang(mut ctx Context) veb.Result {
 @['/api/richtext-names']
 pub fn (wapp &App) richtext_names(mut ctx Context) veb.Result {
 	lang := ctx.query['lang'] or { 'en' }
-	return ctx.json(database.cookie_richtext_names(wapp.db, lang))
+	kind := ctx.query['kind'] or { 'cookie' }
+	return ctx.json(database.richtext_names(wapp.db, lang, kind))
 }
 
 @['/api/set-lang'; post]

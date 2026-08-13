@@ -4,6 +4,7 @@ import os
 import time
 import net.http
 import db.sqlite
+import encoding.html
 import veb
 import database
 import database.models
@@ -570,6 +571,33 @@ fn test_rich_text(mut tc TestContext) ! {
 	if !html1.contains(expected) {
 		return error('rich text: [[name]] did not become a cookie link, got: ${html1}')
 	}
+	// [[pet:Name]] / [[treasure:Name]] -> links to the pet/treasure pages;
+	// the kind prefix is syntax, not link text
+	prow := tc.db.exec('SELECT name, pet_id FROM pet_translation WHERE lang = "en" LIMIT 1')![0]
+	pname := prow.get_string('name')
+	pid := prow.get_int('pet_id')
+	html1b := render_rich_text(tc.db, 'en', 'see [[pet:${pname}]] here')
+	if !html1b.contains('<a href="/pets/${pid}"') || !html1b.contains('>${pname}</a>') {
+		return error('rich text: [[pet:name]] did not become a pet link, got: ${html1b}')
+	}
+	trow := tc.db.exec('SELECT name, treasure_id FROM treasure_translation WHERE lang = "en" LIMIT 1')![0]
+	trname := trow.get_string('name')
+	tid := trow.get_int('treasure_id')
+	html1c := render_rich_text(tc.db, 'en', 'see [[treasure:${trname}]] here')
+	// the link text is HTML-escaped (apostrophes render as &#39;)
+	if !html1c.contains('<a href="/treasures/${tid}"') || !html1c.contains('>${html.escape(trname)}</a>') {
+		return error('rich text: [[treasure:name]] did not become a treasure link, got: ${html1c}')
+	}
+	// explicit cookie: prefix behaves like the bare form
+	html1d := render_rich_text(tc.db, 'en', 'see [[cookie:${name}]] here')
+	if !html1d.contains('<a href="/cookies/${row.get_string('owner_id')}"') {
+		return error('rich text: [[cookie:name]] did not become a cookie link, got: ${html1d}')
+	}
+	// unknown kind prefix stays literal ("gadget:Name" is not a cookie name)
+	html1e := render_rich_text(tc.db, 'en', 'see [[gadget:${name}]] here')
+	if html1e.contains('<a href=') {
+		return error('rich text: unknown kind prefix must stay literal, got: ${html1e}')
+	}
 	// {color:x}text{/color} -> colored span
 	html2 := render_rich_text(tc.db, 'en', 'a {color:red}red{/color} word')
 	if !html2.contains('<span style="color:red">red</span>') {
@@ -611,8 +639,8 @@ fn test_richtext_autocomplete(mut tc TestContext) ! {
 	resp := http.get('${tc.base}/api/richtext-names?lang=en') or {
 		return error('GET /api/richtext-names en: ${err}')
 	}
-	if !resp.body.contains(name) {
-		return error('richtext autocomplete: en list missing "${name}", got: ${resp.body}')
+	if !resp.body.contains(name) || !resp.body.contains('"id"') {
+		return error('richtext autocomplete: en list missing "${name}"/id, got: ${resp.body}')
 	}
 	// the th list carries th names plus the en fallback (render_rich_text's
 	// resolution set), so authors in either language can link
@@ -630,6 +658,30 @@ fn test_richtext_autocomplete(mut tc TestContext) ! {
 	}
 	if !resp3.body.contains(name) {
 		return error('richtext autocomplete: unknown-lang list missing "${name}", got: ${resp3.body}')
+	}
+	// kind=pet / kind=treasure return their own rosters
+	prow := tc.db.exec('SELECT name FROM pet_translation WHERE lang = "en" LIMIT 1')![0]
+	pname := prow.get_string('name')
+	resp4 := http.get('${tc.base}/api/richtext-names?lang=en&kind=pet') or {
+		return error('GET /api/richtext-names pet: ${err}')
+	}
+	if !resp4.body.contains(pname) {
+		return error('richtext autocomplete: pet list missing "${pname}", got: ${resp4.body}')
+	}
+	trow := tc.db.exec('SELECT name FROM treasure_translation WHERE lang = "en" LIMIT 1')![0]
+	trname := trow.get_string('name')
+	resp5 := http.get('${tc.base}/api/richtext-names?lang=en&kind=treasure') or {
+		return error('GET /api/richtext-names treasure: ${err}')
+	}
+	if !resp5.body.contains(trname) {
+		return error('richtext autocomplete: treasure list missing "${trname}", got: ${resp5.body}')
+	}
+	// unknown kind degrades to cookies
+	resp6 := http.get('${tc.base}/api/richtext-names?lang=en&kind=xx') or {
+		return error('GET /api/richtext-names kind=xx: ${err}')
+	}
+	if !resp6.body.contains(name) {
+		return error('richtext autocomplete: unknown-kind list missing "${name}", got: ${resp6.body}')
 	}
 }
 
