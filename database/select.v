@@ -1545,6 +1545,27 @@ pub fn effect_names(conn sqlite.DB, lang string) ![]string {
 	return names
 }
 
+// cookie_richtext_names lists the distinct cookie names that render_rich_text
+// can resolve for `lang`: that language's names plus the en fallback (the same
+// match set cookie_id_by_name uses). It feeds the `[[` autocomplete in the
+// admin rich-text fields.
+pub fn cookie_richtext_names(conn sqlite.DB, lang string) []string {
+	plang := lang
+	translations := sql conn {
+		select from models.CookieTranslation where lang == plang || lang == 'en' order by name
+	} or { return [] }
+	mut seen := map[string]bool{}
+	mut names := []string{}
+	for tr in translations {
+		n := tr.name.trim_space()
+		if n != '' && n !in seen {
+			names << n
+			seen[n] = true
+		}
+	}
+	return names
+}
+
 pub fn get_cookie(conn sqlite.DB, lang string, id int) !CookieView {
 	if id <= 0 {
 		return error('invalid cookie id')

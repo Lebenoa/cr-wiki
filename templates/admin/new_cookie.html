@@ -41,6 +41,7 @@
                 <input id="image" type="file" name="image" accept="image/*" class="sr-only" />
             </div>
             <script src="/js/combobox.js"></script>
+            <script src="/js/richtext.js"></script>
             <script>
                 document.getElementById('image').addEventListener('change', function (e) {
                     var file = e.target.files && e.target.files[0];
@@ -93,7 +94,7 @@
                 </div>
                 <div class="space-y-2">
                     <label class="font-label text-secondary uppercase" for="power_plus">%power_plus</label>
-                    <textarea id="power_plus" name="power_plus" rows="2"
+                    <textarea id="power_plus" name="power_plus" rows="2" data-richtext
                         class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground placeholder:text-foreground/30 focus:border-primary focus:ring-0 transition-all outline-none resize-y"
                         placeholder="%power_plus_placeholder">@state.power_plus</textarea>
                     <p class="text-xs text-foreground-muted">%rich_text_hint</p>
@@ -115,7 +116,7 @@
             </div>
             <div class="space-y-2">
                 <label class="font-label text-secondary uppercase" for="description">%description</label>
-                <textarea id="description" name="description" rows="4"
+                <textarea id="description" name="description" rows="4" data-richtext
                     class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground placeholder:text-foreground/30 focus:border-primary focus:ring-0 transition-all outline-none resize-y">@state.description</textarea>
                 <p class="text-xs text-foreground-muted">%rich_text_hint</p>
             </div>

@@ -26,6 +26,7 @@ bin/
 *.js
 !static/thirdparty/htmx.js
 !static/js/combobox.js
+!static/js/richtext.js
 
 # Ignore installed modules through `v install --local`:
 modules/

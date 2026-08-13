@@ -2,6 +2,7 @@ module app
 
 import veb
 import api
+import database
 import os
 
 pub fn (ctx &Context) lang_map(lang string) string {
@@ -17,6 +18,12 @@ pub fn (wapp &App) available_lang(mut ctx Context) veb.Result {
 	current_url := ctx.get_custom_header('HX-Current-URL') or { '/' }
 	languages := api.available_lang()
 	return $veb.html("./templates/components/lang_selector.html")
+}
+
+@['/api/richtext-names']
+pub fn (wapp &App) richtext_names(mut ctx Context) veb.Result {
+	lang := ctx.query['lang'] or { 'en' }
+	return ctx.json(database.cookie_richtext_names(wapp.db, lang))
 }
 
 @['/api/set-lang'; post]

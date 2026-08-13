@@ -108,6 +108,10 @@ pub fn run_test_session() {
 			run:  test_rich_text
 		},
 		TestCase{
+			name: 'rich text autocomplete names'
+			run:  test_richtext_autocomplete
+		},
+		TestCase{
 			name: 'public pages render'
 			run:  test_public_pages
 		},
@@ -599,6 +603,35 @@ fn test_rich_text(mut tc TestContext) ! {
 }
 
 // ---------- HTTP tests ----------
+
+fn test_richtext_autocomplete(mut tc TestContext) ! {
+	// the en list must contain a real cookie name
+	row := tc.db.exec('SELECT name FROM cookie_translation WHERE lang = "en" LIMIT 1')![0]
+	name := row.get_string('name')
+	resp := http.get('${tc.base}/api/richtext-names?lang=en') or {
+		return error('GET /api/richtext-names en: ${err}')
+	}
+	if !resp.body.contains(name) {
+		return error('richtext autocomplete: en list missing "${name}", got: ${resp.body}')
+	}
+	// the th list carries th names plus the en fallback (render_rich_text's
+	// resolution set), so authors in either language can link
+	row2 := tc.db.exec('SELECT name FROM cookie_translation WHERE lang = "th" LIMIT 1')![0]
+	tname := row2.get_string('name')
+	resp2 := http.get('${tc.base}/api/richtext-names?lang=th') or {
+		return error('GET /api/richtext-names th: ${err}')
+	}
+	if !resp2.body.contains(tname) || !resp2.body.contains(name) {
+		return error('richtext autocomplete: th list missing ${tname}/${name}, got: ${resp2.body}')
+	}
+	// unknown lang degrades to en
+	resp3 := http.get('${tc.base}/api/richtext-names?lang=xx') or {
+		return error('GET /api/richtext-names xx: ${err}')
+	}
+	if !resp3.body.contains(name) {
+		return error('richtext autocomplete: unknown-lang list missing "${name}", got: ${resp3.body}')
+	}
+}
 
 fn test_public_pages(mut tc TestContext) ! {
 	for path in ['/', '/cookies', '/pets', '/treasures', '/search'] {
