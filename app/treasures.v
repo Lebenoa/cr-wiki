@@ -87,8 +87,10 @@ pub fn (wapp &App) new_treasure(mut ctx Context) veb.Result {
 pub fn (wapp &App) treasure_info(mut ctx Context, id int) veb.Result {
 	treasure := database.get_treasure(wapp.db, ctx.lang, id) or { return ctx.not_found() }
 	effects := database.get_treasure_effects(wapp.db, ctx.lang, id) or { [] }
-	// blessed-state effects (same table, state column); empty for non-evolved
-	blessed_effects := database.get_treasure_blessed_effects(wapp.db, ctx.lang, id) or { [] }
+	// blessed-state effects (same table, state column); empty for non-evolved.
+	// Their columns carry the per-level delta vs the normal state.
+	blessed_effects := database.blessed_diffs(effects,
+		database.get_treasure_blessed_effects(wapp.db, ctx.lang, id) or { [] })
 	// the linked variant is the base for evolved rows, the evolved form for
 	// normal rows; the two are mutually exclusive, so a single optional
 	// suffices (the template labels the panel via treasure.is_evolved)

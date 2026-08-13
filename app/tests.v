@@ -391,6 +391,33 @@ fn test_effect_pairs(mut tc TestContext) ! {
 	if blessed[1].value0 != '40' || blessed[1].value9 != '85' {
 		return error('482 blessed1 values = ${blessed[1].value0}/${blessed[1].value9}, want 40/85')
 	}
+	// blessed tab shows the per-column delta vs the normal state: 6%->8% and
+	// 30->40 / 75->85; raw values stay available on the same rows
+	diffs := database.blessed_diffs(effects, blessed)
+	if diffs[0].diff0 != '+2%' || diffs[0].diff9 != '+2%' {
+		return error('482 blessed delta0 = ${diffs[0].diff0}/${diffs[0].diff9}, want +2%/+2%')
+	}
+	if diffs[0].value0 != '8%' {
+		return error('482 blessed raw value0 = ${diffs[0].value0}, want 8%')
+	}
+	if diffs[1].diff0 != '+10' || diffs[1].diff9 != '+10' {
+		return error('482 blessed delta1 = ${diffs[1].diff0}/${diffs[1].diff9}, want +10/+10')
+	}
+	// unchanged values delta to 0; missing normal counterpart keeps its value
+	d398 := database.blessed_diffs(database.get_treasure_effects(tc.db, 'en', 398)!,
+		database.get_treasure_blessed_effects(tc.db, 'en', 398)!)
+	if d398[0].diff0 != '0' || d398[0].diff9 != '0' {
+		return error('398 blessed delta0 = ${d398[0].diff0}/${d398[0].diff9}, want 0/0')
+	}
+	if d398[1].diff0 != '' || d398[1].diff9 != '' {
+		return error('398 unpaired blessed = ${d398[1].diff0}/${d398[1].diff9}, want no diff')
+	}
+	// Thai values parse the same way (suffix-aware, byte-safe)
+	thd := database.blessed_diffs(database.get_treasure_effects(tc.db, 'th', 482)!,
+		database.get_treasure_blessed_effects(tc.db, 'th', 482)!)
+	if thd[0].diff0 != '+2%' || thd[1].diff0 != '+10' {
+		return error('482 th blessed deltas = ${thd[0].diff0}/${thd[1].diff0}, want +2%/+10')
+	}
 	// range with a % unit keeps the symbol on both columns
 	w := database.get_treasure_effects(tc.db, 'en', 368)!
 	if w[0].value0 != '6%' || w[0].value9 != '11%' {
