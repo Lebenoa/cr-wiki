@@ -99,6 +99,10 @@ pub fn run_test_session() {
 			run:  test_effect_placeholder
 		},
 		TestCase{
+			name: 'treasure effect +0/+9 pairs'
+			run:  test_effect_pairs
+		},
+		TestCase{
 			name: 'rich text rendering'
 			run:  test_rich_text
 		},
@@ -325,35 +329,31 @@ fn test_effect_placeholder(mut tc TestContext) ! {
 	if bad > 0 {
 		return error('${bad} structured-value effect translations lack the {value} placeholder')
 	}
-	// substitution: the merged Base-speed effect (496) renders its per-state
-	// value — treasure 482 normal is 6%, blessed 8% — with no literal token
+	// the placeholder renders into the +0/+9 columns with no literal token:
+	// treasure 482 normal "Base speed 6%" is a flat single value
 	effects := database.get_treasure_effects(tc.db, 'en', 482)!
 	mut saw := false
 	for e in effects {
 		if e.name.contains('{value}') {
 			return error('placeholder token leaked into rendered name: ${e.name}')
 		}
-		if e.name == 'Base speed 6%' {
+		if e.name == 'Base speed' && e.value0 == '6%' && e.value9 == '6%' {
 			saw = true
-		}
-		// the value badge must be suppressed: the name already carries it
-		if e.name.contains('Base speed') && e.value_display != '' {
-			return error('duplicate value badge on placeholder effect: ${e.value_display}')
 		}
 	}
 	if !saw {
-		return error('expected "Base speed 6%" on treasure 482, got ${effects}')
+		return error('expected "Base speed" 6%/6% on treasure 482, got ${effects}')
 	}
 	// th renders the unit in Thai word order
 	th := database.get_treasure_effects(tc.db, 'th', 482)!
 	mut saw_th := false
 	for e in th {
-		if e.name == 'ความเร็วพื้นฐาน 6%' {
+		if e.name == 'ความเร็วพื้นฐาน' && e.value0 == '6%' && e.value9 == '6%' {
 			saw_th = true
 		}
 	}
 	if !saw_th {
-		return error('expected th "ความเร็วพื้นฐาน 6%" on treasure 482, got ${th}')
+		return error('expected th "ความเร็วพื้นฐาน" 6%/6% on treasure 482, got ${th}')
 	}
 	// bare formatter: no unit suffix — the unit lives in the translation text
 	bare := database.format_effect_bare_value(6, none, none)
@@ -363,6 +363,85 @@ fn test_effect_placeholder(mut tc TestContext) ! {
 	rng := database.format_effect_bare_value(none, 2, 3)
 	if rng != '2-3' {
 		return error('format_effect_bare_value range = ${rng}, want 2-3')
+	}
+}
+
+fn test_effect_pairs(mut tc TestContext) ! {
+	// treasure 482 (Young Girly Apple), normal tab:
+	// - placeholder effect: flat single value repeats in both columns
+	// - name-baked range: endpoints split into the +0/+9 columns
+	effects := database.get_treasure_effects(tc.db, 'en', 482)!
+	if effects.len != 2 {
+		return error('482 effects = ${effects.len}, want 2')
+	}
+	if effects[0].name != 'Base speed' || effects[0].value0 != '6%' || effects[0].value9 != '6%' {
+		return error('482 effect0 = ${effects[0]}, want Base speed 6%/6%')
+	}
+	if effects[1].name != 'With upgrades extra Energy during Cookie Relays' {
+		return error('482 effect1 name = ${effects[1].name}, want stripped text')
+	}
+	if effects[1].value0 != '30' || effects[1].value9 != '75' {
+		return error('482 effect1 values = ${effects[1].value0}/${effects[1].value9}, want 30/75')
+	}
+	// blessed tab of the same treasure: per-state values 8% and 40-85
+	blessed := database.get_treasure_blessed_effects(tc.db, 'en', 482)!
+	if blessed[0].value0 != '8%' || blessed[0].value9 != '8%' {
+		return error('482 blessed0 values = ${blessed[0].value0}/${blessed[0].value9}, want 8%/8%')
+	}
+	if blessed[1].value0 != '40' || blessed[1].value9 != '85' {
+		return error('482 blessed1 values = ${blessed[1].value0}/${blessed[1].value9}, want 40/85')
+	}
+	// range with a % unit keeps the symbol on both columns
+	w := database.get_treasure_effects(tc.db, 'en', 368)!
+	if w[0].value0 != '6%' || w[0].value9 != '11%' {
+		return error('368 effect0 values = ${w[0].value0}/${w[0].value9}, want 6%/11%')
+	}
+	if w[0].name != 'higher base speed' {
+		return error('368 effect0 name = ${w[0].name}, want "higher base speed"')
+	}
+	// {value} word-unit names strip the placeholder, keeping the sentence
+	if w[1].name != 'Revives once with energy' {
+		return error('368 effect1 name = ${w[1].name}, want "Revives once with energy"')
+	}
+	if w[1].value0 != '20' || w[1].value9 != '20' {
+		return error('368 effect1 values = ${w[1].value0}/${w[1].value9}, want 20/20')
+	}
+	q := database.get_treasure_effects(tc.db, 'en', 390)!
+	if q[0].value0 != '3%' || q[0].value9 != '4%' {
+		return error('390 effect0 values = ${q[0].value0}/${q[0].value9}, want 3%/4%')
+	}
+	if q[0].name != 'With upgrades, Energy drain slower' {
+		return error('390 effect0 name = ${q[0].name}, want stripped text')
+	}
+	// dangling preposition: the value stays in the text instead of dangling
+	inc := database.get_treasure_effects(tc.db, 'en', 15)!
+	if inc[0].name != 'Base speed increased by 5%' {
+		return error('treasure 15 name = ${inc[0].name}, want "Base speed increased by 5%"')
+	}
+	if inc[0].value0 != '5%' || inc[0].value9 != '5%' {
+		return error('treasure 15 values = ${inc[0].value0}/${inc[0].value9}, want 5%/5%')
+	}
+	// Thai: byte-wise stripping keeps multi-byte text intact
+	th := database.get_treasure_effects(tc.db, 'th', 482)!
+	if th[0].name != 'ความเร็วพื้นฐาน' || th[0].value0 != '6%' {
+		return error('482 th effect0 = ${th[0]}, want "ความเร็วพื้นฐาน" 6%')
+	}
+	if th[1].name != 'อัปเกรดแล้ว พลังงานพิเศษ ระหว่างรีเลย์คุกกี้' {
+		return error('482 th effect1 name = ${th[1].name}, want intact Thai text')
+	}
+	if th[1].value0 != '30' || th[1].value9 != '75' {
+		return error('482 th effect1 values = ${th[1].value0}/${th[1].value9}, want 30/75')
+	}
+	// no-value flavor text: both columns empty, text untouched
+	one := database.get_treasure_effects(tc.db, 'en', 1)!
+	if one.len != 1 {
+		return error('treasure 1 effects = ${one.len}, want 1')
+	}
+	if one[0].name != 'With upgrades get more and more performance points' {
+		return error('treasure 1 name = ${one[0].name}, want untouched')
+	}
+	if one[0].value0 != '' || one[0].value9 != '' {
+		return error('treasure 1 values = ${one[0].value0}/${one[0].value9}, want empty/empty')
 	}
 }
 

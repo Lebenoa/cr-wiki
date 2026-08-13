@@ -2,6 +2,7 @@ module database
 
 import db.sqlite
 import models
+import strings
 import time
 
 @[table: 'cookie']
@@ -275,9 +276,10 @@ fn compare_treasures(a &TreasureView, b &TreasureView) int {
 @[table: 'effect']
 pub struct EffectView {
 pub:
-	effect_id     int
-	name          string
-	value_display string
+	effect_id int
+	name      string // effect text (numbers stripped / {value} handled)
+	value0    string // +0 column ("6%", "30"); empty when the effect carries no value
+	value9    string // +9 column ("11%", "75")
 }
 
 // treasure_grade maps the stored int enum value back to the Grade enum;
@@ -836,21 +838,12 @@ fn effects_from_links(conn sqlite.DB, lang string, links []models.TreasureEffect
 		}
 		emitted[link.effect_id] = true
 		if tr := translation_map[link.effect_id] {
-			value := format_effect_bare_value(link.value, link.value_min, link.value_max)
-			mut name := tr.name
-			// {value}-placeholder names substitute the link's own structured
-			// value (unit stays in the text), and drop the duplicate badge.
-			mut value_display := format_effect_value(link.value, link.value_min, link.value_max, link.unit)
-			if tr.name.contains('{value}') {
-				if value != '' {
-					name = tr.name.replace('{value}', value)
-				}
-				value_display = ''
-			}
+			v0, v9, text := split_effect_value(link, tr.name)
 			result << EffectView{
-				effect_id:     link.effect_id
-				name:          name
-				value_display: value_display
+				effect_id: link.effect_id
+				name:      text
+				value0:    v0
+				value9:    v9
 			}
 		}
 	}
@@ -877,6 +870,205 @@ pub fn get_treasure_effects(conn sqlite.DB, lang string, id int) ![]EffectView {
 // treasure has no blessed form
 pub fn get_treasure_blessed_effects(conn sqlite.DB, lang string, id int) ![]EffectView {
 	return effects_by_state(conn, lang, id, models.EffectState.blessed)
+}
+
+// effect_name_tokens returns the number-like tokens of an effect name:
+// "get 5-15 extra points" -> ["5-15"], "6-11% higher" -> ["6-11%"],
+// "get 1.5-3.3 extra seconds" -> ["1.5-3.3"]. Both '-' and '~' separate
+// ranges. Scanning is byte-wise but only advances through ASCII digits and
+// separators, so multi-byte runes (Thai) are never sliced mid-rune.
+fn effect_name_tokens(s string) []string {
+	mut out := []string{}
+	mut i := 0
+	for i < s.len {
+		if !s[i].is_digit() {
+			i++
+			continue
+		}
+		mut j := i
+		for j < s.len && (s[j].is_digit() || s[j] == `.`) {
+			j++
+		}
+		// optional range separator then a second number
+		if j < s.len && (s[j] == `-` || s[j] == `~`) && j + 1 < s.len && s[j + 1].is_digit() {
+			j++
+			for j < s.len && (s[j].is_digit() || s[j] == `.`) {
+				j++
+			}
+		}
+		// optional unit symbol
+		if j < s.len && (s[j] == `%` || s[j] == `s`) {
+			j++
+		}
+		out << s[i..j]
+		i = j
+	}
+	return out
+}
+
+// split_token splits one token into low, high (empty for a single) and the
+// unit symbol ("30-75%" -> 30, 75, "%"; "6" -> 6, "", "").
+fn split_token(t string) (string, string, string) {
+	mut i := 0
+	for i < t.len && (t[i].is_digit() || t[i] == `.`) {
+		i++
+	}
+	low := t[..i]
+	mut rest := t[i..]
+	mut high := ''
+	if rest.len > 0 && (rest[0] == `-` || rest[0] == `~`) {
+		mut j := 1
+		for j < rest.len && (rest[j].is_digit() || rest[j] == `.`) {
+			j++
+		}
+		high = rest[1..j]
+		rest = rest[j..]
+	}
+	return low, high, rest
+}
+
+// collapse_spaces trims s and collapses runs of whitespace into one space,
+// byte-wise so multi-byte runes (Thai) survive untouched.
+fn collapse_spaces(s string) string {
+	mut b := strings.Builder{}
+	mut prev_space := false
+	for c in s {
+		if c == ` ` {
+			if !prev_space {
+				b.write_byte(c)
+			}
+			prev_space = true
+		} else {
+			b.write_byte(c)
+			prev_space = false
+		}
+	}
+	return b.str().trim_space()
+}
+
+// strip_tokens removes the given tokens from s and collapses leftover
+// whitespace ("get 5-15 extra points" -> "get extra points").
+fn strip_tokens(s string, tokens []string) string {
+	mut out := s
+	for t in tokens {
+		out = out.replace(t, ' ')
+	}
+	return collapse_spaces(out)
+}
+
+// strip_value_placeholder removes the {value} placeholder (and an attached
+// unit symbol) from a translation name, collapsing the leftover whitespace.
+fn strip_value_placeholder(s string) string {
+	mut t := s.replace('{value}%', ' ')
+	t = t.replace('{value}s', ' ')
+	t = t.replace('{value}', ' ')
+	return collapse_spaces(t)
+}
+
+// ends_dangling reports whether stripping the value from a {value} name left
+// a dangling word ("Base speed increased by") — the substituted form reads
+// better then.
+fn ends_dangling(s string) bool {
+	t := s.trim_space()
+	if t == '' {
+		return true
+	}
+	for w in [' by', ' with', ' for', ' to', ' of', ' from', ' an', ' a'] {
+		if t.ends_with(w) {
+			return true
+		}
+	}
+	return false
+}
+
+// split_structured_value renders the +0/+9 columns from the link's stored
+// value (range -> endpoints, single -> repeated for both levels) and the
+// display text with the {value} placeholder stripped when it reads cleanly.
+fn split_structured_value(link models.TreasureEffect, name string) (string, string, string) {
+	suffix := match link.unit {
+		.percent { '%' }
+		.second { 's' }
+		.flat { '' }
+	}
+	mut v0 := ''
+	mut v9 := ''
+	mut bare := ''
+	if mn := link.value_min {
+		if mx := link.value_max {
+			v0 = '${mn}${suffix}'
+			v9 = '${mx}${suffix}'
+			bare = '${mn}-${mx}'
+		} else {
+			v0 = '${mn}${suffix}'
+			v9 = v0
+			bare = '${mn}'
+		}
+	} else if v := link.value {
+		v0 = '${v}${suffix}'
+		v9 = v0
+		bare = '${v}'
+	}
+	mut text := name
+	if name.contains('{value}') {
+		if bare == '' {
+			// legacy placeholder with no structured value: never leak the token
+			text = strip_value_placeholder(name)
+		} else if bare.contains('-') {
+			// a range reads naturally inline; keep the substituted form
+			text = name.replace('{value}', bare)
+		} else {
+			stripped := strip_value_placeholder(name)
+			if !ends_dangling(stripped) {
+				text = stripped
+			} else {
+				text = name.replace('{value}', bare)
+			}
+		}
+	}
+	return v0, v9, text
+}
+
+// split_baked_value derives the +0/+9 columns from the number baked into the
+// translation name (the wiki recorded the range/single inline): the first
+// range token splits into its endpoints, a lone single token repeats for both
+// levels. Unrelated extra tokens stay in the text untouched.
+fn split_baked_value(name string) (string, string, string) {
+	toks := effect_name_tokens(name)
+	mut v0 := ''
+	mut v9 := ''
+	mut strip := []string{}
+	for t in toks {
+		low, high, suffix := split_token(t)
+		if high != '' {
+			v0 = low + suffix
+			v9 = high + suffix
+			strip = [t]
+			break
+		}
+	}
+	if v0 == '' && toks.len == 1 {
+		low, _, suffix := split_token(toks[0])
+		v0 = low + suffix
+		v9 = v0
+		strip = [toks[0]]
+	}
+	mut text := if strip.len > 0 { strip_tokens(name, strip) } else { name }
+	// "increased by X-Y" phrases would dangle without their number — keep the
+	// inline form then (the columns stay filled; mild redundancy is fine)
+	if strip.len > 0 && ends_dangling(text) {
+		text = name
+	}
+	return v0, v9, text
+}
+
+// split_effect_value derives the +0/+9 column values and the display text for
+// one treasure-effect link: columns come from the link's structured value
+// when present, else from the range/single number baked into the name.
+fn split_effect_value(link models.TreasureEffect, name string) (string, string, string) {
+	if link.value != none || link.value_min != none || link.value_max != none {
+		return split_structured_value(link, name)
+	}
+	return split_baked_value(name)
 }
 
 // select_treasures lists treasures newest-first; tab filters to normal or

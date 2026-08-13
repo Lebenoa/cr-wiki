@@ -1,6 +1,7 @@
-<div class="effect-card p-4 rounded-xl flex items-center justify-between gap-4 border-l-4 border-primary">
-    <span class="text-on-surface">@effect.name</span>
-    @if effect.value_display != ""
-    <span class="text-accent font-bold whitespace-nowrap">@effect.value_display</span>
-    @endif
+<div class="effect-card p-4 rounded-xl border-l-4 border-primary">
+    <div class="grid grid-cols-2 gap-2 text-center">
+        <span class="text-accent font-bold">@effect.value0</span>
+        <span class="text-accent font-bold">@effect.value9</span>
+    </div>
+    <p class="mt-1 text-on-surface">@effect.name</p>
 </div>

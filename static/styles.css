@@ -148,20 +148,26 @@
 .btn-secondary:hover{background-color:color-mix(in srgb, oklch(var(--secondary, 0.72 0.12 220)) 90%, transparent);}
 .btn-success:hover{background-color:color-mix(in srgb, oklch(var(--success, 0.72 0.18 145)) 90%, transparent);}
 .btn-warning:hover{background-color:color-mix(in srgb, oklch(var(--warning, 0.82 0.17 85)) 90%, transparent);}
+.\!container{width:100% !important;}
 .container{width:100%;}
 @media (min-width: 40rem){
+.\!container{max-width:40rem !important;}
 .container{max-width:40rem;}
 }
 @media (min-width: 48rem){
+.\!container{max-width:48rem !important;}
 .container{max-width:48rem;}
 }
 @media (min-width: 64rem){
+.\!container{max-width:64rem !important;}
 .container{max-width:64rem;}
 }
 @media (min-width: 80rem){
+.\!container{max-width:80rem !important;}
 .container{max-width:80rem;}
 }
 @media (min-width: 96rem){
+.\!container{max-width:96rem !important;}
 .container{max-width:96rem;}
 }
 /* layer: default */
@@ -293,6 +299,7 @@
 [rounded-full=""]{border-radius:calc(infinity * 1px);}
 .rounded-lg{border-radius:var(--radius-lg);}
 .rounded-xl{border-radius:var(--radius-xl);}
+.rounded-t-xl{border-top-left-radius:var(--radius-xl);border-top-right-radius:var(--radius-xl);}
 .border-dashed{--un-border-style:dashed;border-style:dashed;}
 .backdrop\:bg-black::backdrop{background-color:color-mix(in srgb, var(--colors-black) var(--un-bg-opacity), transparent);}
 .bg-background{background-color:color-mix(in srgb, oklch(var(--background, 0.99 0 0)) var(--un-bg-opacity), transparent);}
@@ -301,6 +308,7 @@
 .bg-primary,
 [bg-primary=""]{background-color:color-mix(in srgb, oklch(var(--primary, 0.62 0.22 260)) var(--un-bg-opacity), transparent);}
 .bg-primary\/20{background-color:color-mix(in srgb, oklch(var(--primary, 0.62 0.22 260)) 20%, transparent);}
+.bg-secondary\/10{background-color:color-mix(in srgb, oklch(var(--secondary, 0.72 0.12 220)) 10%, transparent);}
 .bg-secondary\/30{background-color:color-mix(in srgb, oklch(var(--secondary, 0.72 0.12 220)) 30%, transparent);}
 .bg-surface{background-color:color-mix(in srgb, oklch(var(--surface, 0.97 0 0)) var(--un-bg-opacity), transparent);}
 .bg-surface\/50{background-color:color-mix(in srgb, oklch(var(--surface, 0.97 0 0)) 50%, transparent);}
@@ -382,7 +390,6 @@
 .visible{visibility:visible;}
 .cursor-pointer{cursor:pointer;}
 .resize-y{resize:vertical;}
-.whitespace-nowrap{white-space:nowrap;}
 .whitespace-pre-line{white-space:pre-line;}
 .truncate{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .uppercase{text-transform:uppercase;}

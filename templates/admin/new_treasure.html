@@ -150,7 +150,7 @@
             <div class="space-y-2">
                 <label class="font-label text-secondary uppercase">%treasure_effects</label>
                 <div id="effects-rows" class="space-y-2">
-                    @for i, e in state.effects
+                    @for _, e in state.effects
                     @include 'components/effect_row.html'
                     @endfor
                 </div>
