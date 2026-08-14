@@ -24,6 +24,28 @@
         .effect-diff {
             animation: diff-in 0.3s ease-out;
         }
+        .effect-name-diff del,
+        .effect-name-diff ins {
+            display: inline-block;
+        }
+        .effect-name-diff del {
+            position: relative;
+            text-decoration: none;
+        }
+        .effect-name-diff del::after {
+            content: "";
+            position: absolute;
+            left: 0;
+            width: 100%;
+            top: 50%;
+            height: 0.08em;
+            background: currentColor;
+            transform-origin: left;
+            animation: strike-in 0.3s ease-out;
+        }
+        .effect-name-diff ins {
+            animation: diff-in 0.3s ease-out;
+        }
         @keyframes diff-in {
             from {
                 opacity: 0;
@@ -32,6 +54,14 @@
             to {
                 opacity: 1;
                 transform: none;
+            }
+        }
+        @keyframes strike-in {
+            from {
+                transform: scaleX(0);
+            }
+            to {
+                transform: scaleX(1);
             }
         }
     </style>
