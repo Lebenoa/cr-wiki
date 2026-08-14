@@ -9,33 +9,20 @@
     @include 'layout/navbar.html'
 
     <section class="max-w-5xl mx-auto my-16 px-4">
-        <h1 class="font-headline text-accent text-4xl leading-tight">%builds_page_title</h1>
-        <p class="font-body text-foreground-muted mt-2">%build_intro</p>
+        <div class="flex items-center justify-between gap-4 flex-wrap">
+            <h1 class="font-headline text-accent text-4xl leading-tight">%builds_page_title</h1>
+            <a href="/builds/new" class="btn-primary">+ %new_build_button</a>
+        </div>
 
-        <form hx-get="/builds" hx-trigger="change" hx-target="#build-preview" hx-push-url="true"
-            class="mt-8 grid grid-cols-2 md:grid-cols-5 gap-4">
+        <form hx-get="/builds" hx-trigger="change" hx-target="#build-list" hx-push-url="true"
+            class="mt-8 flex flex-wrap items-end gap-4">
             <label class="block space-y-1">
-                <span class="text-xs font-label text-foreground-muted uppercase">%build_cookie_label</span>
-                <select name="cookie"
-                    class="w-full bg-surface border-2 border-primary/30 rounded-xl py-2.5 px-3 text-foreground">
-                    <option value="">%build_none_label</option>
-                    @for c in cookies
-                    <option value="@c.id"
-                        @if c.id == sel.cookie
-                        selected
-                        @endif
-                    >@c.name</option>
-                    @endfor
-                </select>
-            </label>
-            <label class="block space-y-1">
-                <span class="text-xs font-label text-foreground-muted uppercase">%build_pet_label</span>
                 <select name="pet"
-                    class="w-full bg-surface border-2 border-primary/30 rounded-xl py-2.5 px-3 text-foreground">
-                    <option value="">%build_none_label</option>
+                    class="w-full bg-surface border-2 border-primary/30 rounded-xl py-2 px-3 text-foreground">
+                    <option value="">%none_option</option>
                     @for p in pets
                     <option value="@p.id"
-                        @if p.id == sel.pet
+                        @if p.id == filter_pet
                         selected
                         @endif
                     >@p.name</option>
@@ -43,51 +30,59 @@
                 </select>
             </label>
             <label class="block space-y-1">
-                <span class="text-xs font-label text-foreground-muted uppercase">%build_treasure_one</span>
-                <select name="t1"
-                    class="w-full bg-surface border-2 border-primary/30 rounded-xl py-2.5 px-3 text-foreground">
-                    <option value="">%build_none_label</option>
-                    @for t in treasures
-                    <option value="@t.id"
-                        @if t.id == sel.treasure1
+                <select name="cookie"
+                    class="w-full bg-surface border-2 border-primary/30 rounded-xl py-2 px-3 text-foreground">
+                    <option value="">%none_option</option>
+                    @for c in cookies
+                    <option value="@c.id"
+                        @if c.id == filter_cookie
                         selected
                         @endif
-                    >@t.name</option>
+                    >@c.name</option>
                     @endfor
                 </select>
             </label>
             <label class="block space-y-1">
-                <span class="text-xs font-label text-foreground-muted uppercase">%build_treasure_two</span>
-                <select name="t2"
-                    class="w-full bg-surface border-2 border-primary/30 rounded-xl py-2.5 px-3 text-foreground">
-                    <option value="">%build_none_label</option>
-                    @for t in treasures
-                    <option value="@t.id"
-                        @if t.id == sel.treasure2
+                <span class="text-xs font-label text-foreground-muted uppercase">%build_ep_label</span>
+                <select name="ep"
+                    class="w-32 bg-surface border-2 border-primary/30 rounded-xl py-2 px-3 text-foreground">
+                    <option value="">%none_option</option>
+                    @for n in ep_tiers
+                    <option value="@n"
+                        @if filter_ep_raw == n.str()
                         selected
                         @endif
-                    >@t.name</option>
+                    >@{ctx.build_ep_label(n, 0)}</option>
+                    @endfor
+                    @for n in ep_specials
+                    <option value="s@n"
+                        @if filter_ep_raw == 's' + n.str()
+                        selected
+                        @endif
+                    >@{ctx.build_ep_label(0, n)}</option>
                     @endfor
                 </select>
             </label>
             <label class="block space-y-1">
-                <span class="text-xs font-label text-foreground-muted uppercase">%build_treasure_three</span>
-                <select name="t3"
-                    class="w-full bg-surface border-2 border-primary/30 rounded-xl py-2.5 px-3 text-foreground">
-                    <option value="">%build_none_label</option>
-                    @for t in treasures
-                    <option value="@t.id"
-                        @if t.id == sel.treasure3
+                <span class="text-xs font-label text-foreground-muted uppercase">%build_sort_label</span>
+                <select name="sort"
+                    class="w-full bg-surface border-2 border-primary/30 rounded-xl py-2 px-3 text-foreground">
+                    <option value="ep"
+                        @if sort == 'ep'
                         selected
                         @endif
-                    >@t.name</option>
-                    @endfor
+                    >%build_sort_ep</option>
+                    <option value="new"
+                        @if sort == 'new'
+                        selected
+                        @endif
+                    >%build_sort_new</option>
                 </select>
             </label>
         </form>
 
-        <div id="build-preview" class="mt-8">
-            @include 'components/build_preview.html'
+        <div id="build-list" class="mt-6 flex flex-col gap-3">
+            @include 'components/build_cards.html'
         </div>
     </section>
 </body>

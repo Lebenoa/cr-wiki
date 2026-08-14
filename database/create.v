@@ -376,3 +376,29 @@ fn find_or_create_effect(conn sqlite.DB, lang string, name string) !int {
 	return effect_id
 }
 
+
+// create_build stores one community-submitted loadout. `expires_at` is set
+// for anonymous submitters so the build is dropped from the list after the
+// TTL; logged-in submitters pass `none` for a permanent build. `ep` is the
+// tier 1-7 (0 for special builds) and `ep_special` the special tier 1-3;
+// `tag` is one of score/coin/autofarm.
+pub fn create_build(conn sqlite.DB, cookie_id int, cookie2_id int, pet_id int, treasure1_id int, treasure2_id int, treasure3_id int, ep int, ep_special int, tag string, author string, user_id ?int, expires_at ?time.Time) !int {
+	build := models.Build{
+		cookie_id:    cookie_id
+		cookie2_id:   cookie2_id
+		pet_id:       pet_id
+		treasure1_id: treasure1_id
+		treasure2_id: treasure2_id
+		treasure3_id: treasure3_id
+		ep:           ep
+		ep_special:   ep_special
+		tag:          tag
+		author:       author
+		user_id:      user_id
+		created_at:   time.now()
+		expires_at:   expires_at
+	}
+	return sql conn {
+		insert build into models.Build
+	}!
+}

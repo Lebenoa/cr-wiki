@@ -465,6 +465,13 @@ fn unlock_entity_image(conn sqlite.DB, kind string, id int) ?string {
 		if rows.len > 0 {
 			img = rows.first().image
 		}
+	} else if kind == 'treasure' {
+		rows := sql conn {
+			select from models.Treasure where treasure_id == id
+		} or { return none }
+		if rows.len > 0 {
+			img = rows.first().image
+		}
 	}
 	return img
 }
@@ -530,6 +537,22 @@ fn resolve_entity_name(conn sqlite.DB, kind string, id int, lang string) string 
 	if kind == 'pet' {
 		trs := sql conn {
 			select from models.PetTranslation where pet_id == id && (lang == user_lang || lang == 'en')
+		} or { return '' }
+		if trs.len == 0 {
+			return ''
+		}
+		mut tr := trs.first()
+		for x in trs {
+			if x.lang == user_lang {
+				tr = x
+				break
+			}
+		}
+		return tr.name
+	}
+	if kind == 'treasure' {
+		trs := sql conn {
+			select from models.TreasureTranslation where treasure_id == id && (lang == user_lang || lang == 'en')
 		} or { return '' }
 		if trs.len == 0 {
 			return ''
@@ -683,16 +706,127 @@ pub fn combi_edit_rows(conn sqlite.DB, lang string, kind string, id int) ![]Comb
 }
 
 // IdNameOption is a lightweight (id, name) pair for admin-form dropdowns;
-// image is populated for treasure options so the combobox can show sprites.
+// image is populated for treasure options so the combobox can show sprites,
+// and effect carries the treasure's first normal effect text for the build
+// planner picker (empty for cookies/pets).
 pub struct IdNameOption {
 pub:
-	id    int
-	name  string
-	image ?string
+	id     int
+	name   string
+	image  ?string
+	effect string
 }
 
-// treasure_options lists every treasure's id and localized name for the
-// cookie/pet admin forms' "unlocks treasure" selector.
+// BuildCard is one community-submitted build on the /builds list: the EP
+// tier, the five entities, the tag, and the submitter info. Anonymous builds
+// carry the remaining lifetime so the list can render an expiry badge.
+pub struct BuildCard {
+pub:
+	build_id     int
+	ep           int
+	ep_special   int
+	tag          string
+	author       string
+	is_anon      bool
+	expires_in_h int // remaining hours for anonymous builds, 0 for permanent
+	cookie       IdNameOption
+	cookie2      ?IdNameOption // relay cookie; none when the build has no relay
+	pet          IdNameOption
+	treasures    []IdNameOption
+}
+
+// select_builds returns non-expired community builds, filtered by
+// cookie/pet/EP tier and sorted by EP rank desc (or created_at desc with
+// sort='new'), paginated. Special tiers outrank regular ones (Special EP 3
+// is the highest). Expired anonymous builds are excluded. Raw SQL because
+// the expiry filter combines `IS NULL` with a unix-timestamp comparison;
+// time.Time is stored as a unix int by the ORM.
+pub fn select_builds(conn sqlite.DB, lang string, f_cookie int, f_pet int, f_ep int, f_ep_special int, sort string, limit int, offset int) ![]BuildCard {
+	mut where := '1=1'
+	if f_cookie > 0 {
+		where += ' AND cookie_id = ${f_cookie}'
+	}
+	if f_pet > 0 {
+		where += ' AND pet_id = ${f_pet}'
+	}
+	if f_ep > 0 {
+		where += ' AND ep = ${f_ep} AND ep_special = 0'
+	}
+	if f_ep_special > 0 {
+		where += ' AND ep_special = ${f_ep_special}'
+	}
+	where += ' AND (expires_at IS NULL OR expires_at > ${time.now().unix()})'
+	order := if sort == 'new' {
+		'created_at DESC'
+	} else {
+		'CASE WHEN ep_special > 0 THEN 10 + ep_special ELSE ep END DESC, build_id DESC'
+	}
+
+	rows := conn.exec('SELECT build_id, cookie_id, cookie2_id, pet_id, treasure1_id, treasure2_id, treasure3_id, ep, ep_special, tag, author, user_id, expires_at FROM build WHERE ${where} ORDER BY ${order} LIMIT ${limit} OFFSET ${offset}')!
+	if rows.len == 0 {
+		return []
+	}
+
+	mut result := []BuildCard{}
+	for row in rows {
+		// user_id is NULL for anonymous submissions; ids start at 1.
+		is_anon := row.get_int('user_id') == 0
+		exp_unix := row.get_int('expires_at')
+		expires_in_h := if is_anon && exp_unix > 0 {
+			int((exp_unix - time.now().unix() + 3599) / 3600)
+		} else {
+			0
+		}
+		cid := row.get_int('cookie_id')
+		cid2 := row.get_int('cookie2_id')
+		pid := row.get_int('pet_id')
+		tids := [row.get_int('treasure1_id'), row.get_int('treasure2_id'), row.get_int('treasure3_id')]
+		mut treasures := []IdNameOption{}
+		for tid in tids {
+			treasures << IdNameOption{
+				id:    tid
+				name:  resolve_entity_name(conn, 'treasure', tid, lang)
+				image: unlock_entity_image(conn, 'treasure', tid)
+			}
+		}
+		result << BuildCard{
+			build_id:     row.get_int('build_id')
+			ep:           row.get_int('ep')
+			ep_special:   row.get_int('ep_special')
+			tag:          row.get_string('tag')
+			author:       row.get_string('author')
+			is_anon:      is_anon
+			expires_in_h: expires_in_h
+			cookie:       IdNameOption{
+				id:    cid
+				name:  resolve_entity_name(conn, 'cookie', cid, lang)
+				image: unlock_entity_image(conn, 'cookie', cid)
+			}
+			cookie2: if cid2 > 0 {
+				IdNameOption{
+					id:    cid2
+					name:  resolve_entity_name(conn, 'cookie', cid2, lang)
+					image: unlock_entity_image(conn, 'cookie', cid2)
+				}
+			} else {
+				none
+			}
+			pet: IdNameOption{
+				id:    pid
+				name:  resolve_entity_name(conn, 'pet', pid, lang)
+				image: unlock_entity_image(conn, 'pet', pid)
+			}
+			treasures: treasures
+		}
+	}
+	return result
+}
+
+// treasure_options lists every treasure's id, localized name and first
+// normal effect text (the picker shows effects in the modal and on slots) for
+// the build planner and the cookie/pet admin forms' "unlocks treasure"
+// selector. Effects resolve in two batched queries, mirroring the detail
+// page's value-splitting so the picker text matches the wiki card.
 pub fn treasure_options(conn sqlite.DB, lang string) ![]IdNameOption {
 	treasures := sql conn {
 		select from models.Treasure
@@ -712,14 +846,58 @@ pub fn treasure_options(conn sqlite.DB, lang string) ![]IdNameOption {
 			tmap[tr.treasure_id] = tr
 		}
 	}
+
+	// first normal effect per treasure, in listing order (treasure_effect_id)
+	mut effect_map := map[int]string{}
+	links := sql conn {
+		select from models.TreasureEffect where state == models.EffectState.normal order by treasure_effect_id
+	} or { [] }
+	if links.len > 0 {
+		mut eids := []int{}
+		mut seen := map[int]bool{}
+		for l in links {
+			if l.effect_id !in seen {
+				eids << l.effect_id
+				seen[l.effect_id] = true
+			}
+		}
+		trs := sql conn {
+			select from models.EffectTranslation where effect_id in eids
+			&& (lang == user_lang || lang == 'en')
+		} or { [] }
+		mut etmap := map[int]models.EffectTranslation{}
+		for tr in trs {
+			if tr.lang == user_lang {
+				etmap[tr.effect_id] = tr
+			}
+		}
+		for tr in trs {
+			if tr.effect_id !in etmap {
+				etmap[tr.effect_id] = tr
+			}
+		}
+		mut first_seen := map[int]bool{}
+		for l in links {
+			if l.treasure_id in first_seen {
+				continue
+			}
+			first_seen[l.treasure_id] = true
+			if tr := etmap[l.effect_id] {
+				_, _, text := split_effect_value(l, tr.name)
+				effect_map[l.treasure_id] = text
+			}
+		}
+	}
+
 	mut out := []IdNameOption{}
 	for t in treasures {
 		tid := t.treasure_id or { continue }
 		if tr := tmap[tid] {
 			out << IdNameOption{
-				id:    tid
-				name:  tr.name
-				image: t.image
+				id:     tid
+				name:   tr.name
+				image:  t.image
+				effect: effect_map[tid] or { '' }
 			}
 		}
 	}

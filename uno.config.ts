@@ -64,15 +64,18 @@ export default defineConfig({
 					background-color: oklch(var(--background, 0.99 0 0));
 					color: oklch(var(--foreground, 0.15 0 0));
 					transition: background-color 0.3s ease, color 0.3s ease;
-				}
-				html, body {
-					margin: 0;
-					padding: 0;
-				}
-				button {
-					padding: .5rem 1rem;
-					cursor: pointer;
-				}
+				}					html, body {
+						margin: 0;
+						padding: 0;
+					}
+					button {
+						padding: .5rem 1rem;
+						cursor: pointer;
+					}
+					@keyframes combo-in {
+						from { opacity: 0; translate: 0 -6px; }
+						to { opacity: 1; translate: 0 0; }
+					}
 				div[popover] {
 					position-area: bottom center;
 					opacity: 0;

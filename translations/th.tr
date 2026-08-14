@@ -385,3 +385,78 @@ build_empty_hint
 build_with
 กับ
 -----
+new_build_page_title
+ส่งบิลด์ | Classic/FanWiki
+-----
+build_ep_label
+EP
+-----
+build_author_label
+ชื่อ (ไม่บังคับ)
+-----
+build_expiry_hint
+บิลด์ที่ไม่ระบุตัวตนจะหมดอายุใน 24 ชั่วโมง — เข้าสู่ระบบเพื่อเก็บไว้ถาวร
+-----
+build_submit_button
+ส่งบิลด์
+-----
+new_build_button
+บิลด์ใหม่
+-----
+build_empty_list
+ยังไม่มีบิลด์ — เป็นคนแรกที่ส่งบิลด์
+-----
+build_sort_label
+เรียง
+-----
+build_sort_ep
+EP สูงสุด
+-----
+build_sort_new
+ล่าสุด
+-----
+build_anonymous
+ผู้ไม่ระบุชื่อ
+-----
+build_expires_in
+หมดอายุใน {h}ชม.
+-----
+build_ep_tier
+EP {n}
+-----
+build_ep_special
+EP พิเศษ {n}
+-----
+build_tag_label
+แท็ก
+-----
+build_tag_score
+คะแนน
+-----
+build_tag_coin
+เหรียญ
+-----
+build_tag_autofarm
+ฟาร์มอัตโนมัติ
+-----
+build_pick_cookie
+เลือกคุกกี้
+-----
+build_pick_pet
+เลือกสัตว์เลี้ยง
+-----
+build_pick_treasure
+เลือกสมบัติ
+-----
+build_search_placeholder
+ค้นหา...
+-----
+build_clear_slot
+ล้าง
+-----
+build_relay_label
+คุกกี้รีเลย์
+-----
+build_no_combo
+ไม่มีโบนัสคอมโบสำหรับคู่นี้
+-----

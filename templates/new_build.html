@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="@ctx.lang">
+
+<head>
+    @include 'layout/head.html'
+</head>
+
+<body>
+    @include 'layout/navbar.html'
+
+    <section class="max-w-5xl mx-auto my-16 px-4">
+        <h1 class="font-headline text-accent text-4xl leading-tight">%new_build_page_title</h1>
+        <p class="font-body text-foreground-muted mt-2">%build_intro</p>
+        @if _ := ctx.user
+        @else
+        <p class="font-body text-foreground-muted mt-1">%build_expiry_hint</p>
+        @endif
+
+        <form method="post" action="/builds/new" class="mt-8">
+            <input type="hidden" name="cookie" id="sel-cookie" value="@sel.cookie" />
+            <input type="hidden" name="c2" id="sel-cookie2" value="@sel.cookie2" />
+            <input type="hidden" name="pet" id="sel-pet" value="@sel.pet" />
+            <input type="hidden" name="t1" id="sel-t1" value="@sel.treasure1" />
+            <input type="hidden" name="t2" id="sel-t2" value="@sel.treasure2" />
+            <input type="hidden" name="t3" id="sel-t3" value="@sel.treasure3" />
+
+            <div class="grid grid-cols-2 lg:grid-cols-3 gap-4">
+                <div class="relative">
+                    <button type="button" id="slot-cookie" data-empty="%build_cookie_label"
+                        onclick="openCookie('cookie')"
+                        class="w-full p-4 rounded-xl flex flex-col items-center gap-2 min-h-28 border-2 border-dotted border-primary/30 bg-surface/50 hover:bg-surface transition-colors">
+                        @if c := sel_cookie
+                        <img src="@{ctx.img_src('cookies', c.image)}" alt="@c.name" class="size-14 object-contain" />
+                        <span class="text-center text-xs font-bold text-on-surface leading-tight">@c.name</span>
+                        @else
+                        <span class="my-auto text-xs font-label text-foreground-muted uppercase">%build_cookie_label</span>
+                        @endif
+                    </button>
+                    @if c := sel_cookie
+                    <button type="button" title="%build_clear_slot" aria-label="%build_clear_slot"
+                        onclick="clearSlot('cookie')"
+                        class="slot-clear absolute -top-2 -right-2 size-6 rounded-full bg-surface border border-primary/40 text-foreground-muted hover:text-accent hover:border-accent flex items-center justify-center text-sm leading-none shadow">✕</button>
+                    @endif
+                </div>
+                <div class="relative">
+                    <button type="button" id="slot-cookie2" data-empty="%build_relay_label"
+                        onclick="openCookie('cookie2')"
+                        class="w-full p-4 rounded-xl flex flex-col items-center gap-2 min-h-28 border-2 border-dotted border-primary/30 bg-surface/50 hover:bg-surface transition-colors">
+                        @if c := sel_cookie2
+                        <img src="@{ctx.img_src('cookies', c.image)}" alt="@c.name" class="size-14 object-contain" />
+                        <span class="text-center text-xs font-bold text-on-surface leading-tight">@c.name</span>
+                        @else
+                        <span class="my-auto text-xs font-label text-foreground-muted uppercase">%build_relay_label</span>
+                        @endif
+                    </button>
+                    @if c := sel_cookie2
+                    <button type="button" title="%build_clear_slot" aria-label="%build_clear_slot"
+                        onclick="clearSlot('cookie2')"
+                        class="slot-clear absolute -top-2 -right-2 size-6 rounded-full bg-surface border border-primary/40 text-foreground-muted hover:text-accent hover:border-accent flex items-center justify-center text-sm leading-none shadow">✕</button>
+                    @endif
+                </div>
+                <div class="relative">
+                    <button type="button" id="slot-pet" data-empty="%build_pet_label" onclick="openPicker('pet')"
+                        class="w-full p-4 rounded-xl flex flex-col items-center gap-2 min-h-28 border-2 border-dotted border-primary/30 bg-surface/50 hover:bg-surface transition-colors">
+                        @if p := sel_pet
+                        <img src="@{ctx.img_src('pets', p.image)}" alt="@p.name" class="size-14 object-contain" />
+                        <span class="text-center text-xs font-bold text-on-surface leading-tight">@p.name</span>
+                        @else
+                        <span class="my-auto text-xs font-label text-foreground-muted uppercase">%build_pet_label</span>
+                        @endif
+                    </button>
+                    @if p := sel_pet
+                    <button type="button" title="%build_clear_slot" aria-label="%build_clear_slot"
+                        onclick="clearSlot('pet')"
+                        class="slot-clear absolute -top-2 -right-2 size-6 rounded-full bg-surface border border-primary/40 text-foreground-muted hover:text-accent hover:border-accent flex items-center justify-center text-sm leading-none shadow">✕</button>
+                    @endif
+                </div>
+            </div>
+
+            <div id="build-preview" class="mt-6">
+                @include 'components/build_preview.html'
+            </div>
+
+            <div class="mt-4 grid grid-cols-3 gap-4">
+                <div class="relative">
+                    <button type="button" id="slot-t1" data-empty="%build_treasure_one" onclick="openTreasure('t1')"
+                        class="w-full p-4 rounded-xl flex flex-col items-center gap-2 min-h-28 border-2 border-dotted border-primary/30 bg-surface/50 hover:bg-surface transition-colors">
+                        @if t := sel_t1
+                        <img src="@{ctx.img_src('treasures', t.image)}" alt="@t.name" class="size-14 object-contain" />
+                        <span class="text-center text-xs font-bold text-on-surface leading-tight">@t.name</span>
+                        @if t.effect != ''
+                        <span class="text-center text-[10px] text-foreground-muted leading-snug">@t.effect</span>
+                        @endif
+                        @else
+                        <span class="my-auto text-xs font-label text-foreground-muted uppercase">%build_treasure_one</span>
+                        @endif
+                    </button>
+                    @if t := sel_t1
+                    <button type="button" title="%build_clear_slot" aria-label="%build_clear_slot"
+                        onclick="clearSlot('t1')"
+                        class="slot-clear absolute -top-2 -right-2 size-6 rounded-full bg-surface border border-primary/40 text-foreground-muted hover:text-accent hover:border-accent flex items-center justify-center text-sm leading-none shadow">✕</button>
+                    @endif
+                </div>
+                <div class="relative">
+                    <button type="button" id="slot-t2" data-empty="%build_treasure_two" onclick="openTreasure('t2')"
+                        class="w-full p-4 rounded-xl flex flex-col items-center gap-2 min-h-28 border-2 border-dotted border-primary/30 bg-surface/50 hover:bg-surface transition-colors">
+                        @if t := sel_t2
+                        <img src="@{ctx.img_src('treasures', t.image)}" alt="@t.name" class="size-14 object-contain" />
+                        <span class="text-center text-xs font-bold text-on-surface leading-tight">@t.name</span>
+                        @if t.effect != ''
+                        <span class="text-center text-[10px] text-foreground-muted leading-snug">@t.effect</span>
+                        @endif
+                        @else
+                        <span class="my-auto text-xs font-label text-foreground-muted uppercase">%build_treasure_two</span>
+                        @endif
+                    </button>
+                    @if t := sel_t2
+                    <button type="button" title="%build_clear_slot" aria-label="%build_clear_slot"
+                        onclick="clearSlot('t2')"
+                        class="slot-clear absolute -top-2 -right-2 size-6 rounded-full bg-surface border border-primary/40 text-foreground-muted hover:text-accent hover:border-accent flex items-center justify-center text-sm leading-none shadow">✕</button>
+                    @endif
+                </div>
+                <div class="relative">
+                    <button type="button" id="slot-t3" data-empty="%build_treasure_three" onclick="openTreasure('t3')"
+                        class="w-full p-4 rounded-xl flex flex-col items-center gap-2 min-h-28 border-2 border-dotted border-primary/30 bg-surface/50 hover:bg-surface transition-colors">
+                        @if t := sel_t3
+                        <img src="@{ctx.img_src('treasures', t.image)}" alt="@t.name" class="size-14 object-contain" />
+                        <span class="text-center text-xs font-bold text-on-surface leading-tight">@t.name</span>
+                        @if t.effect != ''
+                        <span class="text-center text-[10px] text-foreground-muted leading-snug">@t.effect</span>
+                        @endif
+                        @else
+                        <span class="my-auto text-xs font-label text-foreground-muted uppercase">%build_treasure_three</span>
+                        @endif
+                    </button>
+                    @if t := sel_t3
+                    <button type="button" title="%build_clear_slot" aria-label="%build_clear_slot"
+                        onclick="clearSlot('t3')"
+                        class="slot-clear absolute -top-2 -right-2 size-6 rounded-full bg-surface border border-primary/40 text-foreground-muted hover:text-accent hover:border-accent flex items-center justify-center text-sm leading-none shadow">✕</button>
+                    @endif
+                </div>
+            </div>
+
+            <div class="mt-4 grid grid-cols-2 md:grid-cols-3 gap-4">
+                <label class="block space-y-1">
+                    <span class="text-xs font-label text-foreground-muted uppercase">%build_ep_label</span>
+                    <select name="ep"
+                        class="w-full bg-surface border-2 border-primary/30 rounded-xl py-2.5 px-3 text-foreground">
+                        @for n in ep_tiers
+                        <option value="@n">@{ctx.build_ep_label(n, 0)}</option>
+                        @endfor
+                        @for n in ep_specials
+                        <option value="s@n">@{ctx.build_ep_label(0, n)}</option>
+                        @endfor
+                    </select>
+                </label>
+                <label class="block space-y-1">
+                    <span class="text-xs font-label text-foreground-muted uppercase">%build_tag_label</span>
+                    <select name="tag"
+                        class="w-full bg-surface border-2 border-primary/30 rounded-xl py-2.5 px-3 text-foreground">
+                        @for t in build_tags
+                        <option value="@t">@{ctx.build_tag_label(t)}</option>
+                        @endfor
+                    </select>
+                </label>
+                @if _ := ctx.user
+                @else
+                <label class="block space-y-1">
+                    <span class="text-xs font-label text-foreground-muted uppercase">%build_author_label</span>
+                    <input type="text" name="author" maxlength="48"
+                        class="w-full bg-surface border-2 border-primary/30 rounded-xl py-2.5 px-3 text-foreground" />
+                </label>
+                @endif
+            </div>
+
+            <button type="submit" class="btn-primary mt-6">%build_submit_button</button>
+        </form>
+    </section>
+
+    <dialog id="dialog-cookie" data-kind="cookie" closedby="any"
+        class="relative m-auto p-6 w-[min(64rem,92vw)] max-h-[85vh] hidden open:flex flex-col bg-surface text-foreground rounded-xl border border-accent/30 shadow-2xl transition-discrete transition-all duration-300 opacity-0 open:starting:opacity-0 open:opacity-100 backdrop:transition-all backdrop:transition-discrete backdrop:opacity-0 backdrop:bg-black backdrop:open:opacity-40 backdrop:open:backdrop-blur-sm backdrop:open:blur-sm backdrop:open:starting:opacity-0">
+        <button type="button" onclick="this.closest('dialog').close()"
+            class="btn-secondary size-8 absolute top-3 right-3">✕</button>
+        <h2 class="font-headline text-accent text-2xl mb-4">%build_pick_cookie</h2>
+        <input type="search" placeholder="%build_search_placeholder" oninput="filterOptions('cookie', this.value)"
+            class="w-full shrink-0 bg-surface border-2 border-primary/30 rounded-xl py-2 px-3 text-foreground mb-4" />
+        <form method="dialog" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 overflow-y-auto">
+            @for c in cookies
+            <button type="submit" value="@c.id" data-name="@c.name" onclick="setPicked(this)"
+                class="pick-option border border-secondary px-4 py-2 rounded flex flex-col items-center justify-start hover:border-primary transition-colors group gap-2">
+                <img src="@{ctx.img_src('cookies', c.image)}" alt="@c.name"
+                    class="h-28 w-full object-contain" />
+                <span class="text-xl group-hover:text-primary text-secondary text-center leading-tight">@c.name</span>
+            </button>
+            @endfor
+        </form>
+    </dialog>
+
+    <dialog id="dialog-pet" data-kind="pet" closedby="any"
+        class="relative m-auto p-6 w-[min(64rem,92vw)] max-h-[85vh] hidden open:flex flex-col bg-surface text-foreground rounded-xl border border-accent/30 shadow-2xl transition-discrete transition-all duration-300 opacity-0 open:starting:opacity-0 open:opacity-100 backdrop:transition-all backdrop:transition-discrete backdrop:opacity-0 backdrop:bg-black backdrop:open:opacity-40 backdrop:open:backdrop-blur-sm backdrop:open:blur-sm backdrop:open:starting:opacity-0">
+        <button type="button" onclick="this.closest('dialog').close()"
+            class="btn-secondary size-8 absolute top-3 right-3">✕</button>
+        <h2 class="font-headline text-accent text-2xl mb-4">%build_pick_pet</h2>
+        <input type="search" placeholder="%build_search_placeholder" oninput="filterOptions('pet', this.value)"
+            class="w-full shrink-0 bg-surface border-2 border-primary/30 rounded-xl py-2 px-3 text-foreground mb-4" />
+        <form method="dialog" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 overflow-y-auto">
+            @for p in pets
+            <button type="submit" value="@p.id" data-name="@p.name" onclick="setPicked(this)"
+                class="pick-option border border-secondary px-4 py-2 rounded flex flex-col items-center justify-start hover:border-primary transition-colors group gap-2">
+                <img src="@{ctx.img_src('pets', p.image)}" alt="@p.name"
+                    class="h-28 w-full object-contain" />
+                <span class="text-xl group-hover:text-primary text-secondary text-center leading-tight">@p.name</span>
+            </button>
+            @endfor
+        </form>
+    </dialog>
+
+    <dialog id="dialog-treasure" data-kind="treasure" closedby="any"
+        class="relative m-auto p-6 w-[min(64rem,92vw)] max-h-[85vh] hidden open:flex flex-col bg-surface text-foreground rounded-xl border border-accent/30 shadow-2xl transition-discrete transition-all duration-300 opacity-0 open:starting:opacity-0 open:opacity-100 backdrop:transition-all backdrop:transition-discrete backdrop:opacity-0 backdrop:bg-black backdrop:open:opacity-40 backdrop:open:backdrop-blur-sm backdrop:open:blur-sm backdrop:open:starting:opacity-0">
+        <button type="button" onclick="this.closest('dialog').close()"
+            class="btn-secondary size-8 absolute top-3 right-3">✕</button>
+        <h2 class="font-headline text-accent text-2xl mb-4">%build_pick_treasure</h2>
+        <input type="search" placeholder="%build_search_placeholder" oninput="filterOptions('treasure', this.value)"
+            class="w-full shrink-0 bg-surface border-2 border-primary/30 rounded-xl py-2 px-3 text-foreground mb-4" />
+        <form method="dialog" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 overflow-y-auto">
+            @for t in treasures
+            <button type="submit" value="@t.id" data-name="@t.name" data-effect="@t.effect"
+                onclick="setPicked(this)"
+                class="pick-option border border-secondary px-4 py-2 rounded flex flex-col items-center justify-start hover:border-primary transition-colors group gap-2">
+                <img src="@{ctx.img_src('treasures', t.image)}" alt="@t.name"
+                    class="h-28 w-full object-contain" />
+                <span class="text-xl group-hover:text-primary text-secondary text-center leading-tight">@t.name</span>
+                @if t.effect != ''
+                <span class="text-xs text-foreground-muted text-center leading-snug line-clamp-2">@t.effect</span>
+                @endif
+            </button>
+            @endfor
+        </form>
+    </dialog>
+
+    <script src="/js/picker.js"></script>
+</body>
+
+</html>

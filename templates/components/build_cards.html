@@ -1,0 +1,58 @@
+@if builds.len == 0
+<p class="text-foreground-muted">%build_empty_list</p>
+@else
+@for b in builds
+<div class="p-4 rounded-xl border-l-4 border-primary bg-surface/50 flex items-stretch gap-4">
+    <div class="relative flex items-stretch shrink-0 w-24">
+        <a href="/cookies/@b.cookie.id" title="@b.cookie.name" class="flex w-full">
+            <img src="@{ctx.img_src('cookies', b.cookie.image)}" alt="@b.cookie.name"
+                class="h-full w-full object-contain rounded" />
+        </a>
+        <a href="/pets/@b.pet.id" title="@b.pet.name"
+            class="absolute -left-4 top-1/2 -translate-y-1/2 z-10">
+            <img src="@{ctx.img_src('pets', b.pet.image)}" alt="@b.pet.name"
+                class="size-12 rounded object-contain" />
+        </a>
+    </div>
+    <div class="min-w-0 flex-1 flex flex-wrap items-center gap-x-4 gap-y-2">
+        <div class="text-center min-w-16">
+            <span class="block text-xl font-headline text-accent font-bold leading-tight">@{ctx.build_ep_label(b.ep, b.ep_special)}</span>
+        </div>
+        @if b.tag != ""
+        <span class="self-center font-bold text-accent text-xs border border-accent/50 rounded-full px-2 py-0.5">@{ctx.build_tag_label(b.tag)}</span>
+        @endif
+        @if c2 := b.cookie2
+        <a href="/cookies/@c2.id" class="group flex items-center gap-2" title="@c2.name">
+            <img src="@{ctx.img_src('cookies', c2.image)}" alt="@c2.name"
+                class="size-10 shrink-0 rounded object-contain" />
+            <span class="font-bold text-on-surface group-hover:text-primary transition-colors">@c2.name</span>
+        </a>
+        @endif
+        @for t in b.treasures
+        <span class="text-foreground-muted">+</span>
+        <a href="/treasures/@t.id" class="group flex items-center gap-2" title="@t.name">
+            <img src="@{ctx.img_src('treasures', t.image)}" alt="@t.name"
+                class="size-10 shrink-0 rounded object-contain" />
+            <span class="font-bold text-on-surface group-hover:text-primary transition-colors">@t.name</span>
+        </a>
+        @endfor
+        <div class="ml-auto text-right">
+            @if b.author != ""
+            <span class="font-bold text-on-surface">@b.author</span>
+            @else
+            <span class="font-bold text-on-surface">%build_anonymous</span>
+            @endif
+            @if b.is_anon
+            <span class="block text-xs text-foreground-muted">@{ctx.expires_in_label(b.expires_in_h)}</span>
+            @endif
+        </div>
+    </div>
+</div>
+@endfor
+@if next_page > 0
+<div hx-get="/builds?page=@next_page&cookie=@filter_cookie&pet=@filter_pet&ep=@filter_ep_raw&sort=@sort" hx-trigger="revealed"
+    hx-swap="outerHTML"></div>
+@else
+<div></div>
+@endif
+@endif

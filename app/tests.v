@@ -141,6 +141,10 @@ pub fn run_test_session() {
 			run:  test_admin_login
 		},
 		TestCase{
+			name: 'builds list, planner and anonymous expiry'
+			run:  test_builds
+		},
+		TestCase{
 			name: 'effect {value} placeholder submission guards'
 			run:  test_placeholder_submission_guards
 		},
@@ -744,33 +748,6 @@ fn test_detail_pages(mut tc TestContext) ! {
 	}
 }
 
-fn test_builds(mut tc TestContext) ! {
-	// empty builds page renders the five selects and the empty hint
-	resp := http.get('${tc.base}/builds') or { return error('GET /builds: ${err}') }
-	if resp.status_code != 200 {
-		return error('GET /builds: expected 200, got ${resp.status_code}')
-	}
-	for name in ['cookie', 'pet', 't1', 't2', 't3'] {
-		if !resp.body.contains('name="${name}"') {
-			return error('builds page missing select "${name}"')
-		}
-	}
-	// a known combi pair (Wizard Cookie + Mini Jackson No. 2) shows the
-	// picked entities plus the localized bonus and its hidden badge
-	resp2 := http.get('${tc.base}/builds?cookie=23&pet=58') or {
-		return error('GET /builds?cookie=23&pet=58: ${err}')
-	}
-	if !resp2.body.contains('Wizard Cookie') || !resp2.body.contains('Mini Jackson No. 2') {
-		return error('build preview missing picked entities')
-	}
-	if !resp2.body.contains('1200 Bonus Points for all Jellies') {
-		return error('build preview missing combi effect text')
-	}
-	if !resp2.body.contains('Hidden') {
-		return error('build preview missing hidden combi badge')
-	}
-}
-
 fn test_thai_language(mut tc TestContext) ! {
 	resp := http.fetch(method: .get, url: '${tc.base}/cookies', cookies: {
 		lang_cookie_key: 'th'
@@ -837,6 +814,208 @@ fn test_admin_login(mut tc TestContext) ! {
 		return error('login: no ${session_cookie_key} cookie in Set-Cookie')
 	}
 	tc.session_cookie = sid
+}
+
+fn test_builds(mut tc TestContext) ! {
+	// the community list renders the filters
+	resp := http.get('${tc.base}/builds') or { return error('GET /builds: ${err}') }
+	if resp.status_code != 200 {
+		return error('GET /builds: expected 200, got ${resp.status_code}')
+	}
+	for name in ['cookie', 'pet', 'ep', 'sort'] {
+		if !resp.body.contains('name="${name}"') {
+			return error('builds list missing filter "${name}"')
+		}
+	}
+	// filter row: pet select left of cookie select, no Cookie/Pet labels
+	pet_select := resp.body.index('name="pet"') or { return error('builds list missing pet select') }
+	cookie_select := resp.body.index('name="cookie"') or { return error('builds list missing cookie select') }
+	if pet_select >= cookie_select {
+		return error('builds filter should show pet left of cookie')
+	}
+	if resp.body.contains('uppercase">Cookie<') || resp.body.contains('uppercase">Pet<') {
+		return error('builds filter still has Cookie/Pet labels')
+	}
+
+	// the planner is open to everyone and previews the combi on load
+	planner := http.get('${tc.base}/builds/new?cookie=23&pet=58') or {
+		return error('GET /builds/new: ${err}')
+	}
+	if !planner.body.contains('1200 Bonus Points for all Jellies') {
+		return error('build planner missing combi preview')
+	}
+	// picker dialogs: one per cookie/pet plus a shared treasure dialog,
+	// capturing values via form method=dialog, with options listed
+	for dlg in ['dialog-cookie', 'dialog-pet', 'dialog-treasure'] {
+		if !planner.body.contains('id="${dlg}"') {
+			return error('planner missing ${dlg}')
+		}
+	}
+	if !planner.body.contains('form method="dialog"') {
+		return error('picker should capture values via form method=dialog')
+	}
+	if !planner.body.contains('Wizard Cookie') || !planner.body.contains('Mini Jackson No. 2') {
+		return error('picker dialogs missing options')
+	}
+	// treasure options carry their effect text into the picker modal
+	if !planner.body.contains('data-effect="') {
+		return error('treasure picker options missing effect text')
+	}
+	// a filled treasure slot shows the effect under the name
+	tslot := http.get('${tc.base}/builds/new?t1=180') or {
+		return error('GET /builds/new (t1=180): ${err}')
+	}
+	t1_at := tslot.body.index('id="slot-t1"') or { return error('planner missing slot-t1') }
+	if !tslot.body[t1_at..t1_at + 800].contains('Miniscule Magnetic Aura') {
+		return error('filled treasure slot missing effect text')
+	}
+	// relay cookie slot sits next to the lead cookie on the first row
+	if !planner.body.contains('id="slot-cookie2"') || !planner.body.contains('Relay Cookie') {
+		return error('planner missing relay cookie slot')
+	}
+	// filled slots carry a corner ✕ to clear the pick back to its placeholder
+	for slot in ['cookie', 'pet'] {
+		if !planner.body.contains('id="slot-${slot}" data-empty=') {
+			return error('slot ${slot} missing empty label for clear')
+		}
+		if !planner.body.contains("onclick=\"clearSlot('${slot}')\"") {
+			return error('slot ${slot} missing clear button')
+		}
+	}
+	// the planner preview shows only the combi bonus box (no cookie/pet cards)
+	pv_start := planner.body.index('id="build-preview"') or { return error('planner missing build-preview') }
+	pv_block := planner.body[pv_start..]
+	if pv_block.contains('/pets/58"') || pv_block.contains('/cookies/23"') {
+		return error('planner preview should not render cookie/pet cards')
+	}
+	if !planner.body.contains('Combo bonus') {
+		return error('planner preview missing combo box')
+	}
+	// the preview partial re-renders the loadout live from query params
+	preview_part := http.get('${tc.base}/builds/preview?cookie=23&pet=58') or {
+		return error('GET /builds/preview: ${err}')
+	}
+	if !preview_part.body.contains('1200 Bonus Points for all Jellies') {
+		return error('build preview partial missing combi bonus')
+	}
+	if preview_part.body.contains('<!DOCTYPE') || preview_part.body.contains('id="dialog-cookie"') {
+		return error('preview partial should be a fragment, not a full page')
+	}
+	// the combo box renders whenever cookie+pet are picked: real effect when
+	// the pair has a registered combo, a no-combo hint otherwise
+	none_pair := http.get('${tc.base}/builds/preview?cookie=1&pet=2') or {
+		return error('GET /builds/preview (no-combo pair): ${err}')
+	}
+	if !none_pair.body.contains('No combo bonus for this pair.') {
+		return error('preview should hint when the cookie/pet pair has no combo')
+	}
+
+	// anonymous submit: build appears in the list and carries an expiry
+	post := http.fetch(
+		method: .post
+		url:    '${tc.base}/builds/new'
+		header: http.new_header(key: .content_type, value: 'application/x-www-form-urlencoded')		data: http.url_encode_form_data({
+			'cookie':  '23'
+			'c2':      '95'
+			'pet':     '58'
+			't1':      '180'
+			't2':      '284'
+			't3':      '378'
+			'ep':      '5'
+			'tag':     'score'
+			'author':  'anonplayer'
+		})
+		allow_redirect: false
+	) or { return error('anon submit: ${err}') }
+	if post.status_code != 302 {
+		return error('anon submit: expected 302, got ${post.status_code}')
+	}
+	anon := tc.db.exec("SELECT author, ep, ep_special, tag, expires_at, cookie2_id FROM build WHERE author = 'anonplayer'")!
+	if anon.len != 1 {
+		return error('anon submit: build row missing')
+	}
+	if anon[0].get_int('ep') != 5 || anon[0].get_int('ep_special') != 0 || anon[0].get_string('tag') != 'score' {
+		return error('anon submit: expected EP tier 5 with #score tag')
+	}
+	if anon[0].get_int('cookie2_id') != 95 {
+		return error('anon submit: expected relay cookie 95 to be stored')
+	}
+	if anon[0].get_int('expires_at') <= 0 {
+		return error('anon submit: expected expires_at to be set')
+	}
+
+	// logged-in submit: permanent (no expiry), author from the account
+	if tc.session_cookie == '' {
+		return error('run admin login first')
+	}
+	post2 := http.fetch(
+		method: .post
+		url:    '${tc.base}/builds/new'
+		header: http.new_header(key: .content_type, value: 'application/x-www-form-urlencoded')
+		cookies: {
+			session_cookie_key: tc.session_cookie
+		}
+		data: http.url_encode_form_data({
+			'cookie': '95'
+			'pet':    '99'
+			't1':     '180'
+			't2':     '284'
+			't3':     '378'
+			'ep':     's2'
+			'tag':    'autofarm'
+			'author': 'ignored'
+		})
+		allow_redirect: false
+	) or { return error('logged-in submit: ${err}') }
+	if post2.status_code != 302 {
+		return error('logged-in submit: expected 302, got ${post2.status_code}')
+	}
+	perm := tc.db.exec("SELECT author, ep, ep_special, tag, expires_at FROM build WHERE ep_special = 2 AND tag = 'autofarm'")!
+	if perm.len != 1 || perm[0].get_string('author') != 'test' {
+		return error('logged-in submit: author should be the account name')
+	}
+	if perm[0].get_int('ep') != 0 || perm[0].get_int('ep_special') != 2 || perm[0].get_string('tag') != 'autofarm' {
+		return error('logged-in submit: expected Special EP 2 with #autofarm tag')
+	}
+	if perm[0].get_int('expires_at') != 0 {
+		return error('logged-in submit: expected no expiry')
+	}
+
+	// the list shows both builds and honors the filters
+	list := http.get('${tc.base}/builds') or { return error('GET /builds (2): ${err}') }
+	if !list.body.contains('anonplayer') || !list.body.contains('#score') || !list.body.contains('#autofarm') {
+		return error('builds list missing submitted builds or their tags')
+	}
+	// the anon card carries its relay cookie (95) alongside the lead cookie
+	if !list.body.contains('href="/cookies/95"') {
+		return error('builds list missing relay cookie on card')
+	}
+	// treasure names resolve from TreasureTranslation, not cookie names
+	trs := tc.db.exec("SELECT name FROM treasure_translation WHERE treasure_id = 180 AND lang = 'en'")!
+	if trs.len != 1 || !list.body.contains(trs[0].get_string('name')) {
+		return error('builds list missing treasure name on card')
+	}
+	filtered := http.get('${tc.base}/builds?cookie=23&pet=58&ep=5') or {
+		return error('GET /builds?filter: ${err}')
+	}
+	if !filtered.body.contains('anonplayer') {
+		return error('cookie/pet/EP filter hides a matching build')
+	}
+	special := http.get('${tc.base}/builds?ep=s2') or { return error('GET /builds?ep=s2: ${err}') }
+	if !special.body.contains('#autofarm') || special.body.contains('#score') {
+		return error('special EP filter shows the wrong builds')
+	}
+	no_match := http.get('${tc.base}/builds?ep=7') or { return error('GET /builds?ep=7: ${err}') }
+	if no_match.body.contains('anonplayer') || no_match.body.contains('#autofarm') {
+		return error('EP filter shows builds outside the tier')
+	}
+
+	// expired anonymous builds drop out of the list
+	tc.db.exec("INSERT INTO build (cookie_id, pet_id, treasure1_id, treasure2_id, treasure3_id, ep, author, user_id, created_at, expires_at) VALUES (23, 58, 180, 284, 378, 999, 'zzexpired', NULL, strftime('%s','now'), 1)")!
+	exp := http.get('${tc.base}/builds') or { return error('GET /builds (3): ${err}') }
+	if exp.body.contains('zzexpired') {
+		return error('expired anonymous build still listed')
+	}
 }
 
 fn test_admin_create_cookie(mut tc TestContext) ! {

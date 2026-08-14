@@ -25,6 +25,7 @@ pub fn initialize(path string) !sqlite.DB {
 		create table models.Effect
 		create table models.EffectTranslation
 		create table models.TreasureEffect
+		create table models.Build
 	}!
 
 	migrate(conn)!
@@ -53,6 +54,7 @@ pub struct SeedFixture {
 	effect_translation   []models.EffectTranslation
 	treasure_effect      []models.TreasureEffect
 	combi_bonus          []models.CombiBonus
+	build                []models.Build
 }
 
 // seed_if_empty loads scripts/seed_data.json into a database that has no
@@ -274,6 +276,30 @@ fn create_fts_table(conn sqlite.DB, table FtsTable) ! {
 
 // migrate applies schema changes that `create table` cannot handle on existing databases.
 fn migrate(conn sqlite.DB) ! {
+	// build.ep became a tiered combobox (EP 1-7, Special EP 1-3) and builds
+	// gained a tag (#score/#coin/#autofarm); add the columns for databases
+	// created before the change. Old rows keep their raw ep value and empty
+	// tag until re-submitted.
+	build_cols := conn.columns('build') or { return }
+	if 'ep_special' !in build_cols {
+		result := conn.exec_none('ALTER TABLE build ADD COLUMN ep_special INTEGER NOT NULL DEFAULT 0')
+		if !sqlite_success(result) {
+			return conn.error_message(result, 'add build ep_special column')
+		}
+	}
+	if 'tag' !in build_cols {
+		result := conn.exec_none("ALTER TABLE build ADD COLUMN tag TEXT NOT NULL DEFAULT ''")
+		if !sqlite_success(result) {
+			return conn.error_message(result, 'add build tag column')
+		}
+	}
+	if 'cookie2_id' !in build_cols {
+		result := conn.exec_none('ALTER TABLE build ADD COLUMN cookie2_id INTEGER NOT NULL DEFAULT 0')
+		if !sqlite_success(result) {
+			return conn.error_message(result, 'add build cookie2_id column')
+		}
+	}
+
 	// cookie_translation columns added after the table first shipped; ensure they
 	// exist for databases created before their introduction.
 	translation_cols := conn.columns('cookie_translation') or { return }

@@ -385,3 +385,78 @@ Pick a cookie, a pet and three treasures to preview your build.
 build_with
 with
 -----
+new_build_page_title
+Submit Build | Classic/FanWiki
+-----
+build_ep_label
+EP
+-----
+build_author_label
+Name (optional)
+-----
+build_expiry_hint
+Anonymous builds expire after 24 hours — log in to keep yours.
+-----
+build_submit_button
+Submit build
+-----
+new_build_button
+New build
+-----
+build_empty_list
+No builds yet — be the first to submit one.
+-----
+build_sort_label
+Sort
+-----
+build_sort_ep
+Best EP
+-----
+build_sort_new
+Newest
+-----
+build_anonymous
+Anonymous
+-----
+build_expires_in
+expires in {h}h
+-----
+build_ep_tier
+EP {n}
+-----
+build_ep_special
+Special EP {n}
+-----
+build_tag_label
+Tag
+-----
+build_tag_score
+score
+-----
+build_tag_coin
+coin
+-----
+build_tag_autofarm
+autofarm
+-----
+build_pick_cookie
+Pick a cookie
+-----
+build_pick_pet
+Pick a pet
+-----
+build_pick_treasure
+Pick a treasure
+-----
+build_search_placeholder
+Search...
+-----
+build_clear_slot
+Clear
+-----
+build_relay_label
+Relay Cookie
+-----
+build_no_combo
+No combo bonus for this pair.
+-----
