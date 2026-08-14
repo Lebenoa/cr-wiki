@@ -295,10 +295,18 @@ fn treasure_grade(g ?int) ?models.Grade {
 	return none
 }
 
+// fmt_f64 renders a value without a trailing .0 on whole numbers
+// (5.0 -> "5", 0.3 -> "0.3", 7000.0 -> "7000").
+pub fn fmt_f64(n f64) string {
+	if n == f64(int(n)) {
+		return '${int(n)}'
+	}
+	return '${n}'
+}
+
 // format_effect_value renders the numeric value with its unit suffix
-// ("12%", "3s", "5000", "2-3%"); empty when the effect has no stored value
-// (legacy names carry their own numbers).
-pub fn format_effect_value(value ?int, value_min ?int, value_max ?int, unit models.EffectUnit) string {
+// ("12%", "3s", "5000", "0.3-0.8s"); empty when the effect has no value.
+pub fn format_effect_value(value ?f64, value_min ?f64, value_max ?f64, unit models.EffectUnit) string {
 	suffix := match unit {
 		.percent { '%' }
 		.second { 's' }
@@ -306,12 +314,12 @@ pub fn format_effect_value(value ?int, value_min ?int, value_max ?int, unit mode
 	}
 	if mn := value_min {
 		if mx := value_max {
-			return '${mn}-${mx}${suffix}'
+			return '${fmt_f64(mn)}-${fmt_f64(mx)}${suffix}'
 		}
-		return '${mn}${suffix}'
+		return '${fmt_f64(mn)}${suffix}'
 	}
 	if v := value {
-		return '${v}${suffix}'
+		return '${fmt_f64(v)}${suffix}'
 	}
 	return ''
 }
@@ -319,15 +327,15 @@ pub fn format_effect_value(value ?int, value_min ?int, value_max ?int, unit mode
 // format_effect_bare_value renders the bare number/range without a unit
 // suffix ("5", "2-3") for substitution into {value} placeholders — the unit
 // word/symbol lives in each language's translation text.
-pub fn format_effect_bare_value(value ?int, value_min ?int, value_max ?int) string {
+pub fn format_effect_bare_value(value ?f64, value_min ?f64, value_max ?f64) string {
 	if mn := value_min {
 		if mx := value_max {
-			return '${mn}-${mx}'
+			return '${fmt_f64(mn)}-${fmt_f64(mx)}'
 		}
-		return '${mn}'
+		return '${fmt_f64(mn)}'
 	}
 	if v := value {
-		return '${v}'
+		return '${fmt_f64(v)}'
 	}
 	return ''
 }
@@ -1034,18 +1042,18 @@ fn split_structured_value(link models.TreasureEffect, name string) (string, stri
 	mut bare := ''
 	if mn := link.value_min {
 		if mx := link.value_max {
-			v0 = '${mn}${suffix}'
-			v9 = '${mx}${suffix}'
-			bare = '${mn}-${mx}'
+			v0 = '${fmt_f64(mn)}${suffix}'
+			v9 = '${fmt_f64(mx)}${suffix}'
+			bare = '${fmt_f64(mn)}-${fmt_f64(mx)}'
 		} else {
-			v0 = '${mn}${suffix}'
+			v0 = '${fmt_f64(mn)}${suffix}'
 			v9 = v0
-			bare = '${mn}'
+			bare = '${fmt_f64(mn)}'
 		}
 	} else if v := link.value {
-		v0 = '${v}${suffix}'
+		v0 = '${fmt_f64(v)}${suffix}'
 		v9 = v0
-		bare = '${v}'
+		bare = '${fmt_f64(v)}'
 	}
 	mut text := name
 	if name.contains('{value}') {
@@ -1491,9 +1499,9 @@ pub fn search_all(conn sqlite.DB, lang string, q string, limit int) !SearchResul
 pub struct EffectRowData {
 pub:
 	name      string
-	value     ?int
-	value_min ?int
-	value_max ?int
+	value     ?f64
+	value_min ?f64
+	value_max ?f64
 	unit      models.EffectUnit
 }
 

@@ -241,9 +241,9 @@ pub fn create_pet(conn sqlite.DB, params CreatePetParams) !int {
 pub struct EffectInput {
 pub:
 	name      string
-	value     ?int
-	value_min ?int
-	value_max ?int
+	value     ?f64
+	value_min ?f64
+	value_max ?f64
 	unit      models.EffectUnit
 }
 

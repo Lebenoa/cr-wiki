@@ -68,11 +68,12 @@ pub:
 	effect_id int @[required; references: 'effect'; index]
 
 	// value holds a single number (12 -> "12%"); value_min/value_max hold a
-	// range (2, 3 -> "2-3%"). All are optional so effects whose text carries
-	// its own numbers (legacy names like "drain 5-6% slower") store none.
-	value     ?int
-	value_min ?int
-	value_max ?int
+	// range (0.3, 0.8 -> "0.3-0.8s"). All are optional; names carry no numbers
+	// (they were migrated into these columns), so a missing value means the
+	// effect has none to show.
+	value     ?f64
+	value_min ?f64
+	value_max ?f64
 	unit      EffectUnit @[required]
 	state     EffectState @[required]
 }

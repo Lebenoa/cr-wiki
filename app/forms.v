@@ -81,9 +81,9 @@ fn effect_rows_from_db(rows []database.EffectRowData) []EffectRow {
 // EffectValueParts is the parsed form of an effect's value text.
 pub struct EffectValueParts {
 pub:
-	value     ?int
-	value_min ?int
-	value_max ?int
+	value     ?f64
+	value_min ?f64
+	value_max ?f64
 	unit      models.EffectUnit
 }
 
@@ -109,13 +109,14 @@ fn parse_effect_value(raw string) !EffectValueParts {
 	if s == '' {
 		return error('expected a number or range like 12% or 2-3%')
 	}
-	// scan signed integers: '12' | '2-3' | '-2' | '-2--3' (one or two values).
-	// A single '-' after a number is the range separator; the next number
-	// consumes its own optional sign, so '-2--3' means min -2, max -3.
-	mut nums := []int{}
+	// scan signed numbers: '12' | '0.3-0.8' | '-2' | '-2--3' (one or two
+	// values, decimals allowed). A single '-' after a number is the range
+	// separator; the next number consumes its own optional sign, so '-2--3'
+	// means min -2, max -3.
+	mut nums := []f64{}
 	mut i := 0
 	for i < s.len {
-		// one number: optional sign then digits
+		// one number: optional sign then digits and a single decimal point
 		mut j := i
 		if s[j] == `-` {
 			j++
@@ -123,10 +124,17 @@ fn parse_effect_value(raw string) !EffectValueParts {
 		if j >= s.len || !s[j].is_digit() {
 			return error('expected a number or range like 12% or 2-3%')
 		}
-		for j < s.len && s[j].is_digit() {
+		mut dots := 0
+		for j < s.len && (s[j].is_digit() || s[j] == `.`) {
+			if s[j] == `.` {
+				dots++
+			}
+			if dots > 1 {
+				return error('expected a number or range like 12% or 2-3%')
+			}
 			j++
 		}
-		nums << s[i..j].int()
+		nums << s[i..j].f64()
 		i = j
 		// separator: exactly one '-' before the next number
 		if i < s.len {

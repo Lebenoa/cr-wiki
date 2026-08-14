@@ -326,14 +326,38 @@ fn test_effect_value_parse(mut tc TestContext) ! {
 }
 
 fn test_effect_placeholder(mut tc TestContext) ! {
-	// invariant: every effect whose links carry a structured value must have
-	// {value} in its translations — numbers live on the link (per treasure/
-	// per state), not baked into the text, so identical effects dedupe
-	// no GROUP BY: COUNT always yields a row, even when the invariant holds
-	// (zero offending translations) — `[0]` on an empty result would panic
-	bad := tc.db.exec('SELECT COUNT(*) AS n FROM effect_translation et JOIN treasure_effect te ON te.effect_id = et.effect_id WHERE (te.value IS NOT NULL OR te.value_min IS NOT NULL OR te.value_max IS NOT NULL) AND et.name NOT LIKE "%{value}%"')![0].get_int('n')
+	// invariant 1: a {value} placeholder on a linked effect must resolve — the
+	// link has to carry the value, or the render strips the token and the
+	// reader sees mangled text. Orphan translations (nothing links them) never
+	// render, so they are harmless and excluded by the JOIN.
+	bad := tc.db.exec('SELECT COUNT(DISTINCT et.effect_id) AS n FROM effect_translation et JOIN treasure_effect te ON te.effect_id = et.effect_id WHERE et.name LIKE "%{value}%" AND te.value IS NULL AND te.value_min IS NULL AND te.value_max IS NULL')![0].get_int('n')
 	if bad > 0 {
-		return error('${bad} structured-value effect translations lack the {value} placeholder')
+		return error('${bad} linked effects carry a {value} placeholder with no structured value')
+	}
+	// invariant 2: no effect translation bakes its own structured value into
+	// the name — numbers live on the link (per treasure/state), so identical
+	// effects with different values dedupe. Token-boundary compare so a bare
+	// "2" never matches inside "20 Energy" (a legitimate secondary number).
+	mut baked := []string{}
+	links := sql tc.db {
+		select from models.TreasureEffect where value != none || value_min != none || value_max != none
+	}!
+	for link in links {
+		fv := database.format_effect_value(link.value, link.value_min, link.value_max, link.unit)
+		if fv == '' {
+			continue
+		}
+		translations := sql tc.db {
+			select from models.EffectTranslation where effect_id == link.effect_id
+		}!
+		for tr in translations {
+			if ' ${tr.name} '.contains(' ${fv} ') {
+				baked << 'effect ${link.effect_id} "${tr.name}" carries ${fv}'
+			}
+		}
+	}
+	if baked.len > 0 {
+		return error('${baked.len} effect translations bake their structured value: ${baked}')
 	}
 	// the placeholder renders into the +0/+9 columns with no literal token:
 	// treasure 482 normal "Base speed 6%" is a flat single value
