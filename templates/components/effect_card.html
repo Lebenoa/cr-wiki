@@ -1,15 +1,11 @@
 <div class="effect-card grid grid-cols-[4rem_4rem_1fr] items-center gap-2 p-4 rounded-xl border-l-4 border-primary">
-    <span class="text-center text-accent font-bold">
-        @effect.value0
-        @if effect.diff0 != ''
-        <span class="text-foreground-muted">(@effect.diff0)</span>
-        @endif
+    <span class="flex flex-col items-center gap-1 text-accent font-bold">
+        <span>@effect.value0</span>
+        <span class="effect-diff h-5 text-xs leading-tight text-foreground-muted">@effect.diff0</span>
     </span>
-    <span class="text-center text-accent font-bold">
-        @effect.value9
-        @if effect.diff9 != ''
-        <span class="text-foreground-muted">(@effect.diff9)</span>
-        @endif
+    <span class="flex flex-col items-center gap-1 text-accent font-bold">
+        <span>@effect.value9</span>
+        <span class="effect-diff h-5 text-xs leading-tight text-foreground-muted">@effect.diff9</span>
     </span>
     @if effect.name_html != ''
     <p class="text-on-surface">@effect.name_html</p>

@@ -21,6 +21,19 @@
             mask-composite: exclude;
             pointer-events: none;
         }
+        .effect-diff {
+            animation: diff-in 0.3s ease-out;
+        }
+        @keyframes diff-in {
+            from {
+                opacity: 0;
+                transform: translateY(-2px);
+            }
+            to {
+                opacity: 1;
+                transform: none;
+            }
+        }
     </style>
 </head>
 
@@ -91,8 +104,8 @@
                 @if blessed_effects.len > 0
                 <div id="effects-blessed" class="blessed-effect mt-2 hidden">
                     <div class="grid grid-cols-[4rem_4rem_1fr] px-4 py-1.5 rounded-t-xl bg-secondary/10">
-                        <span class="text-center text-xs font-label text-foreground-muted uppercase">Δ+0</span>
-                        <span class="text-center text-xs font-label text-foreground-muted uppercase">Δ+9</span>
+                        <span class="text-center text-xs font-label text-foreground-muted uppercase">+0</span>
+                        <span class="text-center text-xs font-label text-foreground-muted uppercase">+9</span>
                         <span></span>
                     </div>
                     <div class="mt-2 flex flex-col gap-2">
