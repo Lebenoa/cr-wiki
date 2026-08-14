@@ -705,16 +705,30 @@ pub fn combi_edit_rows(conn sqlite.DB, lang string, kind string, id int) ![]Comb
 	return result
 }
 
+// EffectOption is one treasure effect line for the build planner picker:
+// the display text ("gives extra points for Jellies") plus its compact value
+// ("2-4", "12%", ""). Both come from split_effect_value/compact_effect_value
+// so the picker text matches the treasure detail page.
+pub struct EffectOption {
+pub:
+	text  string
+	value string
+}
+
 // IdNameOption is a lightweight (id, name) pair for admin-form dropdowns;
 // image is populated for treasure options so the combobox can show sprites,
-// and effect carries the treasure's first normal effect text for the build
-// planner picker (empty for cookies/pets).
+// and the effect fields carry the treasure's full normal + blessed effect
+// lists (in wiki order, deduped) for the build planner picker. Empty for
+// cookies/pets. has_blessed_toggle is true when the blessed set differs from
+// the normal set, so the picker can offer a normal/blessed toggle.
 pub struct IdNameOption {
 pub:
-	id     int
-	name   string
-	image  ?string
-	effect string
+	id                 int
+	name               string
+	image              ?string
+	effects            []EffectOption
+	effects_blessed    []EffectOption
+	has_blessed_toggle bool
 }
 
 // BuildCard is one community-submitted build on the /builds list: the EP
@@ -847,10 +861,13 @@ pub fn treasure_options(conn sqlite.DB, lang string) ![]IdNameOption {
 		}
 	}
 
-	// first normal effect per treasure, in listing order (treasure_effect_id)
-	mut effect_map := map[int]string{}
+	// every effect per treasure per state (normal + blessed), in wiki order
+	// with duplicate links dropped; the picker shows them all and toggles
+	// between the states for evolved treasures.
+	mut effect_map := map[int][]EffectOption{}
+	mut blessed_map := map[int][]EffectOption{}
 	links := sql conn {
-		select from models.TreasureEffect where state == models.EffectState.normal order by treasure_effect_id
+		select from models.TreasureEffect order by treasure_effect_id
 	} or { [] }
 	if links.len > 0 {
 		mut eids := []int{}
@@ -876,15 +893,34 @@ pub fn treasure_options(conn sqlite.DB, lang string) ![]IdNameOption {
 				etmap[tr.effect_id] = tr
 			}
 		}
-		mut first_seen := map[int]bool{}
+		mut seen_tid := map[int]map[int]bool{} // treasure_id -> effect_id dedupe
+		mut seen_tid_b := map[int]map[int]bool{}
 		for l in links {
-			if l.treasure_id in first_seen {
-				continue
-			}
-			first_seen[l.treasure_id] = true
 			if tr := etmap[l.effect_id] {
-				_, _, text := split_effect_value(l, tr.name)
-				effect_map[l.treasure_id] = text
+				v0, v9, text := split_effect_value(l, tr.name)
+				opt := EffectOption{
+					text:  text
+					value: compact_effect_value(v0, v9)
+				}
+				if l.state == models.EffectState.blessed {
+					if l.effect_id in (seen_tid_b[l.treasure_id] or { map[int]bool{} }) {
+						continue
+					}
+					if l.treasure_id !in seen_tid_b {
+						seen_tid_b[l.treasure_id] = map[int]bool{}
+					}
+					seen_tid_b[l.treasure_id][l.effect_id] = true
+					blessed_map[l.treasure_id] << opt
+				} else {
+					if l.effect_id in (seen_tid[l.treasure_id] or { map[int]bool{} }) {
+						continue
+					}
+					if l.treasure_id !in seen_tid {
+						seen_tid[l.treasure_id] = map[int]bool{}
+					}
+					seen_tid[l.treasure_id][l.effect_id] = true
+					effect_map[l.treasure_id] << opt
+				}
 			}
 		}
 	}
@@ -893,11 +929,15 @@ pub fn treasure_options(conn sqlite.DB, lang string) ![]IdNameOption {
 	for t in treasures {
 		tid := t.treasure_id or { continue }
 		if tr := tmap[tid] {
+			normal := effect_map[tid] or { []EffectOption{} }
+			blessed := blessed_map[tid] or { []EffectOption{} }
 			out << IdNameOption{
-				id:     tid
-				name:   tr.name
-				image:  t.image
-				effect: effect_map[tid] or { '' }
+				id:                 tid
+				name:               tr.name
+				image:              t.image
+				effects:            normal
+				effects_blessed:    blessed
+				has_blessed_toggle: blessed.len > 0 && normal.len > 0 && effect_lists_differ(normal, blessed)
 			}
 		}
 	}
@@ -1294,6 +1334,37 @@ fn split_effect_value(link models.TreasureEffect, name string) (string, string, 
 		return split_structured_value(link, name)
 	}
 	return split_baked_value(name)
+}
+
+// compact_effect_value joins the +0/+9 column values into one picker line:
+// empty when the effect has no value, the single value when both levels match
+// ("12%"), or a range with the shared unit hoisted ("6-11%", "0.3-0.8s").
+fn compact_effect_value(v0 string, v9 string) string {
+	if v0 == '' {
+		return ''
+	}
+	if v0 == v9 {
+		return v0
+	}
+	if v0.len > 1 && v9.len > 1 && v0[v0.len - 1] == v9[v9.len - 1] && (v0[v0.len - 1] == `%` || v0[v0.len - 1] == `s`) {
+		return v0[..v0.len - 1] + '-' + v9
+	}
+	return v0 + '-' + v9
+}
+
+// effect_lists_differ reports whether two effect lists differ in any text or
+// value at the same position, or in length — the build planner toggle only
+// shows when the blessed set actually changes something visible.
+fn effect_lists_differ(a []EffectOption, b []EffectOption) bool {
+	if a.len != b.len {
+		return true
+	}
+	for i in 0 .. a.len {
+		if a[i].text != b[i].text || a[i].value != b[i].value {
+			return true
+		}
+	}
+	return false
 }
 
 // select_treasures lists treasures newest-first; tab filters to normal or

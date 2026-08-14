@@ -857,17 +857,48 @@ fn test_builds(mut tc TestContext) ! {
 	if !planner.body.contains('Wizard Cookie') || !planner.body.contains('Mini Jackson No. 2') {
 		return error('picker dialogs missing options')
 	}
-	// treasure options carry their effect text into the picker modal
-	if !planner.body.contains('data-effect="') {
-		return error('treasure picker options missing effect text')
+	// a multi-effect treasure's picker option shows every effect, not just
+	// the first
+	multi_at := planner.body.index("data-name=\"Macaron Cookie's Blusher Brush\"") or {
+		return error('planner missing multi-effect treasure option')
 	}
-	// a filled treasure slot shows the effect under the name
+	multi_block := planner.body[multi_at..multi_at + 1800]
+	for fx in ['gives extra points for Macaron Parade Jelly', 'Revives once with energy'] {
+		if !multi_block.contains(fx) {
+			return error('treasure picker option missing effect "${fx}"')
+		}
+	}
+	// a filled treasure slot shows all its effects under the name
 	tslot := http.get('${tc.base}/builds/new?t1=180') or {
 		return error('GET /builds/new (t1=180): ${err}')
 	}
 	t1_at := tslot.body.index('id="slot-t1"') or { return error('planner missing slot-t1') }
-	if !tslot.body[t1_at..t1_at + 800].contains('Miniscule Magnetic Aura') {
-		return error('filled treasure slot missing effect text')
+	for fx in ['Miniscule Magnetic Aura', 'Giant landing makes Jelly sprout from the ground'] {
+		if !tslot.body[t1_at..t1_at + 1200].contains(fx) {
+			return error('filled treasure slot missing effect "${fx}"')
+		}
+	}
+	// an evolved treasure's option renders both states: the blessed group is
+	// hidden until toggled and carries the value bump (2-4 normal, 4-6 blessed)
+	evo_opt := planner.body.index('data-name="Glistening Green Leaves"') or {
+		return error('planner missing evolved treasure option')
+	}
+	evo_block := planner.body[evo_opt..evo_opt + 2000]
+	for v in ['2-4', '4-6'] {
+		if !evo_block.contains(v) {
+			return error('evolved treasure option missing value "${v}"')
+		}
+	}
+	if !evo_block.contains('data-state="blessed"') {
+		return error('evolved treasure option missing blessed toggle')
+	}
+	// a filled evolved slot shows its value alongside the effect
+	evo_slot := http.get('${tc.base}/builds/new?t1=364') or {
+		return error('GET /builds/new (t1=364): ${err}')
+	}
+	evo_at := evo_slot.body.index('id="slot-t1"') or { return error('planner missing slot-t1') }
+	if !evo_slot.body[evo_at..evo_at + 1200].contains('2-4') {
+		return error('filled evolved slot missing effect value')
 	}
 	// relay cookie slot sits next to the lead cookie on the first row
 	if !planner.body.contains('id="slot-cookie2"') || !planner.body.contains('Relay Cookie') {

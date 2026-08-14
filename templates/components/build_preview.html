@@ -1,18 +1,18 @@
 @if c := preview.cookie
 @if p := preview.pet
-<div class="combo-box animate-[combo-in_.4s_ease-out] p-4 rounded-xl border-l-4 border-accent bg-accent/10 flex items-center gap-3 flex-wrap">
-    <span class="text-xs font-label text-foreground-muted uppercase">%combo_bonus_title</span>
-    <span class="text-on-surface font-bold">%build_with @p.name</span>
+<div class="combo-box animate-[combo-in_.4s_ease-out] p-5 rounded-xl border-l-4 border-accent bg-accent/10 flex items-center gap-3 flex-wrap">
+    <span class="text-sm font-label text-foreground-muted uppercase">%combo_bonus_title</span>
+    <span class="text-on-surface text-lg font-bold">%build_with @p.name</span>
     @if cb := preview.combi
     @if cb.effect != ""
-    <span class="text-on-surface">@cb.effect</span>
+    <span class="text-on-surface text-base">@cb.effect</span>
     @endif
     @if cb.is_hidden
     <span
-        class="font-bold text-accent uppercase border border-accent/50 rounded-full px-3 py-1 text-xs">%combi_hidden_badge</span>
+        class="font-bold text-accent uppercase border border-accent/50 rounded-full px-3 py-1 text-sm">%combi_hidden_badge</span>
     @endif
     @else
-    <span class="text-foreground-muted text-sm">%build_no_combo</span>
+    <span class="text-foreground-muted text-base">%build_no_combo</span>
     @endif
 </div>
 @endif
