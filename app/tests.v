@@ -307,7 +307,7 @@ fn test_effect_value_parse(mut _tc TestContext) ! {
 	// round-trip: parse(raw) -> format_effect_value(...) must reproduce raw
 	for raw in ['12%', '2-3%', '-2%', '-2--3%', '2--3%', '-2-3%', '-5-10s', '500000', ''] {
 		parts := parse_effect_value(raw) or { return error('parse ${raw}: ${err}') }
-		got := database.format_effect_value(parts.value, parts.value_min, parts.value_max, parts.unit)
+		got := util.format_effect_value(parts.value, parts.value_min, parts.value_max, parts.unit)
 		if got != raw {
 			return error('parse ${raw}: round-trip mismatch, got ${got}')
 		}
@@ -347,7 +347,7 @@ fn test_effect_placeholder(mut tc TestContext) ! {
 		select from models.TreasureEffect where value !is none || value_min !is none || value_max !is none
 	}!
 	for link in links {
-		fv := database.format_effect_value(link.value, link.value_min, link.value_max, link.unit)
+		fv := util.format_effect_value(link.value, link.value_min, link.value_max, link.unit)
 		if fv == '' {
 			continue
 		}
@@ -390,11 +390,11 @@ fn test_effect_placeholder(mut tc TestContext) ! {
 		return error('expected th "ความเร็วพื้นฐาน" 6%/6% on treasure 482, got ${th}')
 	}
 	// bare formatter: no unit suffix — the unit lives in the translation text
-	bare := database.format_effect_bare_value(6, none, none)
+	bare := util.format_effect_bare_value(6, none, none)
 	if bare != '6' {
 		return error('format_effect_bare_value(6) = ${bare}, want 6')
 	}
-	rng := database.format_effect_bare_value(none, 2, 3)
+	rng := util.format_effect_bare_value(none, 2, 3)
 	if rng != '2-3' {
 		return error('format_effect_bare_value range = ${rng}, want 2-3')
 	}

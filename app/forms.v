@@ -3,6 +3,7 @@ module app
 import time
 import database
 import database.models
+import app.util
 
 // parse_release_date reads the 'release_date' form field as YYYY-MM-DD,
 // defaulting to now when the field is empty.
@@ -72,7 +73,7 @@ fn effect_rows_from_db(rows []database.EffectRowData) []EffectRow {
 	for r in rows {
 		out << EffectRow{
 			name:  r.name
-			value: database.format_effect_value(r.value, r.value_min, r.value_max, r.unit)
+			value: util.format_effect_value(r.value, r.value_min, r.value_max, r.unit)
 		}
 	}
 	return out

@@ -4,61 +4,62 @@ A web platform for displaying and managing rich data about collectible assets �
 
 ## Features
 
-- **Cookie database** – List and detail views with localized names, abilities, and descriptions (see `app/cookies.v`)
-- **Pet & treasure databases** – Collection pages for pets and treasures (`app/pets.v`, `app/treasures.v`)
-- **Team builds** – Build guide page (`app/builds.v`)
-- **Multi-language support** – i18n via `translations/*.tr` files (English + Thai) with a cookie-based language selector and English fallback
-- **HTMX integration** – Partial-page updates for the language selector without full reloads
-- **Session-based auth** – Login/register with Argon2 password hashing and in-memory sessions (`CRSESSID` cookie)
-- **Admin module** – Authenticated admin sub-app with middleware gate (`app/admin.v`; currently not mounted into the router)
-- **Full-text search infrastructure** – SQLite FTS5 virtual tables with synchronization triggers (search UI not yet wired up)
+- **Cookie, pet & treasure databases** — List and detail views with localized names, abilities, and descriptions; grades, release dates, and unlock relationships
+- **Treasure effects** — Normal/blessed effect panels with per-column value diffs and word-level text diffs for evolved treasures
+- **Community builds** — `/builds` list (EP/tag filters, infinite scroll) and `/builds/new` planner with modal pickers, relay cookie, EP tiers, tags, anonymous 24-hour expiry, and a live combo-bonus preview
+- **Full-text search** — Navbar search over cookies/pets/treasures via SQLite FTS5, with a Thai-aware LIKE fallback (the default tokenizer can't segment Thai)
+- **Admin module** — Authenticated create/edit forms for cookies, pets, and treasures (effects, combi bonuses, rich text with `[[Cookie Name]]` links); test credentials `test`/`test`
+- **Multi-language support** — i18n via `translations/*.tr` (English + Thai) with cookie-based language selector and English fallback
+- **HTMX** — Partial-page updates, hx-boost navigation, server-paginated infinite scroll, and live preview refreshes without full reloads
 
 ## Tech Stack
 
 | Layer | Technology |
 |-------|------------|
 | Language | V (vlang) |
-| Web framework | veb |
-| Database | SQLite (with optional FTS5 support) |
+| Web framework | veb (new backend, `-d new_veb`) |
+| Database | SQLite (with FTS5 support, `-d sqlite_fts5`) |
 | Styling | UnoCSS (Wind4 preset), generated `static/styles.css` |
-| Interactivity | HTMX |
-| Package manager | bun (or npm) for frontend tooling |
+| Interactivity | HTMX (served from `/thirdparty/htmx.js`) |
+| Package manager | bun (never npm) |
 
 ## Project Structure
 
 ```
 cookierun/
-├── app/                    # Controllers & request handlers
-│   ├── api/                # API helpers
-│   │   └── available_langs.v  # Language list discovery
-│   ├── admin.v             # Admin sub-app (auth middleware + index)
-│   ├── api.v               # /api/available-langs, /api/set-lang
-│   ├── app.v               # App/Context structs, middleware, static files
-│   ├── builds.v            # Team builds page
-│   ├── cookies.v           # Cookie list + detail
-│   ├── index.v             # Homepage
-│   ├── login.v             # Login (GET form / POST submit)
-│   ├── pets.v              # Pets page
-│   ├── register.v          # Registration (GET form / POST submit)
-│   └── treasures.v         # Treasures page
+├── app/                    # Controllers, middleware, request handlers
+│   ├── api/                # API helpers (available_langs)
+│   ├── util/               # Pure helpers: effect text formatting, blessed
+│   │   └── effects.v       #   diffs, EffectView (no DB access)
+│   ├── app.v               # App/Context structs, middleware, img_src()
+│   ├── builds.v            # Build list + planner + live preview partial
+│   ├── cookies.v / pets.v / treasures.v  # List, detail, admin create/edit
+│   ├── search.v            # Search endpoint
+│   ├── login.v / register.v / api.v
+│   ├── forms.v / uploads.v / richtext.v  # Admin form handling, image
+│   │                                           # uploads, [[link]] rendering
+│   └── tests.v             # Integration suite (compiled out unless -d debug)
 ├── config/                 # Config.toml loading (host, port, db_file)
-├── database/               # Database layer
+├── database/               # DB-coupled code only (queries + models)
 │   ├── models/             # Domain entities (User, Cookie, Pet, Treasure, …)
 │   ├── create.v            # Insert operations
-│   ├── database.v          # Connection, schema creation, FTS5 setup
-│   └── select.v            # Query operations (with translation fallback)
-├── static/                 # Static assets (images, generated styles.css)
-├── templates/              # View templates (veb template syntax)
-│   ├── admin/              # Admin panel templates (WIP)
-│   ├── components/         # Reusable partials (lang_selector.html)
-│   ├── errors/             # Error pages
-│   ├── layout/             # Base layouts (head.html, navbar.html)
-│   ├── views/              # Detail views (cookie.html)
-│   └── *.html              # Page templates (index, cookies, pets, …)
-├── translations/           # i18n .tr files (en, th, lang_map)
-├── main.v                  # Application entry point
+│   ├── select.v            # Query operations (with translation fallback)
+│   ├── update.v            # Update operations
+│   └── database.v          # Connection, schema, migrations, seed fixture
+├── static/                 # Static assets
+│   ├── js/                 # picker.js, combobox.js, richtext.js (served routes)
+│   └── styles.css          # Generated by UnoCSS — don't edit by hand
+├── templates/              # View templates (veb syntax)
+│   ├── views/              # Detail pages (cookie.html, pet.html, treasure.html)
+│   ├── components/         # Shared partials (cards, effect cards, previews)
+│   ├── layout/             # head.html, navbar.html
+│   ├── admin/              # Admin create/edit forms
+│   └── *.html              # Page templates (index, cookies, new_build, …)
+├── translations/           # i18n .tr files (en, th)
+├── scripts/                # seed_data.json — committed DB fixture (only file here)
+├── main.v                  # Entry point (flags, test session hook)
 ├── Config.toml             # Runtime configuration (gitignored)
-├── uno.config.ts           # UnoCSS configuration
+├── uno.config.ts           # UnoCSS configuration (preflight keyframes live here)
 ├── package.json            # Frontend tooling (unocss --watch)
 └── v.mod                   # V module definition
 ```
@@ -69,7 +70,7 @@ cookierun/
 
 - [V compiler](https://vlang.io/docs/#installation) (latest)
 - SQLite build with FTS5 support (only needed for the `-d sqlite_fts5` define)
-- bun or npm (only needed to regenerate the stylesheet)
+- bun (for the UnoCSS watcher)
 
 ### Installation
 
@@ -77,16 +78,16 @@ cookierun/
 git clone <repository-url>
 cd cookierun
 
-# Install frontend tooling (bun or npm both work)
-bun install   # or: npm install
+# Install frontend tooling
+bun install
 
-# Run the application
-v -d sqlite_fts5 -d new_veb run .
+# Run the application — all three flags are required
+v -d sqlite_fts5 -d new_veb -enable-globals run .
 ```
 
-> **Note:** `-d new_veb` enables veb's new-generation runtime (template compilation via `$veb.html()`), and `-d sqlite_fts5` enables the FTS5 virtual tables. Both are required for this project.
+> **Note:** `-d sqlite_fts5` enables SQLITE_ENABLE_FTS5, `-d new_veb` selects veb's new backend, and `-enable-globals` is required by app globals. Omitting `-d new_veb` falls back to the legacy backend.
 
-The server binds to `0.0.0.0:6785` with the current `Config.toml` (defaults without a config file: `127.0.0.1:6785`, database `sqlite.db`).
+The server binds to `0.0.0.0:6785` (see `Config.toml`; defaults without a config file: `127.0.0.1:6785`, database `sqlite.db`). A fresh database seeds itself from `scripts/seed_data.json`.
 
 ### Configuration
 
@@ -104,70 +105,73 @@ All fields are optional; omitted fields fall back to the defaults in `config/con
 
 ### Styles
 
-The stylesheet is generated by UnoCSS from class usage in templates and controllers:
+The stylesheet is generated by UnoCSS from class usage in `./**/*.html` and `./app/*.v`:
 
 ```bash
-bun run dev    # or: npm run dev  →  unocss --watch
+bun run dev    # unocss --watch
 ```
 
-This regenerates `static/styles.css` on changes to `**/*.html` or `app/*.v`.
+This regenerates `static/styles.css` on changes to scanned files. Commit the regenerated CSS together with template class changes; never edit `static/styles.css` by hand, and never add `<style>` tags (all styling via UnoCSS utilities).
 
 ### Building & checking
 
 ```bash
-# Type-check without emitting a binary
-v -d sqlite_fts5 -d new_veb check .
-
-# Format code
-v fmt -w .
-
-# Build a production binary
-v -prod -d sqlite_fts5 -d new_veb build .
+# Type-check and build to /tmp (the watch locks cookierun.exe)
+v -d sqlite_fts5 -d new_veb -enable-globals -o /tmp/cr_test.exe .
 ```
+
+### Test session (debug builds only)
+
+```bash
+CR_TEST=1 v -d sqlite_fts5 -d new_veb -d debug -enable-globals run .
+```
+
+Boots against a fresh throwaway `sqlite_test.db` on port 6798 and runs the data-integrity + HTTP suite. Exit 0 = pass, 1 = fail. Compiled out of release binaries unless `-d debug` is passed.
 
 ### Database
 
-The SQLite database is created automatically at startup from the ORM-annotated structs in `database/models/*.v`. With `-d sqlite_fts5`, it also:
+The SQLite database is created automatically at startup from the ORM-annotated structs in `database/models/*.v`, then migrations in `database/database.v` add columns/constraints for existing databases. With `-d sqlite_fts5`, it also enables WAL mode and creates FTS5 virtual tables with synchronization triggers. Local `*.db` files are gitignored.
 
-- enables WAL mode
-- creates FTS5 virtual tables for `cookie_translation`, `pet_translation`, `treasure_translation`, and `effect_translation`
-- installs `AFTER INSERT/DELETE/UPDATE` triggers to keep the FTS indexes in sync
-
-Local `*.db` files are gitignored.
+`scripts/seed_data.json` is the only tracked file in `scripts/` — a committed DB fixture. Regenerate it whenever data or DB translations change (`seed_if_empty()` in `database/database.v`).
 
 ## Architecture
 
 **Request lifecycle:**
 
-1. HTTP request hits a controller handler in `app/`
-2. Middleware (`before_request` in `app/app.v`) enriches the context: language from `wikilang` cookie, user from session
+1. HTTP request hits a controller handler in `app/` (routes are `@['/path']` annotations; simple handlers auto-route by name)
+2. `before_request` in `app/app.v` enriches the context: language from the `wikilang` cookie, user from session
 3. Controllers delegate data access to `database/`
-4. Domain data is persisted/queried through `database/models/*.v` entities
-5. A `Context` (data + local state) is passed to the template, producing the final HTML
+4. Data is persisted/queried through `database/models/*.v` entities
+5. A structured context (fetched data + local state) is prepared and passed to the view template, producing the final HTML
+
+**Module boundaries:**
+
+- `database/` holds DB-coupled code only — queries, models, migrations. Effect *presentation* (value formatting, splitting, blessed diffs, `EffectView`) lives in `app/util/effects.v`; `database/` imports `app.util`, never the other way around.
+- Controllers stay thin; business logic lives in `app/` and `database/` functions returning structured results (`!` / `or {}`) — no generic exceptions.
 
 **Key patterns:**
 
 - Explicit imports only; no implicit paths
-- Structured result types (`!` / `or {}`) for error handling — no generic exceptions
-- Localized content stored per-language (`*_translation` tables) with English fallback (`backup_translations` in `database/select.v`)
-- Middleware chain for cross-cutting concerns (auth, i18n)
-- In-memory session store (`App.sessions`) keyed by a random session ID in the `CRSESSID` http-only cookie
+- Localized content stored per-language (`*_translation` tables) with English fallback
+- User-facing text always goes through translation keys (`translations/{en,th}.tr` + `ctx.tr()`)
+- In-memory session store keyed by a random session ID in the `CRSESSID` http-only cookie; admin routes return 404 for unauthenticated access
 
 ## API Endpoints
 
 | Method | Path | Description |
 |--------|------|-------------|
 | GET | `/` | Homepage |
-| GET | `/cookies` | List cookies |
-| GET | `/cookies/:id` | Cookie detail |
-| GET | `/pets` | List pets |
-| GET | `/treasures` | List treasures |
-| GET | `/builds` | Team builds |
-| GET | `/login` | Login form |
-| POST | `/login` | Authenticate & create session |
-| GET | `/register` | Registration form |
-| POST | `/register` | Create user & session |
+| GET | `/search` | Search results (FTS5; Thai falls back to LIKE) |
+| GET | `/cookies`, `/pets`, `/treasures` | List pages (htmx infinite scroll) |
+| GET | `/cookies/:id`, `/pets/:id`, `/treasures/:id` | Detail pages |
+| GET/POST | `/cookies/new`, `/pets/new`, `/treasures/new` | Admin create (admin-only) |
+| GET/POST | `/cookies/:id/edit`, `/pets/:id/edit`, `/treasures/:id/edit` | Admin edit (admin-only) |
+| GET | `/builds` | Community build list (filters, sort, pagination) |
+| GET/POST | `/builds/new` | Build planner (anyone) + anonymous submission |
+| GET | `/builds/preview` | Live loadout preview partial (combo bonus) |
+| GET/POST | `/login`, `/register` | Auth |
 | GET | `/api/available-langs` | Available languages (HTML partial for HTMX, JSON otherwise) |
+| GET | `/api/richtext-names` | Linkable entity names for the rich-text autocomplete |
 | POST | `/api/set-lang` | Set language cookie and redirect back |
 
 ## License

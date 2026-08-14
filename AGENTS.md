@@ -15,6 +15,10 @@ The repository implements a web platform written in V (V Language) using a speci
   - *Database layer*: entities, repositories, and domain logic.
   - *Controller layer*: request handling and orchestration.
   - *Service layer*: business rules (exposed as functions in `app/` or `database/`).
+  - *Utility layer*: `app/util/` — pure/presentation helpers with no DB access
+    (effect text formatting/splitting, compact values, blessed diffs,
+    `EffectView`). `database/` imports `app.util`; `app.util` must never
+    import `database` or `app` — it is the leaf module for effect helpers.
   - *Presentation layer*: view templates.
 
 ## Key Directories
@@ -36,6 +40,12 @@ The repository implements a web platform written in V (V Language) using a speci
 
 ## Code Conventions & Common Patterns
 - Use explicit imports rather than implicit paths.
+- **Module boundaries**: `database/` is for DB-coupled code only (queries,
+  models, migrations). Effect *presentation* — value formatting
+  (`format_effect_value`, `split_effect_value`, `compact_effect_value`),
+  blessed diffs, and the `EffectView` struct — lives in `app/util/effects.v`.
+  Keep new pure helpers there, not in `database/`; the import direction is
+  `database` → `app.util` (never the reverse).
 - Follow structured results for error handling (return controlled HTTP responses).
 - Avoid unnecessary abstractions; prefer straightforward functions and modules.
 - Error handling: return status codes via the result type, not generic exceptions.
