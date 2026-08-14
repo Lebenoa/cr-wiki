@@ -51,6 +51,12 @@
         .effect-name-diff ins {
             animation: diff-in 0.5s cubic-bezier(0.16, 1, 0.3, 1);
         }
+        .effects-panels {
+            display: grid;
+        }
+        .effects-panels > div {
+            grid-area: 1 / 1;
+        }
         #effects-blessed.leaving .effect-diff,
         #effects-blessed.leaving .effect-name-diff ins {
             animation: diff-out 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
@@ -178,6 +184,7 @@
                     </div>
                     @endif
                 </div>
+                <div class="effects-panels">
                 <div id="effects-normal" class="mt-2">
                     <div class="grid grid-cols-[4rem_4rem_1fr] px-4 py-1.5 rounded-t-xl bg-secondary/10">
                         <span class="text-center text-xs font-label text-foreground-muted uppercase">+0</span>
@@ -204,6 +211,7 @@
                     </div>
                 </div>
                 @endif
+                </div>
             </div>
             @endif
             <!-- Quick Info Panel -->
