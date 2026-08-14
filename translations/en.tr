@@ -352,3 +352,36 @@ Supports [[Cookie Name]], [[pet:Pet Name]], [[treasure:Treasure Name]] links and
 rich_text_preview
 Preview
 -----
+builds_page_title
+Builds | Classic/FanWiki
+-----
+build_intro
+Compose a loadout: one cookie, one pet and three treasures. Combos appear automatically.
+-----
+build_cookie_label
+Cookie
+-----
+build_pet_label
+Pet
+-----
+build_treasure_label
+Treasure
+-----
+build_treasure_one
+Treasure 1
+-----
+build_treasure_two
+Treasure 2
+-----
+build_treasure_three
+Treasure 3
+-----
+build_none_label
+Select…
+-----
+build_empty_hint
+Pick a cookie, a pet and three treasures to preview your build.
+-----
+build_with
+with
+-----

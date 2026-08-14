@@ -1,0 +1,43 @@
+@if preview.has_selection
+<div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+    @if c := preview.cookie
+    <a href="/cookies/@c.id"
+        class="p-4 rounded-xl flex flex-col items-center gap-2 border-l-4 border-primary bg-surface/50 hover:bg-surface transition-colors">
+        <img src="@{ctx.img_src('cookies', c.image)}" alt="@c.name" class="size-16 object-contain" />
+        <span class="text-center text-sm font-bold text-on-surface leading-tight">@c.name</span>
+        <span class="text-xs font-label text-foreground-muted uppercase">%build_cookie_label</span>
+    </a>
+    @endif
+    @if p := preview.pet
+    <a href="/pets/@p.id"
+        class="p-4 rounded-xl flex flex-col items-center gap-2 border-l-4 border-secondary bg-surface/50 hover:bg-surface transition-colors">
+        <img src="@{ctx.img_src('pets', p.image)}" alt="@p.name" class="size-16 object-contain" />
+        <span class="text-center text-sm font-bold text-on-surface leading-tight">@p.name</span>
+        <span class="text-xs font-label text-foreground-muted uppercase">%build_pet_label</span>
+    </a>
+    @endif
+    @for t in preview.treasures
+    <a href="/treasures/@t.id"
+        class="p-4 rounded-xl flex flex-col items-center gap-2 border-l-4 border-tertiary bg-surface/50 hover:bg-surface transition-colors">
+        <img src="@{ctx.img_src('treasures', t.image)}" alt="@t.name" class="size-16 object-contain" />
+        <span class="text-center text-sm font-bold text-on-surface leading-tight">@t.name</span>
+        <span class="text-xs font-label text-foreground-muted uppercase">%build_treasure_label</span>
+    </a>
+    @endfor
+</div>
+@if cb := preview.combi
+<div class="mt-6 p-4 rounded-xl border-l-4 border-accent bg-accent/10 flex items-center gap-3 flex-wrap">
+    <span class="text-xs font-label text-foreground-muted uppercase">%combo_bonus_title</span>
+    <span class="text-on-surface font-bold">%build_with @cb.partner_name</span>
+    @if cb.effect != ""
+    <span class="text-on-surface">@cb.effect</span>
+    @endif
+    @if cb.is_hidden
+    <span
+        class="font-bold text-accent uppercase border border-accent/50 rounded-full px-3 py-1 text-xs">%combi_hidden_badge</span>
+    @endif
+</div>
+@endif
+@else
+<p class="text-foreground-muted">%build_empty_hint</p>
+@endif

@@ -744,6 +744,33 @@ fn test_detail_pages(mut tc TestContext) ! {
 	}
 }
 
+fn test_builds(mut tc TestContext) ! {
+	// empty builds page renders the five selects and the empty hint
+	resp := http.get('${tc.base}/builds') or { return error('GET /builds: ${err}') }
+	if resp.status_code != 200 {
+		return error('GET /builds: expected 200, got ${resp.status_code}')
+	}
+	for name in ['cookie', 'pet', 't1', 't2', 't3'] {
+		if !resp.body.contains('name="${name}"') {
+			return error('builds page missing select "${name}"')
+		}
+	}
+	// a known combi pair (Wizard Cookie + Mini Jackson No. 2) shows the
+	// picked entities plus the localized bonus and its hidden badge
+	resp2 := http.get('${tc.base}/builds?cookie=23&pet=58') or {
+		return error('GET /builds?cookie=23&pet=58: ${err}')
+	}
+	if !resp2.body.contains('Wizard Cookie') || !resp2.body.contains('Mini Jackson No. 2') {
+		return error('build preview missing picked entities')
+	}
+	if !resp2.body.contains('1200 Bonus Points for all Jellies') {
+		return error('build preview missing combi effect text')
+	}
+	if !resp2.body.contains('Hidden') {
+		return error('build preview missing hidden combi badge')
+	}
+}
+
 fn test_thai_language(mut tc TestContext) ! {
 	resp := http.fetch(method: .get, url: '${tc.base}/cookies', cookies: {
 		lang_cookie_key: 'th'

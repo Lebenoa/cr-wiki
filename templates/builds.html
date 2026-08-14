@@ -8,7 +8,88 @@
 <body>
     @include 'layout/navbar.html'
 
-    Builds
+    <section class="max-w-5xl mx-auto my-16 px-4">
+        <h1 class="font-headline text-accent text-4xl leading-tight">%builds_page_title</h1>
+        <p class="font-body text-foreground-muted mt-2">%build_intro</p>
+
+        <form hx-get="/builds" hx-trigger="change" hx-target="#build-preview" hx-push-url="true"
+            class="mt-8 grid grid-cols-2 md:grid-cols-5 gap-4">
+            <label class="block space-y-1">
+                <span class="text-xs font-label text-foreground-muted uppercase">%build_cookie_label</span>
+                <select name="cookie"
+                    class="w-full bg-surface border-2 border-primary/30 rounded-xl py-2.5 px-3 text-foreground">
+                    <option value="">%build_none_label</option>
+                    @for c in cookies
+                    <option value="@c.id"
+                        @if c.id == sel.cookie
+                        selected
+                        @endif
+                    >@c.name</option>
+                    @endfor
+                </select>
+            </label>
+            <label class="block space-y-1">
+                <span class="text-xs font-label text-foreground-muted uppercase">%build_pet_label</span>
+                <select name="pet"
+                    class="w-full bg-surface border-2 border-primary/30 rounded-xl py-2.5 px-3 text-foreground">
+                    <option value="">%build_none_label</option>
+                    @for p in pets
+                    <option value="@p.id"
+                        @if p.id == sel.pet
+                        selected
+                        @endif
+                    >@p.name</option>
+                    @endfor
+                </select>
+            </label>
+            <label class="block space-y-1">
+                <span class="text-xs font-label text-foreground-muted uppercase">%build_treasure_one</span>
+                <select name="t1"
+                    class="w-full bg-surface border-2 border-primary/30 rounded-xl py-2.5 px-3 text-foreground">
+                    <option value="">%build_none_label</option>
+                    @for t in treasures
+                    <option value="@t.id"
+                        @if t.id == sel.treasure1
+                        selected
+                        @endif
+                    >@t.name</option>
+                    @endfor
+                </select>
+            </label>
+            <label class="block space-y-1">
+                <span class="text-xs font-label text-foreground-muted uppercase">%build_treasure_two</span>
+                <select name="t2"
+                    class="w-full bg-surface border-2 border-primary/30 rounded-xl py-2.5 px-3 text-foreground">
+                    <option value="">%build_none_label</option>
+                    @for t in treasures
+                    <option value="@t.id"
+                        @if t.id == sel.treasure2
+                        selected
+                        @endif
+                    >@t.name</option>
+                    @endfor
+                </select>
+            </label>
+            <label class="block space-y-1">
+                <span class="text-xs font-label text-foreground-muted uppercase">%build_treasure_three</span>
+                <select name="t3"
+                    class="w-full bg-surface border-2 border-primary/30 rounded-xl py-2.5 px-3 text-foreground">
+                    <option value="">%build_none_label</option>
+                    @for t in treasures
+                    <option value="@t.id"
+                        @if t.id == sel.treasure3
+                        selected
+                        @endif
+                    >@t.name</option>
+                    @endfor
+                </select>
+            </label>
+        </form>
+
+        <div id="build-preview" class="mt-8">
+            @include 'components/build_preview.html'
+        </div>
+    </section>
 </body>
 
 </html>
