@@ -299,7 +299,7 @@ fn test_combi_bonus_resolves(mut tc TestContext) ! {
 	}
 }
 
-fn test_effect_value_parse(mut tc TestContext) ! {
+fn test_effect_value_parse(mut _tc TestContext) ! {
 	// round-trip: parse(raw) -> format_effect_value(...) must reproduce raw
 	for raw in ['12%', '2-3%', '-2%', '-2--3%', '2--3%', '-2-3%', '-5-10s', '500000', ''] {
 		parts := parse_effect_value(raw) or { return error('parse ${raw}: ${err}') }
@@ -340,7 +340,7 @@ fn test_effect_placeholder(mut tc TestContext) ! {
 	// "2" never matches inside "20 Energy" (a legitimate secondary number).
 	mut baked := []string{}
 	links := sql tc.db {
-		select from models.TreasureEffect where value != none || value_min != none || value_max != none
+		select from models.TreasureEffect where value !is none || value_min !is none || value_max !is none
 	}!
 	for link in links {
 		fv := database.format_effect_value(link.value, link.value_min, link.value_max, link.unit)

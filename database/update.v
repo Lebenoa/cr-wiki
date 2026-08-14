@@ -2,7 +2,6 @@ module database
 
 import db.sqlite
 import models
-import time
 
 pub fn update_cookie(conn sqlite.DB, id int, params CreateCookieParams) ! {
 	sql conn {

@@ -31,6 +31,8 @@
         .effect-name-diff del {
             position: relative;
             text-decoration: none;
+            animation: strike-color 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+            animation-fill-mode: forwards;
         }
         .effect-name-diff del::after {
             content: "";
@@ -45,6 +47,14 @@
         }
         .effect-name-diff ins {
             animation: diff-in 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        @keyframes strike-color {
+            from {
+                color: inherit;
+            }
+            to {
+                color: oklch(var(--foreground-muted, 0.4 0 0));
+            }
         }
         @keyframes diff-in {
             from {

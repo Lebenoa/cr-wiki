@@ -164,7 +164,7 @@
             >
                 <label class="font-label text-secondary uppercase">%blessed_effects</label>
                 <div id="blessed_effects-rows" class="space-y-2">
-                    @for i, e in state.blessed_effects
+                    @for _, e in state.blessed_effects
                     @include 'components/effect_row.html'
                     @endfor
                 </div>
@@ -172,7 +172,7 @@
                     class="w-full bg-surface border-2 border-dashed border-primary/40 rounded-xl py-3 px-4 text-sm font-semibold text-foreground-muted hover:border-primary hover:text-foreground transition-all text-center">+ %add_effect</button>
             </div>
             <template id="effect-row-template">
-                @for i, e in [state.empty_effect]
+                @for _, e in [state.empty_effect]
                 @include 'components/effect_row.html'
                 @end
             </template>
