@@ -24,6 +24,9 @@
         .effect-diff {
             animation: diff-in 0.5s cubic-bezier(0.16, 1, 0.3, 1);
         }
+        #effects-normal .effect-card {
+            animation: card-in 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+        }
         .effect-name-diff del,
         .effect-name-diff ins {
             display: inline-block;
@@ -47,6 +50,16 @@
         }
         .effect-name-diff ins {
             animation: diff-in 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        @keyframes card-in {
+            from {
+                opacity: 0;
+                transform: translateY(-4px);
+            }
+            to {
+                opacity: 1;
+                transform: none;
+            }
         }
         @keyframes strike-color {
             from {
