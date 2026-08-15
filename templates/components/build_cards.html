@@ -18,9 +18,9 @@
         <div class="text-center min-w-16">
             <span class="block text-xl font-headline text-accent font-bold leading-tight">@{ctx.build_ep_label(b.ep, b.ep_special)}</span>
         </div>
-        @if b.tag != ""
-        <span class="self-center font-bold text-accent text-xs border border-accent/50 rounded-full px-2 py-0.5">@{ctx.build_tag_label(b.tag)}</span>
-        @endif
+        @for t in b.tags
+        <span class="self-center font-bold text-accent text-xs border border-accent/50 rounded-full px-2 py-0.5">@{ctx.build_tag_label(t)}</span>
+        @endfor
         @if c2 := b.cookie2
         <a href="/cookies/@c2.id" class="group flex items-center gap-2" title="@c2.name">
             <img src="@{ctx.img_src('cookies', c2.image)}" alt="@c2.name"
@@ -47,6 +47,31 @@
             @endif
         </div>
     </div>
+    @if b.score > 0 || b.coin > 0 || b.time > 0 || b.boxes > 0
+    <div class="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-foreground-muted w-full basis-full">
+        @if b.score > 0
+        <span>%build_score_label: <span class="font-bold text-foreground">@{b.score}</span></span>
+        @end
+        @if b.coin > 0
+        <span>%build_coin_label: <span class="font-bold text-foreground">@{b.coin}</span></span>
+        @end
+        @if b.time > 0
+        <span>%build_time_label: <span class="font-bold text-foreground">@{b.time}</span></span>
+        @end
+        @if b.boxes > 0
+        <span>%build_boxes_label: <span class="font-bold text-foreground">@{b.boxes}</span></span>
+        @end
+    </div>
+    @end
+    @if b.description != ""
+    <p class="mt-3 text-sm text-foreground-muted whitespace-pre-line w-full basis-full">@b.description</p>
+    @endif
+    @if b.youtube_url != ""
+    <a href="@b.youtube_url" target="_blank" rel="noopener"
+        class="mt-2 inline-flex items-center gap-1.5 text-xs font-bold text-accent hover:underline w-full basis-full">
+        ▶ %build_watch_video
+    </a>
+    @endif
 </div>
 @endfor
 @if next_page > 0

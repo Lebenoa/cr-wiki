@@ -12,6 +12,39 @@
     var cookieSlot = 'cookie';
     var lastPick = null;
 
+    // stepOrder is the picker flow; each dialog shows a step header ("2/6")
+    // with the current slot's translated label and an animated progress fill.
+    var stepOrder = ['cookie', 'cookie2', 'pet', 't1', 't2', 't3'];
+    var stepDialog = { cookie: 'cookie', cookie2: 'cookie', pet: 'pet', t1: 'treasure', t2: 'treasure', t3: 'treasure' };
+
+    // updateDialogStep fills the header inside the dialog that is about to
+    // open: count ("n/6"), translated label (from the dialog's data-label-*
+    // attributes), the modal title (data-title-*) and the fill width, which
+    // animates via transition-all.
+    function updateDialogStep(slot) {
+        var header = document.getElementById('dialog-step-' + stepDialog[slot]);
+        if (!header) {
+            return;
+        }
+        var step = stepOrder.indexOf(slot) + 1;
+        header.querySelector('.step-count').textContent = step + '/6';
+        header.querySelector('.step-name').textContent = header.getAttribute('data-label-' + slot) || '';
+        var title = header.getAttribute('data-title-' + slot);
+        if (title) {
+            var dlg = header.closest('dialog');
+            var h2 = dlg ? dlg.querySelector('h2') : null;
+            if (h2) {
+                h2.textContent = title;
+            }
+        }
+        var fill = header.querySelector('.step-fill');
+        fill.style.width = '0';
+        // let the width transition play from 0 on each open
+        requestAnimationFrame(function () {
+            fill.style.width = (step / 6 * 100) + '%';
+        });
+    }
+
     function filterOptions(kind, term) {
         var dlg = document.getElementById('dialog-' + kind);
         var t = term.trim().toLowerCase();
@@ -51,6 +84,8 @@
             filterOptions(kind, '');
             q.focus();
         }
+        var stepSlot = kind === 'treasure' ? treasureSlot : (kind === 'cookie' ? cookieSlot : kind);
+        updateDialogStep(stepSlot);
         dlg.showModal();
     }
 
@@ -221,17 +256,64 @@
             });
     }
 
+    // advance opens the next picker in the flow and returns true when it did;
+    // false means the flow ended (relay skip/end, after t3) and no dialog opens.
     function advance(kind) {
         if (kind === 'cookie') {
-            openPicker('pet');
+            // after the lead cookie pick, offer the optional relay picker;
+            // after a relay pick (or ✕/Esc skip) the cookie flow ends — do
+            // not auto-advance to the pet modal.
+            if (cookieSlot === 'cookie') {
+                openCookie('cookie2');
+                return true;
+            }
         } else if (kind === 'pet') {
             openTreasure('t1');
+            return true;
         } else if (treasureSlot === 't1') {
             openTreasure('t2');
+            return true;
         } else if (treasureSlot === 't2') {
             openTreasure('t3');
+            return true;
         }
         // after the third treasure the flow ends; the user fills EP/tag and submits
+        return false;
+    }
+
+    // validateBuild blocks the submit when the loadout is incomplete, so
+    // invalid posts never reach the server. Mirrors the server-side checks
+    // (server validation stays authoritative).
+    function validateBuild(form) {
+        var err = document.getElementById('build-error');
+        // relay cookie (cookie2) is optional; the rest are required
+        var slots = ['cookie', 'pet', 't1', 't2', 't3'];
+        for (var i = 0; i < slots.length; i++) {
+            var input = document.getElementById('sel-' + slots[i]);
+            if (!input || input.value === '' || input.value === '0') {
+                showBuildError(err, err ? err.dataset.msgSlots : '');
+                return false;
+            }
+        }
+        var ep = form.querySelector('select[name="ep"]');
+        if (!ep || !ep.value) {
+            showBuildError(err, err ? err.dataset.msgEp : '');
+            return false;
+        }
+        var tag = form.querySelector('input[type="checkbox"][name^="tag_"]:checked');
+        if (!tag) {
+            showBuildError(err, err ? err.dataset.msgTag : '');
+            return false;
+        }
+        return true;
+    }
+
+    function showBuildError(err, msg) {
+        if (!err) {
+            return;
+        }
+        err.textContent = msg;
+        err.classList.remove('hidden');
     }
 
     document.querySelectorAll('dialog').forEach(function (dlg) {
@@ -245,9 +327,20 @@
             document.getElementById('sel-' + target).value = v;
             updateSlot(target);
             refreshPreview();
+            // advance() opens the next dialog, whose openPicker renders its
+            // step header; when the flow ends nothing opens.
             advance(kind);
         });
     });
+
+    var buildForm = document.querySelector('form[action="/builds/new"]');
+    if (buildForm) {
+        buildForm.addEventListener('submit', function (ev) {
+            if (!validateBuild(buildForm)) {
+                ev.preventDefault();
+            }
+        });
+    }
 
     window.openPicker = openPicker;
     window.openCookie = openCookie;

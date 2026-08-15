@@ -381,8 +381,10 @@ fn find_or_create_effect(conn sqlite.DB, lang string, name string) !int {
 // for anonymous submitters so the build is dropped from the list after the
 // TTL; logged-in submitters pass `none` for a permanent build. `ep` is the
 // tier 1-7 (0 for special builds) and `ep_special` the special tier 1-3;
-// `tag` is one of score/coin/autofarm.
-pub fn create_build(conn sqlite.DB, cookie_id int, cookie2_id int, pet_id int, treasure1_id int, treasure2_id int, treasure3_id int, ep int, ep_special int, tag string, author string, user_id ?int, expires_at ?time.Time) !int {
+// `tags` is the score/coin/autofarm list, stored comma-separated.
+// `description`/`youtube_url` are optional and may be empty; the run-result
+// stats (score/coin/time_ms/boxes) are unsigned and 0 when not submitted.
+pub fn create_build(conn sqlite.DB, cookie_id int, cookie2_id int, pet_id int, treasure1_id int, treasure2_id int, treasure3_id int, ep int, ep_special int, tags []string, score u64, coin u64, time_ms u64, boxes u64, description string, youtube_url string, author string, user_id ?int, expires_at ?time.Time) !int {
 	build := models.Build{
 		cookie_id:    cookie_id
 		cookie2_id:   cookie2_id
@@ -392,7 +394,13 @@ pub fn create_build(conn sqlite.DB, cookie_id int, cookie2_id int, pet_id int, t
 		treasure3_id: treasure3_id
 		ep:           ep
 		ep_special:   ep_special
-		tag:          tag
+		tag:          tags.join(',')
+		score:        score
+		coin:         coin
+		time:         time_ms
+		boxes:        boxes
+		description:  description
+		youtube_url:  youtube_url
 		author:       author
 		user_id:      user_id
 		created_at:   time.now()

@@ -176,6 +176,7 @@
                     <span class="text-xs font-label text-foreground-muted uppercase">%build_ep_label</span>
                     <select name="ep"
                         class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground">
+                        <option value="" selected>%build_ep_none</option>
                         @for n in ep_tiers
                         <option value="@n">@{ctx.build_ep_label(n, 0)}</option>
                         @endfor
@@ -184,15 +185,18 @@
                         @endfor
                     </select>
                 </label>
-                <label class="block space-y-1">
-                    <span class="text-xs font-label text-foreground-muted uppercase">%build_tag_label</span>
-                    <select name="tag"
-                        class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground">
+                <fieldset class="block space-y-1">
+                    <legend class="text-xs font-label text-foreground-muted uppercase">%build_tag_label</legend>
+                    <div class="flex flex-wrap gap-2">
                         @for t in build_tags
-                        <option value="@t">@{ctx.build_tag_label(t)}</option>
+                        <label class="flex items-center gap-2 bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground cursor-pointer select-none">
+                            <input type="checkbox" name="tag_@t" value="@t"
+                                class="size-5 accent-accent" />
+                            @{ctx.build_tag_label(t)}
+                        </label>
                         @endfor
-                    </select>
-                </label>
+                    </div>
+                </fieldset>
                 @if _ := ctx.user
                 @else
                 <label class="block space-y-1">
@@ -203,6 +207,45 @@
                 @endif
             </div>
 
+            <div class="mt-4 grid grid-cols-2 md:grid-cols-4 gap-4">
+                <label class="block space-y-1">
+                    <span class="text-xs font-label text-foreground-muted uppercase">%build_score_label</span>
+                    <input type="number" name="score" min="0" step="1"
+                        class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground" />
+                </label>
+                <label class="block space-y-1">
+                    <span class="text-xs font-label text-foreground-muted uppercase">%build_coin_label</span>
+                    <input type="number" name="coin" min="0" step="1"
+                        class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground" />
+                </label>
+                <label class="block space-y-1">
+                    <span class="text-xs font-label text-foreground-muted uppercase">%build_time_label</span>
+                    <input type="number" name="time" min="0" step="1"
+                        class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground" />
+                </label>
+                <label class="block space-y-1">
+                    <span class="text-xs font-label text-foreground-muted uppercase">%build_boxes_label</span>
+                    <input type="number" name="boxes" min="0" step="1"
+                        class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground" />
+                </label>
+            </div>
+
+            <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                <label class="block space-y-1">
+                    <span class="text-xs font-label text-foreground-muted uppercase">%build_description_label</span>
+                    <textarea name="description" rows="3" maxlength="1000"
+                        class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground resize-y"></textarea>
+                </label>
+                <label class="block space-y-1">
+                    <span class="text-xs font-label text-foreground-muted uppercase">%build_youtube_label</span>
+                    <input type="url" name="youtube_url" maxlength="200"
+                        class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground" />
+                </label>
+            </div>
+
+            <p id="build-error" class="hidden mt-4 text-sm font-bold text-red-400" role="alert"
+                data-msg-slots="%build_error_missing_slots" data-msg-ep="%build_error_no_ep"
+                data-msg-tag="%build_error_no_tag"></p>
             <button type="submit" class="btn-primary mt-6">%build_submit_button</button>
         </form>
     </section>
@@ -212,6 +255,15 @@
         <button type="button" onclick="this.closest('dialog').close()"
             class="btn-secondary size-8 absolute top-3 right-3">✕</button>
         <h2 class="font-headline text-accent text-2xl mb-4">%build_pick_cookie</h2>
+        <div id="dialog-step-cookie" class="flex items-center gap-3 mb-4"
+            data-label-cookie="%build_cookie_label" data-label-cookie2="%build_relay_label"
+            data-title-cookie="%build_pick_cookie" data-title-cookie2="%build_pick_relay">
+            <span class="step-count shrink-0 text-xs font-label uppercase text-accent"></span>
+            <span class="step-name shrink-0 text-xs font-label uppercase text-foreground-muted"></span>
+            <div class="flex-1 h-1.5 rounded-full bg-primary/15 overflow-hidden">
+                <div class="step-fill h-full rounded-full bg-accent transition-all duration-500" style="width:0"></div>
+            </div>
+        </div>
         <input type="search" placeholder="%build_search_placeholder" oninput="filterOptions('cookie', this.value)"
             class="w-full shrink-0 bg-surface border-2 border-primary/30 rounded-xl py-2 px-3 text-foreground mb-4" />
         <form method="dialog" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 overflow-y-auto">
@@ -231,6 +283,13 @@
         <button type="button" onclick="this.closest('dialog').close()"
             class="btn-secondary size-8 absolute top-3 right-3">✕</button>
         <h2 class="font-headline text-accent text-2xl mb-4">%build_pick_pet</h2>
+        <div id="dialog-step-pet" class="flex items-center gap-3 mb-4" data-label-pet="%build_pet_label">
+            <span class="step-count shrink-0 text-xs font-label uppercase text-accent"></span>
+            <span class="step-name shrink-0 text-xs font-label uppercase text-foreground-muted"></span>
+            <div class="flex-1 h-1.5 rounded-full bg-primary/15 overflow-hidden">
+                <div class="step-fill h-full rounded-full bg-accent transition-all duration-500" style="width:0"></div>
+            </div>
+        </div>
         <input type="search" placeholder="%build_search_placeholder" oninput="filterOptions('pet', this.value)"
             class="w-full shrink-0 bg-surface border-2 border-primary/30 rounded-xl py-2 px-3 text-foreground mb-4" />
         <form method="dialog" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 overflow-y-auto">
@@ -250,6 +309,15 @@
         <button type="button" onclick="this.closest('dialog').close()"
             class="btn-secondary size-8 absolute top-3 right-3">✕</button>
         <h2 class="font-headline text-accent text-2xl mb-4">%build_pick_treasure</h2>
+        <div id="dialog-step-treasure" class="flex items-center gap-3 mb-4"
+            data-label-t1="%build_treasure_one" data-label-t2="%build_treasure_two" data-label-t3="%build_treasure_three"
+            data-title-t1="%build_pick_treasure_one" data-title-t2="%build_pick_treasure_two" data-title-t3="%build_pick_treasure_three">
+            <span class="step-count shrink-0 text-xs font-label uppercase text-accent"></span>
+            <span class="step-name shrink-0 text-xs font-label uppercase text-foreground-muted"></span>
+            <div class="flex-1 h-1.5 rounded-full bg-primary/15 overflow-hidden">
+                <div class="step-fill h-full rounded-full bg-accent transition-all duration-500" style="width:0"></div>
+            </div>
+        </div>
         <input type="search" placeholder="%build_search_placeholder" oninput="filterOptions('treasure', this.value)"
             class="w-full shrink-0 bg-surface border-2 border-primary/30 rounded-xl py-2 px-3 text-foreground mb-4" />
         <form method="dialog" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 overflow-y-auto">

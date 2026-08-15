@@ -841,6 +841,9 @@ fn test_builds(mut tc TestContext) ! {
 	planner := http.get('${tc.base}/builds/new?cookie=23&pet=58') or {
 		return error('GET /builds/new: ${err}')
 	}
+	if !planner.body.contains('<option value="" selected>') {
+		return error('builds/new: EP selector should default to NONE')
+	}
 	if !planner.body.contains('1200 Bonus Points for all Jellies') {
 		return error('build planner missing combi preview')
 	}
@@ -941,6 +944,26 @@ fn test_builds(mut tc TestContext) ! {
 		return error('preview should hint when the cookie/pet pair has no combo')
 	}
 
+	// submitting with the EP selector left on NONE is rejected
+	rej := http.fetch(
+		method: .post
+		url:    '${tc.base}/builds/new'
+		header: http.new_header(key: .content_type, value: 'application/x-www-form-urlencoded')
+		data: http.url_encode_form_data({
+			'cookie': '23'
+			'pet':    '58'
+			't1':     '180'
+			't2':     '284'
+			't3':     '378'			'ep':           ''
+			'tag_score':    'score'
+			'author':       'noep'
+		})
+		allow_redirect: false
+	) or { return error('no-EP submit: ${err}') }
+	if rej.status_code != 400 {
+		return error('no-EP submit: expected 400, got ${rej.status_code}')
+	}
+
 	// anonymous submit: build appears in the list and carries an expiry
 	post := http.fetch(
 		method: .post
@@ -952,21 +975,34 @@ fn test_builds(mut tc TestContext) ! {
 			't1':      '180'
 			't2':      '284'
 			't3':      '378'
-			'ep':      '5'
-			'tag':     'score'
-			'author':  'anonplayer'
+			'ep':          '5'
+			'tag_score':   'score'
+			'tag_coin':    'coin'
+			'score':       '1234567'
+			'coin':        '890'
+			'time':        '42000'
+			'boxes':       '12'
+			'description': 'Cookies and cream strat'
+			'youtube_url': 'https://youtu.be/abc123'
+			'author':      'anonplayer'
 		})
 		allow_redirect: false
 	) or { return error('anon submit: ${err}') }
 	if post.status_code != 302 {
 		return error('anon submit: expected 302, got ${post.status_code}')
 	}
-	anon := tc.db.exec("SELECT author, ep, ep_special, tag, expires_at, cookie2_id FROM build WHERE author = 'anonplayer'")!
+	anon := tc.db.exec("SELECT author, ep, ep_special, tag, score, coin, time, boxes, description, youtube_url, expires_at, cookie2_id FROM build WHERE author = 'anonplayer'")!
 	if anon.len != 1 {
 		return error('anon submit: build row missing')
 	}
-	if anon[0].get_int('ep') != 5 || anon[0].get_int('ep_special') != 0 || anon[0].get_string('tag') != 'score' {
-		return error('anon submit: expected EP tier 5 with #score tag')
+	if anon[0].get_int('ep') != 5 || anon[0].get_int('ep_special') != 0 || anon[0].get_string('tag') != 'score,coin' {
+		return error('anon submit: expected EP tier 5 with #score,#coin tags')
+	}
+	if anon[0].get_int('score') != 1234567 || anon[0].get_int('coin') != 890 || anon[0].get_int('time') != 42000 || anon[0].get_int('boxes') != 12 {
+		return error('anon submit: run-result stats not stored')
+	}
+	if anon[0].get_string('description') != 'Cookies and cream strat' || anon[0].get_string('youtube_url') != 'https://youtu.be/abc123' {
+		return error('anon submit: description or youtube_url not stored')
 	}
 	if anon[0].get_int('cookie2_id') != 95 {
 		return error('anon submit: expected relay cookie 95 to be stored')
@@ -992,9 +1028,9 @@ fn test_builds(mut tc TestContext) ! {
 			't1':     '180'
 			't2':     '284'
 			't3':     '378'
-			'ep':     's2'
-			'tag':    'autofarm'
-			'author': 'ignored'
+			'ep':          's2'
+			'tag_autofarm': 'autofarm'
+			'author':      'ignored'
 		})
 		allow_redirect: false
 	) or { return error('logged-in submit: ${err}') }
@@ -1016,6 +1052,12 @@ fn test_builds(mut tc TestContext) ! {
 	list := http.get('${tc.base}/builds') or { return error('GET /builds (2): ${err}') }
 	if !list.body.contains('anonplayer') || !list.body.contains('#score') || !list.body.contains('#autofarm') {
 		return error('builds list missing submitted builds or their tags')
+	}
+	if !list.body.contains('Cookies and cream strat') || !list.body.contains('youtu.be/abc123') {
+		return error('builds list missing description or video link on card')
+	}
+	if !list.body.contains('1234567') || !list.body.contains('42000') || !list.body.contains('Boxes:') || !list.body.contains('>12<') {
+		return error('builds list missing run-result stats on card')
 	}
 	// the anon card carries its relay cookie (95) alongside the lead cookie
 	if !list.body.contains('href="/cookies/95"') {

@@ -205,14 +205,25 @@ fn submit_build(wapp &App, mut ctx Context) veb.Result {
 		treasure3: (ctx.form['t3'] or { '' }).int()
 	}
 	ep, ep_special := parse_ep_tier(ctx.form['ep'] or { '' })
-	tag := (ctx.form['tag'] or { '' }).trim_space()
+	score := (ctx.form['score'] or { '' }).u64()
+	coin := (ctx.form['coin'] or { '' }).u64()
+	time_ms := (ctx.form['time'] or { '' }).u64()
+	boxes := (ctx.form['boxes'] or { '' }).u64()
+	description := (ctx.form['description'] or { '' }).trim_space()
+	youtube_url := (ctx.form['youtube_url'] or { '' }).trim_space()
+	mut tags := []string{}
+	for t in ['score', 'coin', 'autofarm'] {
+		if (ctx.form['tag_${t}'] or { '' }) != '' {
+			tags << t
+		}
+	}
 	if sel.cookie <= 0 || sel.pet <= 0 || sel.treasure1 <= 0 || sel.treasure2 <= 0 || sel.treasure3 <= 0 {
 		ctx.res.set_status(.bad_request)
 		return ctx.text('A build needs one cookie, one pet and three treasures')
 	}
-	if (ep == 0 && ep_special == 0) || tag !in ['score', 'coin', 'autofarm'] {
+	if (ep == 0 && ep_special == 0) || tags.len == 0 {
 		ctx.res.set_status(.bad_request)
-		return ctx.text('Pick an EP tier (EP 1-7 or Special EP 1-3) and a tag (#score, #coin, #autofarm)')
+		return ctx.text('Pick an EP tier (EP 1-7 or Special EP 1-3) and at least one tag (#score, #coin, #autofarm)')
 	}
 
 	// Reject unknown ids so the list never links to deleted entities.
@@ -248,7 +259,7 @@ fn submit_build(wapp &App, mut ctx Context) veb.Result {
 		expires = time.now().add(anon_build_ttl)
 	}
 
-	database.create_build(wapp.db, sel.cookie, sel.cookie2, sel.pet, sel.treasure1, sel.treasure2, sel.treasure3, ep, ep_special, tag, author, user_id, expires) or {
+	database.create_build(wapp.db, sel.cookie, sel.cookie2, sel.pet, sel.treasure1, sel.treasure2, sel.treasure3, ep, ep_special, tags, score, coin, time_ms, boxes, description, youtube_url, author, user_id, expires) or {
 		ctx.res.set_status(.bad_request)
 		return ctx.text(err.msg())
 	}

@@ -394,6 +394,36 @@ EP
 build_author_label
 ชื่อ (ไม่บังคับ)
 -----
+build_score_label
+คะแนน
+-----
+build_coin_label
+เหรียญ
+-----
+build_time_label
+เวลา (มิลลิวินาที)
+-----
+build_boxes_label
+กล่อง
+-----
+build_description_label
+คำอธิบาย (ไม่บังคับ)
+-----
+build_youtube_label
+ลิงก์ YouTube (ไม่บังคับ)
+-----
+build_watch_video
+ดูวิดีโอ
+-----
+build_error_missing_slots
+กรอกทุกช่องให้ครบก่อน
+-----
+build_error_no_ep
+เลือก EP (EP 1-7 หรือ EP พิเศษ 1-3)
+-----
+build_error_no_tag
+เลือกแท็กอย่างน้อยหนึ่งแท็ก
+-----
 build_expiry_hint
 บิลด์ที่ไม่ระบุตัวตนจะหมดอายุใน 24 ชั่วโมง — เข้าสู่ระบบเพื่อเก็บไว้ถาวร
 -----
@@ -421,6 +451,9 @@ build_anonymous
 build_expires_in
 หมดอายุใน {h}ชม.
 -----
+build_ep_none
+ไม่มี
+-----
 build_ep_tier
 EP {n}
 -----
@@ -442,11 +475,23 @@ build_tag_autofarm
 build_pick_cookie
 เลือกคุกกี้
 -----
+build_pick_relay
+เลือกรีเลย์คุกกี้
+-----
 build_pick_pet
 เลือกสัตว์เลี้ยง
 -----
 build_pick_treasure
 เลือกสมบัติ
+-----
+build_pick_treasure_one
+เลือกสมบัติชิ้นแรก
+-----
+build_pick_treasure_two
+เลือกสมบัติชิ้นที่สอง
+-----
+build_pick_treasure_three
+เลือกสมบัติชิ้นที่สาม
 -----
 build_search_placeholder
 ค้นหา...

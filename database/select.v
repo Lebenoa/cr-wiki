@@ -681,7 +681,13 @@ pub:
 	build_id     int
 	ep           int
 	ep_special   int
-	tag          string
+	tags         []string
+	score        u64
+	coin         u64
+	time         u64
+	boxes        u64
+	description  string
+	youtube_url  string
 	author       string
 	is_anon      bool
 	expires_in_h int // remaining hours for anonymous builds, 0 for permanent
@@ -718,7 +724,7 @@ pub fn select_builds(conn sqlite.DB, lang string, f_cookie int, f_pet int, f_ep 
 		'CASE WHEN ep_special > 0 THEN 10 + ep_special ELSE ep END DESC, build_id DESC'
 	}
 
-	rows := conn.exec('SELECT build_id, cookie_id, cookie2_id, pet_id, treasure1_id, treasure2_id, treasure3_id, ep, ep_special, tag, author, user_id, expires_at FROM build WHERE ${where} ORDER BY ${order} LIMIT ${limit} OFFSET ${offset}')!
+	rows := conn.exec('SELECT build_id, cookie_id, cookie2_id, pet_id, treasure1_id, treasure2_id, treasure3_id, ep, ep_special, tag, score, coin, time, boxes, description, youtube_url, author, user_id, expires_at FROM build WHERE ${where} ORDER BY ${order} LIMIT ${limit} OFFSET ${offset}')!
 	if rows.len == 0 {
 		return []
 	}
@@ -744,12 +750,17 @@ pub fn select_builds(conn sqlite.DB, lang string, f_cookie int, f_pet int, f_ep 
 				name:  resolve_entity_name(conn, 'treasure', tid, lang)
 				image: unlock_entity_image(conn, 'treasure', tid)
 			}
-		}
-		result << BuildCard{
+		}		result << BuildCard{
 			build_id:     row.get_int('build_id')
 			ep:           row.get_int('ep')
 			ep_special:   row.get_int('ep_special')
-			tag:          row.get_string('tag')
+			tags:         row.get_string('tag').split(',').filter(it != '')
+			score:        u64(row.get_int('score'))
+			coin:         u64(row.get_int('coin'))
+			time:         u64(row.get_int('time'))
+			boxes:        u64(row.get_int('boxes'))
+			description:  row.get_string('description')
+			youtube_url:  row.get_string('youtube_url')
 			author:       row.get_string('author')
 			is_anon:      is_anon
 			expires_in_h: expires_in_h

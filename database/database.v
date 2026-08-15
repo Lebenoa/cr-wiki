@@ -293,6 +293,23 @@ fn migrate(conn sqlite.DB) ! {
 			return conn.error_message(result, 'add build tag column')
 		}
 	}
+	for col in ['description', 'youtube_url'] {
+		if col !in build_cols {
+			result := conn.exec_none("ALTER TABLE build ADD COLUMN ${col} TEXT NOT NULL DEFAULT ''")
+			if !sqlite_success(result) {
+				return conn.error_message(result, 'add build ${col} column')
+			}
+		}
+	}
+	// run-result stats (score/coin/time/boxes) added later; existing rows keep 0.
+	for col in ['score', 'coin', 'time', 'boxes'] {
+		if col !in build_cols {
+			result := conn.exec_none('ALTER TABLE build ADD COLUMN ${col} INTEGER NOT NULL DEFAULT 0')
+			if !sqlite_success(result) {
+				return conn.error_message(result, 'add build ${col} column')
+			}
+		}
+	}
 	if 'cookie2_id' !in build_cols {
 		result := conn.exec_none('ALTER TABLE build ADD COLUMN cookie2_id INTEGER NOT NULL DEFAULT 0')
 		if !sqlite_success(result) {

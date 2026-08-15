@@ -17,7 +17,13 @@ pub:
 	treasure3_id int @[required]
 	ep           int @[index] // tier 1-7; 0 when the build is a special EP build
 	ep_special   int @[index] // special tier 1-3; 0 for regular EP builds
-	tag          string // 'score' | 'coin' | 'autofarm'
+	tag          string // comma-separated: 'score,coin' etc.
+	score        u64 // run result: total score
+	coin         u64 // run result: coins collected
+	time         u64 // run result: run duration in milliseconds (0 = not set)
+	boxes        u64 // run result: boxes opened
+	description  string // optional; may contain plain text/URLs
+	youtube_url  string // optional; empty when the build has no video
 	author       string
 	user_id      ?int // null = anonymous submit
 	created_at   time.Time
