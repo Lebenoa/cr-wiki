@@ -133,6 +133,10 @@ pub fn run_test_session() {
 			run:  test_search_cross_language
 		},
 		TestCase{
+			name: 'build picker matches cross-language'
+			run:  test_build_picker_cross_language
+		},
+		TestCase{
 			name: 'unknown route 404s'
 			run:  test_not_found
 		},
@@ -830,6 +834,19 @@ fn test_search_cross_language(mut tc TestContext) ! {
 	}
 	if resp2.status_code != 200 || !resp2.body.contains('data-name-en="${html.escape(en_name)}"') {
 		return error('cookie list page ${page} must carry data-name-en="${html.escape(en_name)}", got ${resp2.status_code}')
+	}
+}
+
+fn test_build_picker_cross_language(mut tc TestContext) ! {
+	// the /builds/new picker buttons carry the en name so the modal search
+	// matches English queries on a th page
+	row := tc.db.exec("SELECT name, owner_id FROM cookie_translation WHERE lang = 'en' AND name != '' LIMIT 1")![0]
+	en_name := row.get_string('name')
+	resp := http.fetch(method: .get, url: '${tc.base}/builds/new', cookies: {
+		lang_cookie_key: 'th'
+	}) or { return err }
+	if resp.status_code != 200 || !resp.body.contains('data-name-en="${html.escape(en_name)}"') {
+		return error('build picker must carry data-name-en="${html.escape(en_name)}", got ${resp.status_code}')
 	}
 }
 

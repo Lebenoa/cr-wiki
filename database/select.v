@@ -647,6 +647,7 @@ pub struct IdNameOption {
 pub:
 	id                 int
 	name               string
+	en_name            string // English name, for cross-language picker search
 	image              ?string
 	effects            []EffectOption
 	effects_blessed    []EffectOption
@@ -794,6 +795,15 @@ pub fn treasure_options(conn sqlite.DB, lang string) ![]IdNameOption {
 		}
 	}
 
+	// English names power cross-language search in the picker modal (the en
+	// rows are already in `translations`).
+	mut en_name_map := map[int]string{}
+	for tr in translations {
+		if tr.lang == 'en' && tr.name != '' {
+			en_name_map[tr.treasure_id] = tr.name
+		}
+	}
+
 	// every effect per treasure per state (normal + blessed), in wiki order
 	// with duplicate links dropped; the picker shows them all and toggles
 	// between the states for evolved treasures.
@@ -867,6 +877,7 @@ pub fn treasure_options(conn sqlite.DB, lang string) ![]IdNameOption {
 			out << IdNameOption{
 				id:                 tid
 				name:               tr.name
+				en_name:            en_name_map[tid]
 				image:              t.image
 				effects:            normal
 				effects_blessed:    blessed
@@ -907,14 +918,25 @@ pub fn cookie_options(conn sqlite.DB, lang string) ![]IdNameOption {
 			tmap[tr.owner_id] = tr
 		}
 	}
+
+	// English names power cross-language search in the picker modal (the en
+	// rows are already in `translations`).
+	mut en_name_map := map[int]string{}
+	for tr in translations {
+		if tr.lang == 'en' && tr.name != '' {
+			en_name_map[tr.owner_id] = tr.name
+		}
+	}
+
 	mut out := []IdNameOption{}
 	for c in cookies {
 		cid := c.cookie_id or { continue }
 		if tr := tmap[cid] {
 			out << IdNameOption{
-				id:    cid
-				name:  tr.name
-				image: c.image
+				id:      cid
+				name:    tr.name
+				en_name: en_name_map[cid]
+				image:   c.image
 			}
 		}
 	}
@@ -951,13 +973,24 @@ pub fn pet_options(conn sqlite.DB, lang string) ![]IdNameOption {
 			tmap[tr.pet_id] = tr
 		}
 	}
+
+	// English names power cross-language search in the picker modal (the en
+	// rows are already in `translations`).
+	mut en_name_map := map[int]string{}
+	for tr in translations {
+		if tr.lang == 'en' && tr.name != '' {
+			en_name_map[tr.pet_id] = tr.name
+		}
+	}
+
 	mut out := []IdNameOption{}
 	for p in pets {
 		pid := p.pet_id or { continue }
 		if tr := tmap[pid] {
 			out << IdNameOption{
-				id:    pid
-				name:  tr.name
+				id:      pid
+				name:    tr.name
+				en_name: en_name_map[pid]
 				image: p.image
 			}
 		}

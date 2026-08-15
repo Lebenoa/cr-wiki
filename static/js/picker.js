@@ -49,7 +49,10 @@
         var dlg = document.getElementById('dialog-' + kind);
         var t = term.trim().toLowerCase();
         dlg.querySelectorAll('.pick-option').forEach(function (btn) {
-            btn.hidden = t !== '' && btn.dataset.name.toLowerCase().indexOf(t) === -1;
+            // match the localized name or the English name, so e.g. a th page
+            // still finds "Wizard" -> คุกกี้พ่อมด in the picker
+            var names = ((btn.dataset.name || '') + ' ' + (btn.dataset.nameEn || '')).toLowerCase();
+            btn.hidden = t !== '' && names.indexOf(t) === -1;
         });
     }
 

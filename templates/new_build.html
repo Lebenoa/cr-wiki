@@ -268,7 +268,7 @@
             class="w-full shrink-0 bg-surface border-2 border-primary/30 rounded-xl py-2 px-3 text-foreground mb-4" />
         <form method="dialog" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 overflow-y-auto">
             @for c in cookies
-            <button type="submit" value="@c.id" data-name="@c.name" onclick="setPicked(this)"
+            <button type="submit" value="@c.id" data-name="@c.name" data-name-en="@c.en_name" onclick="setPicked(this)"
                 class="pick-option border border-secondary px-4 py-2 rounded flex flex-col items-center justify-start hover:border-primary transition-colors group gap-2">
                 <img src="@{ctx.img_src('cookies', c.image)}" alt="@c.name"
                     class="h-36 w-full object-contain" />
@@ -294,7 +294,7 @@
             class="w-full shrink-0 bg-surface border-2 border-primary/30 rounded-xl py-2 px-3 text-foreground mb-4" />
         <form method="dialog" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 overflow-y-auto">
             @for p in pets
-            <button type="submit" value="@p.id" data-name="@p.name" onclick="setPicked(this)"
+            <button type="submit" value="@p.id" data-name="@p.name" data-name-en="@p.en_name" onclick="setPicked(this)"
                 class="pick-option border border-secondary px-4 py-2 rounded flex flex-col items-center justify-start hover:border-primary transition-colors group gap-2">
                 <img src="@{ctx.img_src('pets', p.image)}" alt="@p.name"
                     class="h-36 w-full object-contain" />
@@ -322,7 +322,7 @@
             class="w-full shrink-0 bg-surface border-2 border-primary/30 rounded-xl py-2 px-3 text-foreground mb-4" />
         <form method="dialog" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 overflow-y-auto">
             @for t in treasures
-            <button type="submit" value="@t.id" data-name="@t.name" onclick="setPicked(this)"
+            <button type="submit" value="@t.id" data-name="@t.name" data-name-en="@t.en_name" onclick="setPicked(this)"
                 class="pick-option border border-secondary px-4 py-2 rounded flex flex-col items-center justify-start hover:border-primary transition-colors group gap-2">
                 <img src="@{ctx.img_src('treasures', t.image)}" alt="@t.name"
                     class="h-36 w-full object-contain" />
