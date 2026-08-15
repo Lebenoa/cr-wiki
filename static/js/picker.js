@@ -49,10 +49,13 @@
         var dlg = document.getElementById('dialog-' + kind);
         var t = term.trim().toLowerCase();
         dlg.querySelectorAll('.pick-option').forEach(function (btn) {
+            if (t === '') { btn.hidden = false; return; }
             // match the localized name or the English name, so e.g. a th page
-            // still finds "Wizard" -> คุกกี้พ่อมด in the picker
-            var names = ((btn.dataset.name || '') + ' ' + (btn.dataset.nameEn || '')).toLowerCase();
-            btn.hidden = t !== '' && names.indexOf(t) === -1;
+            // still finds "Wizard" -> คุกกี้พ่อมด in the picker; treasure
+            // options also match their effect pill lines (.fx-effect)
+            var hay = (btn.dataset.name || '') + ' ' + (btn.dataset.nameEn || '');
+            btn.querySelectorAll('.fx-effect').forEach(function (fx) { hay += ' ' + fx.textContent; });
+            btn.hidden = hay.toLowerCase().indexOf(t) === -1;
         });
     }
 

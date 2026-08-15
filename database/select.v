@@ -712,62 +712,81 @@ pub fn select_builds(conn sqlite.DB, lang string, f_cookie int, f_pet int, f_ep 
 
 	mut result := []BuildCard{}
 	for row in rows {
-		// user_id is NULL for anonymous submissions; ids start at 1.
-		is_anon := row.get_int('user_id') == 0
-		exp_unix := row.get_int('expires_at')
-		expires_in_h := if is_anon && exp_unix > 0 {
-			int((exp_unix - time.now().unix() + 3599) / 3600)
-		} else {
-			0
-		}
-		cid := row.get_int('cookie_id')
-		cid2 := row.get_int('cookie2_id')
-		pid := row.get_int('pet_id')
-		tids := [row.get_int('treasure1_id'), row.get_int('treasure2_id'), row.get_int('treasure3_id')]
-		mut treasures := []IdNameOption{}
-		for tid in tids {
-			treasures << IdNameOption{
-				id:    tid
-				name:  resolve_entity_name(conn, 'treasure', tid, lang)
-				image: unlock_entity_image(conn, 'treasure', tid)
-			}
-		}		result << BuildCard{
-			build_id:     row.get_int('build_id')
-			ep:           row.get_int('ep')
-			ep_special:   row.get_int('ep_special')
-			tags:         row.get_string('tag').split(',').filter(it != '')
-			score:        u64(row.get_int('score'))
-			coin:         u64(row.get_int('coin'))
-			time:         u64(row.get_int('time'))
-			boxes:        u64(row.get_int('boxes'))
-			description:  row.get_string('description')
-			youtube_url:  row.get_string('youtube_url')
-			author:       row.get_string('author')
-			is_anon:      is_anon
-			expires_in_h: expires_in_h
-			cookie:       IdNameOption{
-				id:    cid
-				name:  resolve_entity_name(conn, 'cookie', cid, lang)
-				image: unlock_entity_image(conn, 'cookie', cid)
-			}
-			cookie2: if cid2 > 0 {
-				IdNameOption{
-					id:    cid2
-					name:  resolve_entity_name(conn, 'cookie', cid2, lang)
-					image: unlock_entity_image(conn, 'cookie', cid2)
-				}
-			} else {
-				none
-			}
-			pet: IdNameOption{
-				id:    pid
-				name:  resolve_entity_name(conn, 'pet', pid, lang)
-				image: unlock_entity_image(conn, 'pet', pid)
-			}
-			treasures: treasures
-		}
+		result << build_card_from_row(conn, lang, row)
 	}
 	return result
+}
+
+// build_card_from_row maps one build row (the exact column set select_builds
+// and select_build select) to the card/detail view, resolving localized
+// entity names and the anonymous-build expiry.
+fn build_card_from_row(conn sqlite.DB, lang string, row sqlite.Row) BuildCard {
+	// user_id is NULL for anonymous submissions; ids start at 1.
+	is_anon := row.get_int('user_id') == 0
+	exp_unix := row.get_int('expires_at')
+	expires_in_h := if is_anon && exp_unix > 0 {
+		int((exp_unix - time.now().unix() + 3599) / 3600)
+	} else {
+		0
+	}
+	cid := row.get_int('cookie_id')
+	cid2 := row.get_int('cookie2_id')
+	pid := row.get_int('pet_id')
+	tids := [row.get_int('treasure1_id'), row.get_int('treasure2_id'), row.get_int('treasure3_id')]
+	mut treasures := []IdNameOption{}
+	for tid in tids {
+		treasures << IdNameOption{
+			id:    tid
+			name:  resolve_entity_name(conn, 'treasure', tid, lang)
+			image: unlock_entity_image(conn, 'treasure', tid)
+		}
+	}
+	return BuildCard{
+		build_id:     row.get_int('build_id')
+		ep:           row.get_int('ep')
+		ep_special:   row.get_int('ep_special')
+		tags:         row.get_string('tag').split(',').filter(it != '')
+		score:        u64(row.get_int('score'))
+		coin:         u64(row.get_int('coin'))
+		time:         u64(row.get_int('time'))
+		boxes:        u64(row.get_int('boxes'))
+		description:  row.get_string('description')
+		youtube_url:  row.get_string('youtube_url')
+		author:       row.get_string('author')
+		is_anon:      is_anon
+		expires_in_h: expires_in_h
+		cookie:       IdNameOption{
+			id:    cid
+			name:  resolve_entity_name(conn, 'cookie', cid, lang)
+			image: unlock_entity_image(conn, 'cookie', cid)
+		}
+		cookie2: if cid2 > 0 {
+			IdNameOption{
+				id:    cid2
+				name:  resolve_entity_name(conn, 'cookie', cid2, lang)
+				image: unlock_entity_image(conn, 'cookie', cid2)
+			}
+		} else {
+			none
+		}
+		pet: IdNameOption{
+			id:    pid
+			name:  resolve_entity_name(conn, 'pet', pid, lang)
+			image: unlock_entity_image(conn, 'pet', pid)
+		}
+		treasures: treasures
+	}
+}
+
+// select_build returns one community build by id (including expired ones — a
+// direct link should still render), or an error when it doesn't exist. Used
+// by the /builds/:id detail page the list cards link to.
+pub fn select_build(conn sqlite.DB, lang string, id int) !BuildCard {
+	rows := conn.exec('SELECT build_id, cookie_id, cookie2_id, pet_id, treasure1_id, treasure2_id, treasure3_id, ep, ep_special, tag, score, coin, time, boxes, description, youtube_url, author, user_id, expires_at FROM build WHERE build_id = ${id}')!
+	if rows.len == 0 {
+		return error('build (${id}) not found')
+	}
+	return build_card_from_row(conn, lang, rows.first())
 }
 
 // treasure_options lists every treasure's id, localized name and first

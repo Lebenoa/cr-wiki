@@ -355,6 +355,12 @@ Preview
 builds_page_title
 Builds | Classic/FanWiki
 -----
+build_detail_page_title
+Build Details | Classic/FanWiki
+-----
+build_back_list
+Back to builds
+-----
 build_intro
 Compose a loadout: one cookie, one pet and three treasures. Combos appear automatically.
 -----

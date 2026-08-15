@@ -153,6 +153,10 @@ pub fn run_test_session() {
 			run:  test_builds
 		},
 		TestCase{
+			name: 'build detail page'
+			run:  test_build_detail
+		},
+		TestCase{
 			name: 'effect {value} placeholder submission guards'
 			run:  test_placeholder_submission_guards
 		},
@@ -167,6 +171,10 @@ pub fn run_test_session() {
 		TestCase{
 			name: 'admin combi bonus edit form'
 			run:  test_admin_combi_edit_form
+		},
+		TestCase{
+			name: 'admin entity combobox matches cross-language'
+			run:  test_admin_combobox_cross_language
 		},
 	]
 
@@ -847,6 +855,69 @@ fn test_build_picker_cross_language(mut tc TestContext) ! {
 	}) or { return err }
 	if resp.status_code != 200 || !resp.body.contains('data-name-en="${html.escape(en_name)}"') {
 		return error('build picker must carry data-name-en="${html.escape(en_name)}", got ${resp.status_code}')
+	}
+}
+
+fn test_build_detail(mut tc TestContext) ! {
+	// the list cards are clickable (stretched link to the detail page)
+	list := http.get('${tc.base}/builds') or { return error('GET /builds: ${err}') }
+	if list.status_code != 200 || !list.body.contains('class="absolute inset-0 rounded-xl"') {
+		return error('builds list cards must link to the detail page')
+	}
+	// create a build, then its detail page renders the full loadout
+	post := http.fetch(
+		method: .post
+		url:    '${tc.base}/builds/new'
+		header: http.new_header(key: .content_type, value: 'application/x-www-form-urlencoded')
+		data: http.url_encode_form_data({
+			'cookie':      '23'
+			'pet':         '58'
+			't1':          '180'
+			't2':          '284'
+			't3':          '378'
+			'ep':          '5'
+			'tag_score':   'score'
+			'score':       '12345'
+			'description': 'Detail page strat'
+			'author':      'detailtest'
+		})
+		allow_redirect: false
+	) or { return error('detail test submit: ${err}') }
+	if post.status_code != 302 {
+		return error('detail test submit: expected 302, got ${post.status_code}')
+	}
+	bid := tc.db.exec("SELECT build_id FROM build WHERE author = 'detailtest' ORDER BY build_id DESC LIMIT 1")![0].get_int('build_id')
+	resp := http.get('${tc.base}/builds/${bid}') or { return error('GET /builds/${bid}: ${err}') }
+	if resp.status_code != 200 {
+		return error('GET /builds/${bid}: expected 200, got ${resp.status_code}')
+	}
+	for needle in ['href="/builds"', '/cookies/23', '/pets/58', '/treasures/180', 'Detail page strat', '12345'] {
+		if !resp.body.contains(needle) {
+			return error('build detail missing "${needle}"')
+		}
+	}
+	// a missing build id 404s
+	missing := http.get('${tc.base}/builds/99999999') or { return error('GET /builds/99999999: ${err}') }
+	if missing.status_code != 404 {
+		return error('GET /builds/99999999: expected 404, got ${missing.status_code}')
+	}
+}
+
+fn test_admin_combobox_cross_language(mut tc TestContext) ! {
+	if tc.session_cookie == '' {
+		return error('run admin login first')
+	}
+	// the admin entity comboboxes (unlock treasure + combi partner) carry the
+	// English name so the filter matches English queries on a th form
+	resp := http.fetch(method: .get, url: '${tc.base}/cookies/new', cookies: {
+		lang_cookie_key:    'th'
+		session_cookie_key: tc.session_cookie
+	}) or { return error('GET /cookies/new (th): ${err}') }
+	if resp.status_code != 200 {
+		return error('GET /cookies/new (th): expected 200, got ${resp.status_code}')
+	}
+	if !resp.body.contains('data-cb-en="') {
+		return error('admin entity comboboxes must carry the en name for cross-language search')
 	}
 }
 

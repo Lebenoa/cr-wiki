@@ -355,6 +355,12 @@ rich_text_preview
 builds_page_title
 บิลด์ | Classic/FanWiki
 -----
+build_detail_page_title
+รายละเอียดบิลด์ | Classic/FanWiki
+-----
+build_back_list
+กลับไปรายการบิลด์
+-----
 build_intro
 จัดชุด: คุกกี้ 1 ตัว สัตว์เลี้ยง 1 ตัว และสมบัติ 3 ชิ้น คอมโบจะแสดงอัตโนมัติ
 -----

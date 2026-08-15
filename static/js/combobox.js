@@ -13,7 +13,9 @@
 //   </div>
 //
 // Semantics:
-//   - typing filters the list; an exact match picks that option (hidden
+//   - typing filters the list (localized label or the data-cb-en English
+//     name, so e.g. a th form finds "Wizard" -> คุกกี้พ่อมด); an exact
+//     match picks that option (hidden
 //     value = its data-cb-value), a non-match is treated as "new"
 //     (treasure mode: hidden = '__new__' with the visible input submitted
 //     as the new name; name mode: hidden = the typed text itself).
@@ -32,13 +34,24 @@
         return (li.textContent || '').trim();
     }
 
+    // match the localized label or the English name carried on data-cb-en;
+    // an empty en attr never matches so missing names degrade to label-only
+    function matchText(li, q) {
+        var labelText = label(li).toLowerCase();
+        var enText = (li.getAttribute('data-cb-en') || '').toLowerCase();
+        return labelText.indexOf(q) !== -1 || (enText !== '' && enText.indexOf(q) !== -1);
+    }
+
     function exactValue(list, text) {
         var t = text.toLowerCase();
         var items = list.querySelectorAll('li[data-cb-value]');
         for (var i = 0; i < items.length; i++) {
             var li = items[i];
             if (li.getAttribute('data-cb-value') === '__new__') continue;
-            if (label(li).toLowerCase() === t) return li.getAttribute('data-cb-value');
+            var enText = (li.getAttribute('data-cb-en') || '').toLowerCase();
+            if (label(li).toLowerCase() === t || (enText !== '' && enText === t)) {
+                return li.getAttribute('data-cb-value');
+            }
         }
         return null;
     }
@@ -54,7 +67,7 @@
                 li.classList.remove('hidden');
                 continue;
             }
-            var show = label(li).toLowerCase().indexOf(q) !== -1;
+            var show = matchText(li, q);
             li.classList.toggle('hidden', !show);
             if (show) anyVisible = true;
         }

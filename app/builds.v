@@ -265,3 +265,14 @@ fn submit_build(wapp &App, mut ctx Context) veb.Result {
 	}
 	return ctx.redirect('/builds')
 }
+
+// build_info renders one build's detail page (the /builds list cards link
+// here). Registered after the literal /builds/new and /builds/preview routes
+// so they win the match; the typed int param keeps non-numeric ids from
+// binding.
+@['/builds/:id']
+pub fn (wapp &App) build_info(mut ctx Context, id int) veb.Result {
+	ctx.set_translate_title('build_detail_page_title')
+	b := database.select_build(wapp.db, ctx.lang, id) or { return ctx.not_found() }
+	return $veb.html('./templates/build_detail.html')
+}
