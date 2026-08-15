@@ -529,3 +529,6 @@ build_save
 build_cancel
 ยกเลิก
 -----
+build_notes
+บันทึก
+-----

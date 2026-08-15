@@ -8,115 +8,141 @@
 <body>
     @include 'layout/navbar.html'
 
-    <section class="max-w-4xl mx-auto my-16 px-4">
+    <section class="max-w-5xl mx-auto my-16 px-4">
         <a href="/builds" class="text-sm font-bold text-accent hover:underline">← %build_back_list</a>
 
-        <div class="mt-4 p-6 rounded-2xl border-l-4 border-primary bg-surface/50">
-            <div class="flex flex-wrap items-center gap-3">
-                <span class="text-3xl font-headline text-accent font-bold">@{ctx.build_ep_label(b.ep, b.ep_special)}</span>
-                @for t in b.tags
-                <span class="font-bold text-accent text-xs border border-accent/50 rounded-full px-2 py-0.5">@{ctx.build_tag_label(t)}</span>
-                @endfor
-                <div class="ml-auto text-right">
+        <!-- hub-style header: EP + tags, author · date -->
+        <header class="mt-6 flex flex-wrap items-end justify-between gap-6">
+            <div>
+                <div class="flex flex-wrap items-center gap-3">
+                    <span class="text-4xl font-headline font-bold text-accent">@{ctx.build_ep_label(b.ep, b.ep_special)}</span>
+                    @for t in b.tags
+                    <span class="font-bold text-accent text-xs border border-accent/50 rounded-full px-2 py-0.5">@{ctx.build_tag_label(t)}</span>
+                    @endfor
+                </div>
+                <div class="mt-2 text-sm text-foreground-muted">
                     @if b.author != ""
                     <span class="font-bold text-on-surface">@b.author</span>
                     @else
                     <span class="font-bold text-on-surface">%build_anonymous</span>
                     @endif
+                    <span> · @{ctx.build_date_label(b.created_at)}</span>
                     @if b.is_anon
-                    <span class="block text-xs text-foreground-muted">@{ctx.expires_in_label(b.expires_in_h)}</span>
+                    <span class="ml-2 text-xs">@{ctx.expires_in_label(b.expires_in_h)}</span>
                     @endif
                 </div>
             </div>
-
-            <div class="mt-6 flex items-stretch gap-6 flex-wrap">
-                <div class="relative flex items-stretch shrink-0 w-40">
-                    <a href="/cookies/@b.cookie.id" title="@b.cookie.name" class="flex w-full">
-                        <img src="@{ctx.img_src('cookies', b.cookie.image)}" alt="@b.cookie.name"
-                            class="h-full w-full object-contain rounded" />
-                    </a>
-                    <a href="/pets/@b.pet.id" title="@b.pet.name"
-                        class="absolute -left-4 top-1/2 -translate-y-1/2 z-10">
-                        <img src="@{ctx.img_src('pets', b.pet.image)}" alt="@b.pet.name"
-                            class="size-16 rounded object-contain" />
-                    </a>
-                </div>
-                <div class="min-w-0 flex-1 space-y-3">
-                    @if c2 := b.cookie2
-                    <a href="/cookies/@c2.id" class="flex items-center gap-3 group w-fit" title="@c2.name">
-                        <img src="@{ctx.img_src('cookies', c2.image)}" alt="@c2.name"
-                            class="size-14 shrink-0 rounded object-contain" />
-                        <span class="text-sm font-bold text-on-surface group-hover:text-primary transition-colors">@c2.name</span>
-                    </a>
-                    @endif
-                    <a href="/pets/@b.pet.id" class="flex items-center gap-3 group w-fit" title="@b.pet.name">
-                        <img src="@{ctx.img_src('pets', b.pet.image)}" alt="@b.pet.name"
-                            class="size-14 shrink-0 rounded object-contain" />
-                        <span class="text-sm font-bold text-on-surface group-hover:text-primary transition-colors">@b.pet.name</span>
-                    </a>
-                    @for t in b.treasures
-                    <a href="/treasures/@t.id" class="flex items-center gap-3 group w-fit" title="@t.name">
-                        <img src="@{ctx.img_src('treasures', t.image)}" alt="@t.name"
-                            class="size-14 shrink-0 rounded object-contain" />
-                        <span class="text-sm font-bold text-on-surface group-hover:text-primary transition-colors">@t.name</span>
-                    </a>
-                    @endfor
-                </div>
+            <div class="text-right">
+                <div class="text-xs font-label uppercase text-foreground-muted">%build_score_label</div>
+                <div class="text-3xl font-headline font-bold text-on-surface">@{ctx.format_num(b.score)}</div>
             </div>
+        </header>
 
-            @if cb := combi
-            <div class="mt-6 p-5 rounded-xl border-l-4 border-accent bg-accent/10 flex items-center gap-3 flex-wrap">
-                <span class="text-sm font-label text-foreground-muted uppercase">%combo_bonus_title</span>
-                <span class="text-on-surface text-lg font-bold">%build_with @b.pet.name</span>
-                @if cb.effect != ""
-                <span class="text-on-surface text-base">@cb.effect</span>
-                @end
-                @if cb.is_hidden
-                <span class="font-bold text-accent uppercase border border-accent/50 rounded-full px-3 py-1 text-sm">%combi_hidden_badge</span>
-                @end
-            </div>
-            @end
-
-            @if b.score > 0 || b.coin > 0 || b.time > 0 || b.boxes > 0
-            <div class="mt-6 flex flex-wrap gap-x-6 gap-y-2 text-sm text-foreground-muted">
-                @if b.score > 0
-                <span>%build_score_label: <span class="font-bold text-foreground">@{b.score}</span></span>
-                @end
-                @if b.coin > 0
-                <span>%build_coin_label: <span class="font-bold text-foreground">@{b.coin}</span></span>
-                @end
-                @if b.time > 0
-                <span>%build_time_label: <span class="font-bold text-foreground">@{b.time}</span></span>
-                @end
-                @if b.boxes > 0
-                <span>%build_boxes_label: <span class="font-bold text-foreground">@{b.boxes}</span></span>
-                @end
-            </div>
-            @end
-
-            @if b.description != ""
-            <p class="mt-5 text-foreground whitespace-pre-line leading-relaxed">@b.description</p>
-            @endif
-
-            @if b.youtube_url != ""
-            <a href="@b.youtube_url" target="_blank" rel="noopener"
-                class="mt-5 inline-flex items-center gap-1.5 text-sm font-bold text-accent hover:underline">
-                ▶ %build_watch_video
+        <!-- lineup: main cookie, relay, pet -->
+        <div class="mt-8 grid grid-cols-2 md:grid-cols-3 gap-4">
+            <a href="/cookies/@b.cookie.id" title="@b.cookie.name"
+                class="group rounded-2xl border-2 border-primary/30 bg-surface/50 p-5 flex flex-col items-center gap-3 transition-colors hover:border-primary">
+                <img src="@{ctx.img_src('cookies', b.cookie.image)}" alt="@b.cookie.name"
+                    class="h-36 w-full object-contain" />
+                <span class="text-center font-bold text-on-surface group-hover:text-primary leading-tight">@b.cookie.name</span>
             </a>
-            @endif
-
-            @if can_edit
-            <div class="mt-6 flex items-center gap-3">
-                <a href="/builds/@b.build_id/edit"
-                    class="rounded-xl bg-primary px-5 py-2.5 font-bold text-foreground hover:opacity-90 transition-opacity">%build_edit_button</a>
-                <form method="post" action="/builds/@b.build_id/delete"
-                    onsubmit="return confirm('%build_delete_confirm')">
-                    <button type="submit"
-                        class="rounded-xl border-2 border-error/50 px-5 py-2.5 font-bold text-error hover:border-error transition-colors">%build_delete_button</button>
-                </form>
-            </div>
-            @endif
+            @if c2 := b.cookie2
+            <a href="/cookies/@c2.id" title="@c2.name"
+                class="group rounded-2xl border-2 border-primary/30 bg-surface/50 p-5 flex flex-col items-center gap-3 transition-colors hover:border-primary">
+                <span class="text-[10px] font-label uppercase text-foreground-muted">%build_relay_label</span>
+                <img src="@{ctx.img_src('cookies', c2.image)}" alt="@c2.name"
+                    class="h-28 w-full object-contain" />
+                <span class="text-center font-bold text-on-surface group-hover:text-primary leading-tight">@c2.name</span>
+            </a>
+            @end
+            <a href="/pets/@b.pet.id" title="@b.pet.name"
+                class="group rounded-2xl border-2 border-primary/30 bg-surface/50 p-5 flex flex-col items-center gap-3 transition-colors hover:border-primary">
+                <span class="text-[10px] font-label uppercase text-foreground-muted">%build_pet_label</span>
+                <img src="@{ctx.img_src('pets', b.pet.image)}" alt="@b.pet.name"
+                    class="h-28 w-full object-contain" />
+                <span class="text-center font-bold text-on-surface group-hover:text-primary leading-tight">@b.pet.name</span>
+            </a>
         </div>
+
+        <!-- treasures -->
+        <div class="mt-4 grid grid-cols-3 gap-4">
+            @for t in b.treasures
+            <a href="/treasures/@t.id" title="@t.name"
+                class="group rounded-2xl border-2 border-primary/30 bg-surface/50 p-4 flex flex-col items-center gap-2 transition-colors hover:border-primary">
+                <img src="@{ctx.img_src('treasures', t.image)}" alt="@t.name"
+                    class="h-20 w-full object-contain" />
+                <span class="text-center text-sm font-bold text-on-surface group-hover:text-primary leading-tight">@t.name</span>
+            </a>
+            @endfor
+        </div>
+
+        @if cb := combi
+        <div class="mt-6 p-5 rounded-xl border-l-4 border-accent bg-accent/10 flex items-center gap-3 flex-wrap">
+            <span class="text-sm font-label text-foreground-muted uppercase">%combo_bonus_title</span>
+            <span class="text-on-surface text-lg font-bold">%build_with @b.pet.name</span>
+            @if cb.effect != ""
+            <span class="text-on-surface text-base">@cb.effect</span>
+            @end
+            @if cb.is_hidden
+            <span class="font-bold text-accent uppercase border border-accent/50 rounded-full px-3 py-1 text-sm">%combi_hidden_badge</span>
+            @end
+        </div>
+        @end
+
+        @if b.score > 0 || b.coin > 0 || b.time > 0 || b.boxes > 0
+        <div class="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4">
+            @if b.score > 0
+            <div class="rounded-2xl bg-surface/50 border border-primary/20 p-4">
+                <div class="text-xs font-label uppercase text-foreground-muted">%build_score_label</div>
+                <div class="mt-1 text-xl font-headline font-bold text-on-surface">@{ctx.format_num(b.score)}</div>
+            </div>
+            @end
+            @if b.coin > 0
+            <div class="rounded-2xl bg-surface/50 border border-primary/20 p-4">
+                <div class="text-xs font-label uppercase text-foreground-muted">%build_coin_label</div>
+                <div class="mt-1 text-xl font-headline font-bold text-on-surface">@{ctx.format_num(b.coin)}</div>
+            </div>
+            @end
+            @if b.time > 0
+            <div class="rounded-2xl bg-surface/50 border border-primary/20 p-4">
+                <div class="text-xs font-label uppercase text-foreground-muted">%build_time_label</div>
+                <div class="mt-1 text-xl font-headline font-bold text-on-surface">@{ctx.format_num(b.time)}</div>
+            </div>
+            @end
+            @if b.boxes > 0
+            <div class="rounded-2xl bg-surface/50 border border-primary/20 p-4">
+                <div class="text-xs font-label uppercase text-foreground-muted">%build_boxes_label</div>
+                <div class="mt-1 text-xl font-headline font-bold text-on-surface">@{ctx.format_num(b.boxes)}</div>
+            </div>
+            @end
+        </div>
+        @end
+
+        @if b.description != ""
+        <div class="mt-6 rounded-2xl bg-surface/50 border border-primary/20 p-5">
+            <div class="text-xs font-label uppercase text-foreground-muted">%build_notes</div>
+            <p class="mt-2 text-foreground whitespace-pre-line leading-relaxed">@b.description</p>
+        </div>
+        @end
+
+        @if b.youtube_url != ""
+        <a href="@b.youtube_url" target="_blank" rel="noopener"
+            class="mt-5 inline-flex items-center gap-1.5 text-sm font-bold text-accent hover:underline">
+            ▶ %build_watch_video
+        </a>
+        @end
+
+        @if can_edit
+        <div class="mt-6 flex items-center gap-3">
+            <a href="/builds/@b.build_id/edit"
+                class="rounded-xl bg-primary px-5 py-2.5 font-bold text-foreground hover:opacity-90 transition-opacity">%build_edit_button</a>
+            <form method="post" action="/builds/@b.build_id/delete"
+                onsubmit="return confirm('%build_delete_confirm')">
+                <button type="submit"
+                    class="rounded-xl border-2 border-error/50 px-5 py-2.5 font-bold text-error hover:border-error transition-colors">%build_delete_button</button>
+            </form>
+        </div>
+        @end
     </section>
 </body>
 

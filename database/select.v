@@ -673,6 +673,7 @@ pub:
 	user_id      int // owning user id; 0 for anonymous builds
 	is_anon      bool
 	expires_in_h int // remaining hours for anonymous builds, 0 for permanent
+	created_at   time.Time
 	cookie       IdNameOption
 	cookie2      ?IdNameOption // relay cookie; none when the build has no relay
 	pet          IdNameOption
@@ -706,7 +707,7 @@ pub fn select_builds(conn sqlite.DB, lang string, f_cookie int, f_pet int, f_ep 
 		'CASE WHEN ep_special > 0 THEN 10 + ep_special ELSE ep END DESC, build_id DESC'
 	}
 
-	rows := conn.exec('SELECT build_id, cookie_id, cookie2_id, pet_id, treasure1_id, treasure2_id, treasure3_id, ep, ep_special, tag, score, coin, time, boxes, description, youtube_url, author, user_id, expires_at FROM build WHERE ${where} ORDER BY ${order} LIMIT ${limit} OFFSET ${offset}')!
+	rows := conn.exec('SELECT build_id, cookie_id, cookie2_id, pet_id, treasure1_id, treasure2_id, treasure3_id, ep, ep_special, tag, score, coin, time, boxes, description, youtube_url, author, user_id, expires_at, created_at FROM build WHERE ${where} ORDER BY ${order} LIMIT ${limit} OFFSET ${offset}')!
 	if rows.len == 0 {
 		return []
 	}
@@ -757,6 +758,7 @@ fn build_card_from_row(conn sqlite.DB, lang string, row sqlite.Row) BuildCard {
 		user_id:      row.get_int('user_id')
 		is_anon:      is_anon
 		expires_in_h: expires_in_h
+		created_at:   time.unix(i64(row.get_int('created_at')))
 		cookie:       IdNameOption{
 			id:    cid
 			name:  resolve_entity_name(conn, 'cookie', cid, lang)
@@ -784,7 +786,7 @@ fn build_card_from_row(conn sqlite.DB, lang string, row sqlite.Row) BuildCard {
 // direct link should still render), or an error when it doesn't exist. Used
 // by the /builds/:id detail page the list cards link to.
 pub fn select_build(conn sqlite.DB, lang string, id int) !BuildCard {
-	rows := conn.exec('SELECT build_id, cookie_id, cookie2_id, pet_id, treasure1_id, treasure2_id, treasure3_id, ep, ep_special, tag, score, coin, time, boxes, description, youtube_url, author, user_id, expires_at FROM build WHERE build_id = ${id}')!
+	rows := conn.exec('SELECT build_id, cookie_id, cookie2_id, pet_id, treasure1_id, treasure2_id, treasure3_id, ep, ep_special, tag, score, coin, time, boxes, description, youtube_url, author, user_id, expires_at, created_at FROM build WHERE build_id = ${id}')!
 	if rows.len == 0 {
 		return error('build (${id}) not found')
 	}

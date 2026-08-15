@@ -31,6 +31,28 @@ pub fn (ctx &Context) build_tag_label(tag string) string {
 	return '#' + veb.tr(ctx.lang, 'build_tag_${tag}')
 }
 
+// format_num inserts thousands separators for display (e.g. 710,000,000).
+pub fn (ctx &Context) format_num(n u64) string {
+	s := n.str()
+	mut out := ''
+	mut count := 0
+	for i := s.len - 1; i >= 0; i-- {
+		out = s[i].ascii_str() + out
+		count++
+		if count % 3 == 0 && i > 0 {
+			out = ',' + out
+		}
+	}
+	return out
+}
+
+// build_date_label formats a build's creation date as YYYY.MM.DD (hub style).
+pub fn (ctx &Context) build_date_label(t time.Time) string {
+	month := if t.month < 10 { '0' + t.month.str() } else { t.month.str() }
+	day := if t.day < 10 { '0' + t.day.str() } else { t.day.str() }
+	return '${t.year}.${month}.${day}'
+}
+
 // BuildSelection is the loadout picked on the build planner: one cookie, an
 // optional relay cookie, one pet and up to three treasures (0 = not picked).
 struct BuildSelection {

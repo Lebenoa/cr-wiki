@@ -895,7 +895,7 @@ fn test_build_detail(mut tc TestContext) ! {
 	if resp.status_code != 200 {
 		return error('GET /builds/${bid}: expected 200, got ${resp.status_code}')
 	}
-	for needle in ['href="/builds"', '/cookies/23', '/pets/58', '/treasures/180', 'Detail page strat', '12345'] {
+	for needle in ['href="/builds"', '/cookies/23', '/pets/58', '/treasures/180', 'Detail page strat', '12,345'] {
 		if !resp.body.contains(needle) {
 			return error('build detail missing "${needle}"')
 		}
