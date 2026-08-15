@@ -190,7 +190,28 @@ export default defineConfig({
 						--on-error: 0.2090 0.0000 89.88;
 						--on-surface: 0.9612 0.0000 89.88;
 						--on-muted: 0.9612 0.0000 89.88;
-					}
+					}						html[data-theme="rose_pine"] {
+							--background: 0.2134 0.0255 291.13;
+							--surface: 0.2413 0.0322 289.14;
+							--border: 0.3717 0.0358 291.10;
+							--primary: 0.7760 0.0945 304.99;
+							--secondary: 0.8363 0.0544 21.14;
+							--accent: 0.8219 0.0543 209.56;
+							--muted: 0.2708 0.0423 289.23;
+							--foreground: 0.9088 0.0299 289.97;
+							--foreground-muted: 0.6539 0.0444 291.23;
+							--success: 0.5277 0.0793 227.72;
+							--warning: 0.8429 0.1100 74.60;
+							--error: 0.6977 0.1565 4.22;
+							--on-primary: 0.2090 0.0000 89.88;
+							--on-secondary: 0.2090 0.0000 89.88;
+							--on-accent: 0.2090 0.0000 89.88;
+							--on-success: 0.9612 0.0000 89.88;
+							--on-warning: 0.2090 0.0000 89.88;
+							--on-error: 0.2090 0.0000 89.88;
+							--on-surface: 0.9612 0.0000 89.88;
+							--on-muted: 0.9612 0.0000 89.88;
+						}
 					.theme-swatch[data-theme="default"] {
 						background: conic-gradient(from 0deg, oklch(0.5808 0.1298 294.32), oklch(0.7413 0.1156 88.58), oklch(0.1874 0.0124 300.42), oklch(0.5808 0.1298 294.32));
 					}
@@ -211,6 +232,9 @@ export default defineConfig({
 					}
 					.theme-swatch[data-theme="gruvbox"] {
 						background: conic-gradient(from 0deg, oklch(0.6927 0.0420 169.77), oklch(0.7652 0.1581 110.83), oklch(0.2768 0.0000 89.88), oklch(0.6927 0.0420 169.77));
+					}
+					.theme-swatch[data-theme="rose_pine"] {
+						background: conic-gradient(from 0deg, oklch(0.7760 0.0945 304.99), oklch(0.8219 0.0543 209.56), oklch(0.2134 0.0255 291.13), oklch(0.7760 0.0945 304.99));
 					}
 				body {
 					width: 100%;
@@ -243,6 +267,13 @@ export default defineConfig({
 							translate: 0 -10px;
 						}
 					}
+				}
+				#theme-trigger {
+					anchor-name: --theme-trigger;
+				}
+				#theme-popover {
+					position-anchor: --theme-trigger;
+					position-area: left center;
 				}`,
         },
     ],

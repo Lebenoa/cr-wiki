@@ -84,7 +84,7 @@ pub fn (ctx &Context) nav_link(href string, tr_key ?string) veb.RawHtml {
 // preflight (`html[data-theme="..."]` blocks in uno.config.ts); the dropdown
 // just toggles the `data-theme` attribute (see static/js/theme.js).
 pub fn (ctx &Context) theme_options() []string {
-	return ['default', 'light', 'tokyo_night', 'cappuccino', 'dracula', 'nord', 'gruvbox']
+	return ['default', 'light', 'tokyo_night', 'cappuccino', 'dracula', 'nord', 'gruvbox', 'rose_pine']
 }
 
 // theme_label localizes a theme name (theme_* keys in the .tr files).

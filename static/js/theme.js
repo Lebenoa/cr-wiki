@@ -1,14 +1,17 @@
 // Theme selector. Palettes live in the UnoCSS preflight (uno.config.ts) as
 // `html[data-theme="..."]` variable blocks — this script only toggles the
 // `data-theme` attribute on <html> (the default theme has no attribute).
-// Hovering an option in the account dropdown live-previews it; clicking
-// persists it in localStorage. Delegated listeners survive hx-boost body
-// swaps (the navbar/account dropdown re-renders on every navigation).
+// The theme options live in a popover nested inside the account-dropdown so
+// picking a theme never closes the account dropdown (clicks inside a nested
+// popover don't light-dismiss its ancestor). The popover opens on click OR
+// mouseover of the trigger button and is positioned to its left. Delegated
+// listeners survive hx-boost body swaps (the navbar re-renders on every
+// navigation).
 (function () {
   'use strict';
 
   var KEY = 'cr-theme';
-  var NAMES = ['default', 'light', 'tokyo_night', 'cappuccino', 'dracula', 'nord', 'gruvbox'];
+  var NAMES = ['default', 'light', 'tokyo_night', 'cappuccino', 'dracula', 'nord', 'gruvbox', 'rose_pine'];
 
   function stored() {
     try {
@@ -38,39 +41,68 @@
     refresh();
   }
 
-  // mark the active option in the dropdown
+  // mark the active option in the dropdown and sync the trigger swatch
   function refresh() {
     document.querySelectorAll('.theme-option').forEach(function (btn) {
       var check = btn.querySelector('.theme-check');
       if (check) check.classList.toggle('hidden', btn.dataset.theme !== active);
     });
+    var trig = document.getElementById('theme-trigger');
+    var sw = trig && trig.querySelector('.theme-swatch');
+    if (sw) sw.dataset.theme = active;
+  }
+
+  function trig() { return document.getElementById('theme-trigger'); }
+  function pop() { return document.getElementById('theme-popover'); }
+
+  function openPopover() {
+    var t = trig(), p = pop();
+    if (!t || !p || p.matches(':popover-open')) return;
+    p.showPopover();
+  }
+
+  function closePopover() {
+    var p = pop();
+    if (p && p.matches(':popover-open')) p.hidePopover();
+  }
+
+  // click on the trigger OR mouseover over it — mouseover simulates a button
+  // click so the popover toggles and stays open (sticky), same as clicking
+  function togglePopover() {
+    var p = pop();
+    if (p && p.matches(':popover-open')) closePopover();
+    else openPopover();
   }
 
   // boot: apply the saved theme before first paint (script runs in <head>)
   apply(active);
 
-  // wire the dropdown via delegation (survives hx-boost swaps)
-  var hovered = null;
+  // wire the trigger + options via delegation (survives hx-boost swaps)
+  // mouseover fires on every child-element transition inside the button, so
+  // only toggle on a genuine entry into the trigger (relatedTarget outside it)
   document.addEventListener('mouseover', function (e) {
-    var btn = e.target && e.target.closest ? e.target.closest('.theme-option') : null;
-    if (!btn || btn === hovered) return;
-    hovered = btn;
-    apply(btn.dataset.theme);
-    refresh();
-  });
-  document.addEventListener('mouseout', function (e) {
-    if (!hovered) return;
-    var rel = e.relatedTarget;
-    if (rel && rel.closest && rel.closest('.theme-option')) return; // moved to another option
-    hovered = null;
-    apply(active);
-    refresh();
+    var el = e.target;
+    if (!el || !el.closest) return;
+    if (el.closest('#theme-trigger')) {
+      var rel = e.relatedTarget;
+      var fromInside = rel && rel.closest && rel.closest('#theme-trigger');
+      if (!fromInside) togglePopover();
+    }
   });
   document.addEventListener('click', function (e) {
-    var btn = e.target && e.target.closest ? e.target.closest('.theme-option') : null;
-    if (!btn) return;
-    e.preventDefault();
-    save(btn.dataset.theme);
+    var el = e.target;
+    var t = el && el.closest ? el.closest('#theme-trigger') : null;
+    if (t) {
+      e.preventDefault();
+      togglePopover();
+      return;
+    }
+    var opt = el && el.closest ? el.closest('.theme-option') : null;
+    if (opt) {
+      e.preventDefault();
+      save(opt.dataset.theme);
+      closePopover(); // account-dropdown stays open (nested popover)
+    }
   });
 
   function onReady() {
