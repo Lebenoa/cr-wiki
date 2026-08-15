@@ -341,6 +341,14 @@ fn migrate(conn sqlite.DB) ! {
 			}
 		}
 	}
+	// build.combi_bonus_id snapshots the combi_bonus row for the cookie+pet
+	// pair (none when the pair has no combo); added later, old rows stay null.
+	if 'combi_bonus_id' !in build_cols {
+		result := conn.exec_none('ALTER TABLE build ADD COLUMN combi_bonus_id INTEGER')
+		if !sqlite_success(result) {
+			return conn.error_message(result, 'add build combi_bonus_id column')
+		}
+	}
 
 	// cookie_translation columns added after the table first shipped; ensure they
 	// exist for databases created before their introduction.

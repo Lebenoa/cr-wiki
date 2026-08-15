@@ -12,6 +12,7 @@ pub:
 	cookie_id    int @[required; index]
 	cookie2_id   int @[index] // relay cookie; 0 = none
 	pet_id       int @[required; index]
+	combi_bonus_id ?int // id into combi_bonus when cookie+pet have a combo bonus; none = no combo
 	treasure1_id int @[required]
 	treasure2_id int @[required]
 	treasure3_id int @[required]

@@ -45,6 +45,10 @@
                 <img src="@{ctx.img_src('cookies', b.cookie.image)}" alt="@b.cookie.name"
                     class="h-36 w-full object-contain" />
                 <span class="text-center font-bold text-on-surface group-hover:text-primary leading-tight">@b.cookie.name</span>
+                @if b.combi_bonus_id > 0
+                <span
+                    class="font-bold text-accent uppercase border border-accent/50 rounded-full px-2 py-0.5 text-[10px]">%combo_bonus_title</span>
+                @end
             </a>
             @if c2 := b.cookie2
             <a href="/cookies/@c2.id" title="@c2.name"
@@ -85,7 +89,10 @@
         @if cb := combi
         <div class="mt-6 p-5 rounded-xl border-l-4 border-accent bg-accent/10 flex items-center gap-3 flex-wrap">
             <span class="text-sm font-label text-foreground-muted uppercase">%combo_bonus_title</span>
-            <span class="text-on-surface text-lg font-bold">%build_with @b.pet.name</span>
+            <span class="flex items-center gap-2">
+                <img src="@{ctx.img_src('cookies', b.cookie.image)}" alt="" class="size-10 rounded-lg object-contain" />
+                <img src="@{ctx.img_src('pets', b.pet.image)}" alt="" class="size-10 rounded-lg object-contain" />
+            </span>
             @if cb.effect != ""
             <span class="text-on-surface text-base">@cb.effect</span>
             @end
@@ -124,19 +131,25 @@
         </div>
         @end
 
-        @if b.boosts.len > 0 || b.boost != ""
         <div class="mt-6">
             <div class="text-xs font-label uppercase text-foreground-muted">%build_boosts_label</div>
             <div class="mt-2 flex flex-wrap gap-2">
-                @for bo in b.boosts
+                @for bo in boost_keys
+                @if bo in b.boosts
                 <span class="flex items-center gap-2 rounded-xl bg-surface border border-primary/30 px-3 py-2 text-sm text-on-surface">
                     <img src="@{ctx.boost_img_src(bo)}" alt="" class="size-8 rounded-lg object-contain bg-background/40" />
                     <span class="font-bold text-accent">✓</span>
                     @{ctx.build_boost_label(bo)}
                 </span>
+                @else
+                <span class="flex items-center gap-2 rounded-xl bg-surface/30 border border-primary/10 px-3 py-2 text-sm opacity-60">
+                    <img src="@{ctx.boost_img_src(bo)}" alt="" class="size-8 rounded-lg object-contain bg-background/40" />
+                    @{ctx.build_boost_label(bo)}
+                </span>
+                @endif
                 @endfor
                 @if b.boost != ""
-                <span class="flex items-center gap-2 rounded-xl bg-surface border border-primary/30 px-3 py-2 text-sm text-on-surface">
+                <span class="flex items-center gap-2 rounded-xl bg-surface border border-accent/40 px-3 py-2 text-sm text-on-surface">
                     <img src="@{ctx.boost_img_src(b.boost)}" alt="" class="size-8 rounded-lg object-contain bg-background/40" />
                     <span class="font-bold text-accent">✓</span>
                     @{ctx.purchase_boost_label(b.boost)}
@@ -144,22 +157,26 @@
                 @endif
             </div>
         </div>
-        @end
 
-        @if b.power_effects.len > 0
         <div class="mt-6">
             <div class="text-xs font-label uppercase text-foreground-muted">%build_power_effects_label</div>
             <div class="mt-2 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
-                @for pk in b.power_effects
-                <div class="flex items-center gap-2 rounded-xl bg-surface/50 border border-primary/20 px-3 py-2">
+                @for pk in power_effect_keys
+                @if pk in b.power_effects
+                <div class="flex items-center gap-2 rounded-xl bg-surface/50 border border-accent/40 px-3 py-2">
                     <img src="@{ctx.power_effect_img_src(pk)}" alt="" class="size-8 rounded-lg object-contain" />
                     <span class="min-w-0 flex-1 text-sm text-on-surface truncate">@{ctx.power_effect_label(pk)}</span>
                     <span class="shrink-0 text-xs font-bold text-accent">✓ %build_used</span>
                 </div>
+                @else
+                <div class="flex items-center gap-2 rounded-xl bg-surface/30 border border-primary/10 px-3 py-2 opacity-60">
+                    <img src="@{ctx.power_effect_img_src(pk)}" alt="" class="size-8 rounded-lg object-contain" />
+                    <span class="min-w-0 flex-1 text-sm text-on-surface truncate">@{ctx.power_effect_label(pk)}</span>
+                </div>
+                @endif
                 @endfor
             </div>
         </div>
-        @end
 
         @if b.description != ""
         <div class="mt-6 rounded-2xl bg-surface/50 border border-primary/20 p-5">

@@ -568,6 +568,23 @@ fn combi_effect_text(conn sqlite.DB, effect_id ?int, lang string) string {
 	return ''
 }
 
+// combi_bonus_id_for returns the combi_bonus row id for a cookie+pet pair,
+// or 0 when the pair has no combo bonus. Called on build insert/update so the
+// snapshot column stays in sync with the pair's current combo.
+pub fn combi_bonus_id_for(conn sqlite.DB, cid int, pid int) !int {
+	rows := sql conn {
+		select from models.CombiBonus where cookie_id == cid && pet_id == pid
+	}!
+	if rows.len == 0 {
+		return 0
+	}
+	if id := rows[0].id {
+		return id
+	}
+	warn_missing_id('combi_bonus')
+	return 0
+}
+
 // CombiBonusView is one combo-bonus row rendered on a cookie/pet detail page:
 // the partner entity (the other half of the pair) plus the localized bonus
 // effect text.
@@ -838,6 +855,7 @@ pub:
 	pet             IdNameOption
 	treasures       []IdNameOption
 	treasure_blessed []bool // per-slot blessed state, aligned with treasures
+	combi_bonus_id   int    // combi_bonus row id for the cookie+pet pair; 0 = no combo
 }
 
 // select_builds returns non-expired community builds, filtered by
@@ -870,7 +888,7 @@ pub fn select_builds(conn sqlite.DB, lang string, f_cookie int, f_pet int, f_tre
 		'CASE WHEN ep_special > 0 THEN 10 + ep_special ELSE ep END DESC, build_id DESC'
 	}
 
-	rows := conn.exec('SELECT build_id, cookie_id, cookie2_id, pet_id, treasure1_id, treasure2_id, treasure3_id, treasure1_blessed, treasure2_blessed, treasure3_blessed, ep, ep_special, tag, boosts, boost, power_effects, score, coin, time, boxes, description, youtube_url, author, user_id, expires_at, created_at FROM build WHERE ${where} ORDER BY ${order} LIMIT ${limit} OFFSET ${offset}')!
+	rows := conn.exec('SELECT build_id, cookie_id, cookie2_id, pet_id, combi_bonus_id, treasure1_id, treasure2_id, treasure3_id, treasure1_blessed, treasure2_blessed, treasure3_blessed, ep, ep_special, tag, boosts, boost, power_effects, score, coin, time, boxes, description, youtube_url, author, user_id, expires_at, created_at FROM build WHERE ${where} ORDER BY ${order} LIMIT ${limit} OFFSET ${offset}')!
 	if rows.len == 0 {
 		return []
 	}
@@ -948,6 +966,7 @@ fn build_card_from_row(conn sqlite.DB, lang string, row sqlite.Row) BuildCard {
 		}
 		treasures:       treasures
 		treasure_blessed: treasure_blessed
+		combi_bonus_id:  row.get_int('combi_bonus_id')
 	}
 }
 
@@ -955,7 +974,7 @@ fn build_card_from_row(conn sqlite.DB, lang string, row sqlite.Row) BuildCard {
 // direct link should still render), or an error when it doesn't exist. Used
 // by the /builds/:id detail page the list cards link to.
 pub fn select_build(conn sqlite.DB, lang string, id int) !BuildCard {
-	rows := conn.exec('SELECT build_id, cookie_id, cookie2_id, pet_id, treasure1_id, treasure2_id, treasure3_id, treasure1_blessed, treasure2_blessed, treasure3_blessed, ep, ep_special, tag, boosts, boost, power_effects, score, coin, time, boxes, description, youtube_url, author, user_id, expires_at, created_at FROM build WHERE build_id = ${id}')!
+	rows := conn.exec('SELECT build_id, cookie_id, cookie2_id, pet_id, combi_bonus_id, treasure1_id, treasure2_id, treasure3_id, treasure1_blessed, treasure2_blessed, treasure3_blessed, ep, ep_special, tag, boosts, boost, power_effects, score, coin, time, boxes, description, youtube_url, author, user_id, expires_at, created_at FROM build WHERE build_id = ${id}')!
 	if rows.len == 0 {
 		return error('build (${id}) not found')
 	}

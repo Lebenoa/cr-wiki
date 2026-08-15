@@ -5,16 +5,21 @@
 <div class="relative p-4 rounded-xl border-l-4 border-primary bg-surface/50 flex items-stretch gap-4">
     <a href="/builds/@b.build_id" aria-label="%build_detail_page_title"
         class="absolute inset-0 rounded-xl"></a>
-    <div class="relative flex items-stretch shrink-0 w-24">
-        <a href="/cookies/@b.cookie.id" title="@b.cookie.name" class="relative z-10 flex w-full">
-            <img src="@{ctx.img_src('cookies', b.cookie.image)}" alt="@b.cookie.name"
-                class="h-full w-full object-contain rounded" />
-        </a>
-        <a href="/pets/@b.pet.id" title="@b.pet.name"
-            class="relative z-10 absolute -left-4 top-1/2 -translate-y-1/2">
-            <img src="@{ctx.img_src('pets', b.pet.image)}" alt="@b.pet.name"
-                class="size-12 rounded object-contain" />
-        </a>
+    <div class="relative flex flex-col shrink-0 w-24">
+        <div class="relative flex items-stretch flex-1">
+            <a href="/cookies/@b.cookie.id" title="@b.cookie.name" class="relative z-10 flex w-full">
+                <img src="@{ctx.img_src('cookies', b.cookie.image)}" alt="@b.cookie.name"
+                    class="h-full w-full object-contain rounded" />
+            </a>
+            <a href="/pets/@b.pet.id" title="@b.pet.name"
+                class="relative z-10 absolute -left-4 top-1/2 -translate-y-1/2">
+                <img src="@{ctx.img_src('pets', b.pet.image)}" alt="@b.pet.name"
+                    class="size-12 rounded object-contain" />
+            </a>
+        </div>
+        @if b.combi_bonus_id > 0
+        <span class="self-center mt-1 font-bold text-accent uppercase border border-accent/50 rounded-full px-2 py-0.5 text-[10px]">%combo_bonus_title</span>
+        @end
     </div>
     <div class="min-w-0 flex-1 flex flex-wrap items-center gap-x-4 gap-y-2">
         <div class="text-center min-w-16">

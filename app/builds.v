@@ -409,6 +409,10 @@ pub fn (wapp &App) build_info(mut ctx Context, id int) veb.Result {
 	b := database.select_build(wapp.db, ctx.lang, id) or { return ctx.not_found() }
 	combi := find_combi(wapp, ctx, b.cookie.id, b.pet.id)
 	can_edit := can_edit_build(ctx, b)
+	// the detail page renders the full boost/Power+ catalogs with the used
+	// ones marked, hub-style — not just the ones this build has
+	boost_keys := ['energy', 'item_time', 'fast_start']
+	power_effect_keys := util.power_effect_keys()
 	return $veb.html('./templates/build_detail.html')
 }
 

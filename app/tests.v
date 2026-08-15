@@ -907,10 +907,15 @@ fn test_build_detail(mut tc TestContext) ! {
 	}
 	bid := tc.db.exec("SELECT build_id FROM build WHERE author = 'detailtest' ORDER BY build_id DESC LIMIT 1")![0].get_int('build_id')
 	// the purchased boost and Power+ keys round-trip into the build row
-	row := tc.db.exec("SELECT boost, power_effects FROM build WHERE build_id = ${bid}")![0]
+	row := tc.db.exec("SELECT boost, power_effects, combi_bonus_id FROM build WHERE build_id = ${bid}")![0]
 	if row.get_string('boost') != 'base_speed_up'
 		|| row.get_string('power_effects') != 'cheerleader,serenade' {
 		return error('build round-trip: want boost=base_speed_up, power_effects=cheerleader,serenade; got boost=${row.get_string('boost')}, power_effects=${row.get_string('power_effects')}')
+	}
+	// cookie 23 + pet 58 is the seeded (hidden) combo (combi_bonus id 16):
+	// the snapshot column is set at insert so list cards can badge it
+	if row.get_int('combi_bonus_id') != 16 {
+		return error('build combi snapshot: want combi_bonus_id=16, got ${row.get_int('combi_bonus_id')}')
 	}
 	resp := http.get('${tc.base}/builds/${bid}') or { return error('GET /builds/${bid}: ${err}') }
 	if resp.status_code != 200 {
@@ -921,18 +926,41 @@ fn test_build_detail(mut tc TestContext) ! {
 			return error('build detail missing "${needle}"')
 		}
 	}
-	// the Power+ section renders each used effect with its sprite and a Used badge
-	for needle in ['Power+ Effects', 'Cheerleader Cookie Power+', 'Serenade of Love', 'Used', '/img/owned_effects/cheerleader.png', '/img/owned_effects/serenade.png'] {
+	// the Power+ section renders the full 7-effect catalog hub-style: the two
+	// used effects with their sprites and a Used badge, the five unused ones
+	// plain (this build only set cheerleader + serenade)
+	for needle in ['Power+ Effects', 'Cheerleader Cookie Power+', 'Serenade of Love', 'Special Force Cookie Power+', 'Fairy Cookie Power+', 'Cheesecake Cookie Power+', 'Sea Fairy Cookie Power+', 'EXP Party Power+', 'Used', '/img/owned_effects/cheerleader.png', '/img/owned_effects/serenade.png'] {
 		if !resp.body.contains(needle) {
 			return error('build detail Power+ section missing "${needle}"')
 		}
 	}
+	// and the boost grid shows all three run toggles, used and not
+	for needle in ['Energy', 'Fast Start', 'Item Time'] {
+		if !resp.body.contains(needle) {
+			return error('build detail boost grid missing "${needle}"')
+		}
+	}
 	// cookie 23 + pet 58 is a seeded (hidden) combo: the detail page shows
-	// the combo bonus box with the effect text and the hidden badge
-	for needle in ['Combo bonus', 'with', '1200 Bonus Points for all Jellies', 'Hidden'] {
+	// the combo bonus box with cookie+pet thumbnails (no names), the effect
+	// text and the hidden badge, and the combi badge under the cookie card
+	for needle in ['Combo bonus', '1200 Bonus Points for all Jellies', 'Hidden', '/img/cookies/wizard_cookie.png', '/img/pets/mini_jackson_no_2.png'] {
 		if !resp.body.contains(needle) {
 			return error('build detail combo missing "${needle}"')
 		}
+	}
+	// the banner previously rendered `%build_with @b.pet.name` ("with Mini
+	// Jackson No. 2"); that phrase must be gone — the thumbs replace it. The
+	// plain pet name still appears in the lineup card, so check the phrase.
+	if resp.body.contains('with Mini Jackson No. 2') {
+		return error('build detail combo banner still uses the build_with text')
+	}
+	if resp.body.count('text-[10px]">Combo bonus<') != 1 {
+		return error('build detail must show the combi badge under the cookie, got ${resp.body.count('text-[10px]">Combo bonus<')}')
+	}
+	// and the /builds list card badges the same combi build under its cookie
+	list2 := http.get('${tc.base}/builds') or { return error('GET /builds after submit: ${err}') }
+	if list2.status_code != 200 || list2.body.count('text-[10px]">Combo bonus<') < 1 {
+		return error('build list card must show the combi badge under the cookie')
 	}
 	// blessed slots 1+2 render the hub-style Blessed badge, slot 3 stays plain
 	if resp.body.count('text-[10px]">Blessed<') != 2 {

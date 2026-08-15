@@ -229,8 +229,14 @@ fn apply_combi_diff(conn sqlite.DB, kind string, id int, keep map[int]CombiRowUp
 // enforced by the caller; author/user_id/expiry are left untouched so a
 // rename or an expiry change never happens through the edit form.
 pub fn update_build(conn sqlite.DB, id int, new_cookie int, new_cookie2 int, new_pet int, new_t1 int, new_t2 int, new_t3 int, new_t1_blessed int, new_t2_blessed int, new_t3_blessed int, new_ep int, new_ep_special int, new_tags []string, new_boosts []string, new_boost string, new_power_effects []string, new_score u64, new_coin u64, new_time_ms u64, new_boxes u64, new_description string, new_youtube string) ! {
+	combi_id := combi_bonus_id_for(conn, new_cookie, new_pet)!
 	sql conn {
 		update models.Build set cookie_id = new_cookie, cookie2_id = new_cookie2, pet_id = new_pet,
+		combi_bonus_id = if combi_id > 0 {
+			combi_id
+		} else {
+			none
+		},
 		treasure1_id = new_t1, treasure2_id = new_t2, treasure3_id = new_t3,
 		treasure1_blessed = new_t1_blessed, treasure2_blessed = new_t2_blessed,
 		treasure3_blessed = new_t3_blessed, ep = new_ep,
