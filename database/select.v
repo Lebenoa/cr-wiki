@@ -571,6 +571,76 @@ pub:
 // with id `id`, resolving each partner's name and the effect text in the
 // user's language (en fallback). Hidden rows are listed too — this is a wiki,
 // readers see everything. Empty when the entity has no combos.
+// combo_lookups pre-fetches everything get_combi_bonus / combi_edit_rows need
+// per row — partner name + sprite and the effect text — in 4 batched queries
+// instead of 3 per combo row.
+fn combo_lookups(conn sqlite.DB, lang string, partner_kind string, partner_ids []int, effect_ids []int) (map[int]string, map[int]?string, map[int]string) {
+	mut name_map := map[int]string{}
+	mut img_map := map[int]?string{}
+	user_lang := lang
+
+	if partner_kind == 'pet' {
+		trs := sql conn {
+			select from models.PetTranslation where pet_id in partner_ids
+			&& (lang == user_lang || lang == 'en')
+		} or { [] }
+		for tr in trs {
+			if tr.lang == user_lang {
+				name_map[tr.pet_id] = tr.name
+			}
+		}
+		for tr in trs {
+			if tr.pet_id !in name_map {
+				name_map[tr.pet_id] = tr.name
+			}
+		}
+		id_csv := partner_ids.map(it.str()).join(',')
+		rows := conn.exec('SELECT pet_id, image FROM pet WHERE pet_id IN (${id_csv})') or { [] }
+		for row in rows {
+			img_map[row.get_int('pet_id')] = row.get_string('image')
+		}
+	} else {
+		trs := sql conn {
+			select from models.CookieTranslation where owner_id in partner_ids
+			&& (lang == user_lang || lang == 'en')
+		} or { [] }
+		for tr in trs {
+			if tr.lang == user_lang {
+				name_map[tr.owner_id] = tr.name
+			}
+		}
+		for tr in trs {
+			if tr.owner_id !in name_map {
+				name_map[tr.owner_id] = tr.name
+			}
+		}
+		id_csv := partner_ids.map(it.str()).join(',')
+		rows := conn.exec('SELECT cookie_id, image FROM cookie WHERE cookie_id IN (${id_csv})') or { [] }
+		for row in rows {
+			img_map[row.get_int('cookie_id')] = row.get_string('image')
+		}
+	}
+
+	mut effect_map := map[int]string{}
+	if effect_ids.len > 0 {
+		trs := sql conn {
+			select from models.EffectTranslation where effect_id in effect_ids
+			&& (lang == user_lang || lang == 'en')
+		} or { [] }
+		for tr in trs {
+			if tr.lang == user_lang {
+				effect_map[tr.effect_id] = tr.name
+			}
+		}
+		for tr in trs {
+			if tr.effect_id !in effect_map {
+				effect_map[tr.effect_id] = tr.name
+			}
+		}
+	}
+	return name_map, img_map, effect_map
+}
+
 pub fn get_combi_bonus(conn sqlite.DB, lang string, kind string, id int) ![]CombiBonusView {
 	mut rows := []models.CombiBonus{}
 	if kind == 'cookie' {
@@ -588,11 +658,30 @@ pub fn get_combi_bonus(conn sqlite.DB, lang string, kind string, id int) ![]Comb
 		return []
 	}
 
+	partner_kind := if kind == 'cookie' { 'pet' } else { 'cookie' }
+	mut partner_ids := []int{}
+	mut effect_ids := []int{}
+	mut seen := map[int]bool{}
+	mut seen_e := map[int]bool{}
+	for row in rows {
+		pid := if kind == 'cookie' { row.pet_id } else { row.cookie_id }
+		if pid !in seen {
+			partner_ids << pid
+			seen[pid] = true
+		}
+		if eid := row.effect_id {
+			if eid !in seen_e {
+				effect_ids << eid
+				seen_e[eid] = true
+			}
+		}
+	}
+	name_map, img_map, effect_map := combo_lookups(conn, lang, partner_kind, partner_ids, effect_ids)
+
 	mut result := []CombiBonusView{}
 	for row in rows {
-		partner_kind := if kind == 'cookie' { 'pet' } else { 'cookie' }
 		pid := if kind == 'cookie' { row.pet_id } else { row.cookie_id }
-		name := resolve_entity_name(conn, partner_kind, pid, lang)
+		name := name_map[pid] or { '' }
 		if name == '' {
 			continue
 		}
@@ -600,8 +689,8 @@ pub fn get_combi_bonus(conn sqlite.DB, lang string, kind string, id int) ![]Comb
 			partner_kind:  partner_kind
 			partner_id:    pid
 			partner_name:  name
-			partner_image: unlock_entity_image(conn, partner_kind, pid)
-			effect:        combi_effect_text(conn, row.effect_id, lang)
+			partner_image: img_map[pid] or { none }
+			effect:        effect_map[row.effect_id or { 0 }] or { '' }
 			is_hidden:     row.is_hidden
 		}
 	}
@@ -641,17 +730,36 @@ pub fn combi_edit_rows(conn sqlite.DB, lang string, kind string, id int) ![]Comb
 		return []
 	}
 
+	partner_kind := if kind == 'cookie' { 'pet' } else { 'cookie' }
+	mut partner_ids := []int{}
+	mut effect_ids := []int{}
+	mut seen := map[int]bool{}
+	mut seen_e := map[int]bool{}
+	for row in rows {
+		pid := if kind == 'cookie' { row.pet_id } else { row.cookie_id }
+		if pid !in seen {
+			partner_ids << pid
+			seen[pid] = true
+		}
+		if eid := row.effect_id {
+			if eid !in seen_e {
+				effect_ids << eid
+				seen_e[eid] = true
+			}
+		}
+	}
+	name_map, img_map, effect_map := combo_lookups(conn, lang, partner_kind, partner_ids, effect_ids)
+
 	mut result := []CombiEditRow{}
 	for row in rows {
-		partner_kind := if kind == 'cookie' { 'pet' } else { 'cookie' }
 		pid := if kind == 'cookie' { row.pet_id } else { row.cookie_id }
 		rid := row.id or { continue }
 		result << CombiEditRow{
 			id:            rid
 			partner_id:    pid
-			partner_name:  resolve_entity_name(conn, partner_kind, pid, lang)
-			partner_image: unlock_entity_image(conn, partner_kind, pid)
-			effect:        combi_effect_text(conn, row.effect_id, lang)
+			partner_name:  name_map[pid] or { '' }
+			partner_image: img_map[pid] or { none }
+			effect:        effect_map[row.effect_id or { 0 }] or { '' }
 			is_hidden:     row.is_hidden
 		}
 	}
@@ -684,7 +792,6 @@ pub:
 	effects_blessed    []EffectOption
 	has_blessed_toggle bool
 	is_evolved         bool // treasures only: evolved rows have an evo base
-	is_power_plus      bool // treasures only: POWER+ items cannot be equipped
 	grade              ?models.Grade // treasures only: sort rank for the picker
 	release_date       time.Time // treasures only: sort rank for the picker
 }
@@ -842,10 +949,21 @@ pub fn select_build(conn sqlite.DB, lang string, id int) !BuildCard {
 // the build planner and the cookie/pet admin forms' "unlocks treasure"
 // selector. Effects resolve in two batched queries, mirroring the detail
 // page's value-splitting so the picker text matches the wiki card.
-pub fn treasure_options(conn sqlite.DB, lang string) ![]IdNameOption {
-	treasures := sql conn {
-		select from models.Treasure
-	}!
+pub fn treasure_options(conn sqlite.DB, lang string, equippable bool) ![]IdNameOption {
+	// Power+ treasures are friendly-run bonus items that cannot be equipped:
+	// the build pickers exclude them at the query level, while the admin
+	// unlock combobox (equippable=false) keeps the full list. Explicit
+	// branches keep the WHERE clause non-empty — a `dynamic select` guard
+	// that's false at runtime emits `WHERE ;` (a syntax error).
+	treasures := if equippable {
+		sql conn {
+			select from models.Treasure where is_power_plus == false
+		}!
+	} else {
+		sql conn {
+			select from models.Treasure
+		}!
+	}
 	user_lang := lang
 	translations := sql conn {
 		select from models.TreasureTranslation where lang == user_lang || lang == 'en'
@@ -950,7 +1068,6 @@ pub fn treasure_options(conn sqlite.DB, lang string) ![]IdNameOption {
 				effects_blessed:    blessed
 				has_blessed_toggle: blessed.len > 0 && normal.len > 0 && effect_lists_differ(normal, blessed)
 				is_evolved:         t.is_evolved
-				is_power_plus:      t.is_power_plus
 				grade:              treasure_grade(t.grade)
 				release_date:       t.release_date
 			}
@@ -1187,12 +1304,24 @@ fn effect_lists_differ(a []EffectOption, b []EffectOption) bool {
 	return false
 }
 
-// select_treasures lists treasures newest-first; tab filters to normal or
-// evolved rows, 'all' returns both.
+// select_treasures lists treasures grade-first then newest; `tab` filters to
+// normal/evolved rows at the query level ('all' returns both).
 pub fn select_treasures(conn sqlite.DB, lang string, limit int, offset int, tab string) ![]TreasureView {
-	treasures := sql conn {
-		select from models.Treasure
-	}!
+	// the tab filter is pushed into the query so the server never loads the
+	// rows it would only discard (613 rows on every /treasures request)
+	treasures := if tab == 'normal' {
+		sql conn {
+			select from models.Treasure where is_evolved == false
+		}!
+	} else if tab == 'evo' {
+		sql conn {
+			select from models.Treasure where is_evolved == true
+		}!
+	} else {
+		sql conn {
+			select from models.Treasure
+		}!
+	}
 
 	if treasures.len == 0 {
 		return []
@@ -1227,9 +1356,6 @@ pub fn select_treasures(conn sqlite.DB, lang string, limit int, offset int, tab 
 	mut result := []TreasureView{}
 
 	for treasure in treasures {
-		if (tab == 'normal' && treasure.is_evolved) || (tab == 'evo' && !treasure.is_evolved) {
-			continue
-		}
 		if tr := translation_map[treasure.treasure_id or { continue }] {
 			result << treasure_view(treasure, tr, en_name_map[treasure.treasure_id or { 0 }])
 		}

@@ -45,7 +45,7 @@ pub fn (wapp &App) new_pet(mut ctx Context) veb.Result {
 		state := PetForm{
 			lang:         ctx.lang
 			grade:        'c'
-			treasures:    database.treasure_options(wapp.db, ctx.lang) or { [] }
+			treasures:    database.treasure_options(wapp.db, ctx.lang, false) or { [] }
 			partners:     database.cookie_options(wapp.db, ctx.lang) or { [] }
 			partner_kind: 'cookie'
 			effect_names: database.effect_names(wapp.db, ctx.lang) or { [] }
@@ -117,7 +117,7 @@ pub fn (wapp &App) edit_pet(mut ctx Context, id int) veb.Result {
 			lang:              pet.lang
 			image:             pet.image
 			unlock_treasure_id: unlock_tid
-			treasures:         database.treasure_options(wapp.db, ctx.lang) or { [] }
+			treasures:         database.treasure_options(wapp.db, ctx.lang, false) or { [] }
 			combis:            database.combi_edit_rows(wapp.db, ctx.lang, 'pet', id) or { [] }
 			partners:          database.cookie_options(wapp.db, ctx.lang) or { [] }
 			partner_kind:      'cookie'

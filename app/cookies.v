@@ -45,7 +45,7 @@ pub fn (wapp &App) new_cookie(mut ctx Context) veb.Result {
 		state := CookieForm{
 			lang:         ctx.lang
 			grade:        'c'
-			treasures:    database.treasure_options(wapp.db, ctx.lang) or { [] }
+			treasures:    database.treasure_options(wapp.db, ctx.lang, false) or { [] }
 			partners:     database.pet_options(wapp.db, ctx.lang) or { [] }
 			partner_kind: 'pet'
 			effect_names: database.effect_names(wapp.db, ctx.lang) or { [] }
@@ -121,7 +121,7 @@ pub fn (wapp &App) edit_cookie(mut ctx Context, id int) veb.Result {
 			lang:              cookie.lang
 			image:             cookie.image
 			unlock_treasure_id: unlock_tid
-			treasures:         database.treasure_options(wapp.db, ctx.lang) or { [] }
+			treasures:         database.treasure_options(wapp.db, ctx.lang, false) or { [] }
 			combis:            database.combi_edit_rows(wapp.db, ctx.lang, 'cookie', id) or { [] }
 			partners:          database.pet_options(wapp.db, ctx.lang) or { [] }
 			partner_kind:      'pet'

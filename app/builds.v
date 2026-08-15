@@ -94,19 +94,6 @@ fn resolve_option(options []database.IdNameOption, id int) ?database.IdNameOptio
 	return none
 }
 
-// equippable_treasures drops POWER+ treasures from the loadout pickers: they
-// are friendly-run bonus items that cannot be equipped in a run. The treasure
-// catalog (and the admin unlock links) still show them.
-fn equippable_treasures(options []database.IdNameOption) []database.IdNameOption {
-	mut out := []database.IdNameOption{}
-	for o in options {
-		if !o.is_power_plus {
-			out << o
-		}
-	}
-	return out
-}
-
 fn build_preview(wapp &App, ctx &Context, sel BuildSelection, cookies []database.IdNameOption, pets []database.IdNameOption, treasures []database.IdNameOption) BuildPreview {
 	mut preview := BuildPreview{
 		cookie:  resolve_option(cookies, sel.cookie)
@@ -183,7 +170,7 @@ pub fn (wapp &App) builds(mut ctx Context) veb.Result {
 
 	cookies := database.cookie_options(wapp.db, ctx.lang) or { [] }
 	pets := database.pet_options(wapp.db, ctx.lang) or { [] }
-	treasures := equippable_treasures(database.treasure_options(wapp.db, ctx.lang) or { [] })
+	treasures := database.treasure_options(wapp.db, ctx.lang, true) or { [] }
 	sel_cookie := resolve_option(cookies, filter_cookie)
 	sel_pet := resolve_option(pets, filter_pet)
 	sel_treasure := resolve_option(treasures, filter_treasure)
@@ -203,7 +190,7 @@ pub fn (wapp &App) new_build(mut ctx Context) veb.Result {
 	sel := selection_from_query(ctx)
 	cookies := database.cookie_options(wapp.db, ctx.lang) or { [] }
 	pets := database.pet_options(wapp.db, ctx.lang) or { [] }
-	treasures := equippable_treasures(database.treasure_options(wapp.db, ctx.lang) or { [] })
+	treasures := database.treasure_options(wapp.db, ctx.lang, true) or { [] }
 	preview := build_preview(wapp, ctx, sel, cookies, pets, treasures)
 	sel_cookie := resolve_option(cookies, sel.cookie)
 	sel_cookie2 := resolve_option(cookies, sel.cookie2)
@@ -225,7 +212,7 @@ pub fn (wapp &App) preview_partial(mut ctx Context) veb.Result {
 	sel := selection_from_query(ctx)
 	cookies := database.cookie_options(wapp.db, ctx.lang) or { [] }
 	pets := database.pet_options(wapp.db, ctx.lang) or { [] }
-	treasures := equippable_treasures(database.treasure_options(wapp.db, ctx.lang) or { [] })
+	treasures := database.treasure_options(wapp.db, ctx.lang, true) or { [] }
 	preview := build_preview(wapp, ctx, sel, cookies, pets, treasures)
 	return $veb.html('./templates/components/build_preview.html')
 }
@@ -307,7 +294,7 @@ fn build_form_fields(wapp &App, ctx &Context) !BuildForm {
 	// Reject unknown ids so the list never links to deleted entities.
 	cookies := database.cookie_options(wapp.db, ctx.lang) or { [] }
 	pets := database.pet_options(wapp.db, ctx.lang) or { [] }
-	treasures := equippable_treasures(database.treasure_options(wapp.db, ctx.lang) or { [] })
+	treasures := database.treasure_options(wapp.db, ctx.lang, true) or { [] }
 	if resolve_option(cookies, sel.cookie) == none || resolve_option(pets, sel.pet) == none {
 		return error('Unknown cookie or pet')
 	}
@@ -402,7 +389,7 @@ pub fn (wapp &App) build_edit(mut ctx Context, id int) veb.Result {
 	ctx.set_translate_title('build_edit_page_title')
 	cookies := database.cookie_options(wapp.db, ctx.lang) or { [] }
 	pets := database.pet_options(wapp.db, ctx.lang) or { [] }
-	treasures := equippable_treasures(database.treasure_options(wapp.db, ctx.lang) or { [] })
+	treasures := database.treasure_options(wapp.db, ctx.lang, true) or { [] }
 	ep_tiers := [1, 2, 3, 4, 5, 6, 7]
 	ep_specials := [1, 2, 3]
 	build_tags := ['score', 'coin', 'autofarm']
