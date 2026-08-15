@@ -329,12 +329,15 @@
     function advance(kind) {
         if (kind === 'cookie') {
             // after the lead cookie pick, offer the optional relay picker;
-            // after a relay pick (or ✕/Esc skip) the cookie flow ends — do
-            // not auto-advance to the pet modal.
+            // after a relay pick the cookie flow continues to the pet picker
+            // (relay stays optional — ✕/Esc on the relay dialog skips it and
+            // ends the cookie flow without advancing).
             if (cookieSlot === 'cookie') {
                 openCookie('cookie2');
                 return true;
             }
+            openPicker('pet');
+            return true;
         } else if (kind === 'pet') {
             openTreasure('t1');
             return true;
