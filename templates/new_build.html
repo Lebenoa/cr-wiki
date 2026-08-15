@@ -27,7 +27,11 @@
             <input type="hidden" name="blessed2" id="blessed-t2" value="0" />
             <input type="hidden" name="blessed3" id="blessed-t3" value="0" />
 
-            <div class="grid grid-cols-2 lg:grid-cols-3 gap-5">
+            <section class="rounded-2xl border border-primary/20 bg-surface/40 p-5 md:p-8">
+                <h2 class="flex items-center gap-2 text-xs font-label uppercase tracking-widest text-foreground-muted">
+                    <span class="size-1.5 rounded-full bg-accent"></span>%build_section_loadout
+                </h2>
+                <div class="mt-4 grid grid-cols-2 lg:grid-cols-3 gap-5">
                 <div class="relative">
                     <button type="button" id="slot-cookie" data-empty="%build_cookie_label"
                         onclick="openCookie('cookie')"
@@ -174,76 +178,88 @@
                 </div>
             </div>
 
-            <div class="mt-4 grid grid-cols-2 md:grid-cols-3 gap-4">
-                <label class="block space-y-1">
-                    <span class="text-xs font-label text-foreground-muted uppercase">%build_ep_label</span>
-                    <select name="ep"
-                        class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground">
-                        <option value="" selected>%build_ep_none</option>
-                        @for n in ep_tiers
-                        <option value="@n">@{ctx.build_ep_label(n, 0)}</option>
-                        @endfor
-                        @for n in ep_specials
-                        <option value="s@n">@{ctx.build_ep_label(0, n)}</option>
-                        @endfor
-                    </select>
-                </label>
-                <fieldset class="block space-y-1">
-                    <legend class="text-xs font-label text-foreground-muted uppercase">%build_tag_label</legend>
-                    <div class="flex flex-wrap gap-2">
-                        @for t in build_tags
-                        <label class="flex items-center gap-2 bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground cursor-pointer select-none">
-                            <input type="checkbox" name="tag_@t" value="@t"
-                                class="size-5 accent-accent" />
-                            @{ctx.build_tag_label(t)}
-                        </label>
-                        @endfor
-                    </div>
-                </fieldset>
-                <fieldset class="block space-y-1">
-                    <legend class="text-xs font-label text-foreground-muted uppercase">%build_boosts_label</legend>
-                    <div class="flex flex-wrap gap-2">
-                        @for b in build_boosts
-                        <label class="flex items-center gap-2 bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground cursor-pointer select-none">
-                            <input type="checkbox" name="boost_@b" value="@b"
-                                class="size-5 accent-accent" />
-                            <img src="@{ctx.boost_img_src(b)}" alt="" class="size-8 object-contain" />
-                            @{ctx.build_boost_label(b)}
-                        </label>
-                        @endfor
-                    </div>
-                </fieldset>
-                <label class="block space-y-1">
-                    <span class="text-xs font-label text-foreground-muted uppercase">%build_purchase_boost_label</span>
-                    <select name="boost"
-                        class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground">
-                        <option value="" selected>%none_option</option>
-                        @for bk in purchase_boosts
-                        <option value="@bk">@{ctx.purchase_boost_label(bk)}</option>
-                        @endfor
-                    </select>
-                </label>
-            </div>
+            </section>
 
-            <fieldset class="mt-4 block space-y-1">
-                <legend class="text-xs font-label text-foreground-muted uppercase">%build_power_effects_label</legend>
-                <div class="flex flex-wrap gap-2">
-                    @for pk in power_effect_keys
-                    <label class="flex items-center gap-2 bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground cursor-pointer select-none">
-                        <input type="checkbox" name="power_effect_@pk" value="@pk"
-                            class="size-5 accent-accent" />
-                        <img src="@{ctx.power_effect_img_src(pk)}" alt="" class="size-8 object-contain" />
-                        <span>@{ctx.power_effect_label(pk)}</span>
+            <section class="mt-6 rounded-2xl border border-primary/20 bg-surface/40 p-5 md:p-8">
+                <h2 class="flex items-center gap-2 text-xs font-label uppercase tracking-widest text-foreground-muted">
+                    <span class="size-1.5 rounded-full bg-accent"></span>%build_section_options
+                </h2>
+                <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <label class="block space-y-1">
+                        <span class="text-xs font-label text-foreground-muted uppercase">%build_ep_label</span>
+                        <select name="ep"
+                            class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground focus:border-accent focus:outline-none transition-colors">
+                            <option value="" selected>%build_ep_none</option>
+                            @for n in ep_tiers
+                            <option value="@n">@{ctx.build_ep_label(n, 0)}</option>
+                            @endfor
+                            @for n in ep_specials
+                            <option value="s@n">@{ctx.build_ep_label(0, n)}</option>
+                            @endfor
+                        </select>
                     </label>
-                    @endfor
+                    <label class="block space-y-1">
+                        <span class="text-xs font-label text-foreground-muted uppercase">%build_purchase_boost_label</span>
+                        <select name="boost"
+                            class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground focus:border-accent focus:outline-none transition-colors">
+                            <option value="" selected>%none_option</option>
+                            @for bk in purchase_boosts
+                            <option value="@bk">@{ctx.purchase_boost_label(bk)}</option>
+                            @endfor
+                        </select>
+                    </label>
                 </div>
-            </fieldset>
+                <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <fieldset class="block space-y-1">
+                        <legend class="text-xs font-label text-foreground-muted uppercase">%build_tag_label</legend>
+                        <div class="flex flex-wrap gap-2">
+                            @for t in build_tags
+                            <label class="flex items-center gap-2 bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground cursor-pointer select-none hover:border-primary/60 transition-colors">
+                                <input type="checkbox" name="tag_@t" value="@t"
+                                    class="size-5 accent-accent" />
+                                @{ctx.build_tag_label(t)}
+                            </label>
+                            @endfor
+                        </div>
+                    </fieldset>
+                    <fieldset class="block space-y-1">
+                        <legend class="text-xs font-label text-foreground-muted uppercase">%build_boosts_label</legend>
+                        <div class="flex flex-wrap gap-2">
+                            @for b in build_boosts
+                            <label class="flex items-center gap-2 bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground cursor-pointer select-none hover:border-primary/60 transition-colors">
+                                <input type="checkbox" name="boost_@b" value="@b"
+                                    class="size-5 accent-accent" />
+                                <img src="@{ctx.boost_img_src(b)}" alt="" class="size-8 object-contain" />
+                                @{ctx.build_boost_label(b)}
+                            </label>
+                            @endfor
+                        </div>
+                    </fieldset>
+                </div>
+                <fieldset class="mt-4 block space-y-1">
+                    <legend class="text-xs font-label text-foreground-muted uppercase">%build_power_effects_label</legend>
+                    <div class="flex flex-wrap gap-2">
+                        @for pk in power_effect_keys
+                        <label class="flex items-center gap-2 bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground cursor-pointer select-none hover:border-primary/60 transition-colors">
+                            <input type="checkbox" name="power_effect_@pk" value="@pk"
+                                class="size-5 accent-accent" />
+                            <img src="@{ctx.power_effect_img_src(pk)}" alt="" class="size-8 object-contain" />
+                            <span>@{ctx.power_effect_label(pk)}</span>
+                        </label>
+                        @endfor
+                    </div>
+                </fieldset>
+            </section>
+            <section class="mt-6 rounded-2xl border border-primary/20 bg-surface/40 p-5 md:p-8">
+                <h2 class="flex items-center gap-2 text-xs font-label uppercase tracking-widest text-foreground-muted">
+                    <span class="size-1.5 rounded-full bg-accent"></span>%build_section_results
+                </h2>
             @if _ := ctx.user
             @else
             <label class="mt-4 block space-y-1">
                 <span class="text-xs font-label text-foreground-muted uppercase">%build_author_label</span>
                 <input type="text" name="author" maxlength="48"
-                    class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground" />
+                    class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground focus:border-accent focus:outline-none transition-colors" />
             </label>
             @endif
 
@@ -251,22 +267,22 @@
                 <label class="block space-y-1">
                     <span class="text-xs font-label text-foreground-muted uppercase">%build_score_label</span>
                     <input type="number" name="score" min="0" step="1"
-                        class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground" />
+                        class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground focus:border-accent focus:outline-none transition-colors" />
                 </label>
                 <label class="block space-y-1">
                     <span class="text-xs font-label text-foreground-muted uppercase">%build_coin_label</span>
                     <input type="number" name="coin" min="0" step="1"
-                        class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground" />
+                        class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground focus:border-accent focus:outline-none transition-colors" />
                 </label>
                 <label class="block space-y-1">
                     <span class="text-xs font-label text-foreground-muted uppercase">%build_time_label</span>
                     <input type="number" name="time" min="0" step="1"
-                        class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground" />
+                        class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground focus:border-accent focus:outline-none transition-colors" />
                 </label>
                 <label class="block space-y-1">
                     <span class="text-xs font-label text-foreground-muted uppercase">%build_boxes_label</span>
                     <input type="number" name="boxes" min="0" step="1"
-                        class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground" />
+                        class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground focus:border-accent focus:outline-none transition-colors" />
                 </label>
             </div>
 
@@ -274,19 +290,20 @@
                 <label class="block space-y-1">
                     <span class="text-xs font-label text-foreground-muted uppercase">%build_description_label</span>
                     <textarea name="description" rows="3" maxlength="1000"
-                        class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground resize-y"></textarea>
+                        class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground resize-y focus:border-accent focus:outline-none transition-colors"></textarea>
                 </label>
                 <label class="block space-y-1">
                     <span class="text-xs font-label text-foreground-muted uppercase">%build_youtube_label</span>
                     <input type="url" name="youtube_url" maxlength="200"
-                        class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground" />
+                        class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground focus:border-accent focus:outline-none transition-colors" />
                 </label>
             </div>
 
             <p id="build-error" class="hidden mt-4 text-sm font-bold text-red-400" role="alert"
                 data-msg-slots="%build_error_missing_slots" data-msg-ep="%build_error_no_ep"
                 data-msg-tag="%build_error_no_tag"></p>
-            <button type="submit" class="btn-primary mt-6">%build_submit_button</button>
+            <button type="submit" class="btn-primary mt-6 w-full md:w-auto">%build_submit_button</button>
+            </section>
         </form>
     </section>
 

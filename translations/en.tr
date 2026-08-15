@@ -388,6 +388,15 @@ Back to builds
 build_intro
 Compose a loadout: one cookie, one pet and three treasures. Combos appear automatically.
 -----
+build_section_loadout
+Loadout
+-----
+build_section_options
+Options
+-----
+build_section_results
+Run results
+-----
 build_cookie_label
 Cookie
 -----

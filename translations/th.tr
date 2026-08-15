@@ -388,6 +388,15 @@ build_back_list
 build_intro
 จัดชุด: คุกกี้ 1 ตัว สัตว์เลี้ยง 1 ตัว และสมบัติ 3 ชิ้น คอมโบจะแสดงอัตโนมัติ
 -----
+build_section_loadout
+จัดชุด
+-----
+build_section_options
+ตัวเลือก
+-----
+build_section_results
+ผลการวิ่ง
+-----
 build_cookie_label
 คุกกี้
 -----
