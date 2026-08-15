@@ -879,8 +879,12 @@ fn test_build_detail(mut tc TestContext) ! {
 			't1':          '180'
 			't2':          '284'
 			't3':          '378'
+			'blessed1':    '1'
+			'blessed2':    '1'
 			'ep':          '5'
 			'tag_score':   'score'
+			'boost_energy': 'energy'
+			'boost_fast_start': 'fast_start'
 			'score':       '12345'
 			'description': 'Detail page strat'
 			'author':      'detailtest'
@@ -895,7 +899,7 @@ fn test_build_detail(mut tc TestContext) ! {
 	if resp.status_code != 200 {
 		return error('GET /builds/${bid}: expected 200, got ${resp.status_code}')
 	}
-	for needle in ['href="/builds"', '/cookies/23', '/pets/58', '/treasures/180', 'Detail page strat', '12,345'] {
+	for needle in ['href="/builds"', '/cookies/23', '/pets/58', '/treasures/180', 'Detail page strat', '12,345', 'Energy', 'Fast Start'] {
 		if !resp.body.contains(needle) {
 			return error('build detail missing "${needle}"')
 		}
@@ -906,6 +910,10 @@ fn test_build_detail(mut tc TestContext) ! {
 		if !resp.body.contains(needle) {
 			return error('build detail combo missing "${needle}"')
 		}
+	}
+	// blessed slots 1+2 render the hub-style Blessed badge, slot 3 stays plain
+	if resp.body.count('text-[10px]">Blessed<') != 2 {
+		return error('build detail must show exactly 2 Blessed badges (slots 1+2), got ${resp.body.count('text-[10px]">Blessed<')}')
 	}
 	// a missing build id 404s
 	missing := http.get('${tc.base}/builds/99999999') or { return error('GET /builds/99999999: ${err}') }
@@ -1033,9 +1041,12 @@ fn test_build_edit_delete(mut tc TestContext) ! {
 			't1':          '180'
 			't2':          '284'
 			't3':          '378'
+			'blessed1':    '1'
+			'blessed3':    '1'
 			'ep':          's2'
 			'tag_score':   'score'
 			'tag_autofarm': 'autofarm'
+			'boost_item_time': 'item_time'
 			'score':       '999'
 			'description': 'After edit'
 		})
@@ -1048,9 +1059,28 @@ fn test_build_edit_delete(mut tc TestContext) ! {
 		return error('owner edit POST: expected 302, got ${edit_post.status_code}')
 	}
 	resp := http.get('${tc.base}/builds/${bid}') or { return error('GET detail after edit: ${err}') }
-	for needle in ['After edit', '999', 'Special EP 2', '#autofarm'] {
+	for needle in ['After edit', '999', 'Special EP 2', '#autofarm', 'Item Time'] {
 		if !resp.body.contains(needle) {
 			return error('detail after edit missing "${needle}"')
+		}
+	}
+	// the edit toggled blessed on slots 1+3: exactly two badges render
+	if resp.body.count('text-[10px]">Blessed<') != 2 {
+		return error('detail after edit: want 2 Blessed badges, got ${resp.body.count('text-[10px]">Blessed<')}')
+	}
+	// the edit form prefills the blessed toggles (1 and 3 checked, 2 not)
+	edit_after := http.fetch(method: .get, url: '${tc.base}/builds/${bid}/edit', cookies: {
+		session_cookie_key: owner_sid
+	}) or { return error('GET edit after: ${err}') }
+	if edit_after.status_code != 200 {
+		return error('GET edit after: expected 200, got ${edit_after.status_code}')
+	}
+	for name, want in {'blessed1': true, 'blessed2': false, 'blessed3': true} {
+		marker := 'name="${name}" value="1"'
+		start := edit_after.body.index(marker) or { return error('edit form missing ${marker}') }
+		seg := edit_after.body[start..(start + 160)]
+		if seg.contains('checked') != want {
+			return error('edit form ${name} checked=${seg.contains('checked')}, want ${want}')
 		}
 	}
 	// admin can edit too (site moderation)

@@ -23,6 +23,9 @@
             <input type="hidden" name="t1" id="sel-t1" value="@sel.treasure1" />
             <input type="hidden" name="t2" id="sel-t2" value="@sel.treasure2" />
             <input type="hidden" name="t3" id="sel-t3" value="@sel.treasure3" />
+            <input type="hidden" name="blessed1" id="blessed-t1" value="0" />
+            <input type="hidden" name="blessed2" id="blessed-t2" value="0" />
+            <input type="hidden" name="blessed3" id="blessed-t3" value="0" />
 
             <div class="grid grid-cols-2 lg:grid-cols-3 gap-5">
                 <div class="relative">
@@ -197,15 +200,27 @@
                         @endfor
                     </div>
                 </fieldset>
-                @if _ := ctx.user
-                @else
-                <label class="block space-y-1">
-                    <span class="text-xs font-label text-foreground-muted uppercase">%build_author_label</span>
-                    <input type="text" name="author" maxlength="48"
-                        class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground" />
-                </label>
-                @endif
+                <fieldset class="block space-y-1">
+                    <legend class="text-xs font-label text-foreground-muted uppercase">%build_boosts_label</legend>
+                    <div class="flex flex-wrap gap-2">
+                        @for b in build_boosts
+                        <label class="flex items-center gap-2 bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground cursor-pointer select-none">
+                            <input type="checkbox" name="boost_@b" value="@b"
+                                class="size-5 accent-accent" />
+                            @{ctx.build_boost_label(b)}
+                        </label>
+                        @endfor
+                    </div>
+                </fieldset>
             </div>
+            @if _ := ctx.user
+            @else
+            <label class="mt-4 block space-y-1">
+                <span class="text-xs font-label text-foreground-muted uppercase">%build_author_label</span>
+                <input type="text" name="author" maxlength="48"
+                    class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground" />
+            </label>
+            @endif
 
             <div class="mt-4 grid grid-cols-2 md:grid-cols-4 gap-4">
                 <label class="block space-y-1">

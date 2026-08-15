@@ -532,3 +532,15 @@ Cancel
 build_notes
 Notes
 -----
+build_boosts_label
+Boosts
+-----
+build_boost_energy
+Energy
+-----
+build_boost_item_time
+Item Time
+-----
+build_boost_fast_start
+Fast Start
+-----

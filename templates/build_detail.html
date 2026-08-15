@@ -64,14 +64,20 @@
             </a>
         </div>
 
-        <!-- treasures -->
+        <!-- treasures (blessed slots carry the hub-style badge) -->
         <div class="mt-4 grid grid-cols-3 gap-4">
-            @for t in b.treasures
+            @for i, t in b.treasures
             <a href="/treasures/@t.id" title="@t.name"
                 class="group rounded-2xl border-2 border-primary/30 bg-surface/50 p-4 flex flex-col items-center gap-2 transition-colors hover:border-primary">
                 <img src="@{ctx.img_src('treasures', t.image)}" alt="@t.name"
                     class="h-20 w-full object-contain" />
                 <span class="text-center text-sm font-bold text-on-surface group-hover:text-primary leading-tight">@t.name</span>
+                @if b.treasure_blessed.len > i
+                @if b.treasure_blessed[i]
+                <span
+                    class="font-bold text-accent uppercase border border-accent/50 rounded-full px-2 py-0.5 text-[10px]">%state_blessed</span>
+                @endif
+                @endif
             </a>
             @endfor
         </div>
@@ -115,6 +121,20 @@
                 <div class="mt-1 text-xl font-headline font-bold text-on-surface">@{ctx.format_num(b.boxes)}</div>
             </div>
             @end
+        </div>
+        @end
+
+        @if b.boosts.len > 0
+        <div class="mt-6">
+            <div class="text-xs font-label uppercase text-foreground-muted">%build_boosts_label</div>
+            <div class="mt-2 flex flex-wrap gap-2">
+                @for bo in b.boosts
+                <span class="flex items-center gap-1.5 rounded-full bg-surface border border-primary/30 px-3 py-1 text-sm text-on-surface">
+                    <span class="font-bold text-accent">✓</span>
+                    @{ctx.build_boost_label(bo)}
+                </span>
+                @endfor
+            </div>
         </div>
         @end
 

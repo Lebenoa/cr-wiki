@@ -254,7 +254,8 @@
 .px-2{padding-inline:calc(var(--spacing) * 2);}
 .px-3{padding-inline:calc(var(--spacing) * 3);}
 .px-4,
-[px-4=""]{padding-inline:calc(var(--spacing) * 4);}
+[px-4=""],
+[px=""]{padding-inline:calc(var(--spacing) * 4);}
 .px-5{padding-inline:calc(var(--spacing) * 5);}
 .px-6{padding-inline:calc(var(--spacing) * 6);}
 .px-8{padding-inline:calc(var(--spacing) * 8);}
@@ -446,7 +447,8 @@
 .select-none{-webkit-user-select:none;user-select:none;}
 .whitespace-pre-line{white-space:pre-line;}
 .truncate{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.uppercase{text-transform:uppercase;}
+.uppercase,
+[uppercase=""]{text-transform:uppercase;}
 .ring-2,
 .peer:checked~.peer-checked\:ring-2{--un-ring-shadow:var(--un-ring-inset,) 0 0 0 calc(2px + var(--un-ring-offset-width)) var(--un-ring-color, currentColor);box-shadow:var(--un-inset-shadow), var(--un-inset-ring-shadow), var(--un-ring-offset-shadow), var(--un-ring-shadow), var(--un-shadow);}
 .focus\:ring-0:focus{--un-ring-shadow:var(--un-ring-inset,) 0 0 0 calc(0px + var(--un-ring-offset-width)) var(--un-ring-color, currentColor);box-shadow:var(--un-inset-shadow), var(--un-inset-ring-shadow), var(--un-ring-offset-shadow), var(--un-ring-shadow), var(--un-shadow);}
@@ -539,6 +541,7 @@
 .drop-shadow-lg{--un-drop-shadow:drop-shadow(0 4px 4px var(--un-drop-shadow-color, rgb(0 0 0 / 0.15)));filter:var(--un-blur,) var(--un-brightness,) var(--un-contrast,) var(--un-grayscale,) var(--un-hue-rotate,) var(--un-invert,) var(--un-saturate,) var(--un-sepia,) var(--un-drop-shadow,);}
 .filter,
 [filter=""]{filter:var(--un-blur,) var(--un-brightness,) var(--un-contrast,) var(--un-grayscale,) var(--un-hue-rotate,) var(--un-invert,) var(--un-saturate,) var(--un-sepia,) var(--un-drop-shadow,);}
+[first~="filter"]:first-child{filter:var(--un-blur,) var(--un-brightness,) var(--un-contrast,) var(--un-grayscale,) var(--un-hue-rotate,) var(--un-invert,) var(--un-saturate,) var(--un-sepia,) var(--un-drop-shadow,);}
 .line-clamp-2{overflow:hidden;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;}
 .table{display:table;}
 .space-y-1{
@@ -593,7 +596,6 @@
 .md\:flex{display:flex;}
 .md\:flex-none{flex:none;}
 .md\:flex-row{flex-direction:row;}
-.md\:col-span-2{grid-column:span 2/span 2;}
 .md\:col-span-5{grid-column:span 5/span 5;}
 .md\:col-span-7{grid-column:span 7/span 7;}
 .md\:grid-cols-12{grid-template-columns:repeat(12,minmax(0,1fr));}

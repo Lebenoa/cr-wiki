@@ -15,9 +15,13 @@ pub:
 	treasure1_id int @[required]
 	treasure2_id int @[required]
 	treasure3_id int @[required]
+	treasure1_blessed int // 1 when slot 1 treasure is blessed (evolved treasures only)
+	treasure2_blessed int
+	treasure3_blessed int
 	ep           int @[index] // tier 1-7; 0 when the build is a special EP build
 	ep_special   int @[index] // special tier 1-3; 0 for regular EP builds
 	tag          string // comma-separated: 'score,coin' etc.
+	boosts       string // comma-separated run boosts: 'energy,item_time,fast_start'
 	score        u64 // run result: total score
 	coin         u64 // run result: coins collected
 	time         u64 // run result: run duration in milliseconds (0 = not set)

@@ -217,6 +217,11 @@
             return;
         }
         input.value = '';
+        // treasure slots also carry the blessed flag; reset it with the pick
+        var blessed = document.getElementById('blessed-' + slot);
+        if (blessed) {
+            blessed.value = '0';
+        }
         el.replaceChildren();
         var label = document.createElement('span');
         label.className = 'my-auto text-xs font-label text-foreground-muted uppercase';
@@ -331,6 +336,14 @@
             var kind = dlg.dataset.kind;
             var target = kind === 'treasure' ? treasureSlot : (kind === 'cookie' ? cookieSlot : kind);
             document.getElementById('sel-' + target).value = v;
+            // treasure picks persist their blessed/normal toggle into the
+            // form so the badge survives the submit; cookie/pet have none.
+            if (kind === 'treasure') {
+                var blessed = document.getElementById('blessed-' + target);
+                if (blessed) {
+                    blessed.value = lastPick.blessed ? '1' : '0';
+                }
+            }
             updateSlot(target);
             refreshPreview();
             // advance() opens the next dialog, whose openPicker renders its

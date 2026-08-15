@@ -384,17 +384,21 @@ fn find_or_create_effect(conn sqlite.DB, lang string, name string) !int {
 // `tags` is the score/coin/autofarm list, stored comma-separated.
 // `description`/`youtube_url` are optional and may be empty; the run-result
 // stats (score/coin/time_ms/boxes) are unsigned and 0 when not submitted.
-pub fn create_build(conn sqlite.DB, cookie_id int, cookie2_id int, pet_id int, treasure1_id int, treasure2_id int, treasure3_id int, ep int, ep_special int, tags []string, score u64, coin u64, time_ms u64, boxes u64, description string, youtube_url string, author string, user_id ?int, expires_at ?time.Time) !int {
+pub fn create_build(conn sqlite.DB, cookie_id int, cookie2_id int, pet_id int, treasure1_id int, treasure2_id int, treasure3_id int, treasure1_blessed int, treasure2_blessed int, treasure3_blessed int, ep int, ep_special int, tags []string, boosts []string, score u64, coin u64, time_ms u64, boxes u64, description string, youtube_url string, author string, user_id ?int, expires_at ?time.Time) !int {
 	build := models.Build{
-		cookie_id:    cookie_id
-		cookie2_id:   cookie2_id
-		pet_id:       pet_id
-		treasure1_id: treasure1_id
-		treasure2_id: treasure2_id
-		treasure3_id: treasure3_id
+		cookie_id:       cookie_id
+		cookie2_id:      cookie2_id
+		pet_id:          pet_id
+		treasure1_id:    treasure1_id
+		treasure2_id:    treasure2_id
+		treasure3_id:    treasure3_id
+		treasure1_blessed: treasure1_blessed
+		treasure2_blessed: treasure2_blessed
+		treasure3_blessed: treasure3_blessed
 		ep:           ep
 		ep_special:   ep_special
 		tag:          tags.join(',')
+		boosts:       boosts.join(',')
 		score:        score
 		coin:         coin
 		time:         time_ms

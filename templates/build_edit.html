@@ -64,7 +64,7 @@
             </div>
 
             <div class="mt-4 grid grid-cols-3 gap-4">
-                <label class="block space-y-1">
+                <div class="block space-y-1">
                     <span class="text-xs font-label text-foreground-muted uppercase">%build_treasure_one</span>
                     <select name="t1"
                         class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground">
@@ -76,8 +76,18 @@
                         >@t.name</option>
                         @endfor
                     </select>
-                </label>
-                <label class="block space-y-1">
+                    <label class="mt-2 flex items-center gap-2 text-sm text-foreground cursor-pointer select-none">
+                        <input type="checkbox" name="blessed1" value="1"
+                            @if b.treasure_blessed.len > 0
+                            @if b.treasure_blessed[0]
+                            checked
+                            @endif
+                            @endif
+                            class="size-4 accent-accent" />
+                        %state_blessed
+                    </label>
+                </div>
+                <div class="block space-y-1">
                     <span class="text-xs font-label text-foreground-muted uppercase">%build_treasure_two</span>
                     <select name="t2"
                         class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground">
@@ -89,8 +99,18 @@
                         >@t.name</option>
                         @endfor
                     </select>
-                </label>
-                <label class="block space-y-1">
+                    <label class="mt-2 flex items-center gap-2 text-sm text-foreground cursor-pointer select-none">
+                        <input type="checkbox" name="blessed2" value="1"
+                            @if b.treasure_blessed.len > 1
+                            @if b.treasure_blessed[1]
+                            checked
+                            @endif
+                            @endif
+                            class="size-4 accent-accent" />
+                        %state_blessed
+                    </label>
+                </div>
+                <div class="block space-y-1">
                     <span class="text-xs font-label text-foreground-muted uppercase">%build_treasure_three</span>
                     <select name="t3"
                         class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground">
@@ -102,7 +122,17 @@
                         >@t.name</option>
                         @endfor
                     </select>
-                </label>
+                    <label class="mt-2 flex items-center gap-2 text-sm text-foreground cursor-pointer select-none">
+                        <input type="checkbox" name="blessed3" value="1"
+                            @if b.treasure_blessed.len > 2
+                            @if b.treasure_blessed[2]
+                            checked
+                            @endif
+                            @endif
+                            class="size-4 accent-accent" />
+                        %state_blessed
+                    </label>
+                </div>
             </div>
 
             <div class="mt-4 grid grid-cols-2 md:grid-cols-3 gap-4">
@@ -126,7 +156,7 @@
                         @endfor
                     </select>
                 </label>
-                <fieldset class="block space-y-1 md:col-span-2">
+                <fieldset class="block space-y-1">
                     <legend class="text-xs font-label text-foreground-muted uppercase">%build_tag_label</legend>
                     <div class="flex flex-wrap gap-2">
                         @for t in build_tags
@@ -137,6 +167,21 @@
                                 @endif
                                 class="size-5 accent-accent" />
                             @{ctx.build_tag_label(t)}
+                        </label>
+                        @endfor
+                    </div>
+                </fieldset>
+                <fieldset class="block space-y-1">
+                    <legend class="text-xs font-label text-foreground-muted uppercase">%build_boosts_label</legend>
+                    <div class="flex flex-wrap gap-2">
+                        @for bo in build_boosts
+                        <label class="flex items-center gap-2 bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground cursor-pointer select-none">
+                            <input type="checkbox" name="boost_@bo" value="@bo"
+                                @if bo in b.boosts
+                                checked
+                                @endif
+                                class="size-5 accent-accent" />
+                            @{ctx.build_boost_label(bo)}
                         </label>
                         @endfor
                     </div>

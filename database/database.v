@@ -316,6 +316,21 @@ fn migrate(conn sqlite.DB) ! {
 			return conn.error_message(result, 'add build cookie2_id column')
 		}
 	}
+	if 'boosts' !in build_cols {
+		result := conn.exec_none("ALTER TABLE build ADD COLUMN boosts TEXT NOT NULL DEFAULT ''")
+		if !sqlite_success(result) {
+			return conn.error_message(result, 'add build boosts column')
+		}
+	}
+	// per-slot treasure blessed state (1 = blessed), added later; old rows default to normal.
+	for col in ['treasure1_blessed', 'treasure2_blessed', 'treasure3_blessed'] {
+		if col !in build_cols {
+			result := conn.exec_none('ALTER TABLE build ADD COLUMN ${col} INTEGER NOT NULL DEFAULT 0')
+			if !sqlite_success(result) {
+				return conn.error_message(result, 'add build ${col} column')
+			}
+		}
+	}
 
 	// cookie_translation columns added after the table first shipped; ensure they
 	// exist for databases created before their introduction.

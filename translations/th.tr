@@ -532,3 +532,15 @@ build_cancel
 build_notes
 บันทึก
 -----
+build_boosts_label
+บูสต์
+-----
+build_boost_energy
+พลังงาน
+-----
+build_boost_item_time
+เวลาไอเทม
+-----
+build_boost_fast_start
+ออกตัวเร็ว
+-----

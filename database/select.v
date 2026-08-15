@@ -663,6 +663,7 @@ pub:
 	ep           int
 	ep_special   int
 	tags         []string
+	boosts       []string
 	score        u64
 	coin         u64
 	time         u64
@@ -676,8 +677,9 @@ pub:
 	created_at   time.Time
 	cookie       IdNameOption
 	cookie2      ?IdNameOption // relay cookie; none when the build has no relay
-	pet          IdNameOption
-	treasures    []IdNameOption
+	pet             IdNameOption
+	treasures       []IdNameOption
+	treasure_blessed []bool // per-slot blessed state, aligned with treasures
 }
 
 // select_builds returns non-expired community builds, filtered by
@@ -707,7 +709,7 @@ pub fn select_builds(conn sqlite.DB, lang string, f_cookie int, f_pet int, f_ep 
 		'CASE WHEN ep_special > 0 THEN 10 + ep_special ELSE ep END DESC, build_id DESC'
 	}
 
-	rows := conn.exec('SELECT build_id, cookie_id, cookie2_id, pet_id, treasure1_id, treasure2_id, treasure3_id, ep, ep_special, tag, score, coin, time, boxes, description, youtube_url, author, user_id, expires_at, created_at FROM build WHERE ${where} ORDER BY ${order} LIMIT ${limit} OFFSET ${offset}')!
+	rows := conn.exec('SELECT build_id, cookie_id, cookie2_id, pet_id, treasure1_id, treasure2_id, treasure3_id, treasure1_blessed, treasure2_blessed, treasure3_blessed, ep, ep_special, tag, boosts, score, coin, time, boxes, description, youtube_url, author, user_id, expires_at, created_at FROM build WHERE ${where} ORDER BY ${order} LIMIT ${limit} OFFSET ${offset}')!
 	if rows.len == 0 {
 		return []
 	}
@@ -743,11 +745,14 @@ fn build_card_from_row(conn sqlite.DB, lang string, row sqlite.Row) BuildCard {
 			image: unlock_entity_image(conn, 'treasure', tid)
 		}
 	}
+	treasure_blessed := [row.get_int('treasure1_blessed') != 0, row.get_int('treasure2_blessed') != 0,
+		row.get_int('treasure3_blessed') != 0]
 	return BuildCard{
 		build_id:     row.get_int('build_id')
 		ep:           row.get_int('ep')
 		ep_special:   row.get_int('ep_special')
 		tags:         row.get_string('tag').split(',').filter(it != '')
+		boosts:       row.get_string('boosts').split(',').filter(it != '')
 		score:        u64(row.get_int('score'))
 		coin:         u64(row.get_int('coin'))
 		time:         u64(row.get_int('time'))
@@ -778,7 +783,8 @@ fn build_card_from_row(conn sqlite.DB, lang string, row sqlite.Row) BuildCard {
 			name:  resolve_entity_name(conn, 'pet', pid, lang)
 			image: unlock_entity_image(conn, 'pet', pid)
 		}
-		treasures: treasures
+		treasures:       treasures
+		treasure_blessed: treasure_blessed
 	}
 }
 
@@ -786,7 +792,7 @@ fn build_card_from_row(conn sqlite.DB, lang string, row sqlite.Row) BuildCard {
 // direct link should still render), or an error when it doesn't exist. Used
 // by the /builds/:id detail page the list cards link to.
 pub fn select_build(conn sqlite.DB, lang string, id int) !BuildCard {
-	rows := conn.exec('SELECT build_id, cookie_id, cookie2_id, pet_id, treasure1_id, treasure2_id, treasure3_id, ep, ep_special, tag, score, coin, time, boxes, description, youtube_url, author, user_id, expires_at, created_at FROM build WHERE build_id = ${id}')!
+	rows := conn.exec('SELECT build_id, cookie_id, cookie2_id, pet_id, treasure1_id, treasure2_id, treasure3_id, treasure1_blessed, treasure2_blessed, treasure3_blessed, ep, ep_special, tag, boosts, score, coin, time, boxes, description, youtube_url, author, user_id, expires_at, created_at FROM build WHERE build_id = ${id}')!
 	if rows.len == 0 {
 		return error('build (${id}) not found')
 	}

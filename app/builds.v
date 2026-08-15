@@ -31,6 +31,11 @@ pub fn (ctx &Context) build_tag_label(tag string) string {
 	return '#' + veb.tr(ctx.lang, 'build_tag_${tag}')
 }
 
+// build_boost_label localizes a run boost (energy / item_time / fast_start).
+pub fn (ctx &Context) build_boost_label(boost string) string {
+	return veb.tr(ctx.lang, 'build_boost_${boost}')
+}
+
 // format_num inserts thousands separators for display (e.g. 710,000,000).
 pub fn (ctx &Context) format_num(n u64) string {
 	s := n.str()
@@ -191,6 +196,7 @@ pub fn (wapp &App) new_build(mut ctx Context) veb.Result {
 	ep_tiers := [1, 2, 3, 4, 5, 6, 7]
 	ep_specials := [1, 2, 3]
 	build_tags := ['score', 'coin', 'autofarm']
+	build_boosts := ['energy', 'item_time', 'fast_start']
 	return $veb.html()
 }
 
@@ -226,6 +232,9 @@ fn parse_ep_tier(raw string) (int, int) {
 // BuildForm is the parsed planner fields shared by create and edit.
 struct BuildForm {
 	sel         BuildSelection
+	blessed1    int // 1 when treasure slot 1 is blessed
+	blessed2    int
+	blessed3    int
 	ep          int
 	ep_special  int
 	score       u64
@@ -235,6 +244,7 @@ struct BuildForm {
 	description string
 	youtube_url string
 	tags        []string
+	boosts      []string
 }
 
 // build_form_fields parses and validates the shared planner fields: the
@@ -247,7 +257,9 @@ fn build_form_fields(wapp &App, ctx &Context) !BuildForm {
 		treasure1: (ctx.form['t1'] or { '' }).int()
 		treasure2: (ctx.form['t2'] or { '' }).int()
 		treasure3: (ctx.form['t3'] or { '' }).int()
-	}
+	}	blessed1 := (ctx.form['blessed1'] or { '' }).int()
+	blessed2 := (ctx.form['blessed2'] or { '' }).int()
+	blessed3 := (ctx.form['blessed3'] or { '' }).int()
 	ep, ep_special := parse_ep_tier(ctx.form['ep'] or { '' })
 	score := (ctx.form['score'] or { '' }).u64()
 	coin := (ctx.form['coin'] or { '' }).u64()
@@ -259,6 +271,12 @@ fn build_form_fields(wapp &App, ctx &Context) !BuildForm {
 	for t in ['score', 'coin', 'autofarm'] {
 		if (ctx.form['tag_${t}'] or { '' }) != '' {
 			tags << t
+		}
+	}
+	mut boosts := []string{}
+	for b in ['energy', 'item_time', 'fast_start'] {
+		if (ctx.form['boost_${b}'] or { '' }) != '' {
+			boosts << b
 		}
 	}
 	if sel.cookie <= 0 || sel.pet <= 0 || sel.treasure1 <= 0 || sel.treasure2 <= 0 || sel.treasure3 <= 0 {
@@ -285,6 +303,9 @@ fn build_form_fields(wapp &App, ctx &Context) !BuildForm {
 	}
 	return BuildForm{
 		sel:         sel
+		blessed1:    if blessed1 > 0 { 1 } else { 0 }
+		blessed2:    if blessed2 > 0 { 1 } else { 0 }
+		blessed3:    if blessed3 > 0 { 1 } else { 0 }
 		ep:          ep
 		ep_special:  ep_special
 		score:       score
@@ -294,6 +315,7 @@ fn build_form_fields(wapp &App, ctx &Context) !BuildForm {
 		description: description
 		youtube_url: youtube_url
 		tags:        tags
+		boosts:      boosts
 	}
 }
 
@@ -316,7 +338,7 @@ fn submit_build(wapp &App, mut ctx Context) veb.Result {
 		expires = time.now().add(anon_build_ttl)
 	}
 
-	database.create_build(wapp.db, form.sel.cookie, form.sel.cookie2, form.sel.pet, form.sel.treasure1, form.sel.treasure2, form.sel.treasure3, form.ep, form.ep_special, form.tags, form.score, form.coin, form.time_ms, form.boxes, form.description, form.youtube_url, author, user_id, expires) or {
+	database.create_build(wapp.db, form.sel.cookie, form.sel.cookie2, form.sel.pet, form.sel.treasure1, form.sel.treasure2, form.sel.treasure3, form.blessed1, form.blessed2, form.blessed3, form.ep, form.ep_special, form.tags, form.boosts, form.score, form.coin, form.time_ms, form.boxes, form.description, form.youtube_url, author, user_id, expires) or {
 		ctx.res.set_status(.bad_request)
 		return ctx.text(err.msg())
 	}
@@ -366,6 +388,7 @@ pub fn (wapp &App) build_edit(mut ctx Context, id int) veb.Result {
 	ep_tiers := [1, 2, 3, 4, 5, 6, 7]
 	ep_specials := [1, 2, 3]
 	build_tags := ['score', 'coin', 'autofarm']
+	build_boosts := ['energy', 'item_time', 'fast_start']
 	t1_id := if b.treasures.len > 0 { b.treasures[0].id } else { 0 }
 	t2_id := if b.treasures.len > 1 { b.treasures[1].id } else { 0 }
 	t3_id := if b.treasures.len > 2 { b.treasures[2].id } else { 0 }
@@ -378,7 +401,7 @@ fn update_build_submit(wapp &App, mut ctx Context, id int) veb.Result {
 		ctx.res.set_status(.bad_request)
 		return ctx.text(err.msg())
 	}
-	database.update_build(wapp.db, id, form.sel.cookie, form.sel.cookie2, form.sel.pet, form.sel.treasure1, form.sel.treasure2, form.sel.treasure3, form.ep, form.ep_special, form.tags, form.score, form.coin, form.time_ms, form.boxes, form.description, form.youtube_url) or {
+	database.update_build(wapp.db, id, form.sel.cookie, form.sel.cookie2, form.sel.pet, form.sel.treasure1, form.sel.treasure2, form.sel.treasure3, form.blessed1, form.blessed2, form.blessed3, form.ep, form.ep_special, form.tags, form.boosts, form.score, form.coin, form.time_ms, form.boxes, form.description, form.youtube_url) or {
 		ctx.res.set_status(.bad_request)
 		return ctx.text(err.msg())
 	}
