@@ -57,6 +57,14 @@
     function filterOptions(kind, term) {
         var dlg = document.getElementById('dialog-' + kind);
         var t = term.trim().toLowerCase();
+        // when picking the relay cookie, hide the already-picked main cookie
+        // (its id sits in the sel-cookie hidden input; option ids are the
+        // submit buttons' values) so the same cookie can't be chosen twice
+        var excludeId = '';
+        if (kind === 'cookie' && cookieSlot === 'cookie2') {
+            var lead = document.getElementById('sel-cookie');
+            excludeId = lead ? lead.value : '';
+        }
         dlg.querySelectorAll('.pick-option').forEach(function (btn) {
             // the treasure filter's all/normal/evolved tabs hide options by
             // evolved state before the search term applies
@@ -67,13 +75,14 @@
                     return;
                 }
             }
-            if (t === '') { btn.hidden = false; return; }
+            var excluded = excludeId !== '' && btn.value === excludeId;
+            if (t === '') { btn.hidden = excluded; return; }
             // match the localized name or the English name, so e.g. a th page
             // still finds "Wizard" -> คุกกี้พ่อมด in the picker; treasure
             // options also match their effect pill lines (.fx-effect)
             var hay = (btn.dataset.name || '') + ' ' + (btn.dataset.nameEn || '');
             btn.querySelectorAll('.fx-effect').forEach(function (fx) { hay += ' ' + fx.textContent; });
-            btn.hidden = hay.toLowerCase().indexOf(t) === -1;
+            btn.hidden = excluded || hay.toLowerCase().indexOf(t) === -1;
         });
     }
 
