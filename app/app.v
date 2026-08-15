@@ -80,6 +80,18 @@ pub fn (ctx &Context) nav_link(href string, tr_key ?string) veb.RawHtml {
 	return '<a class="${class}" href="/${href}">${veb.tr(ctx.lang, abs_tr_key)}</a>'
 }
 
+// theme_options lists the selectable themes. The palettes live in the UnoCSS
+// preflight (`html[data-theme="..."]` blocks in uno.config.ts); the dropdown
+// just toggles the `data-theme` attribute (see static/js/theme.js).
+pub fn (ctx &Context) theme_options() []string {
+	return ['default', 'light', 'tokyo_night', 'cappuccino', 'dracula', 'nord', 'gruvbox']
+}
+
+// theme_label localizes a theme name (theme_* keys in the .tr files).
+pub fn (ctx &Context) theme_label(name string) string {
+	return veb.tr(ctx.lang, 'theme_${name}')
+}
+
 // grade_name returns the full grade name (e.g. "Extra" for e, "Legend" for l)
 // for use in tooltips; other grades keep their letter.
 pub fn (ctx &Context) grade_name(g string) string {

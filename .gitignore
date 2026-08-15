@@ -30,6 +30,7 @@ logs/
 !static/thirdparty/htmx.js
 !static/js/combobox.js
 !static/js/richtext.js
+!static/js/theme.js
 !static/js/picker.js
 
 # Ignore installed modules through `v install --local`:

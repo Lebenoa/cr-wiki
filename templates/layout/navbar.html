@@ -95,6 +95,18 @@
                 @endif
                 <button class="btn hover:bg-secondary/20" command="show-modal" commandfor="language-dropdown">%language:
                     <span class="font-bold uppercase ml-2">@{ctx.lang_map(ctx.lang)}</span></button>
+                <div class="flex flex-col gap-1.5">
+                    <div class="text-xs font-label uppercase text-foreground-muted px-1">%theme_label</div>
+                    <div class="grid grid-cols-2 gap-2">
+                        @for t in ctx.theme_options()
+                        <button type="button" class="theme-option flex items-center gap-2 rounded-xl border border-secondary/50 px-2 py-1.5 text-sm text-foreground hover:border-primary transition-colors" data-theme="@t">
+                            <span class="theme-swatch size-5 shrink-0 rounded-full border border-white/20" data-theme="@t"></span>
+                            <span class="truncate">@{ctx.theme_label(t)}</span>
+                            <span class="theme-check hidden ml-auto text-primary font-bold">✓</span>
+                        </button>
+                        @endfor
+                    </div>
+                </div>
                 <!-- <button class="btn-warning" popovertarget="account-dropdown" popovertargetaction="close">Close</button> -->
             </div>
             <dialog

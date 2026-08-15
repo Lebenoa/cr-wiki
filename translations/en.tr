@@ -76,6 +76,30 @@ Choose Language
 language
 Language
 -----
+theme_label
+Theme
+-----
+theme_default
+Default
+-----
+theme_light
+Light
+-----
+theme_tokyo_night
+Tokyo Night
+-----
+theme_cappuccino
+Cappuccino
+-----
+theme_dracula
+Dracula
+-----
+theme_nord
+Nord
+-----
+theme_gruvbox
+Gruvbox
+-----
 missing_description
 No description available.
 -----
