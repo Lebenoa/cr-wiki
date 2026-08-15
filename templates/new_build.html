@@ -214,7 +214,7 @@
                         <legend class="text-xs font-label text-foreground-muted uppercase">%build_tag_label <span class="legend-count text-accent" data-total="3">0/3</span></legend>
                         <div class="flex flex-wrap gap-2">
                             @for t in build_tags
-                            <label class="group flex flex-col items-center gap-2 bg-error/10 border-2 border-error/40 rounded-xl py-3 px-4 text-foreground cursor-pointer select-none hover:border-error/70 hover:bg-error/20 has-[:checked]:border-success has-[:checked]:hover:border-success has-[:checked]:bg-success/10 has-[:checked]:hover:bg-success/20 transition-all duration-300">
+                            <label class="group flex flex-col items-center gap-2 border-2 border-error/40 rounded-xl py-3 px-4 text-foreground cursor-pointer select-none hover:border-error/70 has-[:checked]:border-success has-[:checked]:hover:border-success has-[:checked]:bg-success/10 has-[:checked]:hover:bg-success/20 transition-all duration-300">
                                 <input type="checkbox" name="tag_@t" value="@t"
                                     class="sr-only peer" />
                             <span class="text-center text-sm font-bold text-on-surface leading-tight">@{ctx.build_tag_label(t)}</span>
@@ -233,7 +233,7 @@
                         <legend class="text-xs font-label text-foreground-muted uppercase">%build_boosts_label <span class="legend-count text-accent" data-total="3">0/3</span></legend>
                         <div class="flex flex-wrap gap-2">
                             @for b in build_boosts
-                            <label class="group flex flex-col items-center gap-2 bg-error/10 border-2 border-error/40 rounded-xl py-3 px-4 text-foreground cursor-pointer select-none hover:border-error/70 hover:bg-error/20 has-[:checked]:border-success has-[:checked]:hover:border-success has-[:checked]:bg-success/10 has-[:checked]:hover:bg-success/20 transition-all duration-300">
+                            <label class="group flex flex-col items-center gap-2 border-2 border-error/40 rounded-xl py-3 px-4 text-foreground cursor-pointer select-none hover:border-error/70 has-[:checked]:border-success has-[:checked]:hover:border-success has-[:checked]:bg-success/10 has-[:checked]:hover:bg-success/20 transition-all duration-300">
                                 <input type="checkbox" name="boost_@b" value="@b"
                                     class="sr-only peer" />
                             <img src="@{ctx.boost_img_src(b)}" alt="" class="size-10 object-contain" />
@@ -254,7 +254,7 @@
                     <legend class="text-xs font-label text-foreground-muted uppercase">%build_power_effects_label <span class="legend-count text-accent" data-total="7">0/7</span></legend>
                     <div class="flex flex-wrap gap-2">
                         @for pk in power_effect_keys
-                        <label class="group flex flex-col items-center gap-2 bg-error/10 border-2 border-error/40 rounded-xl py-3 px-4 text-foreground cursor-pointer select-none hover:border-error/70 hover:bg-error/20 has-[:checked]:border-success has-[:checked]:hover:border-success has-[:checked]:bg-success/10 has-[:checked]:hover:bg-success/20 transition-all duration-300">
+                        <label class="group flex flex-col items-center gap-2 border-2 border-error/40 rounded-xl py-3 px-4 text-foreground cursor-pointer select-none hover:border-error/70 has-[:checked]:border-success has-[:checked]:hover:border-success has-[:checked]:bg-success/10 has-[:checked]:hover:bg-success/20 transition-all duration-300">
                             <input type="checkbox" name="power_effect_@pk" value="@pk"
                                 class="sr-only peer" />
                         <img src="@{ctx.power_effect_img_src(pk)}" alt="" class="size-10 object-contain" />
