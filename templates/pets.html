@@ -39,7 +39,10 @@
             var q = (document.getElementById('filter-name')?.value || '').toLowerCase();
             var g = (document.querySelector('.grade-filter.active')?.dataset.grade) || '';
             document.querySelectorAll('[data-cr-card]').forEach(function (card) {
-                var show = (!q || card.dataset.name.toLowerCase().indexOf(q) !== -1) && (!g || card.dataset.grade === g);
+                // match the localized name or the English name, so e.g. a th
+                // page still finds "Wizard" -> คุกกี้พ่อมด
+                var names = ((card.dataset.name || '') + ' ' + (card.dataset.nameEn || '')).toLowerCase();
+                var show = (!q || names.indexOf(q) !== -1) && (!g || card.dataset.grade === g);
                 card.style.display = show ? '' : 'none';
             });
         }

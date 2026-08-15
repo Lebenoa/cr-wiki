@@ -8,7 +8,7 @@ A web platform for displaying and managing rich data about collectible assets �
 - **Treasure effects** — Normal/blessed effect panels with per-column value diffs and word-level text diffs for evolved treasures
 - **Community builds** — `/builds` list (EP/tag filters, infinite scroll) and `/builds/new` planner with modal pickers, relay cookie, EP tiers, tags, anonymous 24-hour expiry, and a live combo-bonus preview
 - **Full-text search** — Navbar search over cookies/pets/treasures via SQLite FTS5, with a Thai-aware LIKE fallback (the default tokenizer can't segment Thai)
-- **Admin module** — Authenticated create/edit forms for cookies, pets, and treasures (effects, combi bonuses, rich text with `[[Cookie Name]]` links); test credentials `test`/`test`
+- **Admin module** — Authenticated create/edit forms for cookies, pets, and treasures (effects, combi bonuses, rich text with `[[cookie:1]]` id links (display names localize at render time)); test credentials `test`/`test`
 - **Multi-language support** — i18n via `translations/*.tr` (English + Thai) with cookie-based language selector and English fallback
 - **HTMX** — Partial-page updates, hx-boost navigation, server-paginated infinite scroll, and live preview refreshes without full reloads
 

@@ -347,7 +347,7 @@ combi_hidden_badge
 ซ่อนอยู่
 -----
 rich_text_hint
-รองรับลิงก์ [[ชื่อคุกกี้]] [[pet:ชื่อสัตว์เลี้ยง]] [[treasure:ชื่อสมบัติ]] และ {color:red}ข้อความสี{/color}
+รองรับลิงก์ [[cookie:1]] [[pet:1]] [[treasure:1]] (ใช้ id ของสิ่งของ เพื่อให้ชื่อแสดงตามภาษาของผู้ชม) และ {color:red}ข้อความสี{/color}
 -----
 rich_text_preview
 ตัวอย่าง

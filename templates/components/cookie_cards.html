@@ -1,5 +1,5 @@
 @for cookie in cookies
-<a href="/cookies/@cookie.cookie_id" data-cr-card data-name="@cookie.name" data-grade="@cookie.grade"
+<a href="/cookies/@cookie.cookie_id" data-cr-card data-name="@cookie.name" data-name-en="@cookie.en_name" data-grade="@cookie.grade"
     class="border border-secondary px-4 py-2 rounded flex flex-col items-center justify-start hover:border-primary transition-colors group gap-2">
     <img src="/img/grades/@{cookie.grade}.png" alt="@cookie.grade" class="size-10 self-start">
     <img src="@{ctx.cookie_img_src(cookie.image)}" alt="@cookie.name"

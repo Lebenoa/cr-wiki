@@ -435,8 +435,7 @@
 .select-none{-webkit-user-select:none;user-select:none;}
 .whitespace-pre-line{white-space:pre-line;}
 .truncate{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.uppercase,
-[uppercase=""]{text-transform:uppercase;}
+.uppercase{text-transform:uppercase;}
 .ring-2,
 .peer:checked~.peer-checked\:ring-2{--un-ring-shadow:var(--un-ring-inset,) 0 0 0 calc(2px + var(--un-ring-offset-width)) var(--un-ring-color, currentColor);box-shadow:var(--un-inset-shadow), var(--un-inset-ring-shadow), var(--un-ring-offset-shadow), var(--un-ring-shadow), var(--un-shadow);}
 .focus\:ring-0:focus{--un-ring-shadow:var(--un-ring-inset,) 0 0 0 calc(0px + var(--un-ring-offset-width)) var(--un-ring-color, currentColor);box-shadow:var(--un-inset-shadow), var(--un-inset-ring-shadow), var(--un-ring-offset-shadow), var(--un-ring-shadow), var(--un-shadow);}

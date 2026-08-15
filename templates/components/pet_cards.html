@@ -1,5 +1,5 @@
 @for pet in pets
-<a href="/pets/@pet.pet_id" data-cr-card data-name="@pet.name" data-grade="@pet.grade"
+<a href="/pets/@pet.pet_id" data-cr-card data-name="@pet.name" data-name-en="@pet.en_name" data-grade="@pet.grade"
     class="border border-secondary px-4 py-2 rounded flex flex-col items-center justify-start hover:border-primary transition-colors group gap-2">
     <img src="/img/grades/@{pet.grade}.png" alt="@pet.grade" class="size-10 self-start">
     <img src="@{ctx.img_src('pets', pet.image)}" alt="@pet.name"

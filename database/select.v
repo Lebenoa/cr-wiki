@@ -15,6 +15,7 @@ pub:
 
 	lang                   string
 	name                   string
+	en_name                string // English name, for cross-language list filters
 	abilities              string
 	description            string
 	power_plus             string
@@ -75,6 +76,18 @@ pub fn select_cookies(conn sqlite.DB, lang string, limit int, offset int) ![]Coo
 
 	translation_map := backup_translations[models.CookieTranslation](conn, lang)!
 
+	// English names power the cross-language list filter: a th page still
+	// matches English queries against the en names on each card.
+	en_trs := sql conn {
+		select from models.CookieTranslation where lang == 'en'
+	}!
+	mut en_name_map := map[int]string{}
+	for etr in en_trs {
+		if etr.name != '' {
+			en_name_map[etr.owner_id] = etr.name
+		}
+	}
+
 	mut result := []CookieView{}
 
 	for cookie in cookies {
@@ -86,6 +99,7 @@ pub fn select_cookies(conn sqlite.DB, lang string, limit int, offset int) ![]Coo
 				release_date:           cookie.release_date
 				lang:                   tr.lang
 				name:                   tr.name
+				en_name:                en_name_map[cookie.cookie_id or { 0 }]
 				abilities:              tr.abilities
 				description:            tr.description
 				power_plus:             tr.power_plus
@@ -108,6 +122,7 @@ pub:
 
 	lang        string
 	name        string
+	en_name     string // English name, for cross-language list filters
 	abilities   string
 	description string
 }
@@ -138,6 +153,15 @@ pub fn select_pets(conn sqlite.DB, lang string, limit int, offset int) ![]PetVie
 		}
 	}
 
+	// English names power the cross-language list filter (the en rows are
+	// already in `translations`).
+	mut en_name_map := map[int]string{}
+	for tr in translations {
+		if tr.lang == 'en' && tr.name != '' {
+			en_name_map[tr.pet_id] = tr.name
+		}
+	}
+
 	mut result := []PetView{}
 
 	for pet in pets {
@@ -149,6 +173,7 @@ pub fn select_pets(conn sqlite.DB, lang string, limit int, offset int) ![]PetVie
 				release_date: pet.release_date
 				lang:         tr.lang
 				name:         tr.name
+				en_name:      en_name_map[pet.pet_id or { 0 }]
 				abilities:    tr.abilities
 				description:  tr.description
 			}
@@ -215,11 +240,12 @@ pub:
 
 	lang        string
 	name        string
+	en_name     string // English name, for cross-language list filters
 	description string
 }
 
 // treasure_view maps a stored row + translation to the view handed to templates
-fn treasure_view(t models.Treasure, tr models.TreasureTranslation) TreasureView {
+fn treasure_view(t models.Treasure, tr models.TreasureTranslation, en_name string) TreasureView {
 	return TreasureView{
 		treasure_id:      t.treasure_id or { 0 }
 		image:            t.image
@@ -231,6 +257,7 @@ fn treasure_view(t models.Treasure, tr models.TreasureTranslation) TreasureView 
 		release_date:     t.release_date
 		lang:             tr.lang
 		name:             tr.name
+		en_name:          en_name
 		description:      tr.description
 	}
 }
@@ -295,7 +322,7 @@ pub fn get_treasure(conn sqlite.DB, lang string, id int) !TreasureView {
 		return error('treasure (${id}) not found')
 	}
 	treasure := treasures.first()
-	return treasure_view(treasure, best_treasure_translation(conn, lang, id)!)
+	return treasure_view(treasure, best_treasure_translation(conn, lang, id)!, '')
 }
 
 // get_treasure_base returns the normal treasure an evolved row evolved from
@@ -310,7 +337,7 @@ pub fn get_treasure_base(conn sqlite.DB, lang string, base_id int) !TreasureView
 		return error('base treasure (${base_id}) not found')
 	}
 	b := bases.first()
-	return treasure_view(b, best_treasure_translation(conn, lang, base_id)!)
+	return treasure_view(b, best_treasure_translation(conn, lang, base_id)!, '')
 }
 
 // get_treasure_evo returns the evolved variant of a base treasure; error
@@ -323,7 +350,7 @@ pub fn get_treasure_evo(conn sqlite.DB, lang string, id int) !TreasureView {
 		return error('treasure (${id}) has no evolved variant')
 	}
 	e := evos.first()
-	return treasure_view(e, best_treasure_translation(conn, lang, e.treasure_id or { 0 })!)
+	return treasure_view(e, best_treasure_translation(conn, lang, e.treasure_id or { 0 })!, '')
 }
 
 // TreasureUnlock describes the cookie or pet whose max-level upgrade unlocks
@@ -418,60 +445,13 @@ fn unlock_entity_image(conn sqlite.DB, kind string, id int) ?string {
 	return img
 }
 
-// resolve_entity_name returns the localized name of a cookie or pet (user
-// lang with en fallback); '' when no translation exists.
-// cookie_id_by_name resolves a cookie by its localized name (exact match in
-// the requested language, then en); 0 when no cookie has that name. Used by
-// the rich-text [[Cookie Name]] link renderer.
-pub fn cookie_id_by_name(conn sqlite.DB, user_lang string, cookie_name string) int {
-	return entity_id_by_name(conn, 'cookie', user_lang, cookie_name)
-}
-
-// entity_id_by_name resolves any linkable entity by its localized name (exact
-// match in the requested language, then en fallback); 0 when nothing matches.
-// kind is 'cookie' | 'pet' | 'treasure' — the rich-text [[kind:Name]] syntax.
-pub fn entity_id_by_name(conn sqlite.DB, kind string, user_lang string, name string) int {
-	nname := name
-	if kind == 'pet' {
-		trs := sql conn {
-			select from models.PetTranslation where name == nname && (lang == user_lang || lang == 'en')
-		} or { return 0 }
-		if trs.len == 0 {
-			return 0
-		}
-		for tr in trs {
-			if tr.lang == user_lang {
-				return tr.pet_id
-			}
-		}
-		return trs.first().pet_id
-	}
-	if kind == 'treasure' {
-		trs := sql conn {
-			select from models.TreasureTranslation where name == nname && (lang == user_lang || lang == 'en')
-		} or { return 0 }
-		if trs.len == 0 {
-			return 0
-		}
-		for tr in trs {
-			if tr.lang == user_lang {
-				return tr.treasure_id
-			}
-		}
-		return trs.first().treasure_id
-	}
-	trs := sql conn {
-		select from models.CookieTranslation where name == nname && (lang == user_lang || lang == 'en')
-	} or { return 0 }
-	if trs.len == 0 {
-		return 0
-	}
-	for tr in trs {
-		if tr.lang == user_lang {
-			return tr.owner_id
-		}
-	}
-	return trs.first().owner_id
+// entity_name_by_id returns the localized name of a cookie, pet, or treasure
+// (user lang with en fallback); '' when the id doesn't exist or no
+// translation covers it. The id-based rich-text [[kind:id]] renderer uses it
+// so authored markup stays language-independent — the link text is resolved
+// per language at render time instead of embedding a localized name.
+pub fn entity_name_by_id(conn sqlite.DB, kind string, id int, lang string) string {
+	return resolve_entity_name(conn, kind, id, lang)
 }
 
 fn resolve_entity_name(conn sqlite.DB, kind string, id int, lang string) string {
@@ -1011,7 +991,7 @@ pub fn get_unlocked_treasure(conn sqlite.DB, lang string, kind string, id int) !
 		return error('${kind} (${id}) unlocks no treasure')
 	}
 	t := ts.first()
-	return treasure_view(t, best_treasure_translation(conn, lang, t.treasure_id or { 0 })!)
+	return treasure_view(t, best_treasure_translation(conn, lang, t.treasure_id or { 0 })!, '')
 }
 
 // effects_from_links resolves effect translations and formats each link into
@@ -1133,6 +1113,15 @@ pub fn select_treasures(conn sqlite.DB, lang string, limit int, offset int, tab 
 		}
 	}
 
+	// English names power the cross-language list filter (the en rows are
+	// already in `translations`).
+	mut en_name_map := map[int]string{}
+	for tr in translations {
+		if tr.lang == 'en' && tr.name != '' {
+			en_name_map[tr.treasure_id] = tr.name
+		}
+	}
+
 	mut result := []TreasureView{}
 
 	for treasure in treasures {
@@ -1140,7 +1129,7 @@ pub fn select_treasures(conn sqlite.DB, lang string, limit int, offset int, tab 
 			continue
 		}
 		if tr := translation_map[treasure.treasure_id or { continue }] {
-			result << treasure_view(treasure, tr)
+			result << treasure_view(treasure, tr, en_name_map[treasure.treasure_id or { 0 }])
 		}
 	}
 
@@ -1457,7 +1446,7 @@ fn treasures_by_ids(conn sqlite.DB, lang string, ids []int) ![]TreasureView {
 	for id in ids {
 		if treasure := treasure_map[id] {
 			if tr := translation_map[id] {
-				result << treasure_view(treasure, tr)
+				result << treasure_view(treasure, tr, '')
 			}
 		}
 	}
@@ -1575,69 +1564,58 @@ pub fn effect_names(conn sqlite.DB, lang string) ![]string {
 	return names
 }
 
-// sort_dedupe_names orders options by name (ties by id) and keeps only the
-// first option per name. The rich-text resolver resolves ambiguous names to
-// its first match, so the autocomplete and preview offer the same one.
-fn sort_dedupe_names(opts []IdNameOption) []IdNameOption {
-	mut sorted := opts.clone()
-	sorted.sort_with_compare(fn (a &IdNameOption, b &IdNameOption) int {
-		if a.name < b.name {
-			return -1
-		}
-		if a.name > b.name {
-			return 1
-		}
-		if a.id < b.id {
-			return -1
-		}
-		if a.id > b.id {
-			return 1
-		}
-		return 0
-	})
-	mut seen := map[string]bool{}
-	mut out := []IdNameOption{}
-	for o in sorted {
-		if o.name != '' && o.name !in seen {
-			out << o
-			seen[o.name] = true
-		}
-	}
-	return out
-}
-
-// richtext_names lists the id + localized name of every linkable entity of one
-// kind that render_rich_text can resolve for `lang`: that language's rows plus
-// the en fallback (the same match set entity_id_by_name uses — a th form can
-// link en-named entities and vice versa). It feeds the `[[kind:Name]]`
-// autocomplete and the live rich-text preview; the ids let the preview build
-// real hrefs. kind defaults to 'cookie'.
-pub fn richtext_names(conn sqlite.DB, lang string, kind string) []IdNameOption {
-	plang := lang
-	mut opts := []IdNameOption{}
+// collect_translation_opts appends every (id, name) translation row of one
+// kind for a single language.
+fn collect_translation_opts(conn sqlite.DB, kind string, rows_lang string, mut opts []IdNameOption) {
 	if kind == 'pet' {
 		rows := sql conn {
-			select from models.PetTranslation where lang == plang || lang == 'en'
-		} or { return [] }
+			select from models.PetTranslation where lang == rows_lang
+		} or { return }
 		for r in rows {
-			opts << IdNameOption{id: r.pet_id, name: r.name.trim_space()}
+			n := r.name.trim_space()
+			if n != '' {
+				opts << IdNameOption{id: r.pet_id, name: n}
+			}
 		}
 	} else if kind == 'treasure' {
 		rows := sql conn {
-			select from models.TreasureTranslation where lang == plang || lang == 'en'
-		} or { return [] }
+			select from models.TreasureTranslation where lang == rows_lang
+		} or { return }
 		for r in rows {
-			opts << IdNameOption{id: r.treasure_id, name: r.name.trim_space()}
+			n := r.name.trim_space()
+			if n != '' {
+				opts << IdNameOption{id: r.treasure_id, name: n}
+			}
 		}
 	} else {
 		rows := sql conn {
-			select from models.CookieTranslation where lang == plang || lang == 'en'
-		} or { return [] }
+			select from models.CookieTranslation where lang == rows_lang
+		} or { return }
 		for r in rows {
-			opts << IdNameOption{id: r.owner_id, name: r.name.trim_space()}
+			n := r.name.trim_space()
+			if n != '' {
+				opts << IdNameOption{id: r.owner_id, name: n}
+			}
 		}
 	}
-	return sort_dedupe_names(opts)
+}
+
+// richtext_names lists the id + localized name of every linkable entity of one
+// kind that the [[kind:id]] renderer can resolve for `lang`: that language's
+// rows first, then the en fallback (the same match set entity_name_by_id uses
+// — a th form can link en-only entities and vice versa). It feeds the
+// autocomplete (which inserts ids) and the live rich-text preview (which
+// looks ids up for the localized name). Page-language rows come first so the
+// preview's id lookup yields that language's name; both languages stay in the
+// list so authors can search in either. kind defaults to 'cookie'.
+pub fn richtext_names(conn sqlite.DB, lang string, kind string) []IdNameOption {
+	plang := lang
+	mut opts := []IdNameOption{}
+	collect_translation_opts(conn, kind, plang, mut opts)
+	if plang != 'en' {
+		collect_translation_opts(conn, kind, 'en', mut opts)
+	}
+	return opts
 }
 
 pub fn get_cookie(conn sqlite.DB, lang string, id int) !CookieView {

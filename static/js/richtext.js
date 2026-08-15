@@ -3,16 +3,18 @@
 // Any <textarea data-richtext> gets two features:
 //   1. an entity-name autocomplete triggered by "[[" — "[[ging" lists cookies,
 //      "[[pet:pep" pets, "[[treasure:..." treasures; Enter, Tab or click
-//      completes the [[kind:Name]] markup, and
+//      completes the [[kind:id]] markup (ids, not names, so the stored text
+//      stays language-independent), and
 //   2. a live preview (the [data-richtext-preview] sibling box) that renders
-//      the markup the same way render_rich_text does: [[...]] become links to
-//      the entity pages, {color:...} becomes colored text, everything else is
-//      escaped.
+//      the markup the same way render_rich_text does: [[kind:id]] become links
+//      to the entity pages with the localized display name, {color:...}
+//      becomes colored text, everything else is escaped.
 //
 // Both use /api/richtext-names?lang=<page lang>&kind=... which returns
 // [{id, name}] for the language render_rich_text resolves (that language plus
-// the en fallback); the ids let the preview build real hrefs. The lists are
-// re-fetched when the form's language <select id="lang"> changes.
+// the en fallback); the preview resolves [[kind:id]] through this list to get
+// the localized name and a real href. The lists are re-fetched when the
+// form's language <select id="lang"> changes.
 //
 // The dropdown is position:fixed and placed from getBoundingClientRect()
 // (viewport coordinates); an absolutely-positioned body child would be offset
@@ -55,21 +57,27 @@
 
     // ---- markup helpers shared by autocomplete + preview -------------------
 
-    // [[inner]] -> { kind, name }; "pet:Apple Rabbit" -> pet + Apple Rabbit,
-    // anything without a known kind prefix stays a cookie link
+    // [[inner]] -> { kind, id }; "pet:5" -> pet + id 5, a bare [[5]] stays a
+    // cookie link (mirroring the server). Names and unknown prefixes are not
+    // refs — authored markup must be language-independent, so only ids link.
     function parseLink(inner) {
         var t = inner.trim();
-        var m = /^([a-z]+):(.*)$/i.exec(t);
-        if (m && KINDS.indexOf(m[1].toLowerCase()) !== -1 && m[2].trim() !== '') {
-            return { kind: m[1].toLowerCase(), name: m[2].trim() };
+        var m = /^([a-z]+):(\d+)$/i.exec(t);
+        if (m && KINDS.indexOf(m[1].toLowerCase()) !== -1) {
+            return { kind: m[1].toLowerCase(), id: parseInt(m[2], 10) };
         }
-        return { kind: 'cookie', name: t };
+        if (/^\d+$/.test(t)) {
+            return { kind: 'cookie', id: parseInt(t, 10) };
+        }
+        return null;
     }
 
-    function findEntity(kind, name) {
+    // name lists are ordered page-language first (en fallback after), so the
+    // id lookup yields the localized name the server renders for this page
+    function findById(kind, id) {
         var list = NAMES[kind] || [];
         for (var i = 0; i < list.length; i++) {
-            if (list[i].name === name) return list[i];
+            if (list[i].id === id) return list[i];
         }
         return null;
     }
@@ -81,11 +89,6 @@
     function escapeHtml(s) {
         return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
             .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-    }
-
-    function unescapeHtml(s) {
-        return s.replace(/&#39;/g, "'").replace(/&quot;/g, '"').replace(/&lt;/g, '<')
-            .replace(/&gt;/g, '>').replace(/&amp;/g, '&');
     }
 
     function validColor(val) {
@@ -164,7 +167,7 @@
         if (!m) { closeBox(); return; }
         var start = before.length - m[0].length;
         var prefix = cur.kind !== 'cookie' ? cur.kind + ':' : '';
-        var fill = '[[' + prefix + opt.name + ']]';
+        var fill = '[[' + prefix + opt.id + ']]';
         ta.value = v.slice(0, start) + fill + v.slice(pos);
         var np = start + fill.length;
         ta.selectionStart = ta.selectionEnd = np;
@@ -244,18 +247,20 @@
         var out = '';
         var i = 0;
         while (i < s.length) {
-            // link: [[Name]] or [[kind:Name]]
+            // link: [[id]] or [[kind:id]]
             if (s[i] === '[' && s[i + 1] === '[') {
                 var end = s.indexOf(']]', i + 2);
                 if (end !== -1) {
                     var parsed = parseLink(s.slice(i + 2, end));
-                    var found = findEntity(parsed.kind, unescapeHtml(parsed.name));
-                    if (found) {
-                        out += '<a href="/' + kindPath(parsed.kind) + '/' + found.id +
-                            '" class="font-bold underline decoration-primary decoration-2 underline-offset-4 hover:text-primary transition-colors">' +
-                            parsed.name + '</a>';
-                        i = end + 2;
-                        continue;
+                    if (parsed) {
+                        var found = findById(parsed.kind, parsed.id);
+                        if (found) {
+                            out += '<a href="/' + kindPath(parsed.kind) + '/' + found.id +
+                                '" class="font-bold underline decoration-primary decoration-2 underline-offset-4 hover:text-primary transition-colors">' +
+                                escapeHtml(found.name) + '</a>';
+                            i = end + 2;
+                            continue;
+                        }
                     }
                 }
             }

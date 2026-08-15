@@ -129,6 +129,10 @@ pub fn run_test_session() {
 			run:  test_search
 		},
 		TestCase{
+			name: 'search matches cross-language'
+			run:  test_search_cross_language
+		},
+		TestCase{
 			name: 'unknown route 404s'
 			run:  test_not_found
 		},
@@ -601,41 +605,63 @@ fn test_placeholder_submission_guards(mut tc TestContext) ! {
 }
 
 fn test_rich_text(mut tc TestContext) ! {
-	// resolve a real seed cookie name for the link test
+	// resolve a real seed cookie id for the link tests
 	row := tc.db.exec('SELECT name, owner_id FROM cookie_translation WHERE lang = "en" LIMIT 1')![0]
 	name := row.get_string('name')
-	// [[Name]] -> link to the cookie page
-	html1 := render_rich_text(tc.db, 'en', 'see [[${name}]] here')
-	expected := '<a href="/cookies/${row.get_string('owner_id')}"'
-	if !html1.contains(expected) {
-		return error('rich text: [[name]] did not become a cookie link, got: ${html1}')
+	cid := row.get_int('owner_id')
+	// [[cookie:id]] -> link to the cookie page with the localized display name
+	html1 := render_rich_text(tc.db, 'en', 'see [[cookie:${cid}]] here')
+	if !html1.contains('<a href="/cookies/${cid}"') || !html1.contains('>${html.escape(name)}</a>') {
+		return error('rich text: [[cookie:id]] did not become a cookie link, got: ${html1}')
 	}
-	// [[pet:Name]] / [[treasure:Name]] -> links to the pet/treasure pages;
-	// the kind prefix is syntax, not link text
+	// bare [[id]] defaults to a cookie link (mirroring the old [[Name]] form)
+	html1d := render_rich_text(tc.db, 'en', 'see [[${cid}]] here')
+	if !html1d.contains('<a href="/cookies/${cid}"') {
+		return error('rich text: bare [[id]] did not become a cookie link, got: ${html1d}')
+	}
+	// [[pet:id]] / [[treasure:id]] -> links to the pet/treasure pages
 	prow := tc.db.exec('SELECT name, pet_id FROM pet_translation WHERE lang = "en" LIMIT 1')![0]
 	pname := prow.get_string('name')
 	pid := prow.get_int('pet_id')
-	html1b := render_rich_text(tc.db, 'en', 'see [[pet:${pname}]] here')
-	if !html1b.contains('<a href="/pets/${pid}"') || !html1b.contains('>${pname}</a>') {
-		return error('rich text: [[pet:name]] did not become a pet link, got: ${html1b}')
+	html1b := render_rich_text(tc.db, 'en', 'see [[pet:${pid}]] here')
+	if !html1b.contains('<a href="/pets/${pid}"') || !html1b.contains('>${html.escape(pname)}</a>') {
+		return error('rich text: [[pet:id]] did not become a pet link, got: ${html1b}')
 	}
 	trow := tc.db.exec('SELECT name, treasure_id FROM treasure_translation WHERE lang = "en" LIMIT 1')![0]
 	trname := trow.get_string('name')
 	tid := trow.get_int('treasure_id')
-	html1c := render_rich_text(tc.db, 'en', 'see [[treasure:${trname}]] here')
+	html1c := render_rich_text(tc.db, 'en', 'see [[treasure:${tid}]] here')
 	// the link text is HTML-escaped (apostrophes render as &#39;)
 	if !html1c.contains('<a href="/treasures/${tid}"') || !html1c.contains('>${html.escape(trname)}</a>') {
-		return error('rich text: [[treasure:name]] did not become a treasure link, got: ${html1c}')
+		return error('rich text: [[treasure:id]] did not become a treasure link, got: ${html1c}')
 	}
-	// explicit cookie: prefix behaves like the bare form
-	html1d := render_rich_text(tc.db, 'en', 'see [[cookie:${name}]] here')
-	if !html1d.contains('<a href="/cookies/${row.get_string('owner_id')}"') {
-		return error('rich text: [[cookie:name]] did not become a cookie link, got: ${html1d}')
+	// the same [[id]] markup localizes at render time — the point of ids over
+	// names: no re-linking per language (falls back to the en name if the
+	// cookie has no th row)
+	mut thname := name
+	if throws := tc.db.exec('SELECT name FROM cookie_translation WHERE owner_id = ${cid} AND lang = "th"') {
+		if throws.len > 0 {
+			thname = throws[0].get_string('name')
+		}
 	}
-	// unknown kind prefix stays literal ("gadget:Name" is not a cookie name)
-	html1e := render_rich_text(tc.db, 'en', 'see [[gadget:${name}]] here')
+	html1f := render_rich_text(tc.db, 'th', 'see [[cookie:${cid}]] here')
+	if !html1f.contains('>${html.escape(thname)}</a>') {
+		return error('rich text: [[cookie:id]] must render the localized name, got: ${html1f}')
+	}
+	// unknown kind prefix stays literal
+	html1e := render_rich_text(tc.db, 'en', 'see [[gadget:${cid}]] here')
 	if html1e.contains('<a href=') {
 		return error('rich text: unknown kind prefix must stay literal, got: ${html1e}')
+	}
+	// names are no longer refs: [[Name]] and [[kind:Name]] render literally
+	html1g := render_rich_text(tc.db, 'en', 'see [[${name}]] here')
+	if html1g.contains('<a href=') {
+		return error('rich text: name-based refs must stay literal after the id revamp, got: ${html1g}')
+	}
+	// unknown or non-positive ids stay literal
+	html1h := render_rich_text(tc.db, 'en', '[[cookie:99999999]] [[pet:-2]] [[treasure:0]]')
+	if html1h.contains('<a href=') {
+		return error('rich text: unknown or non-positive ids must stay literal, got: ${html1h}')
 	}
 	// {color:x}text{/color} -> colored span
 	html2 := render_rich_text(tc.db, 'en', 'a {color:red}red{/color} word')
@@ -771,6 +797,39 @@ fn test_search(mut tc TestContext) ! {
 	}
 	if resp.body.len == 0 {
 		return error('search?q=${q}: empty body')
+	}
+}
+
+fn test_search_cross_language(mut tc TestContext) ! {
+	// an English query on a th page must surface the th-named entity (ids link
+	// to localized names; search matches across languages)
+	row := tc.db.exec("SELECT ct.name AS en_name, ctt.name AS th_name, ct.owner_id AS cid FROM cookie_translation ct JOIN cookie_translation ctt ON ctt.owner_id = ct.owner_id AND ctt.lang = 'th' WHERE ct.lang = 'en' AND ct.name != ctt.name AND ct.name != '' AND ctt.name != '' LIMIT 1")![0]
+	en_name := row.get_string('en_name')
+	th_name := row.get_string('th_name')
+	cid := row.get_int('cid')
+	resp := http.fetch(method: .get, url: '${tc.base}/search', params: {
+		'q': en_name
+	}, cookies: {
+		lang_cookie_key: 'th'
+	}) or {
+		return error('search cross-language: ${err}')
+	}
+	if resp.status_code != 200 || !resp.body.contains(th_name) {
+		return error('search: en query "${en_name}" on a th page must surface th name "${th_name}", got ${resp.status_code}')
+	}
+	// the list-page cards carry the en name so the client-side filter matches
+	// English queries on localized pages (page of the entity, id desc order)
+	rank := tc.db.exec('SELECT COUNT(*) AS n FROM cookie WHERE cookie_id > ${cid}')![0].get_int('n')
+	page := rank / 30 + 1
+	resp2 := http.fetch(method: .get, url: '${tc.base}/cookies', params: {
+		'page': page.str()
+	}, cookies: {
+		lang_cookie_key: 'th'
+	}) or {
+		return error('cookie list cross-language: ${err}')
+	}
+	if resp2.status_code != 200 || !resp2.body.contains('data-name-en="${html.escape(en_name)}"') {
+		return error('cookie list page ${page} must carry data-name-en="${html.escape(en_name)}", got ${resp2.status_code}')
 	}
 }
 

@@ -347,7 +347,7 @@ combi_hidden_badge
 Hidden
 -----
 rich_text_hint
-Supports [[Cookie Name]], [[pet:Pet Name]], [[treasure:Treasure Name]] links and {color:red}colored text{/color}.
+Supports [[cookie:1]], [[pet:1]], [[treasure:1]] links (entity ids, so the display name follows the viewer's language) and {color:red}colored text{/color}.
 -----
 rich_text_preview
 Preview

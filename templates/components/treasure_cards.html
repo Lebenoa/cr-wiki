@@ -1,5 +1,5 @@
 @for treasure in treasures
-<a href="/treasures/@treasure.treasure_id" data-cr-card data-name="@treasure.name"
+<a href="/treasures/@treasure.treasure_id" data-cr-card data-name="@treasure.name" data-name-en="@treasure.en_name"
     class="border border-secondary px-4 py-2 rounded flex flex-col items-center justify-start hover:border-primary transition-colors group gap-2">
     @if grade := treasure.grade
     <img src="/img/grades/@{grade}.png" alt="@grade" class="size-10 self-start">

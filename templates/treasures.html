@@ -36,7 +36,10 @@
         function crFilter() {
             var q = (document.getElementById('filter-name')?.value || '').toLowerCase();
             document.querySelectorAll('[data-cr-card]').forEach(function (card) {
-                card.style.display = (!q || card.dataset.name.toLowerCase().indexOf(q) !== -1) ? '' : 'none';
+                // match the localized name or the English name, so e.g. a th
+                // page still finds "Wizard" -> คุกกี้พ่อมด
+                var names = ((card.dataset.name || '') + ' ' + (card.dataset.nameEn || '')).toLowerCase();
+                card.style.display = (!q || names.indexOf(q) !== -1) ? '' : 'none';
             });
         }
         document.addEventListener('input', function (e) {
