@@ -11,6 +11,9 @@ cr-wiki
 # Ignore binary output folders
 bin/
 
+# Runtime logs
+logs/
+
 # Ignore common editor/system specific metadata
 .DS_Store
 .idea/

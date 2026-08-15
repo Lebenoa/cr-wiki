@@ -66,6 +66,7 @@ The repository implements a web platform written in V (V Language) using a speci
 
 ## Runtime / Tooling Preferences
 - **UnoCSS**: `bun run dev` = `unocss --watch` (package.json). It regenerates `static/styles.css` from utility classes in `./**/*.html` + `./app/*.v` (uno.config.ts scan globs). Commit the regenerated CSS together with template class changes; classes only generate for files inside the scan globs (test/probe files must live in the project root). Keep the watcher running — do not edit `static/styles.css` by hand.
+- **Logging**: `main.v` installs a thread-safe `log` logger (stderr + file) at boot — `logs/cookierun.log` by default, `CR_LOG_FILE` overrides (path is gitignored). Local time, `tf_ss_milli`, `always_flush` on (the default only flushes at process exit, so a running server's log looks frozen). Use `log.warn/info/debug` for app diagnostics; `database/select.v` logs corrupt rows (missing `_id` on a selected row) via `warn_missing_id`.
 - **No `<style>` tags** anywhere — all styling via UnoCSS utilities (`starting:` = `@starting-style`).
 - **htmx** is served from `/thirdparty/htmx.js` (a route; not an on-disk dir) and drives navbar search, infinite scroll, and hx-boost navigation.
 - **Chrome top-layer popover quirks** (hard-won):

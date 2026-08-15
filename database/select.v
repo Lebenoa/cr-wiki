@@ -1,6 +1,7 @@
 module database
 
 import db.sqlite
+import log
 import models
 import time
 import app.util
@@ -60,6 +61,15 @@ fn backup_translations[T](conn sqlite.DB, user_lang string, params ?BackupTransl
 	return translation_map
 }
 
+// warn_missing_id logs a corrupt row: ids on rows fetched with select are
+// always present (serial keys are assigned at insert and never cleared), so a
+// missing one can only happen on an unsaved/created row — or data corruption.
+// Log it instead of silently dropping the row, which would hide the damage as
+// a picker/list entry that's just gone.
+fn warn_missing_id(kind string) {
+	log.warn('${kind} row missing ${kind}_id — corrupt row?')
+}
+
 pub fn select_cookies(conn sqlite.DB, lang string, limit int, offset int) ![]CookieView {
 	cookies := sql conn {
 		select from models.Cookie order by cookie_id desc limit limit offset offset
@@ -71,7 +81,11 @@ pub fn select_cookies(conn sqlite.DB, lang string, limit int, offset int) ![]Coo
 
 	mut ids := []int{}
 	for cookie in cookies {
-		ids << cookie.cookie_id or { continue }
+		cid := cookie.cookie_id or {
+			warn_missing_id('cookie')
+			continue
+		}
+		ids << cid
 	}
 
 	translation_map := backup_translations[models.CookieTranslation](conn, lang)!
@@ -964,9 +978,22 @@ pub fn treasure_options(conn sqlite.DB, lang string, equippable bool) ![]IdNameO
 			select from models.Treasure
 		}!
 	}
+	// fetch only the translations/links for the treasure set about to be
+	// rendered, not the whole catalog: both tables carry a plain `treasure_id
+	// int` (unlike models.Treasure's optional id), so the ORM `in` works —
+	// same pattern as treasures_by_ids.
 	user_lang := lang
+	mut tids := []int{}
+	for t in treasures {
+		if tid := t.treasure_id {
+			tids << tid
+		} else {
+			warn_missing_id('treasure')
+		}
+	}
 	translations := sql conn {
-		select from models.TreasureTranslation where lang == user_lang || lang == 'en'
+		select from models.TreasureTranslation where treasure_id in tids
+		&& (lang == user_lang || lang == 'en')
 	}!
 	mut tmap := map[int]models.TreasureTranslation{}
 	for tr in translations {
@@ -995,7 +1022,7 @@ pub fn treasure_options(conn sqlite.DB, lang string, equippable bool) ![]IdNameO
 	mut effect_map := map[int][]EffectOption{}
 	mut blessed_map := map[int][]EffectOption{}
 	links := sql conn {
-		select from models.TreasureEffect order by treasure_effect_id
+		select from models.TreasureEffect where treasure_id in tids order by treasure_effect_id
 	} or { [] }
 	if links.len > 0 {
 		mut eids := []int{}
@@ -1327,9 +1354,20 @@ pub fn select_treasures(conn sqlite.DB, lang string, limit int, offset int, tab 
 		return []
 	}
 
+	// narrow the translation fetch to the tab-filtered set (the ORM `in`
+	// works here — TreasureTranslation carries a plain `treasure_id int`).
 	user_lang := lang
+	mut tids := []int{}
+	for t in treasures {
+		if tid := t.treasure_id {
+			tids << tid
+		} else {
+			warn_missing_id('treasure')
+		}
+	}
 	translations := sql conn {
-		select from models.TreasureTranslation where lang == user_lang || lang == 'en'
+		select from models.TreasureTranslation where treasure_id in tids
+		&& (lang == user_lang || lang == 'en')
 	}!
 
 	mut translation_map := map[int]models.TreasureTranslation{}
@@ -1549,6 +1587,8 @@ fn cookies_by_ids(conn sqlite.DB, lang string, ids []int) ![]CookieView {
 	for cookie in cookies {
 		if id := cookie.cookie_id {
 			cookie_map[id] = cookie
+		} else {
+			warn_missing_id('cookie')
 		}
 	}
 	mut translation_map := map[int]models.CookieTranslation{}
@@ -1603,6 +1643,8 @@ fn pets_by_ids(conn sqlite.DB, lang string, ids []int) ![]PetView {
 	for pet in pets {
 		if id := pet.pet_id {
 			pet_map[id] = pet
+		} else {
+			warn_missing_id('pet')
 		}
 	}
 	mut translation_map := map[int]models.PetTranslation{}
@@ -1656,6 +1698,8 @@ fn treasures_by_ids(conn sqlite.DB, lang string, ids []int) ![]TreasureView {
 	for treasure in treasures {
 		if id := treasure.treasure_id {
 			treasure_map[id] = treasure
+		} else {
+			warn_missing_id('treasure')
 		}
 	}
 	mut translation_map := map[int]models.TreasureTranslation{}
