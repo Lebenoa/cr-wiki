@@ -1,6 +1,8 @@
 module app
 
+import os
 import veb
+import app.util
 import database
 import time
 
@@ -34,6 +36,37 @@ pub fn (ctx &Context) build_tag_label(tag string) string {
 // build_boost_label localizes a run boost (energy / item_time / fast_start).
 pub fn (ctx &Context) build_boost_label(boost string) string {
 	return veb.tr(ctx.lang, 'build_boost_${boost}')
+}
+
+// purchase_boost_label localizes a purchased pre-run boost key
+// (build_purchase_boost_* keys in the .tr files).
+pub fn (ctx &Context) purchase_boost_label(key string) string {
+	return veb.tr(ctx.lang, 'build_purchase_boost_${key}')
+}
+
+// power_effect_label localizes an owned Power+ effect key (power_effect_*
+// keys in the .tr files).
+pub fn (ctx &Context) power_effect_label(key string) string {
+	return veb.tr(ctx.lang, 'power_effect_${key}')
+}
+
+// boost_img_src returns the boost icon when the asset exists on disk
+// (static/img/boosts/{key}.png), else a placeholder — the icons are
+// placeholders until the real sprites are dropped in.
+pub fn (ctx &Context) boost_img_src(key string) string {
+	if os.exists('static/img/boosts/${key}.png') {
+		return ctx.img_src('boosts', '${key}.png')
+	}
+	return ctx.img_src('boosts', none)
+}
+
+// power_effect_img_src is boost_img_src for owned Power+ effect icons
+// (static/img/owned_effects/{key}.png).
+pub fn (ctx &Context) power_effect_img_src(key string) string {
+	if os.exists('static/img/owned_effects/${key}.png') {
+		return ctx.img_src('owned_effects', '${key}.png')
+	}
+	return ctx.img_src('owned_effects', none)
 }
 
 // format_num inserts thousands separators for display (e.g. 710,000,000).
@@ -202,6 +235,8 @@ pub fn (wapp &App) new_build(mut ctx Context) veb.Result {
 	ep_specials := [1, 2, 3]
 	build_tags := ['score', 'coin', 'autofarm']
 	build_boosts := ['energy', 'item_time', 'fast_start']
+	purchase_boosts := util.run_boost_keys()
+	power_effect_keys := util.power_effect_keys()
 	return $veb.html()
 }
 
@@ -249,7 +284,9 @@ struct BuildForm {
 	description string
 	youtube_url string
 	tags        []string
-	boosts      []string
+	boosts      []string // run toggles: energy/item_time/fast_start
+	boost       string // purchased pre-run boost key ('' = none)
+	power_effects []string // owned Power+ effect keys marked used
 }
 
 // build_form_fields parses and validates the shared planner fields: the
@@ -282,6 +319,16 @@ fn build_form_fields(wapp &App, ctx &Context) !BuildForm {
 	for b in ['energy', 'item_time', 'fast_start'] {
 		if (ctx.form['boost_${b}'] or { '' }) != '' {
 			boosts << b
+		}
+	}
+	boost := (ctx.form['boost'] or { '' }).trim_space()
+	if boost != '' && boost !in util.run_boost_keys() {
+		return error('Unknown boost')
+	}
+	mut power_effects := []string{}
+	for k in util.power_effect_keys() {
+		if (ctx.form['power_effect_${k}'] or { '' }) != '' {
+			power_effects << k
 		}
 	}
 	if sel.cookie <= 0 || sel.pet <= 0 || sel.treasure1 <= 0 || sel.treasure2 <= 0 || sel.treasure3 <= 0 {
@@ -321,6 +368,8 @@ fn build_form_fields(wapp &App, ctx &Context) !BuildForm {
 		youtube_url: youtube_url
 		tags:        tags
 		boosts:      boosts
+		boost:       boost
+		power_effects: power_effects
 	}
 }
 
@@ -343,7 +392,7 @@ fn submit_build(wapp &App, mut ctx Context) veb.Result {
 		expires = time.now().add(anon_build_ttl)
 	}
 
-	database.create_build(wapp.db, form.sel.cookie, form.sel.cookie2, form.sel.pet, form.sel.treasure1, form.sel.treasure2, form.sel.treasure3, form.blessed1, form.blessed2, form.blessed3, form.ep, form.ep_special, form.tags, form.boosts, form.score, form.coin, form.time_ms, form.boxes, form.description, form.youtube_url, author, user_id, expires) or {
+	database.create_build(wapp.db, form.sel.cookie, form.sel.cookie2, form.sel.pet, form.sel.treasure1, form.sel.treasure2, form.sel.treasure3, form.blessed1, form.blessed2, form.blessed3, form.ep, form.ep_special, form.tags, form.boosts, form.boost, form.power_effects, form.score, form.coin, form.time_ms, form.boxes, form.description, form.youtube_url, author, user_id, expires) or {
 		ctx.res.set_status(.bad_request)
 		return ctx.text(err.msg())
 	}
@@ -394,6 +443,8 @@ pub fn (wapp &App) build_edit(mut ctx Context, id int) veb.Result {
 	ep_specials := [1, 2, 3]
 	build_tags := ['score', 'coin', 'autofarm']
 	build_boosts := ['energy', 'item_time', 'fast_start']
+	purchase_boosts := util.run_boost_keys()
+	power_effect_keys := util.power_effect_keys()
 	t1_id := if b.treasures.len > 0 { b.treasures[0].id } else { 0 }
 	t2_id := if b.treasures.len > 1 { b.treasures[1].id } else { 0 }
 	t3_id := if b.treasures.len > 2 { b.treasures[2].id } else { 0 }
@@ -406,7 +457,7 @@ fn update_build_submit(wapp &App, mut ctx Context, id int) veb.Result {
 		ctx.res.set_status(.bad_request)
 		return ctx.text(err.msg())
 	}
-	database.update_build(wapp.db, id, form.sel.cookie, form.sel.cookie2, form.sel.pet, form.sel.treasure1, form.sel.treasure2, form.sel.treasure3, form.blessed1, form.blessed2, form.blessed3, form.ep, form.ep_special, form.tags, form.boosts, form.score, form.coin, form.time_ms, form.boxes, form.description, form.youtube_url) or {
+	database.update_build(wapp.db, id, form.sel.cookie, form.sel.cookie2, form.sel.pet, form.sel.treasure1, form.sel.treasure2, form.sel.treasure3, form.blessed1, form.blessed2, form.blessed3, form.ep, form.ep_special, form.tags, form.boosts, form.boost, form.power_effects, form.score, form.coin, form.time_ms, form.boxes, form.description, form.youtube_url) or {
 		ctx.res.set_status(.bad_request)
 		return ctx.text(err.msg())
 	}

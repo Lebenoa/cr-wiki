@@ -322,6 +322,16 @@ fn migrate(conn sqlite.DB) ! {
 			return conn.error_message(result, 'add build boosts column')
 		}
 	}
+	// the purchased pre-run boost (one key) and the owned Power+ effect keys;
+	// old rows keep the empty defaults until re-submitted.
+	for col in ['boost', 'power_effects'] {
+		if col !in build_cols {
+			result := conn.exec_none("ALTER TABLE build ADD COLUMN ${col} TEXT NOT NULL DEFAULT ''")
+			if !sqlite_success(result) {
+				return conn.error_message(result, 'add build ${col} column')
+			}
+		}
+	}
 	// per-slot treasure blessed state (1 = blessed), added later; old rows default to normal.
 	for col in ['treasure1_blessed', 'treasure2_blessed', 'treasure3_blessed'] {
 		if col !in build_cols {

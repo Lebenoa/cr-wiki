@@ -568,3 +568,66 @@ Item Time
 build_boost_fast_start
 Fast Start
 -----
+build_purchase_boost_label
+Purchased Boost
+-----
+build_purchase_boost_coin_double
+Double Coin
+-----
+build_purchase_boost_health_decrease_slow
+HP Drain -15%
+-----
+build_purchase_boost_extra_score
+Score Bonus 15%
+-----
+build_purchase_boost_base_speed_up
+Base Speed Up 17%
+-----
+build_purchase_boost_revive_hp80
+1 Revive with 80 HP
+-----
+build_purchase_boost_collision_ignore
+70% Crush Chance
+-----
+build_purchase_boost_gold_in_coin_magic
+Gold Coin Magic
+-----
+build_purchase_boost_potion_recovery_up
+Potion Recovery Up
+-----
+build_purchase_boost_hole_rescue
+Pit Rescue
+-----
+build_purchase_boost_collision_damage_down
+Collision Damage Down
+-----
+build_purchase_boost_magnet_activate
+Magnet Activation
+-----
+build_power_effects_label
+Power+ Effects
+-----
+build_used
+Used
+-----
+power_effect_cheerleader
+Cheerleader Cookie Power+
+-----
+power_effect_special_force
+Special Force Cookie Power+
+-----
+power_effect_fairy
+Fairy Cookie Power+
+-----
+power_effect_cheesecake
+Cheesecake Cookie Power+
+-----
+power_effect_sea_fairy
+Sea Fairy Cookie Power+
+-----
+power_effect_serenade
+Serenade of Love
+-----
+power_effect_exp_party
+EXP Party Power+
+-----

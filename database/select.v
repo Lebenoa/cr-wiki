@@ -820,6 +820,8 @@ pub:
 	ep_special   int
 	tags         []string
 	boosts       []string
+	boost        string // purchased pre-run boost key ('' = none)
+	power_effects []string // owned Power+ effect keys marked used
 	score        u64
 	coin         u64
 	time         u64
@@ -868,7 +870,7 @@ pub fn select_builds(conn sqlite.DB, lang string, f_cookie int, f_pet int, f_tre
 		'CASE WHEN ep_special > 0 THEN 10 + ep_special ELSE ep END DESC, build_id DESC'
 	}
 
-	rows := conn.exec('SELECT build_id, cookie_id, cookie2_id, pet_id, treasure1_id, treasure2_id, treasure3_id, treasure1_blessed, treasure2_blessed, treasure3_blessed, ep, ep_special, tag, boosts, score, coin, time, boxes, description, youtube_url, author, user_id, expires_at, created_at FROM build WHERE ${where} ORDER BY ${order} LIMIT ${limit} OFFSET ${offset}')!
+	rows := conn.exec('SELECT build_id, cookie_id, cookie2_id, pet_id, treasure1_id, treasure2_id, treasure3_id, treasure1_blessed, treasure2_blessed, treasure3_blessed, ep, ep_special, tag, boosts, boost, power_effects, score, coin, time, boxes, description, youtube_url, author, user_id, expires_at, created_at FROM build WHERE ${where} ORDER BY ${order} LIMIT ${limit} OFFSET ${offset}')!
 	if rows.len == 0 {
 		return []
 	}
@@ -912,6 +914,8 @@ fn build_card_from_row(conn sqlite.DB, lang string, row sqlite.Row) BuildCard {
 		ep_special:   row.get_int('ep_special')
 		tags:         row.get_string('tag').split(',').filter(it != '')
 		boosts:       row.get_string('boosts').split(',').filter(it != '')
+		boost:        row.get_string('boost')
+		power_effects: row.get_string('power_effects').split(',').filter(it != '')
 		score:        u64(row.get_int('score'))
 		coin:         u64(row.get_int('coin'))
 		time:         u64(row.get_int('time'))
@@ -951,7 +955,7 @@ fn build_card_from_row(conn sqlite.DB, lang string, row sqlite.Row) BuildCard {
 // direct link should still render), or an error when it doesn't exist. Used
 // by the /builds/:id detail page the list cards link to.
 pub fn select_build(conn sqlite.DB, lang string, id int) !BuildCard {
-	rows := conn.exec('SELECT build_id, cookie_id, cookie2_id, pet_id, treasure1_id, treasure2_id, treasure3_id, treasure1_blessed, treasure2_blessed, treasure3_blessed, ep, ep_special, tag, boosts, score, coin, time, boxes, description, youtube_url, author, user_id, expires_at, created_at FROM build WHERE build_id = ${id}')!
+	rows := conn.exec('SELECT build_id, cookie_id, cookie2_id, pet_id, treasure1_id, treasure2_id, treasure3_id, treasure1_blessed, treasure2_blessed, treasure3_blessed, ep, ep_special, tag, boosts, boost, power_effects, score, coin, time, boxes, description, youtube_url, author, user_id, expires_at, created_at FROM build WHERE build_id = ${id}')!
 	if rows.len == 0 {
 		return error('build (${id}) not found')
 	}

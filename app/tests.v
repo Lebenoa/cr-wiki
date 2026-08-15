@@ -868,6 +868,14 @@ fn test_build_detail(mut tc TestContext) ! {
 	if list.status_code != 200 || !list.body.contains('class="absolute inset-0 rounded-xl"') {
 		return error('builds list cards must link to the detail page')
 	}
+	// the planner renders the purchased-boost select (all 11 options) and the
+	// Power+ effect toggles before anything can be submitted
+	form := http.get('${tc.base}/builds/new') or { return error('GET /builds/new: ${err}') }
+	for needle in ['name="boost"', 'value="magnet_activate"', 'name="power_effect_cheerleader"', 'name="power_effect_exp_party"'] {
+		if !form.body.contains(needle) {
+			return error('build form missing "${needle}"')
+		}
+	}
 	// create a build, then its detail page renders the full loadout
 	post := http.fetch(
 		method: .post
@@ -885,6 +893,9 @@ fn test_build_detail(mut tc TestContext) ! {
 			'tag_score':   'score'
 			'boost_energy': 'energy'
 			'boost_fast_start': 'fast_start'
+			'boost':        'base_speed_up'
+			'power_effect_cheerleader': 'cheerleader'
+			'power_effect_serenade':    'serenade'
 			'score':       '12345'
 			'description': 'Detail page strat'
 			'author':      'detailtest'
@@ -895,13 +906,25 @@ fn test_build_detail(mut tc TestContext) ! {
 		return error('detail test submit: expected 302, got ${post.status_code}')
 	}
 	bid := tc.db.exec("SELECT build_id FROM build WHERE author = 'detailtest' ORDER BY build_id DESC LIMIT 1")![0].get_int('build_id')
+	// the purchased boost and Power+ keys round-trip into the build row
+	row := tc.db.exec("SELECT boost, power_effects FROM build WHERE build_id = ${bid}")![0]
+	if row.get_string('boost') != 'base_speed_up'
+		|| row.get_string('power_effects') != 'cheerleader,serenade' {
+		return error('build round-trip: want boost=base_speed_up, power_effects=cheerleader,serenade; got boost=${row.get_string('boost')}, power_effects=${row.get_string('power_effects')}')
+	}
 	resp := http.get('${tc.base}/builds/${bid}') or { return error('GET /builds/${bid}: ${err}') }
 	if resp.status_code != 200 {
 		return error('GET /builds/${bid}: expected 200, got ${resp.status_code}')
 	}
-	for needle in ['href="/builds"', '/cookies/23', '/pets/58', '/treasures/180', 'Detail page strat', '12,345', 'Energy', 'Fast Start'] {
+	for needle in ['href="/builds"', '/cookies/23', '/pets/58', '/treasures/180', 'Detail page strat', '12,345', 'Energy', 'Fast Start', 'Base Speed Up 17%', '/img/boosts/base_speed_up.png'] {
 		if !resp.body.contains(needle) {
 			return error('build detail missing "${needle}"')
+		}
+	}
+	// the Power+ section renders each used effect with its sprite and a Used badge
+	for needle in ['Power+ Effects', 'Cheerleader Cookie Power+', 'Serenade of Love', 'Used', '/img/owned_effects/cheerleader.png', '/img/owned_effects/serenade.png'] {
+		if !resp.body.contains(needle) {
+			return error('build detail Power+ section missing "${needle}"')
 		}
 	}
 	// cookie 23 + pet 58 is a seeded (hidden) combo: the detail page shows
@@ -1047,6 +1070,8 @@ fn test_build_edit_delete(mut tc TestContext) ! {
 			'tag_score':   'score'
 			'tag_autofarm': 'autofarm'
 			'boost_item_time': 'item_time'
+			'boost':        'coin_double'
+			'power_effect_exp_party': 'exp_party'
 			'score':       '999'
 			'description': 'After edit'
 		})
@@ -1059,10 +1084,16 @@ fn test_build_edit_delete(mut tc TestContext) ! {
 		return error('owner edit POST: expected 302, got ${edit_post.status_code}')
 	}
 	resp := http.get('${tc.base}/builds/${bid}') or { return error('GET detail after edit: ${err}') }
-	for needle in ['After edit', '999', 'Special EP 2', '#autofarm', 'Item Time'] {
+	for needle in ['After edit', '999', 'Special EP 2', '#autofarm', 'Item Time', 'Double Coin', 'EXP Party Power+'] {
 		if !resp.body.contains(needle) {
 			return error('detail after edit missing "${needle}"')
 		}
+	}
+	// the edited build's boost and Power+ keys round-trip in the DB
+	edit_row := tc.db.exec("SELECT boost, power_effects FROM build WHERE build_id = ${bid}")![0]
+	if edit_row.get_string('boost') != 'coin_double'
+		|| edit_row.get_string('power_effects') != 'exp_party' {
+		return error('edit round-trip: want boost=coin_double, power_effects=exp_party; got boost=${edit_row.get_string('boost')}, power_effects=${edit_row.get_string('power_effects')}')
 	}
 	// the edit toggled blessed on slots 1+3: exactly two badges render
 	if resp.body.count('text-[10px]">Blessed<') != 2 {
@@ -1079,6 +1110,21 @@ fn test_build_edit_delete(mut tc TestContext) ! {
 		marker := 'name="${name}" value="1"'
 		start := edit_after.body.index(marker) or { return error('edit form missing ${marker}') }
 		seg := edit_after.body[start..(start + 160)]
+		if seg.contains('checked') != want {
+			return error('edit form ${name} checked=${seg.contains('checked')}, want ${want}')
+		}
+	}
+	// the edit form prefills the purchased boost (coin_double selected) and the
+	// Power+ toggles (exp_party checked, cheerleader not)
+	boost_start := edit_after.body.index('name="boost"') or { return error('edit form missing boost select') }
+	boost_seg := edit_after.body[boost_start..(boost_start + 500)]
+	if !boost_seg.contains('value="coin_double"') || !boost_seg.contains('selected') {
+		return error('edit form must prefill the purchased boost (coin_double selected)')
+	}
+	for name, want in {'power_effect_exp_party': true, 'power_effect_cheerleader': false} {
+		marker := 'name="${name}"'
+		start := edit_after.body.index(marker) or { return error('edit form missing ${marker}') }
+		seg := edit_after.body[start..(start + 200)]
 		if seg.contains('checked') != want {
 			return error('edit form ${name} checked=${seg.contains('checked')}, want ${want}')
 		}

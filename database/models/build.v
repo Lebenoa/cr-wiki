@@ -22,6 +22,8 @@ pub:
 	ep_special   int @[index] // special tier 1-3; 0 for regular EP builds
 	tag          string // comma-separated: 'score,coin' etc.
 	boosts       string // comma-separated run boosts: 'energy,item_time,fast_start'
+	boost        string // purchased pre-run boost key ('' = none; run_boost_keys)
+	power_effects string // comma-separated owned Power+ effect keys (power_effect_keys)
 	score        u64 // run result: total score
 	coin         u64 // run result: coins collected
 	time         u64 // run result: run duration in milliseconds (0 = not set)

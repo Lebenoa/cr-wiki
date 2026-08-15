@@ -212,7 +212,31 @@
                         @endfor
                     </div>
                 </fieldset>
+                <label class="block space-y-1">
+                    <span class="text-xs font-label text-foreground-muted uppercase">%build_purchase_boost_label</span>
+                    <select name="boost"
+                        class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground">
+                        <option value="" selected>%none_option</option>
+                        @for bk in purchase_boosts
+                        <option value="@bk">@{ctx.purchase_boost_label(bk)}</option>
+                        @endfor
+                    </select>
+                </label>
             </div>
+
+            <fieldset class="mt-4 block space-y-1">
+                <legend class="text-xs font-label text-foreground-muted uppercase">%build_power_effects_label</legend>
+                <div class="flex flex-wrap gap-2">
+                    @for pk in power_effect_keys
+                    <label class="flex items-center gap-2 bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground cursor-pointer select-none">
+                        <input type="checkbox" name="power_effect_@pk" value="@pk"
+                            class="size-5 accent-accent" />
+                        <img src="@{ctx.power_effect_img_src(pk)}" alt="" class="size-8 object-contain" />
+                        <span>@{ctx.power_effect_label(pk)}</span>
+                    </label>
+                    @endfor
+                </div>
+            </fieldset>
             @if _ := ctx.user
             @else
             <label class="mt-4 block space-y-1">

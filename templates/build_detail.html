@@ -124,15 +124,38 @@
         </div>
         @end
 
-        @if b.boosts.len > 0
+        @if b.boosts.len > 0 || b.boost != ""
         <div class="mt-6">
             <div class="text-xs font-label uppercase text-foreground-muted">%build_boosts_label</div>
             <div class="mt-2 flex flex-wrap gap-2">
                 @for bo in b.boosts
-                <span class="flex items-center gap-1.5 rounded-full bg-surface border border-primary/30 px-3 py-1 text-sm text-on-surface">
+                <span class="flex items-center gap-2 rounded-xl bg-surface border border-primary/30 px-3 py-2 text-sm text-on-surface">
+                    <img src="@{ctx.boost_img_src(bo)}" alt="" class="size-8 rounded-lg object-contain bg-background/40" />
                     <span class="font-bold text-accent">✓</span>
                     @{ctx.build_boost_label(bo)}
                 </span>
+                @endfor
+                @if b.boost != ""
+                <span class="flex items-center gap-2 rounded-xl bg-surface border border-primary/30 px-3 py-2 text-sm text-on-surface">
+                    <img src="@{ctx.boost_img_src(b.boost)}" alt="" class="size-8 rounded-lg object-contain bg-background/40" />
+                    <span class="font-bold text-accent">✓</span>
+                    @{ctx.purchase_boost_label(b.boost)}
+                </span>
+                @endif
+            </div>
+        </div>
+        @end
+
+        @if b.power_effects.len > 0
+        <div class="mt-6">
+            <div class="text-xs font-label uppercase text-foreground-muted">%build_power_effects_label</div>
+            <div class="mt-2 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                @for pk in b.power_effects
+                <div class="flex items-center gap-2 rounded-xl bg-surface/50 border border-primary/20 px-3 py-2">
+                    <img src="@{ctx.power_effect_img_src(pk)}" alt="" class="size-8 rounded-lg object-contain" />
+                    <span class="min-w-0 flex-1 text-sm text-on-surface truncate">@{ctx.power_effect_label(pk)}</span>
+                    <span class="shrink-0 text-xs font-bold text-accent">✓ %build_used</span>
+                </div>
                 @endfor
             </div>
         </div>
