@@ -511,3 +511,21 @@ build_relay_label
 build_no_combo
 ไม่มีโบนัสคอมโบสำหรับคู่นี้
 -----
+build_edit_page_title
+แก้ไขบิลด์
+-----
+build_edit_button
+แก้ไข
+-----
+build_delete_button
+ลบ
+-----
+build_delete_confirm
+ลบบิลด์นี้? ไม่สามารถย้อนกลับได้
+-----
+build_save
+บันทึกการเปลี่ยนแปลง
+-----
+build_cancel
+ยกเลิก
+-----

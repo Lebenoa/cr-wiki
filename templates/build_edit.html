@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="@ctx.lang">
+
+<head>
+    @include 'layout/head.html'
+</head>
+
+<body>
+    @include 'layout/navbar.html'
+
+    <section class="max-w-4xl mx-auto my-16 px-4">
+        <a href="/builds/@b.build_id" class="text-sm font-bold text-accent hover:underline">← %build_back_list</a>
+
+        <h1 class="mt-4 text-3xl font-headline font-bold text-on-surface">%build_edit_page_title</h1>
+
+        <form method="post" action="/builds/@b.build_id/edit" class="mt-6">
+            <div class="grid grid-cols-2 lg:grid-cols-3 gap-4">
+                <label class="block space-y-1">
+                    <span class="text-xs font-label text-foreground-muted uppercase">%build_cookie_label</span>
+                    <select name="cookie"
+                        class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground">
+                        @for c in cookies
+                        <option value="@c.id"
+                            @if c.id == b.cookie.id
+                            selected
+                            @endif
+                        >@c.name</option>
+                        @endfor
+                    </select>
+                </label>
+                <label class="block space-y-1">
+                    <span class="text-xs font-label text-foreground-muted uppercase">%build_relay_label</span>
+                    <select name="c2"
+                        class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground">
+                        <option value=""
+                            @if b.cookie2 == none
+                            selected
+                            @endif
+                        >%none_option</option>
+                        @for c in cookies
+                        <option value="@c.id"
+                            @if c2 := b.cookie2
+                            @if c.id == c2.id
+                            selected
+                            @endif
+                            @endif
+                        >@c.name</option>
+                        @endfor
+                    </select>
+                </label>
+                <label class="block space-y-1">
+                    <span class="text-xs font-label text-foreground-muted uppercase">%build_pet_label</span>
+                    <select name="pet"
+                        class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground">
+                        @for p in pets
+                        <option value="@p.id"
+                            @if p.id == b.pet.id
+                            selected
+                            @endif
+                        >@p.name</option>
+                        @endfor
+                    </select>
+                </label>
+            </div>
+
+            <div class="mt-4 grid grid-cols-3 gap-4">
+                <label class="block space-y-1">
+                    <span class="text-xs font-label text-foreground-muted uppercase">%build_treasure_one</span>
+                    <select name="t1"
+                        class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground">
+                        @for t in treasures
+                        <option value="@t.id"
+                            @if t.id == t1_id
+                            selected
+                            @endif
+                        >@t.name</option>
+                        @endfor
+                    </select>
+                </label>
+                <label class="block space-y-1">
+                    <span class="text-xs font-label text-foreground-muted uppercase">%build_treasure_two</span>
+                    <select name="t2"
+                        class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground">
+                        @for t in treasures
+                        <option value="@t.id"
+                            @if t.id == t2_id
+                            selected
+                            @endif
+                        >@t.name</option>
+                        @endfor
+                    </select>
+                </label>
+                <label class="block space-y-1">
+                    <span class="text-xs font-label text-foreground-muted uppercase">%build_treasure_three</span>
+                    <select name="t3"
+                        class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground">
+                        @for t in treasures
+                        <option value="@t.id"
+                            @if t.id == t3_id
+                            selected
+                            @endif
+                        >@t.name</option>
+                        @endfor
+                    </select>
+                </label>
+            </div>
+
+            <div class="mt-4 grid grid-cols-2 md:grid-cols-3 gap-4">
+                <label class="block space-y-1">
+                    <span class="text-xs font-label text-foreground-muted uppercase">%build_ep_label</span>
+                    <select name="ep"
+                        class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground">
+                        @for n in ep_tiers
+                        <option value="@n"
+                            @if b.ep == n
+                            selected
+                            @endif
+                        >@{ctx.build_ep_label(n, 0)}</option>
+                        @endfor
+                        @for n in ep_specials
+                        <option value="s@n"
+                            @if b.ep_special == n
+                            selected
+                            @endif
+                        >@{ctx.build_ep_label(0, n)}</option>
+                        @endfor
+                    </select>
+                </label>
+                <fieldset class="block space-y-1 md:col-span-2">
+                    <legend class="text-xs font-label text-foreground-muted uppercase">%build_tag_label</legend>
+                    <div class="flex flex-wrap gap-2">
+                        @for t in build_tags
+                        <label class="flex items-center gap-2 bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground cursor-pointer select-none">
+                            <input type="checkbox" name="tag_@t" value="@t"
+                                @if t in b.tags
+                                checked
+                                @endif
+                                class="size-5 accent-accent" />
+                            @{ctx.build_tag_label(t)}
+                        </label>
+                        @endfor
+                    </div>
+                </fieldset>
+            </div>
+
+            <div class="mt-4 grid grid-cols-2 md:grid-cols-4 gap-4">
+                <label class="block space-y-1">
+                    <span class="text-xs font-label text-foreground-muted uppercase">%build_score_label</span>
+                    <input type="number" name="score" min="0" step="1" value="@b.score"
+                        class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground" />
+                </label>
+                <label class="block space-y-1">
+                    <span class="text-xs font-label text-foreground-muted uppercase">%build_coin_label</span>
+                    <input type="number" name="coin" min="0" step="1" value="@b.coin"
+                        class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground" />
+                </label>
+                <label class="block space-y-1">
+                    <span class="text-xs font-label text-foreground-muted uppercase">%build_time_label</span>
+                    <input type="number" name="time" min="0" step="1" value="@b.time"
+                        class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground" />
+                </label>
+                <label class="block space-y-1">
+                    <span class="text-xs font-label text-foreground-muted uppercase">%build_boxes_label</span>
+                    <input type="number" name="boxes" min="0" step="1" value="@b.boxes"
+                        class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground" />
+                </label>
+            </div>
+
+            <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                <label class="block space-y-1">
+                    <span class="text-xs font-label text-foreground-muted uppercase">%build_description_label</span>
+                    <textarea name="description" rows="3" maxlength="1000"
+                        class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground resize-y">@b.description</textarea>
+                </label>
+                <label class="block space-y-1">
+                    <span class="text-xs font-label text-foreground-muted uppercase">%build_youtube_label</span>
+                    <input type="url" name="youtube_url" value="@b.youtube_url"
+                        class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground" />
+                </label>
+            </div>
+
+            <div class="mt-6 flex items-center gap-3">
+                <button type="submit"
+                    class="rounded-xl bg-primary px-6 py-3 font-bold text-foreground hover:opacity-90 transition-opacity">%build_save</button>
+                <a href="/builds/@b.build_id"
+                    class="rounded-xl border-2 border-primary/30 px-6 py-3 font-bold text-foreground hover:border-primary transition-colors">%build_cancel</a>
+            </div>
+        </form>
+    </section>
+</body>
+
+</html>

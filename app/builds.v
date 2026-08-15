@@ -81,16 +81,22 @@ fn build_preview(wapp &App, ctx &Context, sel BuildSelection, cookies []database
 	preview.has_selection = preview.cookie != none || preview.cookie2 != none || preview.pet != none || preview.treasures.len > 0
 	if c := preview.cookie {
 		if p := preview.pet {
-			combis := database.get_combi_bonus(wapp.db, ctx.lang, 'cookie', c.id) or { [] }
-			for cb in combis {
-				if cb.partner_kind == 'pet' && cb.partner_id == p.id {
-					preview.combi = cb
-					break
-				}
-			}
+			preview.combi = find_combi(wapp, ctx, c.id, p.id)
 		}
 	}
 	return preview
+}
+
+// find_combi returns the combo bonus of a cookie+pet pair, or none when the
+// pair has no combo. Shared by the planner preview and the build detail page.
+fn find_combi(wapp &App, ctx &Context, cookie_id int, pet_id int) ?database.CombiBonusView {
+	combis := database.get_combi_bonus(wapp.db, ctx.lang, 'cookie', cookie_id) or { return none }
+	for cb in combis {
+		if cb.partner_kind == 'pet' && cb.partner_id == pet_id {
+			return cb
+		}
+	}
+	return none
 }
 
 fn selection_from_query(ctx &Context) BuildSelection {
@@ -195,7 +201,23 @@ fn parse_ep_tier(raw string) (int, int) {
 	return 0, 0
 }
 
-fn submit_build(wapp &App, mut ctx Context) veb.Result {
+// BuildForm is the parsed planner fields shared by create and edit.
+struct BuildForm {
+	sel         BuildSelection
+	ep          int
+	ep_special  int
+	score       u64
+	coin        u64
+	time_ms     u64
+	boxes       u64
+	description string
+	youtube_url string
+	tags        []string
+}
+
+// build_form_fields parses and validates the shared planner fields: the
+// loadout, EP tier, tags and run stats. Callers own author/expiry handling.
+fn build_form_fields(wapp &App, ctx &Context) !BuildForm {
 	sel := BuildSelection{
 		cookie:    (ctx.form['cookie'] or { '' }).int()
 		cookie2:   (ctx.form['c2'] or { '' }).int()
@@ -218,12 +240,10 @@ fn submit_build(wapp &App, mut ctx Context) veb.Result {
 		}
 	}
 	if sel.cookie <= 0 || sel.pet <= 0 || sel.treasure1 <= 0 || sel.treasure2 <= 0 || sel.treasure3 <= 0 {
-		ctx.res.set_status(.bad_request)
-		return ctx.text('A build needs one cookie, one pet and three treasures')
+		return error('A build needs one cookie, one pet and three treasures')
 	}
 	if (ep == 0 && ep_special == 0) || tags.len == 0 {
-		ctx.res.set_status(.bad_request)
-		return ctx.text('Pick an EP tier (EP 1-7 or Special EP 1-3) and at least one tag (#score, #coin, #autofarm)')
+		return error('Pick an EP tier (EP 1-7 or Special EP 1-3) and at least one tag (#score, #coin, #autofarm)')
 	}
 
 	// Reject unknown ids so the list never links to deleted entities.
@@ -231,20 +251,35 @@ fn submit_build(wapp &App, mut ctx Context) veb.Result {
 	pets := database.pet_options(wapp.db, ctx.lang) or { [] }
 	treasures := database.treasure_options(wapp.db, ctx.lang) or { [] }
 	if resolve_option(cookies, sel.cookie) == none || resolve_option(pets, sel.pet) == none {
-		ctx.res.set_status(.bad_request)
-		return ctx.text('Unknown cookie or pet')
+		return error('Unknown cookie or pet')
 	}
 	if sel.cookie2 > 0 && resolve_option(cookies, sel.cookie2) == none {
-		ctx.res.set_status(.bad_request)
-		return ctx.text('Unknown relay cookie')
+		return error('Unknown relay cookie')
 	}
 	for tid in [sel.treasure1, sel.treasure2, sel.treasure3] {
 		if resolve_option(treasures, tid) == none {
-			ctx.res.set_status(.bad_request)
-			return ctx.text('Unknown treasure')
+			return error('Unknown treasure')
 		}
 	}
+	return BuildForm{
+		sel:         sel
+		ep:          ep
+		ep_special:  ep_special
+		score:       score
+		coin:        coin
+		time_ms:     time_ms
+		boxes:       boxes
+		description: description
+		youtube_url: youtube_url
+		tags:        tags
+	}
+}
 
+fn submit_build(wapp &App, mut ctx Context) veb.Result {
+	form := build_form_fields(wapp, ctx) or {
+		ctx.res.set_status(.bad_request)
+		return ctx.text(err.msg())
+	}
 	user := ctx.user
 	mut author := (ctx.form['author'] or { '' }).trim_space()
 	mut user_id := ?int(none)
@@ -259,7 +294,7 @@ fn submit_build(wapp &App, mut ctx Context) veb.Result {
 		expires = time.now().add(anon_build_ttl)
 	}
 
-	database.create_build(wapp.db, sel.cookie, sel.cookie2, sel.pet, sel.treasure1, sel.treasure2, sel.treasure3, ep, ep_special, tags, score, coin, time_ms, boxes, description, youtube_url, author, user_id, expires) or {
+	database.create_build(wapp.db, form.sel.cookie, form.sel.cookie2, form.sel.pet, form.sel.treasure1, form.sel.treasure2, form.sel.treasure3, form.ep, form.ep_special, form.tags, form.score, form.coin, form.time_ms, form.boxes, form.description, form.youtube_url, author, user_id, expires) or {
 		ctx.res.set_status(.bad_request)
 		return ctx.text(err.msg())
 	}
@@ -274,5 +309,70 @@ fn submit_build(wapp &App, mut ctx Context) veb.Result {
 pub fn (wapp &App) build_info(mut ctx Context, id int) veb.Result {
 	ctx.set_translate_title('build_detail_page_title')
 	b := database.select_build(wapp.db, ctx.lang, id) or { return ctx.not_found() }
+	combi := find_combi(wapp, ctx, b.cookie.id, b.pet.id)
+	can_edit := can_edit_build(ctx, b)
 	return $veb.html('./templates/build_detail.html')
+}
+
+// can_edit_build reports whether the current session may modify a build:
+// its author, or an admin (site moderation).
+fn can_edit_build(ctx &Context, b database.BuildCard) bool {
+	u := ctx.user or { return false }
+	return if uid := u.user_id {
+		uid == b.user_id || u.is_admin
+	} else {
+		u.is_admin
+	}
+}
+
+// build_edit renders the prefilled edit form (author or admin only) and
+// accepts the update POST. 404 for anyone else, matching the admin-route
+// convention of not revealing whether a resource exists.
+@['/builds/:id/edit'; get; post]
+pub fn (wapp &App) build_edit(mut ctx Context, id int) veb.Result {
+	b := database.select_build(wapp.db, ctx.lang, id) or { return ctx.not_found() }
+	if !can_edit_build(ctx, b) {
+		return ctx.not_found()
+	}
+	if ctx.req.method == .post {
+		return update_build_submit(wapp, mut ctx, id)
+	}
+	ctx.set_translate_title('build_edit_page_title')
+	cookies := database.cookie_options(wapp.db, ctx.lang) or { [] }
+	pets := database.pet_options(wapp.db, ctx.lang) or { [] }
+	treasures := database.treasure_options(wapp.db, ctx.lang) or { [] }
+	ep_tiers := [1, 2, 3, 4, 5, 6, 7]
+	ep_specials := [1, 2, 3]
+	build_tags := ['score', 'coin', 'autofarm']
+	t1_id := if b.treasures.len > 0 { b.treasures[0].id } else { 0 }
+	t2_id := if b.treasures.len > 1 { b.treasures[1].id } else { 0 }
+	t3_id := if b.treasures.len > 2 { b.treasures[2].id } else { 0 }
+	return $veb.html('./templates/build_edit.html')
+}
+
+// update_build_submit persists an edit. Author/user_id/expiry are untouched.
+fn update_build_submit(wapp &App, mut ctx Context, id int) veb.Result {
+	form := build_form_fields(wapp, ctx) or {
+		ctx.res.set_status(.bad_request)
+		return ctx.text(err.msg())
+	}
+	database.update_build(wapp.db, id, form.sel.cookie, form.sel.cookie2, form.sel.pet, form.sel.treasure1, form.sel.treasure2, form.sel.treasure3, form.ep, form.ep_special, form.tags, form.score, form.coin, form.time_ms, form.boxes, form.description, form.youtube_url) or {
+		ctx.res.set_status(.bad_request)
+		return ctx.text(err.msg())
+	}
+	return ctx.redirect('/builds/${id}')
+}
+
+// build_delete removes a build (author or admin only). 404 for anyone else.
+@['/builds/:id/delete'; post]
+pub fn (wapp &App) build_delete(mut ctx Context, id int) veb.Result {
+	b := database.select_build(wapp.db, ctx.lang, id) or { return ctx.not_found() }
+	if !can_edit_build(ctx, b) {
+		return ctx.not_found()
+	}
+	database.delete_build(wapp.db, id) or {
+		ctx.res.set_status(.bad_request)
+		return ctx.text(err.msg())
+	}
+	return ctx.redirect('/builds')
 }

@@ -511,3 +511,21 @@ Relay Cookie
 build_no_combo
 No combo bonus for this pair.
 -----
+build_edit_page_title
+Edit build
+-----
+build_edit_button
+Edit
+-----
+build_delete_button
+Delete
+-----
+build_delete_confirm
+Delete this build? This cannot be undone.
+-----
+build_save
+Save changes
+-----
+build_cancel
+Cancel
+-----

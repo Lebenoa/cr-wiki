@@ -64,6 +64,19 @@
                 </div>
             </div>
 
+            @if cb := combi
+            <div class="mt-6 p-5 rounded-xl border-l-4 border-accent bg-accent/10 flex items-center gap-3 flex-wrap">
+                <span class="text-sm font-label text-foreground-muted uppercase">%combo_bonus_title</span>
+                <span class="text-on-surface text-lg font-bold">%build_with @b.pet.name</span>
+                @if cb.effect != ""
+                <span class="text-on-surface text-base">@cb.effect</span>
+                @end
+                @if cb.is_hidden
+                <span class="font-bold text-accent uppercase border border-accent/50 rounded-full px-3 py-1 text-sm">%combi_hidden_badge</span>
+                @end
+            </div>
+            @end
+
             @if b.score > 0 || b.coin > 0 || b.time > 0 || b.boxes > 0
             <div class="mt-6 flex flex-wrap gap-x-6 gap-y-2 text-sm text-foreground-muted">
                 @if b.score > 0
@@ -90,6 +103,18 @@
                 class="mt-5 inline-flex items-center gap-1.5 text-sm font-bold text-accent hover:underline">
                 ▶ %build_watch_video
             </a>
+            @endif
+
+            @if can_edit
+            <div class="mt-6 flex items-center gap-3">
+                <a href="/builds/@b.build_id/edit"
+                    class="rounded-xl bg-primary px-5 py-2.5 font-bold text-foreground hover:opacity-90 transition-opacity">%build_edit_button</a>
+                <form method="post" action="/builds/@b.build_id/delete"
+                    onsubmit="return confirm('%build_delete_confirm')">
+                    <button type="submit"
+                        class="rounded-xl border-2 border-error/50 px-5 py-2.5 font-bold text-error hover:border-error transition-colors">%build_delete_button</button>
+                </form>
+            </div>
             @endif
         </div>
     </section>

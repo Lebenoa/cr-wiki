@@ -224,3 +224,23 @@ fn apply_combi_diff(conn sqlite.DB, kind string, id int, keep map[int]CombiRowUp
 		add_combi_rows(conn, cookie_side, pet_side, new_rows, lang)!
 	}
 }
+
+// update_build overwrites a build's loadout and run fields. Ownership is
+// enforced by the caller; author/user_id/expiry are left untouched so a
+// rename or an expiry change never happens through the edit form.
+pub fn update_build(conn sqlite.DB, id int, new_cookie int, new_cookie2 int, new_pet int, new_t1 int, new_t2 int, new_t3 int, new_ep int, new_ep_special int, new_tags []string, new_score u64, new_coin u64, new_time_ms u64, new_boxes u64, new_description string, new_youtube string) ! {
+	sql conn {
+		update models.Build set cookie_id = new_cookie, cookie2_id = new_cookie2, pet_id = new_pet,
+		treasure1_id = new_t1, treasure2_id = new_t2, treasure3_id = new_t3, ep = new_ep,
+		ep_special = new_ep_special, tag = new_tags.join(','), score = new_score, coin = new_coin,
+		time = new_time_ms, boxes = new_boxes, description = new_description, youtube_url = new_youtube
+		where build_id == id
+	}!
+}
+
+// delete_build removes a build entirely (the author's edit/delete flow).
+pub fn delete_build(conn sqlite.DB, id int) ! {
+	sql conn {
+		delete from models.Build where build_id == id
+	}!
+}

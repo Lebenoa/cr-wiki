@@ -157,6 +157,10 @@ pub fn run_test_session() {
 			run:  test_build_detail
 		},
 		TestCase{
+			name: 'build author edit and delete'
+			run:  test_build_edit_delete
+		},
+		TestCase{
 			name: 'effect {value} placeholder submission guards'
 			run:  test_placeholder_submission_guards
 		},
@@ -896,10 +900,181 @@ fn test_build_detail(mut tc TestContext) ! {
 			return error('build detail missing "${needle}"')
 		}
 	}
+	// cookie 23 + pet 58 is a seeded (hidden) combo: the detail page shows
+	// the combo bonus box with the effect text and the hidden badge
+	for needle in ['Combo bonus', 'with', '1200 Bonus Points for all Jellies', 'Hidden'] {
+		if !resp.body.contains(needle) {
+			return error('build detail combo missing "${needle}"')
+		}
+	}
 	// a missing build id 404s
 	missing := http.get('${tc.base}/builds/99999999') or { return error('GET /builds/99999999: ${err}') }
 	if missing.status_code != 404 {
 		return error('GET /builds/99999999: expected 404, got ${missing.status_code}')
+	}
+}
+
+fn test_build_edit_delete(mut tc TestContext) ! {
+	if tc.session_cookie == '' {
+		return error('run admin login first')
+	}
+	// register a second, non-admin user (register auto-logs-in) to own a build
+	reg := http.fetch(
+		method: .post
+		url:    '${tc.base}/register'
+		header: http.new_header(key: .content_type, value: 'application/x-www-form-urlencoded')
+		data:   http.url_encode_form_data({
+			'username':         'build_owner'
+			'password':         'pw123'
+			'confirm_password': 'pw123'
+		})
+		allow_redirect: false
+	) or { return error('register POST: ${err}') }
+	if reg.status_code != 302 {
+		return error('register: expected 302, got ${reg.status_code}')
+	}
+	mut owner_sid := ''
+	for c in reg.header.values(.set_cookie) {
+		if c.all_before('=').trim_space() == session_cookie_key {
+			owner_sid = c.all_after('=').all_before(';')
+			break
+		}
+	}
+	if owner_sid == '' {
+		return error('register: no ${session_cookie_key} cookie in Set-Cookie')
+	}
+	// a second non-admin user with no build of their own — the true stranger
+	reg2 := http.fetch(
+		method: .post
+		url:    '${tc.base}/register'
+		header: http.new_header(key: .content_type, value: 'application/x-www-form-urlencoded')
+		data:   http.url_encode_form_data({
+			'username':         'build_stranger'
+			'password':         'pw123'
+			'confirm_password': 'pw123'
+		})
+		allow_redirect: false
+	) or { return error('register stranger: ${err}') }
+	if reg2.status_code != 302 {
+		return error('register stranger: expected 302, got ${reg2.status_code}')
+	}
+	mut stranger_sid := ''
+	for c in reg2.header.values(.set_cookie) {
+		if c.all_before('=').trim_space() == session_cookie_key {
+			stranger_sid = c.all_after('=').all_before(';')
+			break
+		}
+	}
+	if stranger_sid == '' {
+		return error('register stranger: no ${session_cookie_key} cookie in Set-Cookie')
+	}
+	// the owner posts a build (their session attaches user_id)
+	post := http.fetch(
+		method: .post
+		url:    '${tc.base}/builds/new'
+		header: http.new_header(key: .content_type, value: 'application/x-www-form-urlencoded')
+		data: http.url_encode_form_data({
+			'cookie':      '23'
+			'pet':         '58'
+			't1':          '180'
+			't2':          '284'
+			't3':          '378'
+			'ep':          '5'
+			'tag_score':   'score'
+			'score':       '12345'
+			'description': 'Before edit'
+		})
+		cookies: {
+			session_cookie_key: owner_sid
+		}
+		allow_redirect: false
+	) or { return error('owner submit: ${err}') }
+	if post.status_code != 302 {
+		return error('owner submit: expected 302, got ${post.status_code}')
+	}
+	bid := tc.db.exec("SELECT build_id FROM build WHERE author = 'build_owner' ORDER BY build_id DESC LIMIT 1")![0].get_int('build_id')
+	// the owner sees the prefilled edit form (score 12345 round-trips)
+	edit_get := http.fetch(method: .get, url: '${tc.base}/builds/${bid}/edit', cookies: {
+		session_cookie_key: owner_sid
+	}) or { return error('GET edit (owner): ${err}') }
+	if edit_get.status_code != 200 || !edit_get.body.contains('action="/builds/${bid}/edit"') {
+		return error('owner edit form: expected 200 with the form action')
+	}
+	if !edit_get.body.contains('name="score" min="0" step="1" value="12345"') {
+		return error('owner edit form must prefill the submitted score')
+	}
+	// a stranger (another non-admin user) and a guest both get 404
+	for sid_name, sid in {'stranger': stranger_sid, 'guest': ''} {
+		mut ck := map[string]string{}
+		if sid != '' {
+			ck[session_cookie_key] = sid
+		}
+		r := http.fetch(method: .get, url: '${tc.base}/builds/${bid}/edit', cookies: ck) or {
+			return error('GET edit (${sid_name}): ${err}')
+		}
+		if r.status_code != 404 {
+			return error('GET edit (${sid_name}): expected 404, got ${r.status_code}')
+		}
+		d := http.fetch(method: .post, url: '${tc.base}/builds/${bid}/delete', cookies: ck) or {
+			return error('POST delete (${sid_name}): ${err}')
+		}
+		if d.status_code != 404 {
+			return error('POST delete (${sid_name}): expected 404, got ${d.status_code}')
+		}
+	}
+	// the owner edits: EP -> Special EP 2, new description, score 999
+	edit_post := http.fetch(
+		method: .post
+		url:    '${tc.base}/builds/${bid}/edit'
+		header: http.new_header(key: .content_type, value: 'application/x-www-form-urlencoded')
+		data: http.url_encode_form_data({
+			'cookie':      '23'
+			'pet':         '58'
+			't1':          '180'
+			't2':          '284'
+			't3':          '378'
+			'ep':          's2'
+			'tag_score':   'score'
+			'tag_autofarm': 'autofarm'
+			'score':       '999'
+			'description': 'After edit'
+		})
+		cookies: {
+			session_cookie_key: owner_sid
+		}
+		allow_redirect: false
+	) or { return error('owner edit POST: ${err}') }
+	if edit_post.status_code != 302 {
+		return error('owner edit POST: expected 302, got ${edit_post.status_code}')
+	}
+	resp := http.get('${tc.base}/builds/${bid}') or { return error('GET detail after edit: ${err}') }
+	for needle in ['After edit', '999', 'Special EP 2', '#autofarm'] {
+		if !resp.body.contains(needle) {
+			return error('detail after edit missing "${needle}"')
+		}
+	}
+	// admin can edit too (site moderation)
+	edit_admin := http.fetch(method: .get, url: '${tc.base}/builds/${bid}/edit', cookies: {
+		session_cookie_key: tc.session_cookie
+	}) or { return error('GET edit (admin): ${err}') }
+	if edit_admin.status_code != 200 {
+		return error('GET edit (admin): expected 200, got ${edit_admin.status_code}')
+	}
+	// the owner deletes their build; the detail page 404s afterwards
+	del := http.fetch(
+		method: .post
+		url:    '${tc.base}/builds/${bid}/delete'
+		cookies: {
+			session_cookie_key: owner_sid
+		}
+		allow_redirect: false
+	) or { return error('owner delete POST: ${err}') }
+	if del.status_code != 302 {
+		return error('owner delete POST: expected 302, got ${del.status_code}')
+	}
+	gone := http.get('${tc.base}/builds/${bid}') or { return error('GET deleted build: ${err}') }
+	if gone.status_code != 404 {
+		return error('GET deleted build: expected 404, got ${gone.status_code}')
 	}
 }
 

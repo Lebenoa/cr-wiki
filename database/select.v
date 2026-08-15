@@ -670,6 +670,7 @@ pub:
 	description  string
 	youtube_url  string
 	author       string
+	user_id      int // owning user id; 0 for anonymous builds
 	is_anon      bool
 	expires_in_h int // remaining hours for anonymous builds, 0 for permanent
 	cookie       IdNameOption
@@ -753,6 +754,7 @@ fn build_card_from_row(conn sqlite.DB, lang string, row sqlite.Row) BuildCard {
 		description:  row.get_string('description')
 		youtube_url:  row.get_string('youtube_url')
 		author:       row.get_string('author')
+		user_id:      row.get_int('user_id')
 		is_anon:      is_anon
 		expires_in_h: expires_in_h
 		cookie:       IdNameOption{
