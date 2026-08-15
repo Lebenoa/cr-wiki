@@ -171,8 +171,9 @@ fn selection_from_query(ctx &Context) BuildSelection {
 }
 
 // builds renders the community build list: paginated (30/page) with
-// cookie/pet/min-EP filters and EP/new sort. htmx requests (filter changes,
-// infinite scroll) get only the cards partial so filters live in the URL.
+// cookie/pet/treasure/min-EP filters and score/coin/time/latest sort.
+// htmx requests (filter changes, infinite scroll) get only the cards
+// partial so filters live in the URL.
 @['/builds']
 pub fn (wapp &App) builds(mut ctx Context) veb.Result {
 	ctx.set_translate_title('builds_page_title')
@@ -181,9 +182,9 @@ pub fn (wapp &App) builds(mut ctx Context) veb.Result {
 	filter_treasure := (ctx.query['treasure'] or { '' }).int()
 	filter_ep_raw := ctx.query['ep'] or { '' }
 	filter_ep, filter_ep_special := parse_ep_tier(filter_ep_raw)
-	mut sort := ctx.query['sort'] or { 'ep' }
-	if sort != 'new' {
-		sort = 'ep'
+	mut sort := ctx.query['sort'] or { 'latest' }
+	if sort !in ['score', 'coin', 'time', 'latest'] {
+		sort = 'latest'
 	}
 	mut page := (ctx.query['page'] or { '1' }).int()
 	if page < 1 {
@@ -305,7 +306,7 @@ fn build_form_fields(wapp &App, ctx &Context) !BuildForm {
 	ep, ep_special := parse_ep_tier(ctx.form['ep'] or { '' })
 	score := (ctx.form['score'] or { '' }).u64()
 	coin := (ctx.form['coin'] or { '' }).u64()
-	time_ms := (ctx.form['time'] or { '' }).u64()
+	time_ms := (ctx.form['time'] or { '' }).u64() * 1000 // form is in seconds; stored as ms
 	boxes := (ctx.form['boxes'] or { '' }).u64()
 	description := (ctx.form['description'] or { '' }).trim_space()
 	youtube_url := (ctx.form['youtube_url'] or { '' }).trim_space()

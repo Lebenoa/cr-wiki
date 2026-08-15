@@ -122,7 +122,7 @@
             @if b.time > 0
             <div class="rounded-2xl bg-surface/50 border border-primary/20 p-4">
                 <div class="text-xs font-label uppercase text-foreground-muted">%build_time_label</div>
-                <div class="mt-1 text-xl font-headline font-bold text-on-surface">@{ctx.format_num(b.time)}</div>
+                <div class="mt-1 text-xl font-headline font-bold text-on-surface">@{ctx.format_num(b.time / 1000)} %build_time_unit</div>
             </div>
             @end
             @if b.boxes > 0

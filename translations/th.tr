@@ -446,7 +446,10 @@ build_coin_label
 เหรียญ
 -----
 build_time_label
-เวลา (มิลลิวินาที)
+เวลา (วินาที)
+-----
+build_time_unit
+วินาที
 -----
 build_boxes_label
 กล่อง
@@ -484,10 +487,16 @@ build_empty_list
 build_sort_label
 เรียง
 -----
-build_sort_ep
-EP สูงสุด
+build_sort_score
+คะแนนสูงสุด
 -----
-build_sort_new
+build_sort_coin
+เหรียญมากสุด
+-----
+build_sort_time
+เวลาน้อยสุด
+-----
+build_sort_latest
 ล่าสุด
 -----
 build_anonymous

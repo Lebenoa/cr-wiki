@@ -1406,7 +1406,7 @@ fn test_builds(mut tc TestContext) ! {
 			'tag_coin':    'coin'
 			'score':       '1234567'
 			'coin':        '890'
-			'time':        '42000'
+			'time':        '42'
 			'boxes':       '12'
 			'description': 'Cookies and cream strat'
 			'youtube_url': 'https://youtu.be/abc123'
@@ -1482,7 +1482,7 @@ fn test_builds(mut tc TestContext) ! {
 	if !list.body.contains('Cookies and cream strat') || !list.body.contains('youtu.be/abc123') {
 		return error('builds list missing description or video link on card')
 	}
-	if !list.body.contains('1234567') || !list.body.contains('42000') || !list.body.contains('Boxes:') || !list.body.contains('>12<') {
+	if !list.body.contains('1234567') || !list.body.contains('42 second') || !list.body.contains('Boxes:') || !list.body.contains('>12<') {
 		return error('builds list missing run-result stats on card')
 	}
 	// the anon card carries its relay cookie (95) alongside the lead cookie

@@ -258,7 +258,7 @@
                 </label>
                 <label class="block space-y-1">
                     <span class="text-xs font-label text-foreground-muted uppercase">%build_time_label</span>
-                    <input type="number" name="time" min="0" step="1" value="@b.time"
+                    <input type="number" name="time" min="0" step="1" value="@{b.time / 1000}"
                         class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground" />
                 </label>
                 <label class="block space-y-1">

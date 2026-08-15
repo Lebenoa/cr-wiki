@@ -446,7 +446,10 @@ build_coin_label
 Coins
 -----
 build_time_label
-Time (ms)
+Time (s)
+-----
+build_time_unit
+second
 -----
 build_boxes_label
 Boxes
@@ -484,10 +487,16 @@ No builds yet — be the first to submit one.
 build_sort_label
 Sort
 -----
-build_sort_ep
-Best EP
+build_sort_score
+Best Score
 -----
-build_sort_new
+build_sort_coin
+Most Coins
+-----
+build_sort_time
+Best Time
+-----
+build_sort_latest
 Newest
 -----
 build_anonymous

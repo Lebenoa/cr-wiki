@@ -107,16 +107,26 @@
                 <span class="text-xs font-label text-foreground-muted uppercase">%build_sort_label</span>
                 <select name="sort"
                     class="w-full bg-surface border-2 border-primary/30 rounded-xl py-2 px-3 text-foreground">
-                    <option value="ep"
-                        @if sort == 'ep'
+                    <option value="score"
+                        @if sort == 'score'
                         selected
                         @endif
-                    >%build_sort_ep</option>
-                    <option value="new"
-                        @if sort == 'new'
+                    >%build_sort_score</option>
+                    <option value="coin"
+                        @if sort == 'coin'
                         selected
                         @endif
-                    >%build_sort_new</option>
+                    >%build_sort_coin</option>
+                    <option value="time"
+                        @if sort == 'time'
+                        selected
+                        @endif
+                    >%build_sort_time</option>
+                    <option value="latest"
+                        @if sort == 'latest'
+                        selected
+                        @endif
+                    >%build_sort_latest</option>
                 </select>
             </label>
         </form>

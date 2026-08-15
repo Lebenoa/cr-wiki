@@ -859,9 +859,9 @@ pub:
 }
 
 // select_builds returns non-expired community builds, filtered by
-// cookie/pet/EP tier and sorted by EP rank desc (or created_at desc with
-// sort='new'), paginated. Special tiers outrank regular ones (Special EP 3
-// is the highest). Expired anonymous builds are excluded. Raw SQL because
+// cookie/pet/treasure/EP tier and sorted by score/coin/time/latest
+// (score/coin DESC, time ASC — fastest run first, latest by created_at),
+// paginated. Expired anonymous builds are excluded. Raw SQL because
 // the expiry filter combines `IS NULL` with a unix-timestamp comparison;
 // time.Time is stored as a unix int by the ORM.
 pub fn select_builds(conn sqlite.DB, lang string, f_cookie int, f_pet int, f_treasure int, f_ep int, f_ep_special int, sort string, limit int, offset int) ![]BuildCard {
@@ -882,10 +882,11 @@ pub fn select_builds(conn sqlite.DB, lang string, f_cookie int, f_pet int, f_tre
 		where += ' AND ep_special = ${f_ep_special}'
 	}
 	where += ' AND (expires_at IS NULL OR expires_at > ${time.now().unix()})'
-	order := if sort == 'new' {
-		'created_at DESC'
-	} else {
-		'CASE WHEN ep_special > 0 THEN 10 + ep_special ELSE ep END DESC, build_id DESC'
+	order := match sort {
+		'score' { 'score DESC, build_id DESC' }
+		'coin' { 'coin DESC, build_id DESC' }
+		'time' { 'time ASC, build_id DESC' } // fastest run first (duration ms)
+		else { 'created_at DESC, build_id DESC' } // latest
 	}
 
 	rows := conn.exec('SELECT build_id, cookie_id, cookie2_id, pet_id, combi_bonus_id, treasure1_id, treasure2_id, treasure3_id, treasure1_blessed, treasure2_blessed, treasure3_blessed, ep, ep_special, tag, boosts, boost, power_effects, score, coin, time, boxes, description, youtube_url, author, user_id, expires_at, created_at FROM build WHERE ${where} ORDER BY ${order} LIMIT ${limit} OFFSET ${offset}')!

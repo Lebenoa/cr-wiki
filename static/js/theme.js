@@ -67,7 +67,13 @@
   }
 
   // click on the trigger OR mouseover over it — mouseover simulates a button
-  // click so the popover toggles and stays open (sticky), same as clicking
+  // click so the popover toggles and stays open (sticky), same as clicking.
+  // On touch devices a single tap fires a synthetic mouseover followed by a
+  // real click, which would toggle twice (open then immediately close). The
+  // click handler skips its toggle when a hover-toggle just happened, so one
+  // tap = one toggle.
+  var lastHoverToggle = 0;
+
   function togglePopover() {
     var p = pop();
     if (p && p.matches(':popover-open')) closePopover();
@@ -86,7 +92,10 @@
     if (el.closest('#theme-trigger')) {
       var rel = e.relatedTarget;
       var fromInside = rel && rel.closest && rel.closest('#theme-trigger');
-      if (!fromInside) togglePopover();
+      if (!fromInside) {
+        lastHoverToggle = Date.now();
+        togglePopover();
+      }
     }
   });
   document.addEventListener('click', function (e) {
@@ -94,6 +103,8 @@
     var t = el && el.closest ? el.closest('#theme-trigger') : null;
     if (t) {
       e.preventDefault();
+      // a tap = mouseover (already toggled) + click: skip the click's toggle
+      if (Date.now() - lastHoverToggle < 400) return;
       togglePopover();
       return;
     }

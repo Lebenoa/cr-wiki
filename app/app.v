@@ -59,7 +59,7 @@ pub fn (ctx &Context) img_src(dir string, image ?string) string {
 	if img := image {
 		return '/img/${dir}/${img}'
 	}
-	return 'https://placehold.co/600x400'
+	return 'https://placehold.co/600x600'
 }
 
 pub fn (ctx &Context) cookie_img_src(image ?string) string {
