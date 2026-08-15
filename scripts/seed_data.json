@@ -6772,7 +6772,8 @@
    "is_evolved": false,
    "release_date": "1970-01-01T00:00:00Z",
    "unlock_cookie_id": null,
-   "unlock_pet_id": null
+   "unlock_pet_id": null,
+   "is_power_plus": true
   },
   {
    "treasure_id": 191,
@@ -6782,7 +6783,8 @@
    "is_evolved": false,
    "release_date": "1970-01-01T00:00:00Z",
    "unlock_cookie_id": null,
-   "unlock_pet_id": null
+   "unlock_pet_id": null,
+   "is_power_plus": true
   },
   {
    "treasure_id": 192,
@@ -6792,7 +6794,8 @@
    "is_evolved": false,
    "release_date": "1970-01-01T00:00:00Z",
    "unlock_cookie_id": null,
-   "unlock_pet_id": null
+   "unlock_pet_id": null,
+   "is_power_plus": true
   },
   {
    "treasure_id": 193,
@@ -6802,7 +6805,8 @@
    "is_evolved": false,
    "release_date": "1970-01-01T00:00:00Z",
    "unlock_cookie_id": null,
-   "unlock_pet_id": null
+   "unlock_pet_id": null,
+   "is_power_plus": true
   },
   {
    "treasure_id": 194,
@@ -6812,7 +6816,8 @@
    "is_evolved": false,
    "release_date": "1970-01-01T00:00:00Z",
    "unlock_cookie_id": null,
-   "unlock_pet_id": null
+   "unlock_pet_id": null,
+   "is_power_plus": true
   },
   {
    "treasure_id": 195,
@@ -6822,7 +6827,8 @@
    "is_evolved": false,
    "release_date": "2014-10-20T00:00:00Z",
    "unlock_cookie_id": 31,
-   "unlock_pet_id": null
+   "unlock_pet_id": null,
+   "is_power_plus": true
   },
   {
    "treasure_id": 196,
@@ -6832,7 +6838,8 @@
    "is_evolved": false,
    "release_date": "2014-12-18T00:00:00Z",
    "unlock_cookie_id": null,
-   "unlock_pet_id": 47
+   "unlock_pet_id": 47,
+   "is_power_plus": true
   },
   {
    "treasure_id": 197,
@@ -6842,7 +6849,8 @@
    "is_evolved": false,
    "release_date": "2014-12-29T00:00:00Z",
    "unlock_cookie_id": null,
-   "unlock_pet_id": 48
+   "unlock_pet_id": 48,
+   "is_power_plus": true
   },
   {
    "treasure_id": 198,
@@ -6852,7 +6860,8 @@
    "is_evolved": false,
    "release_date": "2015-02-27T00:00:00Z",
    "unlock_cookie_id": null,
-   "unlock_pet_id": null
+   "unlock_pet_id": null,
+   "is_power_plus": true
   },
   {
    "treasure_id": 199,
@@ -6862,7 +6871,8 @@
    "is_evolved": false,
    "release_date": "2015-03-27T00:00:00Z",
    "unlock_cookie_id": null,
-   "unlock_pet_id": 52
+   "unlock_pet_id": 52,
+   "is_power_plus": true
   },
   {
    "treasure_id": 200,
@@ -6872,7 +6882,8 @@
    "is_evolved": false,
    "release_date": "2015-04-24T00:00:00Z",
    "unlock_cookie_id": null,
-   "unlock_pet_id": null
+   "unlock_pet_id": null,
+   "is_power_plus": true
   },
   {
    "treasure_id": 201,
@@ -6882,7 +6893,8 @@
    "is_evolved": false,
    "release_date": "2015-05-15T00:00:00Z",
    "unlock_cookie_id": 51,
-   "unlock_pet_id": null
+   "unlock_pet_id": null,
+   "is_power_plus": true
   },
   {
    "treasure_id": 202,
@@ -6892,7 +6904,8 @@
    "is_evolved": false,
    "release_date": "2015-05-15T00:00:00Z",
    "unlock_cookie_id": null,
-   "unlock_pet_id": null
+   "unlock_pet_id": null,
+   "is_power_plus": true
   },
   {
    "treasure_id": 203,
@@ -6952,7 +6965,8 @@
    "is_evolved": false,
    "release_date": "2016-09-09T00:00:00Z",
    "unlock_cookie_id": null,
-   "unlock_pet_id": null
+   "unlock_pet_id": null,
+   "is_power_plus": true
   },
   {
    "treasure_id": 209,
@@ -6972,7 +6986,8 @@
    "is_evolved": false,
    "release_date": "1970-01-01T00:00:00Z",
    "unlock_cookie_id": null,
-   "unlock_pet_id": null
+   "unlock_pet_id": null,
+   "is_power_plus": true
   },
   {
    "treasure_id": 211,
@@ -7092,7 +7107,8 @@
    "is_evolved": false,
    "release_date": "2014-12-18T00:00:00Z",
    "unlock_cookie_id": null,
-   "unlock_pet_id": null
+   "unlock_pet_id": null,
+   "is_power_plus": true
   },
   {
    "treasure_id": 223,
@@ -7102,7 +7118,8 @@
    "is_evolved": false,
    "release_date": "2015-05-15T00:00:00Z",
    "unlock_cookie_id": null,
-   "unlock_pet_id": null
+   "unlock_pet_id": null,
+   "is_power_plus": true
   },
   {
    "treasure_id": 224,
@@ -7112,7 +7129,8 @@
    "is_evolved": false,
    "release_date": "2016-02-05T00:00:00Z",
    "unlock_cookie_id": null,
-   "unlock_pet_id": null
+   "unlock_pet_id": null,
+   "is_power_plus": true
   },
   {
    "treasure_id": 225,
@@ -7122,7 +7140,8 @@
    "is_evolved": false,
    "release_date": "2016-10-14T00:00:00Z",
    "unlock_cookie_id": null,
-   "unlock_pet_id": null
+   "unlock_pet_id": null,
+   "is_power_plus": true
   },
   {
    "treasure_id": 226,
@@ -7132,7 +7151,8 @@
    "is_evolved": false,
    "release_date": "2016-10-14T00:00:00Z",
    "unlock_cookie_id": null,
-   "unlock_pet_id": null
+   "unlock_pet_id": null,
+   "is_power_plus": true
   },
   {
    "treasure_id": 227,
@@ -7142,7 +7162,8 @@
    "is_evolved": false,
    "release_date": "2016-10-14T00:00:00Z",
    "unlock_cookie_id": null,
-   "unlock_pet_id": null
+   "unlock_pet_id": null,
+   "is_power_plus": true
   },
   {
    "treasure_id": 228,
@@ -7192,7 +7213,8 @@
    "is_evolved": false,
    "release_date": "1970-01-01T00:00:00Z",
    "unlock_cookie_id": null,
-   "unlock_pet_id": null
+   "unlock_pet_id": null,
+   "is_power_plus": true
   },
   {
    "treasure_id": 233,
@@ -7262,7 +7284,8 @@
    "is_evolved": false,
    "release_date": "1970-01-01T00:00:00Z",
    "unlock_cookie_id": null,
-   "unlock_pet_id": null
+   "unlock_pet_id": null,
+   "is_power_plus": true
   },
   {
    "treasure_id": 240,
@@ -7272,7 +7295,8 @@
    "is_evolved": false,
    "release_date": "1970-01-01T00:00:00Z",
    "unlock_cookie_id": null,
-   "unlock_pet_id": null
+   "unlock_pet_id": null,
+   "is_power_plus": true
   },
   {
    "treasure_id": 241,
@@ -7322,7 +7346,8 @@
    "is_evolved": false,
    "release_date": "1970-01-01T00:00:00Z",
    "unlock_cookie_id": null,
-   "unlock_pet_id": null
+   "unlock_pet_id": null,
+   "is_power_plus": true
   },
   {
    "treasure_id": 246,
@@ -7332,7 +7357,8 @@
    "is_evolved": false,
    "release_date": "2014-12-24T00:00:00Z",
    "unlock_cookie_id": 26,
-   "unlock_pet_id": null
+   "unlock_pet_id": null,
+   "is_power_plus": true
   },
   {
    "treasure_id": 247,
@@ -7422,7 +7448,8 @@
    "is_evolved": false,
    "release_date": "1970-01-01T00:00:00Z",
    "unlock_cookie_id": null,
-   "unlock_pet_id": null
+   "unlock_pet_id": null,
+   "is_power_plus": true
   },
   {
    "treasure_id": 256,
@@ -7432,7 +7459,8 @@
    "is_evolved": false,
    "release_date": "1970-01-01T00:00:00Z",
    "unlock_cookie_id": null,
-   "unlock_pet_id": null
+   "unlock_pet_id": null,
+   "is_power_plus": true
   },
   {
    "treasure_id": 257,
@@ -7442,7 +7470,8 @@
    "is_evolved": false,
    "release_date": "1970-01-01T00:00:00Z",
    "unlock_cookie_id": null,
-   "unlock_pet_id": null
+   "unlock_pet_id": null,
+   "is_power_plus": true
   },
   {
    "treasure_id": 258,
@@ -7452,7 +7481,8 @@
    "is_evolved": false,
    "release_date": "1970-01-01T00:00:00Z",
    "unlock_cookie_id": null,
-   "unlock_pet_id": null
+   "unlock_pet_id": null,
+   "is_power_plus": true
   },
   {
    "treasure_id": 259,
@@ -7462,7 +7492,8 @@
    "is_evolved": false,
    "release_date": "2015-12-31T00:00:00Z",
    "unlock_cookie_id": null,
-   "unlock_pet_id": null
+   "unlock_pet_id": null,
+   "is_power_plus": true
   },
   {
    "treasure_id": 260,
@@ -7472,7 +7503,8 @@
    "is_evolved": false,
    "release_date": "2015-12-31T00:00:00Z",
    "unlock_cookie_id": null,
-   "unlock_pet_id": null
+   "unlock_pet_id": null,
+   "is_power_plus": true
   },
   {
    "treasure_id": 261,
@@ -7482,7 +7514,8 @@
    "is_evolved": false,
    "release_date": "2015-12-31T00:00:00Z",
    "unlock_cookie_id": null,
-   "unlock_pet_id": null
+   "unlock_pet_id": null,
+   "is_power_plus": true
   },
   {
    "treasure_id": 262,
@@ -7492,7 +7525,8 @@
    "is_evolved": false,
    "release_date": "2015-12-31T00:00:00Z",
    "unlock_cookie_id": null,
-   "unlock_pet_id": null
+   "unlock_pet_id": null,
+   "is_power_plus": true
   },
   {
    "treasure_id": 263,
@@ -7502,7 +7536,8 @@
    "is_evolved": false,
    "release_date": "2015-12-31T00:00:00Z",
    "unlock_cookie_id": null,
-   "unlock_pet_id": null
+   "unlock_pet_id": null,
+   "is_power_plus": true
   },
   {
    "treasure_id": 264,
@@ -7512,7 +7547,8 @@
    "is_evolved": false,
    "release_date": "2015-12-31T00:00:00Z",
    "unlock_cookie_id": null,
-   "unlock_pet_id": null
+   "unlock_pet_id": null,
+   "is_power_plus": true
   },
   {
    "treasure_id": 265,
@@ -7522,7 +7558,8 @@
    "is_evolved": false,
    "release_date": "2016-06-28T00:00:00Z",
    "unlock_cookie_id": null,
-   "unlock_pet_id": null
+   "unlock_pet_id": null,
+   "is_power_plus": true
   },
   {
    "treasure_id": 266,
@@ -7582,7 +7619,8 @@
    "is_evolved": false,
    "release_date": "1970-01-01T00:00:00Z",
    "unlock_cookie_id": null,
-   "unlock_pet_id": null
+   "unlock_pet_id": null,
+   "is_power_plus": true
   },
   {
    "treasure_id": 272,
@@ -7592,7 +7630,8 @@
    "is_evolved": false,
    "release_date": "1970-01-01T00:00:00Z",
    "unlock_cookie_id": null,
-   "unlock_pet_id": null
+   "unlock_pet_id": null,
+   "is_power_plus": true
   },
   {
    "treasure_id": 273,
@@ -7642,7 +7681,8 @@
    "is_evolved": false,
    "release_date": "1970-01-01T00:00:00Z",
    "unlock_cookie_id": null,
-   "unlock_pet_id": null
+   "unlock_pet_id": null,
+   "is_power_plus": true
   },
   {
    "treasure_id": 278,
@@ -7652,7 +7692,8 @@
    "is_evolved": false,
    "release_date": "1970-01-01T00:00:00Z",
    "unlock_cookie_id": null,
-   "unlock_pet_id": null
+   "unlock_pet_id": null,
+   "is_power_plus": true
   },
   {
    "treasure_id": 279,
@@ -7662,7 +7703,8 @@
    "is_evolved": false,
    "release_date": "1970-01-01T00:00:00Z",
    "unlock_cookie_id": null,
-   "unlock_pet_id": null
+   "unlock_pet_id": null,
+   "is_power_plus": true
   },
   {
    "treasure_id": 280,
@@ -7782,7 +7824,8 @@
    "is_evolved": false,
    "release_date": "1970-01-01T00:00:00Z",
    "unlock_cookie_id": null,
-   "unlock_pet_id": null
+   "unlock_pet_id": null,
+   "is_power_plus": true
   },
   {
    "treasure_id": 292,
@@ -7792,7 +7835,8 @@
    "is_evolved": false,
    "release_date": "1970-01-01T00:00:00Z",
    "unlock_cookie_id": null,
-   "unlock_pet_id": null
+   "unlock_pet_id": null,
+   "is_power_plus": true
   },
   {
    "treasure_id": 293,
@@ -7812,7 +7856,8 @@
    "is_evolved": false,
    "release_date": "1970-01-01T00:00:00Z",
    "unlock_cookie_id": null,
-   "unlock_pet_id": null
+   "unlock_pet_id": null,
+   "is_power_plus": true
   },
   {
    "treasure_id": 295,
@@ -7822,7 +7867,8 @@
    "is_evolved": false,
    "release_date": "1970-01-01T00:00:00Z",
    "unlock_cookie_id": null,
-   "unlock_pet_id": null
+   "unlock_pet_id": null,
+   "is_power_plus": true
   },
   {
    "treasure_id": 296,
@@ -7832,7 +7878,8 @@
    "is_evolved": false,
    "release_date": "1970-01-01T00:00:00Z",
    "unlock_cookie_id": null,
-   "unlock_pet_id": null
+   "unlock_pet_id": null,
+   "is_power_plus": true
   },
   {
    "treasure_id": 297,

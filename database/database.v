@@ -405,6 +405,15 @@ fn migrate(conn sqlite.DB) ! {
 			return conn.error_message(result, query)
 		}
 	}
+	// treasure.is_power_plus marks POWER+ treasures (friendly-run bonus items
+	// that cannot be equipped); they are excluded from the build pickers.
+	if 'is_power_plus' !in treasure_cols {
+		query := 'ALTER TABLE treasure ADD COLUMN is_power_plus INTEGER NOT NULL DEFAULT 0'
+		result := conn.exec_none(query)
+		if !sqlite_success(result) {
+			return conn.error_message(result, query)
+		}
+	}
 
 	// merge blessed states into their evolved row: move the blessed effects to
 	// treasure_blessed_effect (created by the ORM) keyed by the sibling

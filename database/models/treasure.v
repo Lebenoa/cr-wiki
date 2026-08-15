@@ -11,6 +11,7 @@ pub:
 	unlock_cookie_id ?int // treasure unlocked by upgrading this cookie to max level
 	unlock_pet_id ?int // treasure unlocked by upgrading this pet to max level
 	is_evolved bool
+	is_power_plus bool // POWER+ treasures (friendly-run bonus items) cannot be equipped in a run
 	release_date time.Time
 }
 

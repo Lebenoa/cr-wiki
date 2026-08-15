@@ -12,6 +12,15 @@
     var cookieSlot = 'cookie';
     var lastPick = null;
 
+    // filter mode: /builds reuses the same picker dialogs for its cookie/pet/
+    // treasure filters. A pick just re-filters the list via htmx — no planner
+    // flow (no auto-advance), no live preview.
+    var filterForm = document.querySelector('form[hx-get="/builds"]');
+    var filterMode = !!filterForm;
+    // treasureTab: the /builds treasure filter dialog's all/normal/evolved
+    // state tabs (treasure list page style). Planner treasure picks ignore it.
+    var treasureTab = 'all';
+
     // stepOrder is the picker flow; each dialog shows a step header ("2/6")
     // with the current slot's translated label and an animated progress fill.
     var stepOrder = ['cookie', 'cookie2', 'pet', 't1', 't2', 't3'];
@@ -49,6 +58,15 @@
         var dlg = document.getElementById('dialog-' + kind);
         var t = term.trim().toLowerCase();
         dlg.querySelectorAll('.pick-option').forEach(function (btn) {
+            // the treasure filter's all/normal/evolved tabs hide options by
+            // evolved state before the search term applies
+            if (kind === 'treasure' && treasureTab !== 'all') {
+                var isEvo = btn.dataset.evolved === 'true' || btn.dataset.evolved === '1';
+                if ((treasureTab === 'normal' && isEvo) || (treasureTab === 'evo' && !isEvo)) {
+                    btn.hidden = true;
+                    return;
+                }
+            }
             if (t === '') { btn.hidden = false; return; }
             // match the localized name or the English name, so e.g. a th page
             // still finds "Wizard" -> คุกกี้พ่อมด in the picker; treasure
@@ -57,6 +75,26 @@
             btn.querySelectorAll('.fx-effect').forEach(function (fx) { hay += ' ' + fx.textContent; });
             btn.hidden = hay.toLowerCase().indexOf(t) === -1;
         });
+    }
+
+    // setTreasureTab flips the treasure filter dialog between its
+    // all/normal/evolved tabs, re-applying the search filter afterwards.
+    function setTreasureTab(tab) {
+        treasureTab = tab;
+        var dlg = document.getElementById('dialog-treasure');
+        if (!dlg) {
+            return;
+        }
+        dlg.querySelectorAll('.state-tab').forEach(function (btn) {
+            var on = btn.dataset.tab === tab;
+            btn.classList.toggle('bg-primary', on);
+            btn.classList.toggle('text-foreground', on);
+            btn.classList.toggle('border-2', !on);
+            btn.classList.toggle('border-secondary/50', !on);
+            btn.classList.toggle('text-secondary', !on);
+        });
+        var q = dlg.querySelector('input[type="search"]');
+        filterOptions('treasure', q ? q.value : '');
     }
 
     function openPicker(kind) {
@@ -195,13 +233,14 @@
     }
 
     function ensureClear(slot) {
-        var wrap = document.getElementById('slot-' + slot).parentNode;
-        if (wrap.querySelector('.slot-clear')) {
+        var slotEl = document.getElementById('slot-' + slot);
+        var wrap = slotEl ? slotEl.parentNode : null;
+        if (!wrap || wrap.querySelector('.slot-clear')) {
             return;
         }
         var btn = document.createElement('button');
         btn.type = 'button';
-        btn.title = 'Clear';
+        btn.title = slotEl.dataset.clearTitle || 'Clear';
         btn.className = 'slot-clear absolute -top-2 -right-2 size-6 rounded-full bg-surface border border-primary/40 text-foreground-muted hover:text-accent hover:border-accent flex items-center justify-center text-sm leading-none shadow';
         btn.textContent = '✕';
         btn.addEventListener('click', function () {
@@ -231,7 +270,25 @@
         if (clear) {
             clear.remove();
         }
-        refreshPreview();
+        if (filterMode) {
+            triggerFilter(slot);
+        } else {
+            refreshPreview();
+        }
+    }
+
+    // triggerFilter re-runs the /builds htmx filter after a pick or clear:
+    // assigning a hidden input's value fires no native event, so use htmx's
+    // trigger API on the form (its hx-trigger="change" listener).
+    function triggerFilter(slot) {
+        if (!filterForm) {
+            return;
+        }
+        if (window.htmx && window.htmx.trigger) {
+            htmx.trigger(filterForm, 'change');
+        } else {
+            filterForm.dispatchEvent(new Event('change', { bubbles: true }));
+        }
     }
 
     function refreshPreview() {
@@ -345,6 +402,11 @@
                 }
             }
             updateSlot(target);
+            if (filterMode) {
+                // /builds: a pick is just a filter change — no next dialog.
+                triggerFilter(target);
+                return;
+            }
             refreshPreview();
             // advance() opens the next dialog, whose openPicker renders its
             // step header; when the flow ends nothing opens.
@@ -368,4 +430,5 @@
     window.setPicked = setPicked;
     window.toggleFx = toggleFx;
     window.clearSlot = clearSlot;
+    window.setTreasureTab = setTreasureTab;
 })();

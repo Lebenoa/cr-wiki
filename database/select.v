@@ -282,19 +282,50 @@ fn best_treasure_translation(conn sqlite.DB, lang string, tid int) !models.Treas
 	return tr
 }
 
+// grade_rank maps a Grade to its sort position from grade_values (lowest to
+// highest); treasures without a wiki grade rank below all graded ones.
+fn grade_rank(g ?models.Grade) int {
+	if v := g {
+		for i, name in models.grade_values {
+			if name == v.str() {
+				return i
+			}
+		}
+	}
+	return -1
+}
+
+// compare_treasures orders the list by grade (highest first, ungraded last)
+// and then by release date descending, with the name as a final tie-break.
 fn compare_treasures(a &TreasureView, b &TreasureView) int {
-	ad := a.release_date.unix()
-	bd := b.release_date.unix()
-	if ad != bd {
-		if ad > bd {
+	return compare_grade_date(a.grade, a.release_date, a.name, b.grade, b.release_date, b.name)
+}
+
+// compare_treasure_options applies the same grade-then-date ordering to the
+// picker modal's IdNameOption list.
+fn compare_treasure_options(a &IdNameOption, b &IdNameOption) int {
+	return compare_grade_date(a.grade, a.release_date, a.name, b.grade, b.release_date, b.name)
+}
+
+fn compare_grade_date(ag ?models.Grade, ad time.Time, an string, bg ?models.Grade, bd time.Time, bn string) int {
+	ar := grade_rank(ag)
+	br := grade_rank(bg)
+	if ar != br {
+		if ar > br {
 			return -1
 		}
 		return 1
 	}
-	if a.name < b.name {
+	if ad.unix() != bd.unix() {
+		if ad.unix() > bd.unix() {
+			return -1
+		}
+		return 1
+	}
+	if an < bn {
 		return -1
 	}
-	if a.name > b.name {
+	if an > bn {
 		return 1
 	}
 	return 0
@@ -652,6 +683,10 @@ pub:
 	effects            []EffectOption
 	effects_blessed    []EffectOption
 	has_blessed_toggle bool
+	is_evolved         bool // treasures only: evolved rows have an evo base
+	is_power_plus      bool // treasures only: POWER+ items cannot be equipped
+	grade              ?models.Grade // treasures only: sort rank for the picker
+	release_date       time.Time // treasures only: sort rank for the picker
 }
 
 // BuildCard is one community-submitted build on the /builds list: the EP
@@ -688,13 +723,16 @@ pub:
 // is the highest). Expired anonymous builds are excluded. Raw SQL because
 // the expiry filter combines `IS NULL` with a unix-timestamp comparison;
 // time.Time is stored as a unix int by the ORM.
-pub fn select_builds(conn sqlite.DB, lang string, f_cookie int, f_pet int, f_ep int, f_ep_special int, sort string, limit int, offset int) ![]BuildCard {
+pub fn select_builds(conn sqlite.DB, lang string, f_cookie int, f_pet int, f_treasure int, f_ep int, f_ep_special int, sort string, limit int, offset int) ![]BuildCard {
 	mut where := '1=1'
 	if f_cookie > 0 {
 		where += ' AND cookie_id = ${f_cookie}'
 	}
 	if f_pet > 0 {
 		where += ' AND pet_id = ${f_pet}'
+	}
+	if f_treasure > 0 {
+		where += ' AND (treasure1_id = ${f_treasure} OR treasure2_id = ${f_treasure} OR treasure3_id = ${f_treasure})'
 	}
 	if f_ep > 0 {
 		where += ' AND ep = ${f_ep} AND ep_special = 0'
@@ -911,18 +949,16 @@ pub fn treasure_options(conn sqlite.DB, lang string) ![]IdNameOption {
 				effects:            normal
 				effects_blessed:    blessed
 				has_blessed_toggle: blessed.len > 0 && normal.len > 0 && effect_lists_differ(normal, blessed)
+				is_evolved:         t.is_evolved
+				is_power_plus:      t.is_power_plus
+				grade:              treasure_grade(t.grade)
+				release_date:       t.release_date
 			}
 		}
 	}
-	out.sort_with_compare(fn (a &IdNameOption, b &IdNameOption) int {
-		if a.name < b.name {
-			return -1
-		}
-		if a.name > b.name {
-			return 1
-		}
-		return 0
-	})
+	// match the /treasures list order: grade (highest first) then newest
+	// release date, so the picker modal presents the same sequence
+	out.sort_with_compare(compare_treasure_options)
 	return out
 }
 
@@ -969,11 +1005,13 @@ pub fn cookie_options(conn sqlite.DB, lang string) ![]IdNameOption {
 			}
 		}
 	}
+	// match the /cookies list order (newest id first) so the picker modal
+	// presents the same sequence as the catalog page
 	out.sort_with_compare(fn (a &IdNameOption, b &IdNameOption) int {
-		if a.name < b.name {
+		if a.id > b.id {
 			return -1
 		}
-		if a.name > b.name {
+		if a.id < b.id {
 			return 1
 		}
 		return 0
@@ -1024,11 +1062,13 @@ pub fn pet_options(conn sqlite.DB, lang string) ![]IdNameOption {
 			}
 		}
 	}
+	// match the /pets list order (newest id first) so the picker modal
+	// presents the same sequence as the catalog page
 	out.sort_with_compare(fn (a &IdNameOption, b &IdNameOption) int {
-		if a.name < b.name {
+		if a.id > b.id {
 			return -1
 		}
-		if a.name > b.name {
+		if a.id < b.id {
 			return 1
 		}
 		return 0
@@ -1197,7 +1237,7 @@ pub fn select_treasures(conn sqlite.DB, lang string, limit int, offset int, tab 
 
 	result.sort_with_compare(compare_treasures)
 
-	// paginate after the in-memory sort (newest first, name tie-break)
+	// paginate after the in-memory sort (grade first, newest release first)
 	if offset >= result.len {
 		return []
 	}
