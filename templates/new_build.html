@@ -207,6 +207,7 @@
                         <label class="flex items-center gap-2 bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground cursor-pointer select-none">
                             <input type="checkbox" name="boost_@b" value="@b"
                                 class="size-5 accent-accent" />
+                            <img src="@{ctx.boost_img_src(b)}" alt="" class="size-8 object-contain" />
                             @{ctx.build_boost_label(b)}
                         </label>
                         @endfor
