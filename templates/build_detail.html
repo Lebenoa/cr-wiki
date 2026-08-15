@@ -90,8 +90,11 @@
         <div class="mt-6 p-5 rounded-xl border-l-4 border-accent bg-accent/10 flex items-center gap-3 flex-wrap">
             <span class="text-sm font-label text-foreground-muted uppercase">%combo_bonus_title</span>
             <span class="flex items-center gap-2">
-                <img src="@{ctx.img_src('cookies', b.cookie.image)}" alt="" class="size-10 rounded-lg object-contain" />
-                <img src="@{ctx.img_src('pets', b.pet.image)}" alt="" class="size-10 rounded-lg object-contain" />
+                <img src="@{ctx.img_src('cookies', b.cookie.image)}" alt=""
+                    class="size-10 rounded-lg object-contain transition-transform duration-200 hover:scale-110" />
+                <span class="text-accent font-bold">+</span>
+                <img src="@{ctx.img_src('pets', b.pet.image)}" alt=""
+                    class="size-10 rounded-lg object-contain transition-transform duration-200 hover:scale-110" />
             </span>
             @if cb.effect != ""
             <span class="text-on-surface text-base">@cb.effect</span>
