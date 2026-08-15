@@ -226,6 +226,12 @@ state_normal
 state_blessed
 ได้รับพร
 -----
+toggle_on
+เปิด
+-----
+toggle_off
+ปิด
+-----
 treasure_effects
 เอฟเฟกต์
 -----

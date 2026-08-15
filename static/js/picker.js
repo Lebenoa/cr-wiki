@@ -426,6 +426,44 @@
         });
     }
 
+    // updateLegendCounts refreshes each fieldset legend's "n/total" counter:
+    // count the checked checkboxes inside that fieldset (scoped, so tags /
+    // boosts / power effects never cross-contaminate). Runs on load so the
+    // server-rendered initial (0/n on /builds/new, prefill on edit) is kept
+    // in sync, and on every change.
+    function updateLegendCounts() {
+        document.querySelectorAll('fieldset').forEach(function (fs) {
+            var count = fs.querySelector('.legend-count');
+            if (!count) {
+                return;
+            }
+            var total = count.dataset.total || '0';
+            var n = fs.querySelectorAll('input[type="checkbox"]:checked').length;
+            count.textContent = n + '/' + total;
+        });
+    }
+
+    // syncChipStates mirrors each chip checkbox's checked state onto its
+    // label's `is-on` class, which swaps the On/Off pill text. A JS class is
+    // used because Chrome here neither invalidates descendant :has() rules
+    // nor applies opacity/transform transitions on class-toggled elements
+    // (both froze at stale computed values in testing); the pill's own
+    // color morph is peer-checked + transition-colors, which does animate.
+    function syncChipStates() {
+        document.querySelectorAll('label.group input[type="checkbox"]').forEach(function (input) {
+            input.closest('label').classList.toggle('is-on', input.checked);
+        });
+    }
+
+    document.addEventListener('change', function (ev) {
+        if (ev.target && ev.target.type === 'checkbox') {
+            updateLegendCounts();
+            syncChipStates();
+        }
+    });
+    updateLegendCounts();
+    syncChipStates();
+
     window.openPicker = openPicker;
     window.openCookie = openCookie;
     window.openTreasure = openTreasure;
@@ -434,4 +472,5 @@
     window.toggleFx = toggleFx;
     window.clearSlot = clearSlot;
     window.setTreasureTab = setTreasureTab;
+    window.updateLegendCounts = updateLegendCounts;
 })();

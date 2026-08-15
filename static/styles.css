@@ -345,6 +345,7 @@
 .text-foreground,
 .group:hover .group-hover\:text-foreground{color:color-mix(in srgb, oklch(var(--foreground, 0.15 0 0)) var(--un-text-opacity), transparent);}
 .text-foreground-muted{color:color-mix(in srgb, oklch(var(--foreground-muted, 0.4 0 0)) var(--un-text-opacity), transparent);}
+.text-on-error{color:color-mix(in srgb, oklch(var(--on-error, 0.96 0 0)) var(--un-text-opacity), transparent);}
 .text-on-primary{color:color-mix(in srgb, oklch(var(--on-primary, 0.96 0 0)) var(--un-text-opacity), transparent);}
 .text-on-surface{color:color-mix(in srgb, oklch(var(--on-surface, 0.96 0 0)) var(--un-text-opacity), transparent);}
 .text-primary,
@@ -352,6 +353,7 @@
 .group:hover .group-hover\:text-primary{color:color-mix(in srgb, oklch(var(--primary, 0.62 0.22 260)) var(--un-text-opacity), transparent);}
 .text-red-400{color:color-mix(in srgb, var(--colors-red-400) var(--un-text-opacity), transparent);}
 .text-secondary{color:color-mix(in srgb, oklch(var(--secondary, 0.72 0.12 220)) var(--un-text-opacity), transparent);}
+.peer:checked~.peer-checked\:text-on-success{color:color-mix(in srgb, oklch(var(--on-success, 0.96 0 0)) var(--un-text-opacity), transparent);}
 .hover\:text-accent:hover{color:color-mix(in srgb, oklch(var(--accent, 0.70 0.18 330)) var(--un-text-opacity), transparent);}
 .hover\:text-black:hover{color:color-mix(in srgb, var(--colors-black) var(--un-text-opacity), transparent);}
 .hover\:text-foreground:hover{color:color-mix(in srgb, oklch(var(--foreground, 0.15 0 0)) var(--un-text-opacity), transparent);}
@@ -455,6 +457,7 @@
 .border-accent\/30{border-color:color-mix(in srgb, oklch(var(--accent, 0.70 0.18 330)) 30%, transparent);}
 .border-accent\/40{border-color:color-mix(in srgb, oklch(var(--accent, 0.70 0.18 330)) 40%, transparent);}
 .border-accent\/50{border-color:color-mix(in srgb, oklch(var(--accent, 0.70 0.18 330)) 50%, transparent);}
+.border-error\/40{border-color:color-mix(in srgb, oklch(var(--error, 0.62 0.24 25)) 40%, transparent);}
 .border-error\/50{border-color:color-mix(in srgb, oklch(var(--error, 0.62 0.24 25)) 50%, transparent);}
 .border-primary,
 .peer:checked~.peer-checked\:border-primary,
@@ -472,10 +475,12 @@
 .border-secondary\/70{border-color:color-mix(in srgb, oklch(var(--secondary, 0.72 0.12 220)) 70%, transparent);}
 .border-transparent{border-color:transparent;}
 .border-white\/20{border-color:color-mix(in srgb, var(--colors-white) 20%, transparent);}
+.has-\[\:checked\]\:border-success:has(:checked){border-color:color-mix(in srgb, oklch(var(--success, 0.72 0.18 145)) var(--un-border-opacity), transparent);}
+.has-\[\:checked\]\:hover\:border-success:hover:has(:checked){border-color:color-mix(in srgb, oklch(var(--success, 0.72 0.18 145)) var(--un-border-opacity), transparent);}
 .hover\:border-accent:hover{border-color:color-mix(in srgb, oklch(var(--accent, 0.70 0.18 330)) var(--un-border-opacity), transparent);}
 .hover\:border-error:hover{border-color:color-mix(in srgb, oklch(var(--error, 0.62 0.24 25)) var(--un-border-opacity), transparent);}
+.hover\:border-error\/70:hover{border-color:color-mix(in srgb, oklch(var(--error, 0.62 0.24 25)) 70%, transparent);}
 .hover\:border-primary:hover{border-color:color-mix(in srgb, oklch(var(--primary, 0.62 0.22 260)) var(--un-border-opacity), transparent);}
-.hover\:border-primary\/60:hover{border-color:color-mix(in srgb, oklch(var(--primary, 0.62 0.22 260)) 60%, transparent);}
 .focus\:border-accent:focus{border-color:color-mix(in srgb, oklch(var(--accent, 0.70 0.18 330)) var(--un-border-opacity), transparent);}
 .focus\:border-primary:focus{border-color:color-mix(in srgb, oklch(var(--primary, 0.62 0.22 260)) var(--un-border-opacity), transparent);}
 .rd,
@@ -496,6 +501,8 @@
 .bg-background\/40{background-color:color-mix(in srgb, oklch(var(--background, 0.99 0 0)) 40%, transparent);}
 .bg-background\/80{background-color:color-mix(in srgb, oklch(var(--background, 0.99 0 0)) 80%, transparent);}
 .bg-black{background-color:color-mix(in srgb, var(--colors-black) var(--un-bg-opacity), transparent);}
+.bg-error{background-color:color-mix(in srgb, oklch(var(--error, 0.62 0.24 25)) var(--un-bg-opacity), transparent);}
+.bg-error\/10{background-color:color-mix(in srgb, oklch(var(--error, 0.62 0.24 25)) 10%, transparent);}
 .bg-primary,
 [bg-primary=""]{background-color:color-mix(in srgb, oklch(var(--primary, 0.62 0.22 260)) var(--un-bg-opacity), transparent);}
 .bg-primary\/15{background-color:color-mix(in srgb, oklch(var(--primary, 0.62 0.22 260)) 15%, transparent);}
@@ -506,8 +513,12 @@
 .bg-surface\/30{background-color:color-mix(in srgb, oklch(var(--surface, 0.97 0 0)) 30%, transparent);}
 .bg-surface\/40{background-color:color-mix(in srgb, oklch(var(--surface, 0.97 0 0)) 40%, transparent);}
 .bg-surface\/50{background-color:color-mix(in srgb, oklch(var(--surface, 0.97 0 0)) 50%, transparent);}
+.has-\[\:checked\]\:bg-success\/10:has(:checked){background-color:color-mix(in srgb, oklch(var(--success, 0.72 0.18 145)) 10%, transparent);}
 [backdrop\:bg-black=""]::backdrop{background-color:color-mix(in srgb, var(--colors-black) var(--un-bg-opacity), transparent);}
+.peer:checked~.peer-checked\:bg-success{background-color:color-mix(in srgb, oklch(var(--success, 0.72 0.18 145)) var(--un-bg-opacity), transparent);}
 .group:hover .group-hover\:bg-primary\/10{background-color:color-mix(in srgb, oklch(var(--primary, 0.62 0.22 260)) 10%, transparent);}
+.has-\[\:checked\]\:hover\:bg-success\/20:hover:has(:checked){background-color:color-mix(in srgb, oklch(var(--success, 0.72 0.18 145)) 20%, transparent);}
+.hover\:bg-error\/20:hover{background-color:color-mix(in srgb, oklch(var(--error, 0.62 0.24 25)) 20%, transparent);}
 .hover\:bg-primary:hover{background-color:color-mix(in srgb, oklch(var(--primary, 0.62 0.22 260)) var(--un-bg-opacity), transparent);}
 .hover\:bg-primary\/10:hover{background-color:color-mix(in srgb, oklch(var(--primary, 0.62 0.22 260)) 10%, transparent);}
 .hover\:bg-primary\/30:hover{background-color:color-mix(in srgb, oklch(var(--primary, 0.62 0.22 260)) 30%, transparent);}
@@ -531,6 +542,7 @@
 .flex{display:flex;}
 .open\:flex[open]{display:flex;}
 .popover-open\:flex:popover-open{display:flex;}
+.group.is-on .group-\[\.is-on\]\:inline-flex,
 .inline-flex{display:inline-flex;}
 .flex-1{flex:1 1 0%;}
 .shrink-0{flex-shrink:0;}
@@ -609,6 +621,7 @@
 .inline-64{inline-size:calc(var(--spacing) * 64);}
 .block{display:block;}
 .inline-block{display:inline-block;}
+.group.is-on .group-\[\.is-on\]\:hidden,
 .hidden,
 [hidden=""]{display:none;}
 .visible{visibility:visible;}

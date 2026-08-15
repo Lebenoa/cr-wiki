@@ -226,6 +226,12 @@ Normal
 state_blessed
 Blessed
 -----
+toggle_on
+On
+-----
+toggle_off
+Off
+-----
 treasure_effects
 Effects
 -----

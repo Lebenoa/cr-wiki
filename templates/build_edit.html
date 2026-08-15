@@ -157,32 +157,46 @@
                     </select>
                 </label>
                 <fieldset class="block space-y-1">
-                    <legend class="text-xs font-label text-foreground-muted uppercase">%build_tag_label</legend>
+                    <legend class="text-xs font-label text-foreground-muted uppercase">%build_tag_label <span class="legend-count text-accent" data-total="3">@{b.tags.len}/3</span></legend>
                     <div class="flex flex-wrap gap-2">
                         @for t in build_tags
-                        <label class="flex items-center gap-2 bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground cursor-pointer select-none">
+                        <label class="group flex flex-col items-center gap-2 bg-error/10 border-2 border-error/40 rounded-xl py-3 px-4 text-foreground cursor-pointer select-none hover:border-error/70 hover:bg-error/20 has-[:checked]:border-success has-[:checked]:hover:border-success has-[:checked]:bg-success/10 has-[:checked]:hover:bg-success/20 transition-all duration-300">
                             <input type="checkbox" name="tag_@t" value="@t"
                                 @if t in b.tags
                                 checked
                                 @endif
-                                class="size-5 accent-accent" />
-                            @{ctx.build_tag_label(t)}
+                                class="sr-only peer" />
+                            <span class="text-center text-sm font-bold text-on-surface leading-tight">@{ctx.build_tag_label(t)}</span>
+                            <span
+                                class="relative inline-flex items-center rounded-full px-2 py-0.5 text-xs font-bold bg-error text-on-error transition-colors duration-300 peer-checked:bg-success peer-checked:text-on-success">
+                                <span
+                                    class="inline-flex items-center group-[.is-on]:hidden">%toggle_off</span>
+                                <span
+                                    class="hidden group-[.is-on]:inline-flex items-center">%toggle_on</span>
+                            </span>
                         </label>
                         @endfor
                     </div>
                 </fieldset>
                 <fieldset class="block space-y-1">
-                    <legend class="text-xs font-label text-foreground-muted uppercase">%build_boosts_label</legend>
+                    <legend class="text-xs font-label text-foreground-muted uppercase">%build_boosts_label <span class="legend-count text-accent" data-total="3">@{b.boosts.len}/3</span></legend>
                     <div class="flex flex-wrap gap-2">
                         @for bo in build_boosts
-                        <label class="flex items-center gap-2 bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground cursor-pointer select-none">
+                        <label class="group flex flex-col items-center gap-2 bg-error/10 border-2 border-error/40 rounded-xl py-3 px-4 text-foreground cursor-pointer select-none hover:border-error/70 hover:bg-error/20 has-[:checked]:border-success has-[:checked]:hover:border-success has-[:checked]:bg-success/10 has-[:checked]:hover:bg-success/20 transition-all duration-300">
                             <input type="checkbox" name="boost_@bo" value="@bo"
                                 @if bo in b.boosts
                                 checked
                                 @endif
-                                class="size-5 accent-accent" />
-                            <img src="@{ctx.boost_img_src(bo)}" alt="" class="size-8 object-contain" />
-                            @{ctx.build_boost_label(bo)}
+                                class="sr-only peer" />
+                            <img src="@{ctx.boost_img_src(bo)}" alt="" class="size-10 object-contain" />
+                            <span class="text-center text-sm font-bold text-on-surface leading-tight">@{ctx.build_boost_label(bo)}</span>
+                            <span
+                                class="relative inline-flex items-center rounded-full px-2 py-0.5 text-xs font-bold bg-error text-on-error transition-colors duration-300 peer-checked:bg-success peer-checked:text-on-success">
+                                <span
+                                    class="inline-flex items-center group-[.is-on]:hidden">%toggle_off</span>
+                                <span
+                                    class="hidden group-[.is-on]:inline-flex items-center">%toggle_on</span>
+                            </span>
                         </label>
                         @endfor
                     </div>
@@ -208,17 +222,24 @@
             </div>
 
             <fieldset class="mt-4 block space-y-1">
-                <legend class="text-xs font-label text-foreground-muted uppercase">%build_power_effects_label</legend>
+                <legend class="text-xs font-label text-foreground-muted uppercase">%build_power_effects_label <span class="legend-count text-accent" data-total="7">@{b.power_effects.len}/7</span></legend>
                 <div class="flex flex-wrap gap-2">
                     @for pk in power_effect_keys
-                    <label class="flex items-center gap-2 bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground cursor-pointer select-none">
+                    <label class="group flex flex-col items-center gap-2 bg-error/10 border-2 border-error/40 rounded-xl py-3 px-4 text-foreground cursor-pointer select-none hover:border-error/70 hover:bg-error/20 has-[:checked]:border-success has-[:checked]:hover:border-success has-[:checked]:bg-success/10 has-[:checked]:hover:bg-success/20 transition-all duration-300">
                         <input type="checkbox" name="power_effect_@pk" value="@pk"
                             @if pk in b.power_effects
                             checked
                             @endif
-                            class="size-5 accent-accent" />
-                        <img src="@{ctx.power_effect_img_src(pk)}" alt="" class="size-8 object-contain" />
-                        <span>@{ctx.power_effect_label(pk)}</span>
+                            class="sr-only peer" />
+                        <img src="@{ctx.power_effect_img_src(pk)}" alt="" class="size-10 object-contain" />
+                        <span class="text-center text-sm font-bold text-on-surface leading-tight">@{ctx.power_effect_label(pk)}</span>
+                        <span
+                            class="relative inline-flex items-center rounded-full px-2 py-0.5 text-xs font-bold bg-error text-on-error transition-colors duration-300 peer-checked:bg-success peer-checked:text-on-success">
+                            <span
+                                class="inline-flex items-center group-[.is-on]:hidden">%toggle_off</span>
+                            <span
+                                class="hidden group-[.is-on]:inline-flex items-center">%toggle_on</span>
+                        </span>
                     </label>
                     @endfor
                 </div>
@@ -268,6 +289,42 @@
             </div>
         </form>
     </section>
+    <script>
+        // keep each fieldset legend's "n/total" counter in sync with its
+        // checkboxes (tags / boosts / power effects). The initial value is
+        // server-rendered from the build's stored selection.
+        (function () {
+            function updateLegendCounts() {
+                document.querySelectorAll('fieldset').forEach(function (fs) {
+                    var count = fs.querySelector('.legend-count');
+                    if (!count) {
+                        return;
+                    }
+                    var total = count.dataset.total || '0';
+                    var n = fs.querySelectorAll('input[type="checkbox"]:checked').length;
+                    count.textContent = n + '/' + total;
+                });
+            }
+
+            // mirror each chip checkbox's checked state onto its label's
+            // `is-on` class, which swaps the On/Off pill text (see picker.js
+            // syncChipStates for why a JS class, not :has()/transition).
+            function syncChipStates() {
+                document.querySelectorAll('label.group input[type="checkbox"]').forEach(function (input) {
+                    input.closest('label').classList.toggle('is-on', input.checked);
+                });
+            }
+
+            document.addEventListener('change', function (ev) {
+                if (ev.target && ev.target.type === 'checkbox') {
+                    updateLegendCounts();
+                    syncChipStates();
+                }
+            });
+            updateLegendCounts();
+            syncChipStates();
+        })();
+    </script>
 </body>
 
 </html>
