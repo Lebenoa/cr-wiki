@@ -14,6 +14,23 @@
 <script src="/thirdparty/htmx.js"></script>
 <script src="/js/theme.js"></script>
 <title>@ctx.page_title</title>
+<meta name="description" content="@ctx.meta_description()">
+<link rel="canonical" href="@ctx.canonical_url()">
+@if ctx.noindex
+<meta name="robots" content="noindex, nofollow">
+@else
+<meta name="robots" content="index, follow">
+@end
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="%site_name">
+<meta property="og:title" content="@ctx.page_title">
+<meta property="og:description" content="@ctx.meta_description()">
+<meta property="og:url" content="@ctx.canonical_url()">
+<meta property="og:locale" content="@ctx.og_locale()">
+@if ctx.og_image != ''
+<meta property="og:image" content="@ctx.og_image">
+@end
+<meta name="twitter:card" content="summary">
 <script>
     htmx.config.globalViewTransitions = true;
 </script>

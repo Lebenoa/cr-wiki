@@ -8,6 +8,7 @@ import app.util
 
 pub fn (wapp &App) treasures(mut ctx Context) veb.Result {
 	ctx.set_translate_title('treasures_page_title')
+	ctx.set_translate_desc('treasures_page_description')
 	page_size := 30
 
 	mut tab := ctx.query['tab'] or { 'all' }
@@ -58,6 +59,7 @@ pub fn (wapp &App) new_treasure(mut ctx Context) veb.Result {
 
 	if ctx.req.method == .get {
 		ctx.set_translate_title('new_treasure_page_title')
+		ctx.noindex = true
 		languages := api.available_lang()
 		grades := models.grade_values
 		state := TreasureForm{
@@ -112,6 +114,8 @@ pub fn (wapp &App) treasure_info(mut ctx Context, id int) veb.Result {
 		unlock_entity = u
 	}
 	ctx.set_translate_title('entity_detail_title', treasure.name)
+	ctx.set_translate_desc('entity_detail_description', treasure.name)
+	ctx.set_og_image('treasures', treasure.image)
 	is_admin := ctx.is_admin()
 	// rich text: [[Cookie Name]] links + {color:x} spans in the description
 	description_html := render_rich_text(wapp.db, ctx.lang, treasure.description)
@@ -129,6 +133,7 @@ pub fn (wapp &App) edit_treasure(mut ctx Context, id int) veb.Result {
 
 	if ctx.req.method == .get {
 		ctx.set_translate_title('edit_treasure_page_title', treasure.name)
+		ctx.noindex = true
 		languages := api.available_lang()
 		grades := models.grade_values
 		rd := treasure.release_date

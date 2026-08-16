@@ -7,6 +7,7 @@ import database.models
 
 pub fn (wapp &App) pets(mut ctx Context) veb.Result {
 	ctx.set_translate_title("pets_page_title")
+	ctx.set_translate_desc("pets_page_description")
 	page_size := 30
 	grades := models.grade_values
 
@@ -40,6 +41,7 @@ pub fn (wapp &App) new_pet(mut ctx Context) veb.Result {
 
 	if ctx.req.method == .get {
 		ctx.set_translate_title('new_pet_page_title')
+		ctx.noindex = true
 		languages := api.available_lang()
 		grades := models.grade_values
 		state := PetForm{
@@ -80,6 +82,8 @@ pub fn (wapp &App) pet_info(mut ctx Context, id int) veb.Result {
 	// combo bonuses pairing this pet with a cookie (empty when it has none)
 	combi_bonus := database.get_combi_bonus(wapp.db, ctx.lang, 'pet', pet.pet_id) or { [] }
 	ctx.set_translate_title('entity_detail_title', pet.name)
+	ctx.set_translate_desc('entity_detail_description', pet.name)
+	ctx.set_og_image('pets', pet.image)
 	is_admin := ctx.is_admin()
 	// rich text: [[Cookie Name]] links + {color:x} spans in prose fields
 	description_html := render_rich_text(wapp.db, ctx.lang, pet.description)
@@ -97,6 +101,7 @@ pub fn (wapp &App) edit_pet(mut ctx Context, id int) veb.Result {
 
 	if ctx.req.method == .get {
 		ctx.set_translate_title('edit_pet_page_title', pet.name)
+		ctx.noindex = true
 		languages := api.available_lang()
 		grades := models.grade_values
 		rd := pet.release_date

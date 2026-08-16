@@ -2,42 +2,109 @@
 <p class="text-foreground-muted">%build_empty_list</p>
 @else
 @for b in builds
-<div class="relative p-4 rounded-xl border-l-4 border-primary bg-surface/50 flex items-stretch gap-4">
-    <a href="/builds/@b.build_id" aria-label="%build_detail_page_title"
-        class="absolute inset-0 rounded-xl"></a>
-    <div class="relative flex flex-col shrink-0 w-24">
-        <div class="relative flex items-stretch flex-1">
-            <a href="/cookies/@b.cookie.id" title="@b.cookie.name" class="relative z-10 flex w-full">
-                <img src="@{ctx.img_src('cookies', b.cookie.image)}" alt="@b.cookie.name"
-                    class="h-full w-full object-contain rounded" />
-            </a>
-            <a href="/pets/@b.pet.id" title="@b.pet.name"
-                class="relative z-10 absolute -left-4 top-1/2 -translate-y-1/2">
+<div class="relative p-4 rounded-xl border-l-4 border-primary bg-surface/50 flex flex-wrap gap-4 h-full">
+    <a href="/builds/@b.build_id" aria-label="%build_detail_page_title" class="absolute inset-0 rounded-xl"></a>
+    <div class="relative flex flex-col shrink-0 h-full">
+        <div class="relative flex items-center flex-1 gap-2">
+            <a href="/pets/@b.pet.id" title="@b.pet.name" class="relative z-10 shrink-0">
                 <img src="@{ctx.img_src('pets', b.pet.image)}" alt="@b.pet.name"
                     class="size-12 rounded object-contain" />
             </a>
+            <a href="/cookies/@b.cookie.id" title="@b.cookie.name" class="relative z-10 flex w-24 h-24">
+                <img src="@{ctx.img_src('cookies', b.cookie.image)}" alt="@b.cookie.name"
+                    class="h-full w-full object-contain rounded" />
+            </a>
+            @if c2 := b.cookie2
+            <span class="text-primary font-bold text-xl leading-none" aria-hidden="true">+</span>
+            <a href="/cookies/@c2.id" class="relative z-10 group shrink-0" title="@c2.name">
+                <img src="@{ctx.img_src('cookies', c2.image)}" alt="@c2.name"
+                    class="size-14 rounded object-contain transition-[box-shadow] group-hover:ring-2 group-hover:ring-primary" />
+            </a>
+            @endif
         </div>
         @if b.combi_bonus_id > 0
-        <span class="self-center mt-1 font-bold text-accent uppercase border border-accent/50 rounded-full px-2 py-0.5 text-[10px]">%combo_bonus_title</span>
+        <span
+            class="self-center mt-1 font-bold text-on-accent bg-accent uppercase border border-accent/50 rounded-full px-2 py-0.5 text-[10px]">%combo_bonus_title</span>
+        @end
+        @if b.treasures.len > 0
+        <div class="lg:hidden h-full flex flex-wrap justify-center w-full items-center gap-2 mt-1">
+            <button type="button" popovertarget="treasure-pop-@b.build_id" popovertargetaction="toggle"
+                class="relative z-10 inline-flex items-center gap-2 text-xs font-bold text-accent hover:underline transition-colors">
+                <span class="flex items-center gap-1">
+                    @for t in b.treasures
+                    <img src="@{ctx.img_src('treasures', t.image)}" alt=""
+                        class="size-14 shrink-0 rounded object-contain ring-1 ring-surface transition-transform hover:scale-110" />
+                    @endfor
+                </span>
+            </button>
+        </div>
         @end
     </div>
+
+    @if b.treasures.len > 0
+    <div class="hidden lg:block self-stretch w-1 bg-accent/30 rounded"></div>
+    <div class="hidden lg:flex self-center items-center gap-2">
+        <button type="button" popovertarget="treasure-pop-@b.build_id" popovertargetaction="toggle"
+            class="relative z-10 inline-flex items-center gap-2 text-xs font-bold text-accent hover:underline transition-colors">
+            <span class="flex items-center gap-1">
+                @for t in b.treasures
+                <img src="@{ctx.img_src('treasures', t.image)}" alt=""
+                    class="size-14 shrink-0 rounded object-contain ring-1 ring-surface transition-transform hover:scale-110" />
+                @endfor
+            </span>
+        </button>
+    </div>
+    <div id="treasure-pop-@b.build_id" popover
+        class="p-4 m-0 w-64 bg-background text-foreground rounded border border-accent flex-col gap-2 hidden popover-open:flex">
+        <div class="text-xs font-label uppercase text-foreground-muted px-1">%build_treasure_label</div>
+        @for t in b.treasures
+        <a href="/treasures/@t.id" class="relative z-10 group flex items-center gap-2" title="@t.name">
+            <img src="@{ctx.img_src('treasures', t.image)}" alt="@t.name"
+                class="size-10 shrink-0 rounded object-contain" />
+            <span class="font-bold text-on-surface group-hover:text-primary transition-colors">@t.name</span>
+        </a>
+        @endfor
+    </div>
+    @end
     <div class="min-w-0 flex-1 flex flex-wrap items-center gap-x-4 gap-y-2">
         <div class="text-center min-w-16">
-            <span class="block text-xl font-headline text-accent font-bold leading-tight">@{ctx.build_ep_label(b.ep, b.ep_special)}</span>
+            <span class="block text-xl font-headline text-accent font-bold leading-tight">@{ctx.build_ep_label(b.ep,
+                b.ep_special)}</span>
         </div>
         @for t in b.tags
-        <span class="self-center font-bold text-accent text-xs border border-accent/50 rounded-full px-2 py-0.5">@{ctx.build_tag_label(t)}</span>
+        <span
+            class="self-center font-bold text-accent text-xs border border-accent/50 rounded-full px-2 py-0.5">@{ctx.build_tag_label(t)}</span>
         @endfor
-        @if c2 := b.cookie2
-        <a href="/cookies/@c2.id" class="relative z-10 group flex items-center gap-2" title="@c2.name">
-            <img src="@{ctx.img_src('cookies', c2.image)}" alt="@c2.name"
-                class="size-10 shrink-0 rounded object-contain" />
-            <span class="font-bold text-on-surface group-hover:text-primary transition-colors">@c2.name</span>
+        @if b.score > 0 || b.coin > 0 || b.time > 0 || b.boxes > 0
+        <div class="ml-auto text-right flex flex-wrap justify-end gap-x-4 gap-y-1 text-xs text-foreground-muted">
+            @if b.score > 0
+            <span>%build_score_label: <span class="font-bold text-foreground">@{b.score}</span></span>
+            @end
+            @if b.coin > 0
+            <span>%build_coin_label: <span class="font-bold text-foreground">@{b.coin}</span></span>
+            @end
+            @if b.time > 0
+            <span>%build_time_label: <span class="font-bold text-foreground">@{b.time / 1000}
+                    %build_time_unit</span></span>
+            @end
+            @if b.boxes > 0
+            <span>%build_boxes_label: <span class="font-bold text-foreground">@{b.boxes}</span></span>
+            @end
+        </div>
+        @end
+    </div>
+    <div class="relative z-10 inline-flex items-center gap-1.5 text-xs font-bold text-accent w-full basis-full">
+        @if b.youtube_url != ""
+        <a href="@b.youtube_url" target="_blank" rel="noopener" class="hover:underline ">
+            ▶ %build_watch_video
         </a>
         @endif
-        <div class="ml-auto text-right">
+        <div class="mt-auto ml-auto self-end text-right">
             @if b.author != ""
-            <span class="font-bold text-on-surface">@b.author</span>
+            <span class="font-bold text-on-surface inline-flex items-center gap-1">
+                @include 'icons/user.html'
+                @b.author
+            </span>
             @else
             <span class="font-bold text-on-surface">%build_anonymous</span>
             @endif
@@ -45,63 +112,11 @@
             <span class="block text-xs text-foreground-muted">@{ctx.expires_in_label(b.expires_in_h)}</span>
             @endif
         </div>
-        @if b.treasures.len > 0
-        <div class="w-full basis-full mt-1 flex items-center gap-1.5">
-            <button type="button" popovertarget="treasure-pop-@b.build_id" popovertargetaction="toggle"
-                class="relative z-10 inline-flex items-center gap-1.5 text-xs font-bold text-accent hover:underline transition-colors">
-                %build_treasure_label:
-                <span class="flex items-center">
-                    @for t in b.treasures
-                    <img src="@{ctx.img_src('treasures', t.image)}" alt=""
-                        class="size-6 shrink-0 rounded object-contain -ml-1 first:ml-0 ring-1 ring-surface" />
-                    @endfor
-                </span>
-            </button>
-        </div>
-        <div id="treasure-pop-@b.build_id" popover
-            class="p-4 m-0 w-64 bg-background text-foreground rounded border border-accent flex-col gap-2 hidden popover-open:flex">
-            <div class="text-xs font-label uppercase text-foreground-muted px-1">%build_treasure_label</div>
-            @for t in b.treasures
-            <a href="/treasures/@t.id" class="relative z-10 group flex items-center gap-2" title="@t.name">
-                <img src="@{ctx.img_src('treasures', t.image)}" alt="@t.name"
-                    class="size-10 shrink-0 rounded object-contain" />
-                <span class="font-bold text-on-surface group-hover:text-primary transition-colors">@t.name</span>
-            </a>
-            @endfor
-        </div>
-        @end
     </div>
-    @if b.score > 0 || b.coin > 0 || b.time > 0 || b.boxes > 0
-    <div class="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-foreground-muted w-full basis-full">
-        @if b.score > 0
-        <span>%build_score_label: <span class="font-bold text-foreground">@{b.score}</span></span>
-        @end
-        @if b.coin > 0
-        <span>%build_coin_label: <span class="font-bold text-foreground">@{b.coin}</span></span>
-        @end
-        @if b.time > 0
-        <span>%build_time_label: <span class="font-bold text-foreground">@{b.time / 1000} %build_time_unit</span></span>
-        @end
-        @if b.boxes > 0
-        <span>%build_boxes_label: <span class="font-bold text-foreground">@{b.boxes}</span></span>
-        @end
-    </div>
-    @end
-    @if b.description != ""
-    <p class="mt-3 text-sm text-foreground-muted whitespace-pre-line w-full basis-full">@b.description</p>
-    @endif
-    @if b.youtube_url != ""
-    <a href="@b.youtube_url" target="_blank" rel="noopener"
-        class="relative z-10 mt-2 inline-flex items-center gap-1.5 text-xs font-bold text-accent hover:underline w-full basis-full">
-        ▶ %build_watch_video
-    </a>
-    @endif
 </div>
 @endfor
 @if next_page > 0
-<div hx-get="/builds?page=@next_page&cookie=@filter_cookie&pet=@filter_pet&ep=@filter_ep_raw&sort=@sort" hx-trigger="revealed"
-    hx-swap="outerHTML"></div>
-@else
-<div></div>
+<div hx-get="/builds?page=@next_page&cookie=@filter_cookie&pet=@filter_pet&ep=@filter_ep_raw&sort=@sort"
+    hx-trigger="revealed" hx-swap="outerHTML"></div>
 @endif
 @endif

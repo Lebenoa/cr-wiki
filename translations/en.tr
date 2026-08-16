@@ -655,3 +655,27 @@ Serenade of Love
 power_effect_exp_party
 EXP Party Power+
 -----
+site_name
+CookieRun: Classic/FanWiki
+-----
+site_description
+Wiki and build planner for CookieRun: Classic cookies, pets, and treasures — grades, combo bonuses, effects, and score builds.
+-----
+index_page_description
+CookieRun: Classic fan wiki: cookies, pets, treasures, combo bonuses, and community score builds in one place.
+-----
+cookies_page_description
+Browse all CookieRun: Classic cookies with grades, Power+ effects, unlock goals, and pet combo bonuses.
+-----
+pets_page_description
+Browse all CookieRun: Classic pets with grades, unlock goals, and cookie combo bonuses.
+-----
+treasures_page_description
+Browse all CookieRun: Classic treasures with effects, evolved variants, and blessed upgrades.
+-----
+builds_page_description
+Community CookieRun: Classic builds: cookie, pet, and treasure loadouts with EP, boosts, and run results.
+-----
+entity_detail_description
+{name}: stats, effects, combo bonuses, and linked treasures on the CookieRun: Classic fan wiki.
+-----

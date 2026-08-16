@@ -15,6 +15,7 @@ pub fn (mut wapp App) login(mut ctx Context) veb.Result {
 
 	if ctx.req.method == .get {
 		ctx.set_translate_title("login_page_title")
+		ctx.noindex = true
 		return $veb.html()
 	} else if ctx.req.method == .post {
 		username := ctx.form['username']

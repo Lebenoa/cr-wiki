@@ -655,3 +655,27 @@ power_effect_serenade
 power_effect_exp_party
 เอฟเฟกต์ปาร์ตี้ EXP
 -----
+site_name
+CookieRun: Classic/FanWiki
+-----
+site_description
+วิกิและเครื่องมือจัดบิลด์สำหรับคุกกี้ สัตว์เลี้ยง และสมบัติใน CookieRun: Classic — เกรด คอมโบโบนัส เอฟเฟกต์ และบิลด์คะแนน
+-----
+index_page_description
+วิกิแฟน CookieRun: Classic: คุกกี้ สัตว์เลี้ยง สมบัติ คอมโบโบนัส และบิลด์ของชุมชน รวมอยู่ในที่เดียว
+-----
+cookies_page_description
+ดูคุกกี้ CookieRun: Classic ทั้งหมด พร้อมเกรด เอฟเฟกต์ Power+ เงื่อนไขปลดล็อก และคอมโบโบนัสกับสัตว์เลี้ยง
+-----
+pets_page_description
+ดูสัตว์เลี้ยง CookieRun: Classic ทั้งหมด พร้อมเกรด เงื่อนไขปลดล็อก และคอมโบโบนัสกับคุกกี้
+-----
+treasures_page_description
+ดูสมบัติ CookieRun: Classic ทั้งหมด พร้อมเอฟเฟกต์ ร่างวิวัฒนาการ และการอัปเกรดร่างศักดิ์สิทธิ์
+-----
+builds_page_description
+บิลด์ของชุมชน CookieRun: Classic: ชุดคุกกี้ สัตว์เลี้ยง และสมบัติ พร้อม EP บูสต์ และผลลัพธ์การวิ่ง
+-----
+entity_detail_description
+{name}: สถิติ เอฟเฟกต์ คอมโบโบนัส และสมบัติที่เกี่ยวข้อง บนวิกิแฟน CookieRun: Classic
+-----

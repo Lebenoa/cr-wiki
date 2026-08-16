@@ -177,6 +177,7 @@ fn selection_from_query(ctx &Context) BuildSelection {
 @['/builds']
 pub fn (wapp &App) builds(mut ctx Context) veb.Result {
 	ctx.set_translate_title('builds_page_title')
+	ctx.set_translate_desc('builds_page_description')
 	filter_cookie := (ctx.query['cookie'] or { '' }).int()
 	filter_pet := (ctx.query['pet'] or { '' }).int()
 	filter_treasure := (ctx.query['treasure'] or { '' }).int()
@@ -221,6 +222,7 @@ pub fn (wapp &App) new_build(mut ctx Context) veb.Result {
 	}
 
 	ctx.set_translate_title('new_build_page_title')
+	ctx.noindex = true
 	sel := selection_from_query(ctx)
 	cookies := database.cookie_options(wapp.db, ctx.lang) or { [] }
 	pets := database.pet_options(wapp.db, ctx.lang) or { [] }
@@ -408,6 +410,8 @@ fn submit_build(wapp &App, mut ctx Context) veb.Result {
 pub fn (wapp &App) build_info(mut ctx Context, id int) veb.Result {
 	ctx.set_translate_title('build_detail_page_title')
 	b := database.select_build(wapp.db, ctx.lang, id) or { return ctx.not_found() }
+	ctx.set_translate_desc('builds_page_description')
+	ctx.set_og_image('cookies', b.cookie.image)
 	combi := find_combi(wapp, ctx, b.cookie.id, b.pet.id)
 	can_edit := can_edit_build(ctx, b)
 	// the detail page renders the full boost/Power+ catalogs with the used
@@ -441,6 +445,7 @@ pub fn (wapp &App) build_edit(mut ctx Context, id int) veb.Result {
 		return update_build_submit(wapp, mut ctx, id)
 	}
 	ctx.set_translate_title('build_edit_page_title')
+	ctx.noindex = true
 	cookies := database.cookie_options(wapp.db, ctx.lang) or { [] }
 	pets := database.pet_options(wapp.db, ctx.lang) or { [] }
 	treasures := database.treasure_options(wapp.db, ctx.lang, true) or { [] }

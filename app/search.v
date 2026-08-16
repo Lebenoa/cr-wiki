@@ -7,6 +7,7 @@ import database
 @['/search']
 pub fn (wapp &App) search(mut ctx Context) veb.Result {
 	ctx.set_translate_title("search_page_title")
+	ctx.noindex = true
 	q := (ctx.query['q'] or { '' }).trim_space()
 	is_fragment := ctx.is_htmx_request() && !ctx.is_boosted_request()
 	limit := if is_fragment { 8 } else { 30 }

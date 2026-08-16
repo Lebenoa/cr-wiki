@@ -2,6 +2,7 @@ module app
 
 import veb
 import db.sqlite
+import os
 import database.models
 
 const lang_cookie_key = 'wikilang'
@@ -16,7 +17,10 @@ pub struct Context {
 pub mut:
 	lang       string = 'en'
 	page_title string
-	user ?models.User
+	page_desc  string
+	og_image   string
+	noindex    bool
+	user       ?models.User
 }
 
 pub struct App {
@@ -45,6 +49,62 @@ pub fn (mut ctx Context) set_translate_title(key string, name ?string) {
 	} else {
 		title
 	}
+}
+
+// set_translate_desc fills the meta description from a .tr key, with an
+// optional {name} placeholder like set_translate_title.
+pub fn (mut ctx Context) set_translate_desc(key string, name ?string) {
+	desc := veb.tr(ctx.lang, key)
+	ctx.page_desc = if n := name {
+		desc.replace('{name}', n)
+	} else {
+		desc
+	}
+}
+
+// meta_description returns the page description or the site-wide fallback.
+pub fn (ctx &Context) meta_description() string {
+	if ctx.page_desc != '' {
+		return ctx.page_desc
+	}
+	return veb.tr(ctx.lang, 'site_description')
+}
+
+// set_og_image records an absolute Open Graph image URL for an entity image.
+pub fn (mut ctx Context) set_og_image(dir string, image ?string) {
+	if img := image {
+		ctx.og_image = ctx.site_url() + '/img/${dir}/${img}'
+	}
+}
+
+// site_url returns the public origin used for canonical/OG URLs. Derived
+// from the request Host header so it stays correct behind proxies/domains;
+// CR_BASE_URL still wins when set (Host can be spoofed, so an explicit
+// override is the trusted option).
+pub fn (ctx &Context) site_url() string {
+	base := os.getenv('CR_BASE_URL')
+	if base != '' {
+		return base.trim_right('/')
+	}
+	scheme := if host := ctx.get_custom_header('X-Forwarded-Proto') {
+		host
+	} else {
+		'http'
+	}
+	if host := ctx.get_custom_header('Host') {
+		return '${scheme}://${host}'
+	}
+	return 'http://localhost:6785'
+}
+
+// canonical_url is the clean (query-free) absolute URL of the current page.
+pub fn (ctx &Context) canonical_url() string {
+	return '${ctx.site_url()}${ctx.req.url.split('?')[0]}'
+}
+
+// og_locale maps the wikilang cookie to an Open Graph locale tag.
+pub fn (ctx &Context) og_locale() string {
+	return if ctx.lang == 'th' { 'th_TH' } else { 'en_US' }
 }
 
 pub fn (mut ctx Context) not_found() veb.Result {

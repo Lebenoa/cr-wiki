@@ -50,6 +50,7 @@ pub fn (mut wapp App) register(mut ctx Context) veb.Result {
 		return ctx.redirect("/")
 	} else if ctx.req.method == .get {
 		ctx.set_translate_title("register_page_title")
+		ctx.noindex = true
 		return $veb.html()
 	}
 
