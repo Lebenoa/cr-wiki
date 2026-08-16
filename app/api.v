@@ -48,5 +48,5 @@ pub fn (wapp &App) set_lang(mut ctx Context) veb.Result {
 		)
 	}
 
-	return ctx.redirect(og_url)
+	return submit_success(mut ctx, og_url)
 }

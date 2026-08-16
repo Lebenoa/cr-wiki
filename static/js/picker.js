@@ -435,6 +435,18 @@
         });
     }
 
+    // htmx's own submit listener ignores preventDefault() from other
+    // handlers, so an invalid loadout would still POST. Cancel through
+    // htmx's config:request event instead (preventDefault on it drops the
+    // request); the native submit guard above stays for the no-htmx case.
+    document.addEventListener('htmx:config:request', function (ev) {
+        var elt = ev.detail && (ev.detail.elt || (ev.detail.ctx && ev.detail.ctx.sourceElement));
+        if (elt && elt.matches && elt.matches('form[action="/builds/new"]')
+            && !validateBuild(elt)) {
+            ev.preventDefault();
+        }
+    });
+
     // updateLegendCounts refreshes each fieldset legend's "n/total" counter:
     // count the checked checkboxes inside that fieldset (scoped, so tags /
     // boosts / power effects never cross-contaminate). Runs on load so the

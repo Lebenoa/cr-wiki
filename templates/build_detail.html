@@ -208,8 +208,9 @@
         <div class="mt-6 flex items-center gap-3">
             <a href="/builds/@b.build_id/edit"
                 class="rounded-xl bg-primary px-5 py-2.5 font-bold text-foreground hover:opacity-90 transition-opacity">%build_edit_button</a>
-            <form method="post" action="/builds/@b.build_id/delete"
-                onsubmit="return confirm('%build_delete_confirm')">
+            <form method="post" action="/builds/@b.build_id/delete" hx-post="/builds/@b.build_id/delete"
+                hx-swap="none" hx-disable="find button[type=submit]" hx-confirm="%build_delete_confirm">
+                <div id="form-error"></div>
                 <div class="cf-turnstile" data-sitekey="@{ctx.turnstile_sitekey_for_template()}" data-action="build_delete"></div>
                 <button type="submit"
                     class="rounded-xl border-2 border-error/50 px-5 py-2.5 font-bold text-error hover:border-error transition-colors">%build_delete_button</button>

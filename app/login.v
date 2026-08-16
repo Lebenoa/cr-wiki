@@ -20,7 +20,7 @@ pub fn (mut wapp App) login(mut ctx Context) veb.Result {
 	} else if ctx.req.method == .post {
 		if !verify_turnstile(ctx, 'login') {
 			ctx.res.set_status(.forbidden)
-			return ctx.text('forbidden')
+			return submit_error(mut ctx, veb.tr(ctx.lang, 'turnstile_form_failed'))
 		}
 
 		username := ctx.form['username']
@@ -28,7 +28,7 @@ pub fn (mut wapp App) login(mut ctx Context) veb.Result {
 
 		if username == '' || password == '' {
 			ctx.res.set_status(.bad_request)
-			return ctx.text(invalid_credentials)
+			return submit_error(mut ctx, invalid_credentials)
 		}
 
 		user := sql wapp.db {
@@ -36,24 +36,24 @@ pub fn (mut wapp App) login(mut ctx Context) veb.Result {
 		} or {
 			ctx.res.set_status(.internal_server_error)
 			println('Failed to query user for login: ${err}')
-			return ctx.text("Unexpected Error")
+			return submit_error(mut ctx, 'Unexpected Error')
 		}
 
 		if user.len == 0 {
 			// artificial hash compare
 			generate := argon2.generate_from_password(password.bytes()) or {
 				ctx.res.set_status(.not_found)
-				return ctx.text(invalid_credentials)
+				return submit_error(mut ctx, invalid_credentials)
 			}
 			argon2.compare_hash_and_password(password.bytes(), generate.bytes()) or {}
 			ctx.res.set_status(.not_found)
-			return ctx.text(invalid_credentials)
+			return submit_error(mut ctx, invalid_credentials)
 		}
 
 		first_user := user.first()
 		argon2.compare_hash_and_password(password.bytes(), first_user.password.bytes()) or {
 			ctx.res.set_status(.not_found)
-			return ctx.text(invalid_credentials)
+			return submit_error(mut ctx, invalid_credentials)
 		}
 
 		session_key := rand.uuid_v4()
@@ -68,7 +68,7 @@ pub fn (mut wapp App) login(mut ctx Context) veb.Result {
 			http_only: true
 			same_site: .same_site_lax_mode
 		)
-		return ctx.redirect("/")
+		return submit_success(mut ctx, '/')
 	}
 	return ctx.not_found()
 }

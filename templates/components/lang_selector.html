@@ -1,6 +1,7 @@
 <h2 class="font-bold text-center text-xl">%choose_language</h2>
 <div class="flex items-center gap-2 w-full justify-center flex-row flex-wrap">
-    <form action="/api/set-lang" method="post">
+    <form action="/api/set-lang" method="post" hx-post="/api/set-lang" hx-swap="none"
+        hx-disable="find button">
         <input type="hidden" value="@current_url" name="url">
         @for lang in languages
         @if lang == ctx.lang

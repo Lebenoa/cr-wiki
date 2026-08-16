@@ -14,31 +14,31 @@ pub fn (mut wapp App) register(mut ctx Context) veb.Result {
 	if ctx.req.method == .post {
 		if !verify_turnstile(ctx, 'register') {
 			ctx.res.set_status(.forbidden)
-			return ctx.text('forbidden')
+			return submit_error(mut ctx, veb.tr(ctx.lang, 'turnstile_form_failed'))
 		}
 
 		username := ctx.form['username'] or {
 			ctx.res.set_status(.bad_request)
-			return ctx.text("Username is required")
+			return submit_error(mut ctx, 'Username is required')
 		}
 		password := ctx.form['password'] or {
 			ctx.res.set_status(.bad_request)
-			return ctx.text("Password is required")
+			return submit_error(mut ctx, 'Password is required')
 		}
 		confirm_password := ctx.form['confirm_password'] or {
 			ctx.res.set_status(.bad_request)
-			return ctx.text("Confirm password is required")
+			return submit_error(mut ctx, 'Confirm password is required')
 		}
 
 		if password != confirm_password {
 			ctx.res.set_status(.bad_request)
-			return ctx.text("Passwords do not match")
+			return submit_error(mut ctx, 'Passwords do not match')
 		}
 
 		new_user_id := database.create_user(wapp.db, username, password) or {
 			eprintln(err)
 			ctx.res.set_status(.internal_server_error)
-			return ctx.text("Failed to create user")
+			return submit_error(mut ctx, 'Failed to create user')
 		}
 
 		session_id := rand.uuid_v4()
@@ -54,7 +54,7 @@ pub fn (mut wapp App) register(mut ctx Context) veb.Result {
 			http_only: true
 			same_site: .same_site_lax_mode
 		)
-		return ctx.redirect("/")
+		return submit_success(mut ctx, '/')
 	} else if ctx.req.method == .get {
 		ctx.set_translate_title("register_page_title")
 		ctx.noindex = true

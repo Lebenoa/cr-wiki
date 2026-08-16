@@ -13,7 +13,9 @@
             <h1 class="font-headline font-bold text-2xl text-accent mb-2">%share_build_message</h1>
             <p class="font-body text-lg text-secondary">%lets_register_message</p>
         </div>
-        <form class="space-y-5" method="post" hx-boost="true">
+        <form class="space-y-5" method="post" hx-post="/register" hx-swap="none"
+            hx-disable="find button[type=submit]">
+            <div id="form-error"></div>
             <div class="space-y-2">
                 <label class="font-label text-secondary uppercase">%username</label>
                 <div class="relative group input-glow">
@@ -88,7 +90,7 @@
                     the <a class="text-primary hover:underline" href="#">Protocols of Service</a></label>
             </div>
             <div class="cf-turnstile" data-sitekey="@{ctx.turnstile_sitekey_for_template()}" data-action="register"></div>
-            <button
+            <button type="submit"
                 class="w-full bg-primary hover:bg-primary/90 text-foreground font-headline py-4 rounded-xl shadow-lg transition-all active:scale-[0.98] neon-glow flex items-center justify-center gap-2 group">
                 %register_button_text
                 <span class="group-hover:translate-x-1 transition-transform"><svg xmlns="http://www.w3.org/2000/svg"

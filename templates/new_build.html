@@ -16,7 +16,9 @@
         <p class="font-body text-foreground-muted mt-1">%build_expiry_hint</p>
         @endif
 
-        <form method="post" action="/builds/new" class="mt-8">
+        <form method="post" action="/builds/new" hx-post="/builds/new" hx-swap="none"
+            hx-disable="find button[type=submit]" class="mt-8">
+            <div id="form-error"></div>
             <input type="hidden" name="cookie" id="sel-cookie" value="@sel.cookie" />
             <input type="hidden" name="c2" id="sel-cookie2" value="@sel.cookie2" />
             <input type="hidden" name="pet" id="sel-pet" value="@sel.pet" />

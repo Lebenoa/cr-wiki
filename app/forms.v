@@ -431,6 +431,18 @@ fn submit_success(mut ctx Context, redirect_url string) veb.Result {
 	return ctx.redirect(redirect_url)
 }
 
+// submit_error returns a failed form submission for forms without a
+// re-renderable state (login/register/builds): htmx requests get the OOB
+// error banner fragment (the form stays in place, input preserved); plain
+// requests keep the bare error text. The caller sets the status first.
+fn submit_error(mut ctx Context, form_error string) veb.Result {
+	if ctx.is_htmx_request() {
+		err_msg := form_error
+		return $veb.html('./templates/components/form_error.html')
+	}
+	return ctx.text(form_error)
+}
+
 // cookie_form_state builds the CookieForm for the create page (edit = none)
 // or the edit page. Shared by the GET render and the failed-POST re-render.
 fn cookie_form_state(wapp &App, ctx &Context, edit ?database.CookieView) CookieForm {
