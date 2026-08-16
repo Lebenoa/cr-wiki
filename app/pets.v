@@ -7,7 +7,7 @@ import database.models
 
 pub fn (wapp &App) pets(mut ctx Context) veb.Result {
 	if !rate_limit_ok(mut ctx) {
-		return ctx.text('too many requests')
+		return rate_limited_response(mut ctx)
 	}
 	ctx.set_translate_title("pets_page_title")
 	ctx.set_translate_desc("pets_page_description")
@@ -80,6 +80,9 @@ pub fn (wapp &App) new_pet(mut ctx Context) veb.Result {
 
 @['/pets/:id']
 pub fn (wapp &App) pet_info(mut ctx Context, id int) veb.Result {
+	if !rate_limit_ok(mut ctx) {
+		return rate_limited_response(mut ctx)
+	}
 	pet := database.get_pet(wapp.db, ctx.lang, id) or { return ctx.not_found() }
 	// the treasure unlocked by upgrading this pet to max level (none for pets
 	// without one)

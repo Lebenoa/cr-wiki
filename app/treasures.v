@@ -8,7 +8,7 @@ import app.util
 
 pub fn (wapp &App) treasures(mut ctx Context) veb.Result {
 	if !rate_limit_ok(mut ctx) {
-		return ctx.text('too many requests')
+		return rate_limited_response(mut ctx)
 	}
 	ctx.set_translate_title('treasures_page_title')
 	ctx.set_translate_desc('treasures_page_description')
@@ -96,6 +96,9 @@ pub fn (wapp &App) new_treasure(mut ctx Context) veb.Result {
 
 @['/treasures/:id']
 pub fn (wapp &App) treasure_info(mut ctx Context, id int) veb.Result {
+	if !rate_limit_ok(mut ctx) {
+		return rate_limited_response(mut ctx)
+	}
 	treasure := database.get_treasure(wapp.db, ctx.lang, id) or { return ctx.not_found() }
 	effects := database.get_treasure_effects(wapp.db, ctx.lang, id) or { [] }
 	// blessed-state effects (same table, state column); empty for non-evolved.

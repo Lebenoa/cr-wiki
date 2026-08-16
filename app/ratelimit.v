@@ -2,12 +2,14 @@ module app
 
 import log
 import time
+import veb
 
-// Per-IP token bucket for the public read endpoints (search plus the cookie,
-// pet, treasure and build list pages). Each IP gets `rate_capacity` burst
-// tokens, refilled at `rate_refill` per second, and a 429 is returned while
-// the bucket is empty, so heavy read traffic cannot starve the server. One
-// bucket per IP covers all five endpoints together.
+// Per-IP token bucket for the public read endpoints (search, the cookie,
+// pet, treasure and build list pages, their detail pages, and the API/planner
+// AJAX endpoints). Each IP gets `rate_capacity` burst tokens, refilled at
+// `rate_refill` per second, and a 429 is returned while the bucket is empty,
+// so heavy read traffic cannot starve the server. One bucket per IP covers
+// all the endpoints together.
 const rate_capacity = 60.0 // burst tokens
 const rate_refill = 20.0 // tokens refilled per second
 const rate_idle_ttl = 300 // seconds without a request before a bucket is pruned
@@ -36,8 +38,9 @@ fn client_ip(ctx &Context) string {
 
 // rate_limit_ok applies the per-IP token bucket to the current request.
 // Returns true when the bucket had a token (the request proceeds); false
-// with a 429 status when the bucket is empty. The debug (test-session)
-// build skips limiting so the HTTP suite isn't throttled.
+// with a 429 status and a Retry-After header when the bucket is empty. The
+// debug (test-session) build skips limiting so the HTTP suite isn't
+// throttled.
 pub fn rate_limit_ok(mut ctx Context) bool {
 	$if debug ? {
 		return true
@@ -49,6 +52,7 @@ pub fn rate_limit_ok(mut ctx Context) bool {
 	// let parallel requests read the same balance and consume one token per
 	// wave
 	mut allowed := false
+	mut retry_after := 1
 	lock rate_buckets {
 		// prune buckets idle past the TTL once the map grows; under normal
 		// traffic the map stays small and no sweep ever runs
@@ -85,12 +89,30 @@ pub fn rate_limit_ok(mut ctx Context) bool {
 			allowed = true
 		} else {
 			rate_buckets[ip] = b
+			// the next token lands within one refill tick (20/s), so
+			// advertise that; the bucket may still be deep in the red when
+			// the burst was large, hence the +1 guard
+			retry_after = int((1.0 - b.tokens) / rate_refill) + 1
 		}
 	}
 	if !allowed {
 		log.warn('rate limit hit for ${ip}')
 		ctx.res.set_status(.too_many_requests)
+		ctx.set_header(.retry_after, retry_after.str())
 		return false
 	}
 	return true
+}
+
+// rate_limited_response returns the body for a denied request (status 429
+// already set by rate_limit_ok). htmx fragment swaps get an empty body so
+// the infinite-scroll sentinel is removed by its outerHTML swap and the
+// search/filter results just stop quietly — the bucket refills within
+// seconds and a retry is harmless. Full-page and hx-boosted navigations get
+// the plain text so the visitor sees why the page is blank.
+pub fn rate_limited_response(mut ctx Context) veb.Result {
+	if ctx.is_htmx_request() && !ctx.is_boosted_request() {
+		return ctx.text('')
+	}
+	return ctx.text('too many requests')
 }

@@ -177,7 +177,7 @@ fn selection_from_query(ctx &Context) BuildSelection {
 @['/builds']
 pub fn (wapp &App) builds(mut ctx Context) veb.Result {
 	if !rate_limit_ok(mut ctx) {
-		return ctx.text('too many requests')
+		return rate_limited_response(mut ctx)
 	}
 	ctx.set_translate_title('builds_page_title')
 	ctx.set_translate_desc('builds_page_description')
@@ -250,6 +250,9 @@ pub fn (wapp &App) new_build(mut ctx Context) veb.Result {
 // the planner can live-update the combi/treasure cards after each pick.
 @['/builds/preview']
 pub fn (wapp &App) preview_partial(mut ctx Context) veb.Result {
+	if !rate_limit_ok(mut ctx) {
+		return rate_limited_response(mut ctx)
+	}
 	sel := selection_from_query(ctx)
 	cookies := database.cookie_options(wapp.db, ctx.lang) or { [] }
 	pets := database.pet_options(wapp.db, ctx.lang) or { [] }
@@ -416,6 +419,9 @@ fn submit_build(wapp &App, mut ctx Context) veb.Result {
 // binding.
 @['/builds/:id']
 pub fn (wapp &App) build_info(mut ctx Context, id int) veb.Result {
+	if !rate_limit_ok(mut ctx) {
+		return rate_limited_response(mut ctx)
+	}
 	ctx.set_translate_title('build_detail_page_title')
 	b := database.select_build(wapp.db, ctx.lang, id) or { return ctx.not_found() }
 	ctx.set_translate_desc('builds_page_description')

@@ -7,7 +7,7 @@ import database
 @['/search']
 pub fn (wapp &App) search(mut ctx Context) veb.Result {
 	if !rate_limit_ok(mut ctx) {
-		return ctx.text('too many requests')
+		return rate_limited_response(mut ctx)
 	}
 	ctx.set_translate_title("search_page_title")
 	ctx.noindex = true

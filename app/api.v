@@ -11,6 +11,9 @@ pub fn (ctx &Context) lang_map(lang string) string {
 
 @['/api/available-langs']
 pub fn (wapp &App) available_lang(mut ctx Context) veb.Result {
+	if !rate_limit_ok(mut ctx) {
+		return rate_limited_response(mut ctx)
+	}
 	if !ctx.is_htmx_request() {
 		return ctx.json(api.available_lang())
 	}
@@ -22,6 +25,9 @@ pub fn (wapp &App) available_lang(mut ctx Context) veb.Result {
 
 @['/api/richtext-names']
 pub fn (wapp &App) richtext_names(mut ctx Context) veb.Result {
+	if !rate_limit_ok(mut ctx) {
+		return rate_limited_response(mut ctx)
+	}
 	lang := ctx.query['lang'] or { 'en' }
 	kind := ctx.query['kind'] or { 'cookie' }
 	return ctx.json(database.richtext_names(wapp.db, lang, kind))
