@@ -22,17 +22,20 @@ pub fn update_cookie(conn sqlite.DB, id int, params CreateCookieParams) ! {
 	if existing.len > 0 {
 		sql conn {
 			update models.CookieTranslation set name = params.name, abilities = params.abilities,
-			description = params.description, power_plus = params.power_plus where owner_id == id
-			&& lang == params.lang
+			description = params.description, power_plus = params.power_plus,
+			power_plus_requirement = params.power_plus_requirement, unlock_goal = params.unlock_goal
+			where owner_id == id && lang == params.lang
 		}!
 	} else {
 		new_tr := models.CookieTranslation{
-			owner_id:    id
-			lang:        params.lang
-			name:        params.name
-			abilities:   params.abilities
-			description: params.description
-			power_plus:  params.power_plus
+			owner_id:                id
+			lang:                    params.lang
+			name:                    params.name
+			abilities:               params.abilities
+			description:             params.description
+			power_plus:              params.power_plus
+			power_plus_requirement:  params.power_plus_requirement
+			unlock_goal:             params.unlock_goal
 		}
 		sql conn {
 			insert new_tr into models.CookieTranslation

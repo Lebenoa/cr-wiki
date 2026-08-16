@@ -28,6 +28,8 @@ pub:
 	grade              models.Grade
 	image              ?string
 	power_plus         string
+	power_plus_requirement string
+	unlock_goal        string
 	release_date       time.Time
 	unlock_treasure_id ?int // treasure this cookie unlocks at max level
 	new_treasure_name  string // non-empty: create this treasure, then link it
@@ -126,12 +128,14 @@ pub fn create_cookie(conn sqlite.DB, params CreateCookieParams) !int {
 	}!
 
 	new_translation := models.CookieTranslation{
-		owner_id:    cookie_id
-		lang:        params.lang
-		name:        params.name
-		abilities:   params.abilities
-		description: params.description
-		power_plus:  params.power_plus
+		owner_id:                cookie_id
+		lang:                    params.lang
+		name:                    params.name
+		abilities:               params.abilities
+		description:             params.description
+		power_plus:              params.power_plus
+		power_plus_requirement:  params.power_plus_requirement
+		unlock_goal:             params.unlock_goal
 	}
 
 	sql conn {

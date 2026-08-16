@@ -26,6 +26,8 @@ pub:
 	abilities         string
 	description       string
 	power_plus        string
+	power_plus_requirement string
+	unlock_goal       string
 	grade             string
 	release_date      string
 	lang              string
@@ -265,12 +267,14 @@ fn parse_cookie_form(mut ctx Context) !database.CreateCookieParams {
 		} else {
 			image
 		}
-		power_plus:         ctx.form['power_plus']
-		release_date:       parse_release_date(mut ctx)!
-		unlock_treasure_id: choice.treasure_id
-		new_treasure_name:  choice.new_name
-		combi_keep:         combi_keep
-		combi_new:          combi_new
+		power_plus:              ctx.form['power_plus']
+		power_plus_requirement:  ctx.form['power_plus_requirement']
+		unlock_goal:             ctx.form['unlock_goal']
+		release_date:            parse_release_date(mut ctx)!
+		unlock_treasure_id:      choice.treasure_id
+		new_treasure_name:       choice.new_name
+		combi_keep:              combi_keep
+		combi_new:               combi_new
 	}
 }
 

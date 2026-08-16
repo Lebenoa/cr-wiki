@@ -107,6 +107,20 @@
                         type="date" name="release_date" value="@state.release_date" />
                 </div>
             </div>
+            <div class="space-y-2">
+                <label class="font-label text-secondary uppercase" for="power_plus_requirement">%power_plus_requirement</label>
+                <textarea id="power_plus_requirement" name="power_plus_requirement" rows="2" data-richtext
+                    class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground placeholder:text-foreground/30 focus:border-primary focus:ring-0 transition-all outline-none resize-y">@state.power_plus_requirement</textarea>
+                @include 'components/richtext_preview.html'
+                <p class="text-xs text-foreground-muted">%rich_text_hint</p>
+            </div>
+            <div class="space-y-2">
+                <label class="font-label text-secondary uppercase" for="unlock_goal">%unlock_goal</label>
+                <textarea id="unlock_goal" name="unlock_goal" rows="3" data-richtext
+                    class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground placeholder:text-foreground/30 focus:border-primary focus:ring-0 transition-all outline-none resize-y">@state.unlock_goal</textarea>
+                @include 'components/richtext_preview.html'
+                <p class="text-xs text-foreground-muted">%rich_text_hint</p>
+            </div>
             @include 'components/treasure_combobox.html'
             @include 'components/combi_editor.html'
             <div class="space-y-2">

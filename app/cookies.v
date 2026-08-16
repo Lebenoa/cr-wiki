@@ -132,6 +132,8 @@ pub fn (wapp &App) edit_cookie(mut ctx Context, id int) veb.Result {
 			abilities:         cookie.abilities
 			description:       cookie.description
 			power_plus:        cookie.power_plus
+			power_plus_requirement: cookie.power_plus_requirement
+			unlock_goal:       cookie.unlock_goal
 			grade:             cookie.grade.str()
 			release_date:      '${rd.year:04d}-${int(rd.month):02d}-${rd.day:02d}'
 			lang:              cookie.lang
