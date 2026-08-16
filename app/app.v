@@ -158,12 +158,6 @@ pub fn (ctx &Context) theme_label(name string) string {
 	return veb.tr(ctx.lang, 'theme_${name}')
 }
 
-// grade_name returns the full grade name (e.g. "Extra" for e, "Legend" for l)
-// for use in tooltips; other grades keep their letter.
-pub fn (ctx &Context) grade_name(g string) string {
-	return models.grade_name(g)
-}
-
 // is_admin reports whether the current session belongs to an admin user.
 pub fn (ctx &Context) is_admin() bool {
 	if user := ctx.user {
