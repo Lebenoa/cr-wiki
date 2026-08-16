@@ -268,6 +268,21 @@ pub:
 	unlock_pet_id    ?int // pet whose max-level upgrade unlocks this treasure
 }
 
+// validate_evolved_link enforces the base-treasure invariants shared by
+// create and update: a base link requires is_evolved, and cannot point at
+// the treasure itself (create passes 0 — a fresh row cannot reference its
+// own not-yet-assigned id).
+fn validate_evolved_link(id int, params CreateTreasureParams) ! {
+	if bid := params.base_treasure_id {
+		if !params.is_evolved {
+			return error('base_treasure_id requires is_evolved')
+		}
+		if bid == id {
+			return error('base_treasure_id cannot point at the treasure itself')
+		}
+	}
+}
+
 pub fn create_treasure(conn sqlite.DB, params CreateTreasureParams) !int {
 	if params.lang == '' {
 		return error('treasure lang is required')
@@ -275,6 +290,7 @@ pub fn create_treasure(conn sqlite.DB, params CreateTreasureParams) !int {
 	if params.name == '' {
 		return error('treasure name is required')
 	}
+	validate_evolved_link(0, params)!
 
 	new_treasure := models.Treasure{
 		image:            params.image
