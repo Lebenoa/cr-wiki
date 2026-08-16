@@ -6,6 +6,9 @@ import database
 import database.models
 
 pub fn (wapp &App) pets(mut ctx Context) veb.Result {
+	if !rate_limit_ok(mut ctx) {
+		return ctx.text('too many requests')
+	}
 	ctx.set_translate_title("pets_page_title")
 	ctx.set_translate_desc("pets_page_description")
 	page_size := 30

@@ -176,6 +176,9 @@ fn selection_from_query(ctx &Context) BuildSelection {
 // partial so filters live in the URL.
 @['/builds']
 pub fn (wapp &App) builds(mut ctx Context) veb.Result {
+	if !rate_limit_ok(mut ctx) {
+		return ctx.text('too many requests')
+	}
 	ctx.set_translate_title('builds_page_title')
 	ctx.set_translate_desc('builds_page_description')
 	filter_cookie := (ctx.query['cookie'] or { '' }).int()

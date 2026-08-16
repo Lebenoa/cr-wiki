@@ -6,6 +6,9 @@ import database
 
 @['/search']
 pub fn (wapp &App) search(mut ctx Context) veb.Result {
+	if !rate_limit_ok(mut ctx) {
+		return ctx.text('too many requests')
+	}
 	ctx.set_translate_title("search_page_title")
 	ctx.noindex = true
 	q := (ctx.query['q'] or { '' }).trim_space()
