@@ -6,8 +6,8 @@ import database
 import database.models
 import app.util
 
-pub fn (wapp &App) treasures(mut ctx Context) veb.Result {
-	if !rate_limit_ok(mut ctx) {
+pub fn (mut wapp App) treasures(mut ctx Context) veb.Result {
+	if !wapp.rate_limit_ok(mut ctx) {
 		return rate_limited_response(mut ctx)
 	}
 	ctx.set_translate_title('treasures_page_title')
@@ -95,8 +95,8 @@ pub fn (wapp &App) new_treasure(mut ctx Context) veb.Result {
 }
 
 @['/treasures/:id']
-pub fn (wapp &App) treasure_info(mut ctx Context, id int) veb.Result {
-	if !rate_limit_ok(mut ctx) {
+pub fn (mut wapp App) treasure_info(mut ctx Context, id int) veb.Result {
+	if !wapp.rate_limit_ok(mut ctx) {
 		return rate_limited_response(mut ctx)
 	}
 	treasure := database.get_treasure(wapp.db, ctx.lang, id) or { return ctx.not_found() }

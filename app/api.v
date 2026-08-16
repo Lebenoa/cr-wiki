@@ -10,8 +10,8 @@ pub fn (ctx &Context) lang_map(lang string) string {
 }
 
 @['/api/available-langs']
-pub fn (wapp &App) available_lang(mut ctx Context) veb.Result {
-	if !rate_limit_ok(mut ctx) {
+pub fn (mut wapp App) available_lang(mut ctx Context) veb.Result {
+	if !wapp.rate_limit_ok(mut ctx) {
 		return rate_limited_response(mut ctx)
 	}
 	if !ctx.is_htmx_request() {
@@ -24,8 +24,8 @@ pub fn (wapp &App) available_lang(mut ctx Context) veb.Result {
 }
 
 @['/api/richtext-names']
-pub fn (wapp &App) richtext_names(mut ctx Context) veb.Result {
-	if !rate_limit_ok(mut ctx) {
+pub fn (mut wapp App) richtext_names(mut ctx Context) veb.Result {
+	if !wapp.rate_limit_ok(mut ctx) {
 		return rate_limited_response(mut ctx)
 	}
 	lang := ctx.query['lang'] or { 'en' }

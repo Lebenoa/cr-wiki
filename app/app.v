@@ -3,14 +3,11 @@ module app
 import veb
 import db.sqlite
 import os
+import sync
 import database.models
 
 const lang_cookie_key = 'wikilang'
 const session_cookie_key = 'CRSESSID'
-
-__global (
-	sessions shared map[string]models.User
-)
 
 pub struct Context {
 	veb.Context
@@ -29,11 +26,19 @@ pub struct App {
 
 	db sqlite.DB
 mut:
+	// in-memory login sessions (cookie -> user), keyed by CRSESSID
+	sessions   map[string]models.User
+	session_mu &sync.RwMutex
+	// per-IP rate-limit buckets for the public read endpoints
+	rate_buckets map[string]RateBucket
+	rate_mu      &sync.RwMutex
 }
 
 pub fn initialize(conn sqlite.DB) !&App {
 	mut new_app := &App{
-		db: conn,
+		db:         conn
+		session_mu: sync.new_rwmutex()
+		rate_mu:    sync.new_rwmutex()
 	}
 	new_app.static_mime_types['.avif'] = 'image/avif'
 	new_app.handle_static('static', true)!
@@ -198,16 +203,19 @@ pub fn (mut wapp App) before_request(mut ctx Context) bool {
 	}
 
 	ctx.user = if user_cookie := ctx.req.cookie(session_cookie_key) {
-		println("Found cookie: ${user_cookie}")
-		if user := sessions[user_cookie.value] {
-			println("Found user: ${user}")
+		wapp.session_mu.rlock()
+		has_session := user_cookie.value in wapp.sessions
+		user := wapp.sessions[user_cookie.value]
+		wapp.session_mu.runlock()
+		// struct-field map index yields the value (zero struct on a miss), not
+		// an Option, so presence must be checked with `in` — a garbage cookie
+		// must not look logged in
+		if has_session {
 			user
 		} else {
-			println("No user found for cookie: ${user_cookie.value}")
 			none
 		}
 	} else {
-		println("No cookie found")
 		none
 	}
 

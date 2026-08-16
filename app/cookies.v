@@ -5,8 +5,8 @@ import api
 import database
 import database.models
 
-pub fn (wapp &App) cookies(mut ctx Context) veb.Result {
-	if !rate_limit_ok(mut ctx) {
+pub fn (mut wapp App) cookies(mut ctx Context) veb.Result {
+	if !wapp.rate_limit_ok(mut ctx) {
 		return rate_limited_response(mut ctx)
 	}
 	ctx.set_translate_title('cookies_page_title')
@@ -79,8 +79,8 @@ pub fn (wapp &App) new_cookie(mut ctx Context) veb.Result {
 }
 
 @['/cookies/:id']
-pub fn (wapp &App) cookie_info(mut ctx Context, id int) veb.Result {
-	if !rate_limit_ok(mut ctx) {
+pub fn (mut wapp App) cookie_info(mut ctx Context, id int) veb.Result {
+	if !wapp.rate_limit_ok(mut ctx) {
 		return rate_limited_response(mut ctx)
 	}
 	cookie := database.get_cookie(wapp.db, ctx.lang, id) or { return ctx.not_found() }

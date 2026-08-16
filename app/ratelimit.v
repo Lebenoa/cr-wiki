@@ -23,10 +23,6 @@ mut:
 	last_fill i64
 }
 
-__global (
-	rate_buckets shared map[string]RateBucket
-)
-
 // client_ip resolves the requester's IP through veb's own detection: the
 // trusted proxy headers (CF-Connecting-IP, X-Forwarded-For, X-Real-Ip) first,
 // then the TCP peer address. Requests without any address share the
@@ -41,33 +37,33 @@ fn client_ip(ctx &Context) string {
 // with a 429 status and a Retry-After header when the bucket is empty. The
 // debug (test-session) build skips limiting so the HTTP suite isn't
 // throttled.
-pub fn rate_limit_ok(mut ctx Context) bool {
+pub fn (mut wapp App) rate_limit_ok(mut ctx Context) bool {
 	$if debug ? {
 		return true
 	}
 	now := time.now().unix()
 	ip := client_ip(ctx)
-	// the whole read-modify-write runs under the shared lock so concurrent
-	// requests actually deplete the bucket — per-op auto-locking alone would
-	// let parallel requests read the same balance and consume one token per
-	// wave
+	// the RwMutex guards the whole read-modify-write so concurrent requests
+	// actually deplete the bucket — per-op auto-locking alone would let
+	// parallel requests read the same balance and consume one token per wave
 	mut allowed := false
 	mut retry_after := 1
-	lock rate_buckets {
+	wapp.rate_mu.lock()
+	{
 		// prune buckets idle past the TTL once the map grows; under normal
 		// traffic the map stays small and no sweep ever runs
-		if rate_buckets.len > rate_sweep_above {
-			for k in rate_buckets.keys() {
-				b := rate_buckets[k]
+		if wapp.rate_buckets.len > rate_sweep_above {
+			for k in wapp.rate_buckets.keys() {
+				b := wapp.rate_buckets[k]
 				if now - b.last_fill > rate_idle_ttl {
-					rate_buckets.delete(k)
+					wapp.rate_buckets.delete(k)
 				}
 			}
 		}
 		mut b := RateBucket{}
-		had_key := ip in rate_buckets
+		had_key := ip in wapp.rate_buckets
 		if had_key {
-			b = rate_buckets[ip]
+			b = wapp.rate_buckets[ip]
 		} else {
 			b = RateBucket{
 				tokens:    rate_capacity
@@ -85,16 +81,17 @@ pub fn rate_limit_ok(mut ctx Context) bool {
 		}
 		if b.tokens >= 1 {
 			b.tokens -= 1
-			rate_buckets[ip] = b
+			wapp.rate_buckets[ip] = b
 			allowed = true
 		} else {
-			rate_buckets[ip] = b
+			wapp.rate_buckets[ip] = b
 			// the next token lands within one refill tick (20/s), so
 			// advertise that; the bucket may still be deep in the red when
 			// the burst was large, hence the +1 guard
 			retry_after = int((1.0 - b.tokens) / rate_refill) + 1
 		}
 	}
+	wapp.rate_mu.unlock()
 	if !allowed {
 		log.warn('rate limit hit for ${ip}')
 		ctx.res.set_status(.too_many_requests)

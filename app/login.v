@@ -57,7 +57,9 @@ pub fn (mut wapp App) login(mut ctx Context) veb.Result {
 		}
 
 		session_key := rand.uuid_v4()
-		sessions[session_key] = first_user
+		wapp.session_mu.lock()
+		wapp.sessions[session_key] = first_user
+		wapp.session_mu.unlock()
 		ctx.set_cookie(
 			name:  session_cookie_key
 			value: session_key

@@ -175,8 +175,8 @@ fn selection_from_query(ctx &Context) BuildSelection {
 // htmx requests (filter changes, infinite scroll) get only the cards
 // partial so filters live in the URL.
 @['/builds']
-pub fn (wapp &App) builds(mut ctx Context) veb.Result {
-	if !rate_limit_ok(mut ctx) {
+pub fn (mut wapp App) builds(mut ctx Context) veb.Result {
+	if !wapp.rate_limit_ok(mut ctx) {
 		return rate_limited_response(mut ctx)
 	}
 	ctx.set_translate_title('builds_page_title')
@@ -249,8 +249,8 @@ pub fn (wapp &App) new_build(mut ctx Context) veb.Result {
 // preview_partial re-renders just the loadout preview from query params, so
 // the planner can live-update the combi/treasure cards after each pick.
 @['/builds/preview']
-pub fn (wapp &App) preview_partial(mut ctx Context) veb.Result {
-	if !rate_limit_ok(mut ctx) {
+pub fn (mut wapp App) preview_partial(mut ctx Context) veb.Result {
+	if !wapp.rate_limit_ok(mut ctx) {
 		return rate_limited_response(mut ctx)
 	}
 	sel := selection_from_query(ctx)
@@ -418,8 +418,8 @@ fn submit_build(wapp &App, mut ctx Context) veb.Result {
 // so they win the match; the typed int param keeps non-numeric ids from
 // binding.
 @['/builds/:id']
-pub fn (wapp &App) build_info(mut ctx Context, id int) veb.Result {
-	if !rate_limit_ok(mut ctx) {
+pub fn (mut wapp App) build_info(mut ctx Context, id int) veb.Result {
+	if !wapp.rate_limit_ok(mut ctx) {
 		return rate_limited_response(mut ctx)
 	}
 	ctx.set_translate_title('build_detail_page_title')
