@@ -494,6 +494,10 @@ pub fn (wapp &App) build_delete(mut ctx Context, id int) veb.Result {
 	if !can_edit_build(ctx, b) {
 		return ctx.not_found()
 	}
+	if !verify_turnstile(ctx, 'build_delete') {
+		ctx.res.set_status(.forbidden)
+		return ctx.text('forbidden')
+	}
 	database.delete_build(wapp.db, id) or {
 		ctx.res.set_status(.bad_request)
 		return ctx.text(err.msg())
