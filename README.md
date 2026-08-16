@@ -103,9 +103,20 @@ db_file = "sqlite.db"
 # TURNSTILE_HOSTNAMES env vars override these fields when set.
 turnstile_secret = ""
 turnstile_hostnames = "localhost,127.0.0.1"
+
+# Per-IP rate limiting for the public read endpoints (search, list/detail
+# pages, API/planner AJAX). A token bucket per IP: `capacity` burst tokens,
+# refilled at `refill` per second; 429 while empty. `idle_ttl` is the seconds
+# a bucket may sit unused before the sweep prunes it (the sweep only runs
+# once the bucket map grows past `sweep_above` entries).
+[ratelimit]
+capacity = 60
+refill = 20
+idle_ttl = 300
+sweep_above = 2048
 ```
 
-All fields are optional; omitted fields fall back to the defaults in `config/config.v`. `turnstile_hostnames` is the comma-separated frontend-hostname allowlist checked against siteverify — production deployments must set the real domain (never `localhost`).
+All fields are optional; omitted fields fall back to the defaults in `config/config.v`, and non-positive `[ratelimit]` values are clamped back to those defaults at load. `turnstile_hostnames` is the comma-separated frontend-hostname allowlist checked against siteverify — production deployments must set the real domain (never `localhost`).
 
 ## Development
 

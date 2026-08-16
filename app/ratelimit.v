@@ -6,14 +6,11 @@ import veb
 
 // Per-IP token bucket for the public read endpoints (search, the cookie,
 // pet, treasure and build list pages, their detail pages, and the API/planner
-// AJAX endpoints). Each IP gets `rate_capacity` burst tokens, refilled at
-// `rate_refill` per second, and a 429 is returned while the bucket is empty,
-// so heavy read traffic cannot starve the server. One bucket per IP covers
-// all the endpoints together.
-const rate_capacity = 60.0 // burst tokens
-const rate_refill = 20.0 // tokens refilled per second
-const rate_idle_ttl = 300 // seconds without a request before a bucket is pruned
-const rate_sweep_above = 2048 // prune only once the bucket map grows past this
+// AJAX endpoints). Each IP gets `rate_cfg.capacity` burst tokens, refilled at
+// `rate_cfg.refill` per second, and a 429 is returned while the bucket is
+// empty, so heavy read traffic cannot starve the server. One bucket per IP
+// covers all the endpoints together. Tuning comes from the [ratelimit] table
+// of Config.toml (see config/config.v for the defaults).
 
 // RateBucket is one client's token state. last_fill is the unix-second
 // timestamp of the last refill; tokens is the current balance.
@@ -52,10 +49,10 @@ pub fn (mut wapp App) rate_limit_ok(mut ctx Context) bool {
 	{
 		// prune buckets idle past the TTL once the map grows; under normal
 		// traffic the map stays small and no sweep ever runs
-		if wapp.rate_buckets.len > rate_sweep_above {
+		if wapp.rate_buckets.len > wapp.rate_cfg.sweep_above {
 			for k in wapp.rate_buckets.keys() {
 				b := wapp.rate_buckets[k]
-				if now - b.last_fill > rate_idle_ttl {
+				if now - b.last_fill > wapp.rate_cfg.idle_ttl {
 					wapp.rate_buckets.delete(k)
 				}
 			}
@@ -66,16 +63,16 @@ pub fn (mut wapp App) rate_limit_ok(mut ctx Context) bool {
 			b = wapp.rate_buckets[ip]
 		} else {
 			b = RateBucket{
-				tokens:    rate_capacity
+				tokens:    wapp.rate_cfg.capacity
 				last_fill: now
 			}
 		}
 		// refill by wall-clock elapsed time, capped at the burst capacity
 		elapsed := now - b.last_fill
 		if elapsed > 0 {
-			b.tokens += f64(elapsed) * rate_refill
-			if b.tokens > rate_capacity {
-				b.tokens = rate_capacity
+			b.tokens += f64(elapsed) * wapp.rate_cfg.refill
+			if b.tokens > wapp.rate_cfg.capacity {
+				b.tokens = wapp.rate_cfg.capacity
 			}
 			b.last_fill = now
 		}
@@ -85,10 +82,10 @@ pub fn (mut wapp App) rate_limit_ok(mut ctx Context) bool {
 			allowed = true
 		} else {
 			wapp.rate_buckets[ip] = b
-			// the next token lands within one refill tick (20/s), so
-			// advertise that; the bucket may still be deep in the red when
-			// the burst was large, hence the +1 guard
-			retry_after = int((1.0 - b.tokens) / rate_refill) + 1
+			// the next token lands within one refill tick, so advertise that;
+			// the bucket may still be deep in the red when the burst was
+			// large, hence the +1 guard
+			retry_after = int((1.0 - b.tokens) / wapp.rate_cfg.refill) + 1
 		}
 	}
 	wapp.rate_mu.unlock()

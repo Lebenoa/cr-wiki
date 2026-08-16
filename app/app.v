@@ -1,6 +1,7 @@
 module app
 
 import veb
+import config
 import db.sqlite
 import os
 import sync
@@ -25,6 +26,8 @@ pub struct App {
 	veb.Middleware[Context]
 
 	db sqlite.DB
+	// per-IP rate-limit tuning from the [ratelimit] table of Config.toml
+	rate_cfg config.RateLimitConfig
 mut:
 	// in-memory login sessions (cookie -> user), keyed by CRSESSID
 	sessions   map[string]models.User
@@ -35,10 +38,12 @@ mut:
 }
 
 pub fn initialize(conn sqlite.DB) !&App {
+	cfg := config.load() or { config.Config{} }
 	mut new_app := &App{
 		db:         conn
 		session_mu: sync.new_rwmutex()
 		rate_mu:    sync.new_rwmutex()
+		rate_cfg:   cfg.ratelimit
 	}
 	new_app.static_mime_types['.avif'] = 'image/avif'
 	new_app.handle_static('static', true)!
