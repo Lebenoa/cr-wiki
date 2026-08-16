@@ -4,7 +4,6 @@ import veb
 import config
 import db.sqlite
 import os
-import sync
 import database.models
 
 const lang_cookie_key = 'wikilang'
@@ -29,21 +28,18 @@ pub struct App {
 	// per-IP rate-limit tuning from the [ratelimit] table of Config.toml
 	rate_cfg config.RateLimitConfig
 mut:
-	// in-memory login sessions (cookie -> user), keyed by CRSESSID
-	sessions   map[string]models.User
-	session_mu &sync.RwMutex
+	// in-memory login sessions (cookie -> user), keyed by CRSESSID. Shared
+	// fields carry their own lock; access goes through lock/rlock blocks.
+	sessions shared map[string]models.User
 	// per-IP rate-limit buckets for the public read endpoints
-	rate_buckets map[string]RateBucket
-	rate_mu      &sync.RwMutex
+	rate_buckets shared map[string]RateBucket
 }
 
 pub fn initialize(conn sqlite.DB) !&App {
 	cfg := config.load() or { config.Config{} }
 	mut new_app := &App{
-		db:         conn
-		session_mu: sync.new_rwmutex()
-		rate_mu:    sync.new_rwmutex()
-		rate_cfg:   cfg.ratelimit
+		db:       conn
+		rate_cfg: cfg.ratelimit
 	}
 	new_app.static_mime_types['.avif'] = 'image/avif'
 	new_app.handle_static('static', true)!
@@ -208,10 +204,12 @@ pub fn (mut wapp App) before_request(mut ctx Context) bool {
 	}
 
 	ctx.user = if user_cookie := ctx.req.cookie(session_cookie_key) {
-		wapp.session_mu.rlock()
-		has_session := user_cookie.value in wapp.sessions
-		user := wapp.sessions[user_cookie.value]
-		wapp.session_mu.runlock()
+		mut has_session := false
+		mut user := models.User{}
+		rlock wapp.sessions {
+			has_session = user_cookie.value in wapp.sessions
+			user = wapp.sessions[user_cookie.value]
+		}
 		// struct-field map index yields the value (zero struct on a miss), not
 		// an Option, so presence must be checked with `in` — a garbage cookie
 		// must not look logged in

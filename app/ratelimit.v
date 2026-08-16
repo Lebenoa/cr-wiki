@@ -40,13 +40,13 @@ pub fn (mut wapp App) rate_limit_ok(mut ctx Context) bool {
 	}
 	now := time.now().unix()
 	ip := client_ip(ctx)
-	// the RwMutex guards the whole read-modify-write so concurrent requests
-	// actually deplete the bucket — per-op auto-locking alone would let
-	// parallel requests read the same balance and consume one token per wave
+	// the lock block guards the whole read-modify-write so concurrent
+	// requests actually deplete the bucket — per-op auto-locking alone would
+	// let parallel requests read the same balance and consume one token per
+	// wave
 	mut allowed := false
 	mut retry_after := 1
-	wapp.rate_mu.lock()
-	{
+	lock wapp.rate_buckets {
 		// prune buckets idle past the TTL once the map grows; under normal
 		// traffic the map stays small and no sweep ever runs
 		if wapp.rate_buckets.len > wapp.rate_cfg.sweep_above {
@@ -88,7 +88,6 @@ pub fn (mut wapp App) rate_limit_ok(mut ctx Context) bool {
 			retry_after = int((1.0 - b.tokens) / wapp.rate_cfg.refill) + 1
 		}
 	}
-	wapp.rate_mu.unlock()
 	if !allowed {
 		log.warn('rate limit hit for ${ip}')
 		ctx.res.set_status(.too_many_requests)
