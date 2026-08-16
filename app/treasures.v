@@ -65,31 +65,25 @@ pub fn (wapp &App) new_treasure(mut ctx Context) veb.Result {
 		ctx.noindex = true
 		languages := api.available_lang()
 		grades := models.grade_values
-		state := TreasureForm{
-			lang:         ctx.lang
-			effect_names: database.effect_names(wapp.db, ctx.lang) or { [] }
-			cookies:      database.cookie_options(wapp.db, ctx.lang) or { [] }
-			pets:         database.pet_options(wapp.db, ctx.lang) or { [] }
-			bases:        database.normal_treasure_options(wapp.db, ctx.lang) or { [] }
-		}
+		state := treasure_form_state(wapp, ctx, none)
 		return $veb.html('./templates/admin/new_treasure.html')
 	} else if ctx.req.method == .post {
 		if !verify_turnstile(ctx, 'treasure_form') {
 			ctx.res.set_status(.forbidden)
-			return ctx.text('forbidden')
+			return treasure_submit_error(wapp, ctx, none, veb.tr(ctx.lang, 'turnstile_form_failed'))
 		}
 
 		params := parse_treasure_form(mut ctx) or {
 			ctx.res.set_status(.bad_request)
-			return ctx.text(err.msg())
+			return treasure_submit_error(wapp, ctx, none, err.msg())
 		}
 
 		database.create_treasure(wapp.db, params) or {
 			ctx.res.set_status(.bad_request)
-			return ctx.text('Failed to create treasure: ${err}')
+			return treasure_submit_error(wapp, ctx, none, 'Failed to create treasure: ${err}')
 		}
 
-		return ctx.redirect('/treasures')
+		return submit_success(mut ctx, '/treasures')
 	}
 
 	return ctx.not_found()
@@ -148,64 +142,25 @@ pub fn (wapp &App) edit_treasure(mut ctx Context, id int) veb.Result {
 		ctx.noindex = true
 		languages := api.available_lang()
 		grades := models.grade_values
-		rd := treasure.release_date
-		state := TreasureForm{
-			edit_mode:       true
-			id:              treasure.treasure_id
-			name:            treasure.name
-			description:     treasure.description
-			grade:           if g := treasure.grade {
-				g.str()
-			} else {
-				''
-			}
-			effects:         effect_rows_from_db(database.treasure_effect_rows(wapp.db, ctx.lang,
-				id, models.EffectState.normal) or { [] })
-			blessed_effects: effect_rows_from_db(database.treasure_effect_rows(wapp.db, ctx.lang,
-				id, models.EffectState.blessed) or { [] })
-			effect_names:    database.effect_names(wapp.db, ctx.lang) or { [] }
-			is_evolved:      treasure.is_evolved
-			is_power_plus:   treasure.is_power_plus
-			base_treasure_id: if bid := treasure.base_treasure_id {
-				bid
-			} else {
-				0
-			}
-			bases:           database.normal_treasure_options(wapp.db, ctx.lang) or { [] }
-			release_date:    '${rd.year:04d}-${int(rd.month):02d}-${rd.day:02d}'
-			lang:            treasure.lang
-			image:           treasure.image
-			unlock_cookie_id: if cid := treasure.unlock_cookie_id {
-				cid
-			} else {
-				0
-			}
-			unlock_pet_id:    if pid := treasure.unlock_pet_id {
-				pid
-			} else {
-				0
-			}
-			cookies:          database.cookie_options(wapp.db, ctx.lang) or { [] }
-			pets:             database.pet_options(wapp.db, ctx.lang) or { [] }
-		}
+		state := treasure_form_state(wapp, ctx, treasure)
 		return $veb.html('./templates/admin/new_treasure.html')
 	} else if ctx.req.method == .post {
 		if !verify_turnstile(ctx, 'treasure_form') {
 			ctx.res.set_status(.forbidden)
-			return ctx.text('forbidden')
+			return treasure_submit_error(wapp, ctx, treasure, veb.tr(ctx.lang, 'turnstile_form_failed'))
 		}
 
 		params := parse_treasure_form(mut ctx) or {
 			ctx.res.set_status(.bad_request)
-			return ctx.text(err.msg())
+			return treasure_submit_error(wapp, ctx, treasure, err.msg())
 		}
 
 		database.update_treasure(wapp.db, id, params) or {
 			ctx.res.set_status(.bad_request)
-			return ctx.text('Failed to update treasure: ${err}')
+			return treasure_submit_error(wapp, ctx, treasure, 'Failed to update treasure: ${err}')
 		}
 
-		return ctx.redirect('/treasures/${id}')
+		return submit_success(mut ctx, '/treasures/${id}')
 	}
 
 	return ctx.not_found()

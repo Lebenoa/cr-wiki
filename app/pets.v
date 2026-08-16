@@ -47,32 +47,25 @@ pub fn (wapp &App) new_pet(mut ctx Context) veb.Result {
 		ctx.noindex = true
 		languages := api.available_lang()
 		grades := models.grade_values
-		state := PetForm{
-			lang:         ctx.lang
-			grade:        'c'
-			treasures:    database.treasure_options(wapp.db, ctx.lang, false) or { [] }
-			partners:     database.cookie_options(wapp.db, ctx.lang) or { [] }
-			partner_kind: 'cookie'
-			effect_names: database.effect_names(wapp.db, ctx.lang) or { [] }
-		}
+		state := pet_form_state(wapp, ctx, none)
 		return $veb.html("./templates/admin/new_pet.html")
 	} else if ctx.req.method == .post {
 		if !verify_turnstile(ctx, 'pet_form') {
 			ctx.res.set_status(.forbidden)
-			return ctx.text('forbidden')
+			return pet_submit_error(wapp, ctx, none, veb.tr(ctx.lang, 'turnstile_form_failed'))
 		}
 
 		params := parse_pet_form(mut ctx) or {
 			ctx.res.set_status(.bad_request)
-			return ctx.text(err.msg())
+			return pet_submit_error(wapp, ctx, none, err.msg())
 		}
 
 		database.create_pet(wapp.db, params) or {
 			ctx.res.set_status(.bad_request)
-			return ctx.text('Failed to create pet: ${err}')
+			return pet_submit_error(wapp, ctx, none, 'Failed to create pet: ${err}')
 		}
 
-		return ctx.redirect('/pets')
+		return submit_success(mut ctx, '/pets')
 	}
 
 	return ctx.not_found()
@@ -115,49 +108,26 @@ pub fn (wapp &App) edit_pet(mut ctx Context, id int) veb.Result {
 		ctx.noindex = true
 		languages := api.available_lang()
 		grades := models.grade_values
-		rd := pet.release_date
-		unlock_tid := if ut := database.get_unlocked_treasure(wapp.db, ctx.lang, 'pet',
-			pet.pet_id) {
-			ut.treasure_id
-		} else {
-			0
-		}
-		state := PetForm{
-			edit_mode:         true
-			id:                pet.pet_id
-			name:              pet.name
-			abilities:         pet.abilities
-			description:       pet.description
-			grade:             pet.grade.str()
-			release_date:      '${rd.year:04d}-${int(rd.month):02d}-${rd.day:02d}'
-			lang:              pet.lang
-			image:             pet.image
-			unlock_treasure_id: unlock_tid
-			treasures:         database.treasure_options(wapp.db, ctx.lang, false) or { [] }
-			combis:            database.combi_edit_rows(wapp.db, ctx.lang, 'pet', id) or { [] }
-			partners:          database.cookie_options(wapp.db, ctx.lang) or { [] }
-			partner_kind:      'cookie'
-			effect_names:      database.effect_names(wapp.db, ctx.lang) or { [] }
-		}
+		state := pet_form_state(wapp, ctx, pet)
 		return $veb.html("./templates/admin/new_pet.html")
 
 	} else if ctx.req.method == .post {
 		if !verify_turnstile(ctx, 'pet_form') {
 			ctx.res.set_status(.forbidden)
-			return ctx.text('forbidden')
+			return pet_submit_error(wapp, ctx, pet, veb.tr(ctx.lang, 'turnstile_form_failed'))
 		}
 
 		params := parse_pet_form(mut ctx) or {
 			ctx.res.set_status(.bad_request)
-			return ctx.text(err.msg())
+			return pet_submit_error(wapp, ctx, pet, err.msg())
 		}
 
 		database.update_pet(wapp.db, id, params) or {
 			ctx.res.set_status(.bad_request)
-			return ctx.text('Failed to update pet: ${err}')
+			return pet_submit_error(wapp, ctx, pet, 'Failed to update pet: ${err}')
 		}
 
-		return ctx.redirect('/pets/${id}')
+		return submit_success(mut ctx, '/pets/${id}')
 	}
 
 	return ctx.not_found()

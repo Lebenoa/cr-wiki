@@ -229,6 +229,9 @@ is_power_plus
 base_treasure_hint
 สมบัติธรรมดาที่วิวัฒน์รูปแบบนี้พัฒนามาจาก
 -----
+turnstile_form_failed
+การตรวจสอบบอตล้มเหลว กรุณาลองอีกครั้ง
+-----
 state_normal
 ธรรมดา
 -----

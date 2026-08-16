@@ -1,6 +1,8 @@
 module app
 
 import time
+import api
+import veb
 import database
 import database.models
 import app.util
@@ -18,8 +20,10 @@ fn parse_release_date(mut ctx Context) !time.Time {
 }
 
 // CookieForm carries the form state shared by the cookie create/edit pages.
+// Fields are pub mut — the failed-submit path re-renders the form and
+// overlays the submitted values onto the state.
 pub struct CookieForm {
-pub:
+pub mut:
 	edit_mode         bool
 	id                int
 	name              string
@@ -38,11 +42,14 @@ pub:
 	partners          []database.IdNameOption // pickable pets for a new combo
 	partner_kind      string                  // 'pet' — sprite dir for partner images
 	effect_names      []string                // shared effect-name suggestions
+	form_error        string                  // validation error shown in the error banner (failed submit)
 }
 
 // PetForm carries the form state shared by the pet create/edit pages.
+// Fields are pub mut — the failed-submit path re-renders the form and
+// overlays the submitted values onto the state.
 pub struct PetForm {
-pub:
+pub mut:
 	edit_mode         bool
 	id                int
 	name              string
@@ -58,6 +65,7 @@ pub:
 	partners          []database.IdNameOption // pickable cookies for a new combo
 	partner_kind      string                  // 'cookie' — sprite dir for partner images
 	effect_names      []string                // shared effect-name suggestions
+	form_error        string                  // validation error shown in the error banner (failed submit)
 }
 
 // EffectRow carries one effect row in the treasure form's structured editor.
@@ -167,8 +175,10 @@ fn parse_effect_value(raw string) !EffectValueParts {
 }
 
 // TreasureForm carries the form state shared by the treasure create/edit pages.
+// Fields are pub mut — the failed-submit path re-renders the form and
+// overlays the submitted values onto the state.
 pub struct TreasureForm {
-pub:
+pub mut:
 	edit_mode       bool
 	id              int
 	name            string
@@ -189,6 +199,7 @@ pub:
 	unlock_pet_id    int // 0 = none; pet whose max-level upgrade unlocks this treasure
 	cookies         []database.IdNameOption
 	pets            []database.IdNameOption
+	form_error      string // validation error shown in the error banner (failed submit)
 }
 
 // parse_combi_editor reads the combi-bonus section of the cookie/pet form:
@@ -406,4 +417,247 @@ fn parse_treasure_form(mut ctx Context) !database.CreateTreasureParams {
 		unlock_cookie_id: parse_optional_id(mut ctx, 'unlock_cookie_id')
 		unlock_pet_id:    parse_optional_id(mut ctx, 'unlock_pet_id')
 	}
+}
+
+// submit_success finishes a successful form POST. htmx requests get an
+// HX-Redirect header so the browser navigates to the destination (a fragment
+// swap would render it inside the form's target with the URL stuck on the
+// form path); plain requests keep the normal 302 redirect.
+fn submit_success(mut ctx Context, redirect_url string) veb.Result {
+	if ctx.is_htmx_request() {
+		ctx.set_custom_header('HX-Redirect', redirect_url) or {}
+		return ctx.text('')
+	}
+	return ctx.redirect(redirect_url)
+}
+
+// cookie_form_state builds the CookieForm for the create page (edit = none)
+// or the edit page. Shared by the GET render and the failed-POST re-render.
+fn cookie_form_state(wapp &App, ctx &Context, edit ?database.CookieView) CookieForm {
+	mut state := CookieForm{
+		lang:         ctx.lang
+		grade:        'c'
+		treasures:    database.treasure_options(wapp.db, ctx.lang, false) or { [] }
+		partners:     database.pet_options(wapp.db, ctx.lang) or { [] }
+		partner_kind: 'pet'
+		effect_names: database.effect_names(wapp.db, ctx.lang) or { [] }
+	}
+	if c := edit {
+		rd := c.release_date
+		unlock_tid := if ut := database.get_unlocked_treasure(wapp.db, ctx.lang, 'cookie',
+			c.cookie_id) {
+			ut.treasure_id
+		} else {
+			0
+		}
+		state.edit_mode = true
+		state.id = c.cookie_id
+		state.name = c.name
+		state.abilities = c.abilities
+		state.description = c.description
+		state.power_plus = c.power_plus
+		state.power_plus_requirement = c.power_plus_requirement
+		state.unlock_goal = c.unlock_goal
+		state.grade = c.grade.str()
+		state.release_date = '${rd.year:04d}-${int(rd.month):02d}-${rd.day:02d}'
+		state.lang = c.lang
+		state.image = c.image
+		state.unlock_treasure_id = unlock_tid
+		state.combis = database.combi_edit_rows(wapp.db, ctx.lang, 'cookie', c.cookie_id) or { [] }
+	}
+	return state
+}
+
+// cookie_form_overlay_post restores the submitted scalar values after a
+// failed submission. The dynamic editors (combo rows, treasure combobox)
+// cannot be rebuilt from a bare form POST, so they keep their defaults.
+fn cookie_form_overlay_post(ctx &Context, mut state CookieForm) {
+	state.name = ctx.form['name'] or { state.name }
+	state.abilities = ctx.form['abilities'] or { state.abilities }
+	state.description = ctx.form['description'] or { state.description }
+	state.power_plus = ctx.form['power_plus'] or { state.power_plus }
+	state.power_plus_requirement = ctx.form['power_plus_requirement'] or { state.power_plus_requirement }
+	state.unlock_goal = ctx.form['unlock_goal'] or { state.unlock_goal }
+	state.grade = ctx.form['grade'] or { state.grade }
+	state.release_date = ctx.form['release_date'] or { state.release_date }
+	if lang := ctx.form['lang'] {
+		state.lang = lang
+	}
+	if raw := ctx.form['unlock_treasure_id'] {
+		if raw != '' && raw != '__new__' {
+			state.unlock_treasure_id = raw.int()
+		}
+	}
+}
+
+// cookie_submit_error returns a failed cookie submission: htmx requests get
+// an OOB error banner (the form stays in place with the user's input intact);
+// plain requests get the full form page re-rendered with the banner inline.
+fn cookie_submit_error(wapp &App, ctx &Context, edit ?database.CookieView, form_error string) veb.Result {
+	if ctx.is_htmx_request() {
+		err_msg := form_error
+		return $veb.html('./templates/components/form_error.html')
+	}
+	languages := api.available_lang()
+	grades := models.grade_values
+	mut state := cookie_form_state(wapp, ctx, edit)
+	cookie_form_overlay_post(ctx, mut state)
+	state.form_error = form_error
+	return $veb.html('./templates/admin/new_cookie.html')
+}
+
+// pet_form_state builds the PetForm for the create page (edit = none) or the
+// edit page. Shared by the GET render and the failed-POST re-render.
+fn pet_form_state(wapp &App, ctx &Context, edit ?database.PetView) PetForm {
+	mut state := PetForm{
+		lang:         ctx.lang
+		grade:        'c'
+		treasures:    database.treasure_options(wapp.db, ctx.lang, false) or { [] }
+		partners:     database.cookie_options(wapp.db, ctx.lang) or { [] }
+		partner_kind: 'cookie'
+		effect_names: database.effect_names(wapp.db, ctx.lang) or { [] }
+	}
+	if p := edit {
+		rd := p.release_date
+		unlock_tid := if ut := database.get_unlocked_treasure(wapp.db, ctx.lang, 'pet', p.pet_id) {
+			ut.treasure_id
+		} else {
+			0
+		}
+		state.edit_mode = true
+		state.id = p.pet_id
+		state.name = p.name
+		state.abilities = p.abilities
+		state.description = p.description
+		state.grade = p.grade.str()
+		state.release_date = '${rd.year:04d}-${int(rd.month):02d}-${rd.day:02d}'
+		state.lang = p.lang
+		state.image = p.image
+		state.unlock_treasure_id = unlock_tid
+		state.combis = database.combi_edit_rows(wapp.db, ctx.lang, 'pet', p.pet_id) or { [] }
+	}
+	return state
+}
+
+// pet_form_overlay_post restores the submitted scalar values after a failed
+// submission (the dynamic editors keep their defaults, see cookie overlay).
+fn pet_form_overlay_post(ctx &Context, mut state PetForm) {
+	state.name = ctx.form['name'] or { state.name }
+	state.abilities = ctx.form['abilities'] or { state.abilities }
+	state.description = ctx.form['description'] or { state.description }
+	state.grade = ctx.form['grade'] or { state.grade }
+	state.release_date = ctx.form['release_date'] or { state.release_date }
+	if lang := ctx.form['lang'] {
+		state.lang = lang
+	}
+	if raw := ctx.form['unlock_treasure_id'] {
+		if raw != '' && raw != '__new__' {
+			state.unlock_treasure_id = raw.int()
+		}
+	}
+}
+
+// pet_submit_error returns a failed pet submission: htmx requests get an OOB
+// error banner; plain requests get the full form page with the banner inline.
+fn pet_submit_error(wapp &App, ctx &Context, edit ?database.PetView, form_error string) veb.Result {
+	if ctx.is_htmx_request() {
+		err_msg := form_error
+		return $veb.html('./templates/components/form_error.html')
+	}
+	languages := api.available_lang()
+	grades := models.grade_values
+	mut state := pet_form_state(wapp, ctx, edit)
+	pet_form_overlay_post(ctx, mut state)
+	state.form_error = form_error
+	return $veb.html('./templates/admin/new_pet.html')
+}
+
+// treasure_form_state builds the TreasureForm for the create page (edit =
+// none) or the edit page. Shared by the GET render and the failed-POST
+// re-render.
+fn treasure_form_state(wapp &App, ctx &Context, edit ?database.TreasureView) TreasureForm {
+	mut state := TreasureForm{
+		lang:         ctx.lang
+		effect_names: database.effect_names(wapp.db, ctx.lang) or { [] }
+		cookies:      database.cookie_options(wapp.db, ctx.lang) or { [] }
+		pets:         database.pet_options(wapp.db, ctx.lang) or { [] }
+		bases:        database.normal_treasure_options(wapp.db, ctx.lang) or { [] }
+	}
+	if t := edit {
+		rd := t.release_date
+		state.edit_mode = true
+		state.id = t.treasure_id
+		state.name = t.name
+		state.description = t.description
+		state.grade = if g := t.grade {
+			g.str()
+		} else {
+			''
+		}
+		state.effects = effect_rows_from_db(database.treasure_effect_rows(wapp.db, ctx.lang,
+			t.treasure_id, models.EffectState.normal) or { [] })
+		state.blessed_effects = effect_rows_from_db(database.treasure_effect_rows(wapp.db,
+			ctx.lang, t.treasure_id, models.EffectState.blessed) or { [] })
+		state.is_evolved = t.is_evolved
+		state.is_power_plus = t.is_power_plus
+		state.base_treasure_id = if bid := t.base_treasure_id {
+			bid
+		} else {
+			0
+		}
+		state.release_date = '${rd.year:04d}-${int(rd.month):02d}-${rd.day:02d}'
+		state.lang = t.lang
+		state.image = t.image
+		state.unlock_cookie_id = if cid := t.unlock_cookie_id {
+			cid
+		} else {
+			0
+		}
+		state.unlock_pet_id = if pid := t.unlock_pet_id {
+			pid
+		} else {
+			0
+		}
+	}
+	return state
+}
+
+// treasure_form_overlay_post restores the submitted scalar values after a
+// failed submission (effect rows and the unlock combobox keep their
+// defaults — they cannot be rebuilt from a bare form POST).
+fn treasure_form_overlay_post(ctx &Context, mut state TreasureForm) {
+	state.name = ctx.form['name'] or { state.name }
+	state.description = ctx.form['description'] or { state.description }
+	state.grade = ctx.form['grade'] or { state.grade }
+	state.release_date = ctx.form['release_date'] or { state.release_date }
+	if lang := ctx.form['lang'] {
+		state.lang = lang
+	}
+	state.is_evolved = ctx.form['is_evolved'] == 'true'
+	state.is_power_plus = ctx.form['is_power_plus'] == 'true'
+	if raw := ctx.form['base_treasure_id'] {
+		state.base_treasure_id = raw.int()
+	}
+	if raw := ctx.form['unlock_cookie_id'] {
+		state.unlock_cookie_id = raw.int()
+	}
+	if raw := ctx.form['unlock_pet_id'] {
+		state.unlock_pet_id = raw.int()
+	}
+}
+
+// treasure_submit_error returns a failed treasure submission: htmx requests
+// get an OOB error banner; plain requests get the full form page with the
+// banner inline.
+fn treasure_submit_error(wapp &App, ctx &Context, edit ?database.TreasureView, form_error string) veb.Result {
+	if ctx.is_htmx_request() {
+		err_msg := form_error
+		return $veb.html('./templates/components/form_error.html')
+	}
+	languages := api.available_lang()
+	grades := models.grade_values
+	mut state := treasure_form_state(wapp, ctx, edit)
+	treasure_form_overlay_post(ctx, mut state)
+	state.form_error = form_error
+	return $veb.html('./templates/admin/new_treasure.html')
 }

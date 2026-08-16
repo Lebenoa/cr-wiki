@@ -47,32 +47,25 @@ pub fn (wapp &App) new_cookie(mut ctx Context) veb.Result {
 		ctx.noindex = true
 		languages := api.available_lang()
 		grades := models.grade_values
-		state := CookieForm{
-			lang:         ctx.lang
-			grade:        'c'
-			treasures:    database.treasure_options(wapp.db, ctx.lang, false) or { [] }
-			partners:     database.pet_options(wapp.db, ctx.lang) or { [] }
-			partner_kind: 'pet'
-			effect_names: database.effect_names(wapp.db, ctx.lang) or { [] }
-		}
+		state := cookie_form_state(wapp, ctx, none)
 		return $veb.html('./templates/admin/new_cookie.html')
 	} else if ctx.req.method == .post {
 		if !verify_turnstile(ctx, 'cookie_form') {
 			ctx.res.set_status(.forbidden)
-			return ctx.text('forbidden')
+			return cookie_submit_error(wapp, ctx, none, veb.tr(ctx.lang, 'turnstile_form_failed'))
 		}
 
 		params := parse_cookie_form(mut ctx) or {
 			ctx.res.set_status(.bad_request)
-			return ctx.text(err.msg())
+			return cookie_submit_error(wapp, ctx, none, err.msg())
 		}
 
 		cookie_id := database.create_cookie(wapp.db, params) or {
 			ctx.res.set_status(.bad_request)
-			return ctx.text('Failed to create cookie: ${err}')
+			return cookie_submit_error(wapp, ctx, none, 'Failed to create cookie: ${err}')
 		}
 
-		return ctx.redirect('/cookies/${cookie_id}')
+		return submit_success(mut ctx, '/cookies/${cookie_id}')
 	}
 
 	return ctx.not_found()
@@ -118,51 +111,25 @@ pub fn (wapp &App) edit_cookie(mut ctx Context, id int) veb.Result {
 		ctx.noindex = true
 		languages := api.available_lang()
 		grades := models.grade_values
-		rd := cookie.release_date
-		unlock_tid := if ut := database.get_unlocked_treasure(wapp.db, ctx.lang, 'cookie',
-			cookie.cookie_id) {
-			ut.treasure_id
-		} else {
-			0
-		}
-		state := CookieForm{
-			edit_mode:         true
-			id:                cookie.cookie_id
-			name:              cookie.name
-			abilities:         cookie.abilities
-			description:       cookie.description
-			power_plus:        cookie.power_plus
-			power_plus_requirement: cookie.power_plus_requirement
-			unlock_goal:       cookie.unlock_goal
-			grade:             cookie.grade.str()
-			release_date:      '${rd.year:04d}-${int(rd.month):02d}-${rd.day:02d}'
-			lang:              cookie.lang
-			image:             cookie.image
-			unlock_treasure_id: unlock_tid
-			treasures:         database.treasure_options(wapp.db, ctx.lang, false) or { [] }
-			combis:            database.combi_edit_rows(wapp.db, ctx.lang, 'cookie', id) or { [] }
-			partners:          database.pet_options(wapp.db, ctx.lang) or { [] }
-			partner_kind:      'pet'
-			effect_names:      database.effect_names(wapp.db, ctx.lang) or { [] }
-		}
+		state := cookie_form_state(wapp, ctx, cookie)
 		return $veb.html('./templates/admin/new_cookie.html')
 	} else if ctx.req.method == .post {
 		if !verify_turnstile(ctx, 'cookie_form') {
 			ctx.res.set_status(.forbidden)
-			return ctx.text('forbidden')
+			return cookie_submit_error(wapp, ctx, cookie, veb.tr(ctx.lang, 'turnstile_form_failed'))
 		}
 
 		params := parse_cookie_form(mut ctx) or {
 			ctx.res.set_status(.bad_request)
-			return ctx.text(err.msg())
+			return cookie_submit_error(wapp, ctx, cookie, err.msg())
 		}
 
 		database.update_cookie(wapp.db, id, params) or {
 			ctx.res.set_status(.bad_request)
-			return ctx.text('Failed to update cookie: ${err}')
+			return cookie_submit_error(wapp, ctx, cookie, 'Failed to update cookie: ${err}')
 		}
 
-		return ctx.redirect('/cookies/${id}')
+		return submit_success(mut ctx, '/cookies/${id}')
 	}
 
 	return ctx.not_found()
