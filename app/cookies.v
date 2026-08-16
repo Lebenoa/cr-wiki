@@ -54,6 +54,11 @@ pub fn (wapp &App) new_cookie(mut ctx Context) veb.Result {
 		}
 		return $veb.html('./templates/admin/new_cookie.html')
 	} else if ctx.req.method == .post {
+		if !verify_turnstile(ctx, 'cookie_form') {
+			ctx.res.set_status(.forbidden)
+			return ctx.text('forbidden')
+		}
+
 		params := parse_cookie_form(mut ctx) or {
 			ctx.res.set_status(.bad_request)
 			return ctx.text(err.msg())
@@ -134,6 +139,11 @@ pub fn (wapp &App) edit_cookie(mut ctx Context, id int) veb.Result {
 		}
 		return $veb.html('./templates/admin/new_cookie.html')
 	} else if ctx.req.method == .post {
+		if !verify_turnstile(ctx, 'cookie_form') {
+			ctx.res.set_status(.forbidden)
+			return ctx.text('forbidden')
+		}
+
 		params := parse_cookie_form(mut ctx) or {
 			ctx.res.set_status(.bad_request)
 			return ctx.text(err.msg())

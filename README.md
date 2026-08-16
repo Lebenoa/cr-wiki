@@ -97,9 +97,15 @@ The server binds to `0.0.0.0:6785` (see `Config.toml`; defaults without a config
 host = "0.0.0.0"
 port = 6785
 db_file = "sqlite.db"
+# Cloudflare Turnstile bot protection (protected POST handlers reject with
+# 403 unless siteverify passes). Omit turnstile_secret to disable enforcement
+# only in the debug test-session build; the TURNSTILE_SECRET /
+# TURNSTILE_HOSTNAMES env vars override these fields when set.
+turnstile_secret = ""
+turnstile_hostnames = "localhost,127.0.0.1"
 ```
 
-All fields are optional; omitted fields fall back to the defaults in `config/config.v`.
+All fields are optional; omitted fields fall back to the defaults in `config/config.v`. `turnstile_hostnames` is the comma-separated frontend-hostname allowlist checked against siteverify — production deployments must set the real domain (never `localhost`).
 
 ## Development
 

@@ -87,6 +87,7 @@
                 <label class="font-body-md text-on-surface-variant text-sm cursor-pointer" for="terms">I accept
                     the <a class="text-primary hover:underline" href="#">Protocols of Service</a></label>
             </div>
+            <div class="cf-turnstile" data-sitekey="@{ctx.turnstile_sitekey_for_template()}" data-action="register"></div>
             <button
                 class="w-full bg-primary hover:bg-primary/90 text-foreground font-headline py-4 rounded-xl shadow-lg transition-all active:scale-[0.98] neon-glow flex items-center justify-center gap-2 group">
                 %register_button_text

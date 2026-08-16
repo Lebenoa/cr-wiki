@@ -70,6 +70,11 @@ pub fn (wapp &App) new_treasure(mut ctx Context) veb.Result {
 		}
 		return $veb.html('./templates/admin/new_treasure.html')
 	} else if ctx.req.method == .post {
+		if !verify_turnstile(ctx, 'treasure_form') {
+			ctx.res.set_status(.forbidden)
+			return ctx.text('forbidden')
+		}
+
 		params := parse_treasure_form(mut ctx) or {
 			ctx.res.set_status(.bad_request)
 			return ctx.text(err.msg())
@@ -171,6 +176,11 @@ pub fn (wapp &App) edit_treasure(mut ctx Context, id int) veb.Result {
 		}
 		return $veb.html('./templates/admin/new_treasure.html')
 	} else if ctx.req.method == .post {
+		if !verify_turnstile(ctx, 'treasure_form') {
+			ctx.res.set_status(.forbidden)
+			return ctx.text('forbidden')
+		}
+
 		params := parse_treasure_form(mut ctx) or {
 			ctx.res.set_status(.bad_request)
 			return ctx.text(err.msg())

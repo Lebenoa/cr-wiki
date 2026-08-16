@@ -18,6 +18,11 @@ pub fn (mut wapp App) login(mut ctx Context) veb.Result {
 		ctx.noindex = true
 		return $veb.html()
 	} else if ctx.req.method == .post {
+		if !verify_turnstile(ctx, 'login') {
+			ctx.res.set_status(.forbidden)
+			return ctx.text('forbidden')
+		}
+
 		username := ctx.form['username']
 		password := ctx.form['password']
 

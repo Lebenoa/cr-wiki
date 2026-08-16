@@ -377,6 +377,11 @@ fn build_form_fields(wapp &App, ctx &Context) !BuildForm {
 }
 
 fn submit_build(wapp &App, mut ctx Context) veb.Result {
+	if !verify_turnstile(ctx, 'build_form') {
+		ctx.res.set_status(.forbidden)
+		return ctx.text('forbidden')
+	}
+
 	form := build_form_fields(wapp, ctx) or {
 		ctx.res.set_status(.bad_request)
 		return ctx.text(err.msg())
@@ -463,6 +468,11 @@ pub fn (wapp &App) build_edit(mut ctx Context, id int) veb.Result {
 
 // update_build_submit persists an edit. Author/user_id/expiry are untouched.
 fn update_build_submit(wapp &App, mut ctx Context, id int) veb.Result {
+	if !verify_turnstile(ctx, 'build_form') {
+		ctx.res.set_status(.forbidden)
+		return ctx.text('forbidden')
+	}
+
 	form := build_form_fields(wapp, ctx) or {
 		ctx.res.set_status(.bad_request)
 		return ctx.text(err.msg())

@@ -12,6 +12,11 @@ pub fn (mut wapp App) register(mut ctx Context) veb.Result {
 	}
 
 	if ctx.req.method == .post {
+		if !verify_turnstile(ctx, 'register') {
+			ctx.res.set_status(.forbidden)
+			return ctx.text('forbidden')
+		}
+
 		username := ctx.form['username'] or {
 			ctx.res.set_status(.bad_request)
 			return ctx.text("Username is required")
