@@ -179,6 +179,9 @@ pub:
 	effect_names []string  // suggestions for the effect name input
 	empty_effect EffectRow // blank row for the clone template loop
 	is_evolved      bool
+	is_power_plus   bool // POWER+ treasure (friendly-run bonus) cannot be equipped
+	base_treasure_id int // 0 = none; the normal treasure this evolved row evolves from
+	bases           []database.IdNameOption // pickable normal treasures for the base link
 	release_date    string
 	lang            string
 	image           ?string
@@ -395,6 +398,8 @@ fn parse_treasure_form(mut ctx Context) !database.CreateTreasureParams {
 		}
 		grade:            grade
 		is_evolved:       ctx.form['is_evolved'] == 'true'
+		is_power_plus:    ctx.form['is_power_plus'] == 'true'
+		base_treasure_id: parse_optional_id(mut ctx, 'base_treasure_id')
 		release_date:     parse_release_date(mut ctx)!
 		effects:          parse_effect_inputs(mut ctx, 'effects')!
 		blessed_effects:  parse_effect_inputs(mut ctx, 'blessed_effects')!

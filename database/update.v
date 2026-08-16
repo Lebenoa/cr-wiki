@@ -151,6 +151,7 @@ pub fn update_pet(conn sqlite.DB, id int, params CreatePetParams) ! {
 pub fn update_treasure(conn sqlite.DB, id int, params CreateTreasureParams) ! {
 	sql conn {
 		update models.Treasure set grade = params.grade, is_evolved = params.is_evolved,
+		is_power_plus = params.is_power_plus, base_treasure_id = params.base_treasure_id,
 		release_date = params.release_date, unlock_cookie_id = params.unlock_cookie_id,
 		unlock_pet_id = params.unlock_pet_id where treasure_id == id
 	}!

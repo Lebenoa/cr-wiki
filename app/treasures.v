@@ -70,6 +70,7 @@ pub fn (wapp &App) new_treasure(mut ctx Context) veb.Result {
 			effect_names: database.effect_names(wapp.db, ctx.lang) or { [] }
 			cookies:      database.cookie_options(wapp.db, ctx.lang) or { [] }
 			pets:         database.pet_options(wapp.db, ctx.lang) or { [] }
+			bases:        database.normal_treasure_options(wapp.db, ctx.lang) or { [] }
 		}
 		return $veb.html('./templates/admin/new_treasure.html')
 	} else if ctx.req.method == .post {
@@ -164,6 +165,13 @@ pub fn (wapp &App) edit_treasure(mut ctx Context, id int) veb.Result {
 				id, models.EffectState.blessed) or { [] })
 			effect_names:    database.effect_names(wapp.db, ctx.lang) or { [] }
 			is_evolved:      treasure.is_evolved
+			is_power_plus:   treasure.is_power_plus
+			base_treasure_id: if bid := treasure.base_treasure_id {
+				bid
+			} else {
+				0
+			}
+			bases:           database.normal_treasure_options(wapp.db, ctx.lang) or { [] }
 			release_date:    '${rd.year:04d}-${int(rd.month):02d}-${rd.day:02d}'
 			lang:            treasure.lang
 			image:           treasure.image

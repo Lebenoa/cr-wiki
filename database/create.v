@@ -259,6 +259,8 @@ pub:
 	image           ?string
 	grade           ?int // models.Grade value; none = no wiki grade
 	is_evolved      bool
+	is_power_plus   bool // POWER+ treasure (friendly-run bonus) cannot be equipped
+	base_treasure_id ?int // evolved rows link back to their normal base treasure
 	release_date    time.Time
 	effects         []EffectInput
 	blessed_effects []EffectInput
@@ -278,6 +280,8 @@ pub fn create_treasure(conn sqlite.DB, params CreateTreasureParams) !int {
 		image:            params.image
 		grade:            params.grade
 		is_evolved:       params.is_evolved
+		is_power_plus:    params.is_power_plus
+		base_treasure_id: params.base_treasure_id
 		release_date:     params.release_date
 		unlock_cookie_id: params.unlock_cookie_id
 		unlock_pet_id:    params.unlock_pet_id

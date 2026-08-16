@@ -223,6 +223,12 @@ treasure_tab_evolved
 base
 ธรรมดา
 -----
+is_power_plus
+สมบัติพลัง+
+-----
+base_treasure_hint
+สมบัติธรรมดาที่วิวัฒน์รูปแบบนี้พัฒนามาจาก
+-----
 state_normal
 ธรรมดา
 -----

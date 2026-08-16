@@ -250,6 +250,7 @@ pub:
 	unlock_cookie_id ?int
 	unlock_pet_id    ?int
 	is_evolved       bool
+	is_power_plus    bool
 	release_date     time.Time
 
 	lang        string
@@ -268,6 +269,7 @@ fn treasure_view(t models.Treasure, tr models.TreasureTranslation, en_name strin
 		unlock_cookie_id: t.unlock_cookie_id
 		unlock_pet_id:    t.unlock_pet_id
 		is_evolved:       t.is_evolved
+		is_power_plus:    t.is_power_plus
 		release_date:     t.release_date
 		lang:             tr.lang
 		name:             tr.name
@@ -1127,6 +1129,20 @@ pub fn treasure_options(conn sqlite.DB, lang string, equippable bool) ![]IdNameO
 	// match the /treasures list order: grade (highest first) then newest
 	// release date, so the picker modal presents the same sequence
 	out.sort_with_compare(compare_treasure_options)
+	return out
+}
+
+// normal_treasure_options lists non-evolved treasures for the admin form's
+// "base treasure" selector: evolved rows link back to their normal form, and
+// the base must itself be a normal treasure (never evolved, never Power+ —
+// Power+ treasures are friendly-run bonuses that cannot be equipped).
+pub fn normal_treasure_options(conn sqlite.DB, lang string) ![]IdNameOption {
+	mut out := []IdNameOption{}
+	for opt in treasure_options(conn, lang, true)! {
+		if !opt.is_evolved {
+			out << opt
+		}
+	}
 	return out
 }
 

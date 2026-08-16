@@ -223,6 +223,12 @@ Evolved
 base
 Base
 -----
+is_power_plus
+Power+ treasure
+-----
+base_treasure_hint
+The normal treasure this evolved form upgrades from
+-----
 state_normal
 Normal
 -----
