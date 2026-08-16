@@ -30,6 +30,7 @@ pub fn initialize(path string) !sqlite.DB {
 	}!
 
 	migrate(conn)!
+	create_indexes(conn)!
 
 	$if sqlite_fts5 ? {
 		conn.exec("PRAGMA journal_mode = WAL; PRAGMA synchoronous = FULL;")!
@@ -273,6 +274,46 @@ fn create_fts_table(conn sqlite.DB, table FtsTable) ! {
 			LIMIT 1
 		);
 	")!
+}
+
+// create_indexes materializes the secondary indexes the ORM's `create table`
+// never creates: V's sqlite ORM emits only the UNIQUE constraint auto-indexes
+// (one per table), so every WHERE on a non-PK column is a full table scan
+// until these exist. IF NOT EXISTS keeps this idempotent for both fresh and
+// pre-existing databases; run once at initialize.
+fn create_indexes(conn sqlite.DB) ! {
+	// The ORM's UNIQUE(owner_id, lang) auto-index already serves cookie/pet/
+	// treasure translation lookups by owner and treasure_effect lookups by
+	// treasure (leftmost column of UNIQUE(treasure_id, effect_id, state)), so
+	// only tables with no covering constraint need explicit indexes.
+	indexes := [
+		// combi_bonus: cookie+pet pair lookup on build insert/update, and the
+		// cookie/pet detail-page combo sections (cookie_id prefix).
+		'CREATE INDEX IF NOT EXISTS idx_combi_bonus_cookie_pet ON combi_bonus (cookie_id, pet_id)',
+		'CREATE INDEX IF NOT EXISTS idx_combi_bonus_pet ON combi_bonus (pet_id)',
+		// treasure: evolved/base links and the cookie/pet max-level unlocks.
+		'CREATE INDEX IF NOT EXISTS idx_treasure_base ON treasure (base_treasure_id)',
+		'CREATE INDEX IF NOT EXISTS idx_treasure_unlock_cookie ON treasure (unlock_cookie_id)',
+		'CREATE INDEX IF NOT EXISTS idx_treasure_unlock_pet ON treasure (unlock_pet_id)',
+		// build: the /builds list filters (cookie/pet/EP tiers, and the
+		// treasure OR filter) — the model's @[index] annotations were never
+		// materialized by the ORM. The three treasure indexes turn the
+		// treasure1/2/3 OR filter into a MULTI-INDEX OR instead of a scan.
+		'CREATE INDEX IF NOT EXISTS idx_build_cookie ON build (cookie_id)',
+		'CREATE INDEX IF NOT EXISTS idx_build_cookie2 ON build (cookie2_id)',
+		'CREATE INDEX IF NOT EXISTS idx_build_pet ON build (pet_id)',
+		'CREATE INDEX IF NOT EXISTS idx_build_ep ON build (ep)',
+		'CREATE INDEX IF NOT EXISTS idx_build_ep_special ON build (ep_special)',
+		'CREATE INDEX IF NOT EXISTS idx_build_treasure1_id ON build (treasure1_id)',
+		'CREATE INDEX IF NOT EXISTS idx_build_treasure2_id ON build (treasure2_id)',
+		'CREATE INDEX IF NOT EXISTS idx_build_treasure3_id ON build (treasure3_id)',
+	]
+	for stmt in indexes {
+		result := conn.exec_none(stmt)
+		if !sqlite_success(result) {
+			return conn.error_message(result, 'create index')
+		}
+	}
 }
 
 // migrate applies schema changes that `create table` cannot handle on existing databases.

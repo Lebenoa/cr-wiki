@@ -87,18 +87,36 @@ pub fn select_cookies(conn sqlite.DB, lang string, limit int, offset int) ![]Coo
 		}
 		ids << cid
 	}
+	// an empty list would generate `owner_id IN ()` (a SQLite syntax error);
+	// corrupt rows are all skipped below, same as the old full-table path
+	if ids.len == 0 {
+		return []
+	}
 
-	translation_map := backup_translations[models.CookieTranslation](conn, lang)!
-
-	// English names power the cross-language list filter: a th page still
-	// matches English queries against the en names on each card.
-	en_trs := sql conn {
-		select from models.CookieTranslation where lang == 'en'
+	// One query fetches both the page's user-lang rows and their en fallbacks
+	// (narrowed to the 30 ids on this page instead of the whole table); the en
+	// names power the cross-language list filter: a th page still matches
+	// English queries against the en names on each card.
+	user_lang := lang
+	translations := sql conn {
+		select from models.CookieTranslation where owner_id in ids && (lang == user_lang || lang == 'en')
 	}!
+
+	mut translation_map := map[int]models.CookieTranslation{}
+	for tr in translations {
+		if tr.lang == user_lang {
+			translation_map[tr.owner_id] = tr
+		}
+	}
+	for tr in translations {
+		if tr.owner_id !in translation_map {
+			translation_map[tr.owner_id] = tr
+		}
+	}
 	mut en_name_map := map[int]string{}
-	for etr in en_trs {
-		if etr.name != '' {
-			en_name_map[etr.owner_id] = etr.name
+	for tr in translations {
+		if tr.lang == 'en' && tr.name != '' {
+			en_name_map[tr.owner_id] = tr.name
 		}
 	}
 
@@ -150,9 +168,23 @@ pub fn select_pets(conn sqlite.DB, lang string, limit int, offset int) ![]PetVie
 		return []
 	}
 
+	// narrow the translation fetch to the pets on this page instead of the
+	// whole table (see select_cookies for the map-building pattern)
 	user_lang := lang
+	mut ids := []int{}
+	for pet in pets {
+		pid := pet.pet_id or {
+			warn_missing_id('pet')
+			continue
+		}
+		ids << pid
+	}
+	// an empty list would generate `pet_id IN ()` (a SQLite syntax error)
+	if ids.len == 0 {
+		return []
+	}
 	translations := sql conn {
-		select from models.PetTranslation where lang == user_lang || lang == 'en'
+		select from models.PetTranslation where pet_id in ids && (lang == user_lang || lang == 'en')
 	}!
 
 	mut translation_map := map[int]models.PetTranslation{}
@@ -630,7 +662,10 @@ fn combo_lookups(conn sqlite.DB, lang string, partner_kind string, partner_ids [
 		id_csv := partner_ids.map(it.str()).join(',')
 		rows := conn.exec('SELECT pet_id, image FROM pet WHERE pet_id IN (${id_csv})') or { [] }
 		for row in rows {
-			img_map[row.get_int('pet_id')] = row.get_string('image')
+			// get_string maps SQL NULL to ''; map that to none so the
+			// placeholder URL fires (same pattern as images_by_ids).
+			img := row.get_string('image')
+			img_map[row.get_int('pet_id')] = if img == '' { none } else { img }
 		}
 	} else {
 		trs := sql conn {
@@ -650,7 +685,10 @@ fn combo_lookups(conn sqlite.DB, lang string, partner_kind string, partner_ids [
 		id_csv := partner_ids.map(it.str()).join(',')
 		rows := conn.exec('SELECT cookie_id, image FROM cookie WHERE cookie_id IN (${id_csv})') or { [] }
 		for row in rows {
-			img_map[row.get_int('cookie_id')] = row.get_string('image')
+			// get_string maps SQL NULL to ''; map that to none so the
+			// placeholder URL fires (same pattern as images_by_ids).
+			img := row.get_string('image')
+			img_map[row.get_int('cookie_id')] = if img == '' { none } else { img }
 		}
 	}
 
@@ -897,16 +935,144 @@ pub fn select_builds(conn sqlite.DB, lang string, f_cookie int, f_pet int, f_tre
 	}
 
 	mut result := []BuildCard{}
+	lookups := build_card_lookups(conn, lang, rows)
 	for row in rows {
-		result << build_card_from_row(conn, lang, row)
+		result << build_card_from_row(row, lookups)
 	}
 	return result
+}
+// BuildCardLookups holds the localized names and sprites every card on a
+// build list/detail page needs, resolved once for the whole page instead of
+// two queries per entity per card (30 cards × 6 entities = ~360 queries).
+pub struct BuildCardLookups {
+pub:
+	cookie_names    map[int]string
+	cookie_images   map[int]?string
+	pet_names       map[int]string
+	pet_images      map[int]?string
+	treasure_names  map[int]string
+	treasure_images map[int]?string
+}
+
+// build_card_lookups pre-fetches the localized names and sprites for every
+// cookie/pet/treasure id the given build rows reference — 6 batched queries
+// total (name + image per kind), independent of the row count.
+fn build_card_lookups(conn sqlite.DB, lang string, rows []sqlite.Row) BuildCardLookups {
+	mut cookie_ids := []int{}
+	mut pet_ids := []int{}
+	mut treasure_ids := []int{}
+	mut seen_c := map[int]bool{}
+	mut seen_p := map[int]bool{}
+	mut seen_t := map[int]bool{}
+	for row in rows {
+		cid := row.get_int('cookie_id')
+		if cid > 0 && cid !in seen_c {
+			cookie_ids << cid
+			seen_c[cid] = true
+		}
+		cid2 := row.get_int('cookie2_id')
+		if cid2 > 0 && cid2 !in seen_c {
+			cookie_ids << cid2
+			seen_c[cid2] = true
+		}
+		pid := row.get_int('pet_id')
+		if pid > 0 && pid !in seen_p {
+			pet_ids << pid
+			seen_p[pid] = true
+		}
+		for tid in [row.get_int('treasure1_id'), row.get_int('treasure2_id'), row.get_int('treasure3_id')] {
+			if tid > 0 && tid !in seen_t {
+				treasure_ids << tid
+				seen_t[tid] = true
+			}
+		}
+	}
+
+	user_lang := lang
+	mut cookie_names := map[int]string{}
+	if cookie_ids.len > 0 {
+		trs := sql conn {
+			select from models.CookieTranslation where owner_id in cookie_ids
+			&& (lang == user_lang || lang == 'en')
+		} or { [] }
+		for tr in trs {
+			if tr.lang == user_lang {
+				cookie_names[tr.owner_id] = tr.name
+			}
+		}
+		for tr in trs {
+			if tr.owner_id !in cookie_names {
+				cookie_names[tr.owner_id] = tr.name
+			}
+		}
+	}
+	mut pet_names := map[int]string{}
+	if pet_ids.len > 0 {
+		trs := sql conn {
+			select from models.PetTranslation where pet_id in pet_ids
+			&& (lang == user_lang || lang == 'en')
+		} or { [] }
+		for tr in trs {
+			if tr.lang == user_lang {
+				pet_names[tr.pet_id] = tr.name
+			}
+		}
+		for tr in trs {
+			if tr.pet_id !in pet_names {
+				pet_names[tr.pet_id] = tr.name
+			}
+		}
+	}
+	mut treasure_names := map[int]string{}
+	if treasure_ids.len > 0 {
+		trs := sql conn {
+			select from models.TreasureTranslation where treasure_id in treasure_ids
+			&& (lang == user_lang || lang == 'en')
+		} or { [] }
+		for tr in trs {
+			if tr.lang == user_lang {
+				treasure_names[tr.treasure_id] = tr.name
+			}
+		}
+		for tr in trs {
+			if tr.treasure_id !in treasure_names {
+				treasure_names[tr.treasure_id] = tr.name
+			}
+		}
+	}
+
+	return BuildCardLookups{
+		cookie_names:    cookie_names
+		cookie_images:   images_by_ids(conn, 'cookie', 'cookie_id', cookie_ids)
+		pet_names:       pet_names
+		pet_images:      images_by_ids(conn, 'pet', 'pet_id', pet_ids)
+		treasure_names:  treasure_names
+		treasure_images: images_by_ids(conn, 'treasure', 'treasure_id', treasure_ids)
+	}
+}
+
+// images_by_ids fetches the sprite column for the given ids in one query;
+// ids without a row (or a NULL image) map to none for the placeholder URL.
+fn images_by_ids(conn sqlite.DB, table string, id_col string, ids []int) map[int]?string {
+	mut img_map := map[int]?string{}
+	if ids.len == 0 {
+		return img_map
+	}
+	id_csv := ids.map(it.str()).join(',')
+	rows := conn.exec('SELECT ${id_col}, image FROM ${table} WHERE ${id_col} IN (${id_csv})') or { return img_map }
+	for row in rows {
+		// get_string maps SQL NULL to ''; map that to none so the template's
+		// placeholder URL fires (matching the ?string rows the ORM returns).
+		img := row.get_string('image')
+		img_map[row.get_int(id_col)] = if img == '' { none } else { img }
+	}
+	return img_map
 }
 
 // build_card_from_row maps one build row (the exact column set select_builds
 // and select_build select) to the card/detail view, resolving localized
-// entity names and the anonymous-build expiry.
-fn build_card_from_row(conn sqlite.DB, lang string, row sqlite.Row) BuildCard {
+// entity names from the page-level lookups (see build_card_lookups).
+fn build_card_from_row(row sqlite.Row, lookups BuildCardLookups) BuildCard {
 	// user_id is NULL for anonymous submissions; ids start at 1.
 	is_anon := row.get_int('user_id') == 0
 	exp_unix := row.get_int('expires_at')
@@ -923,8 +1089,8 @@ fn build_card_from_row(conn sqlite.DB, lang string, row sqlite.Row) BuildCard {
 	for tid in tids {
 		treasures << IdNameOption{
 			id:    tid
-			name:  resolve_entity_name(conn, 'treasure', tid, lang)
-			image: unlock_entity_image(conn, 'treasure', tid)
+			name:  lookups.treasure_names[tid] or { '' }
+			image: lookups.treasure_images[tid] or { none }
 		}
 	}
 	treasure_blessed := [row.get_int('treasure1_blessed') != 0, row.get_int('treasure2_blessed') != 0,
@@ -950,22 +1116,22 @@ fn build_card_from_row(conn sqlite.DB, lang string, row sqlite.Row) BuildCard {
 		created_at:   time.unix(i64(row.get_int('created_at')))
 		cookie:       IdNameOption{
 			id:    cid
-			name:  resolve_entity_name(conn, 'cookie', cid, lang)
-			image: unlock_entity_image(conn, 'cookie', cid)
+			name:  lookups.cookie_names[cid] or { '' }
+			image: lookups.cookie_images[cid] or { none }
 		}
 		cookie2: if cid2 > 0 {
 			IdNameOption{
 				id:    cid2
-				name:  resolve_entity_name(conn, 'cookie', cid2, lang)
-				image: unlock_entity_image(conn, 'cookie', cid2)
+				name:  lookups.cookie_names[cid2] or { '' }
+				image: lookups.cookie_images[cid2] or { none }
 			}
 		} else {
 			none
 		}
 		pet: IdNameOption{
 			id:    pid
-			name:  resolve_entity_name(conn, 'pet', pid, lang)
-			image: unlock_entity_image(conn, 'pet', pid)
+			name:  lookups.pet_names[pid] or { '' }
+			image: lookups.pet_images[pid] or { none }
 		}
 		treasures:       treasures
 		treasure_blessed: treasure_blessed
@@ -981,7 +1147,8 @@ pub fn select_build(conn sqlite.DB, lang string, id int) !BuildCard {
 	if rows.len == 0 {
 		return error('build (${id}) not found')
 	}
-	return build_card_from_row(conn, lang, rows.first())
+	lookups := build_card_lookups(conn, lang, rows)
+	return build_card_from_row(rows.first(), lookups)
 }
 
 // treasure_options lists every treasure's id, localized name and first
