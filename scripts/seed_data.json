@@ -11030,6 +11030,300 @@
    "release_date": "1970-01-01T00:00:00Z",
    "unlock_cookie_id": null,
    "unlock_pet_id": 98
+  },
+  {
+   "treasure_id": 819,
+   "image": "2025 Crystal Blue Snake.png",
+   "grade": 4,
+   "base_treasure_id": null,
+   "is_evolved": false,
+   "release_date": "2025-01-01T00:00:00Z",
+   "unlock_cookie_id": null,
+   "unlock_pet_id": null,
+   "is_power_plus": true
+  },
+  {
+   "treasure_id": 820,
+   "image": "pufferfish2024.png",
+   "grade": 3,
+   "base_treasure_id": null,
+   "is_evolved": false,
+   "release_date": "2024-02-01T00:00:00Z",
+   "unlock_cookie_id": null,
+   "unlock_pet_id": null,
+   "is_power_plus": true
+  },
+  {
+   "treasure_id": 821,
+   "image": "Cookies' 11th Freedom Frame.png",
+   "grade": 4,
+   "base_treasure_id": null,
+   "is_evolved": false,
+   "release_date": "2024-04-02T00:00:00Z",
+   "unlock_cookie_id": null,
+   "unlock_pet_id": null,
+   "is_power_plus": true
+  },
+  {
+   "treasure_id": 822,
+   "image": "Crystal Strawberry Shaved Ice.png",
+   "grade": 4,
+   "base_treasure_id": null,
+   "is_evolved": false,
+   "release_date": "2024-06-04T00:00:00Z",
+   "unlock_cookie_id": null,
+   "unlock_pet_id": null,
+   "is_power_plus": true
+  },
+  {
+   "treasure_id": 823,
+   "image": "CRC Sweet Drumstick.png",
+   "grade": 4,
+   "base_treasure_id": null,
+   "is_evolved": false,
+   "release_date": "2024-12-11T00:00:00Z",
+   "unlock_cookie_id": null,
+   "unlock_pet_id": null
+  },
+  {
+   "treasure_id": 824,
+   "image": "Squirrel's Holiday Cookie Box.png",
+   "grade": 4,
+   "base_treasure_id": null,
+   "is_evolved": false,
+   "release_date": "1970-01-01T00:00:00Z",
+   "unlock_cookie_id": null,
+   "unlock_pet_id": null
+  },
+  {
+   "treasure_id": 825,
+   "image": "Squirrel's Crystal Star Ornament.png",
+   "grade": 4,
+   "base_treasure_id": null,
+   "is_evolved": false,
+   "release_date": "1970-01-01T00:00:00Z",
+   "unlock_cookie_id": null,
+   "unlock_pet_id": null,
+   "is_power_plus": true
+  },
+  {
+   "treasure_id": 826,
+   "image": "Squirrel's Marshmallow Santa Chocolate Cake.png",
+   "grade": 4,
+   "base_treasure_id": null,
+   "is_evolved": false,
+   "release_date": "1970-01-01T00:00:00Z",
+   "unlock_cookie_id": null,
+   "unlock_pet_id": null
+  },
+  {
+   "treasure_id": 827,
+   "image": "Squirrel's Powder Magic Hangwa.png",
+   "grade": 4,
+   "base_treasure_id": null,
+   "is_evolved": false,
+   "release_date": "1970-01-01T00:00:00Z",
+   "unlock_cookie_id": null,
+   "unlock_pet_id": null,
+   "is_power_plus": true
+  },
+  {
+   "treasure_id": 828,
+   "image": "Squirrel's Sparkle Crystal Yut.png",
+   "grade": 4,
+   "base_treasure_id": null,
+   "is_evolved": false,
+   "release_date": "2025-01-23T00:00:00Z",
+   "unlock_cookie_id": null,
+   "unlock_pet_id": null,
+   "is_power_plus": true
+  },
+  {
+   "treasure_id": 829,
+   "image": "Squirrel's Dandan Sweet Okchudang.png",
+   "grade": 4,
+   "base_treasure_id": null,
+   "is_evolved": false,
+   "release_date": "2025-01-23T00:00:00Z",
+   "unlock_cookie_id": null,
+   "unlock_pet_id": null
+  },
+  {
+   "treasure_id": 830,
+   "image": "Five Colors of Squirrel's Jelly Skewer Pancake.png",
+   "grade": 4,
+   "base_treasure_id": null,
+   "is_evolved": false,
+   "release_date": "2025-01-23T00:00:00Z",
+   "unlock_cookie_id": null,
+   "unlock_pet_id": null
+  },
+  {
+   "treasure_id": 831,
+   "image": "Squirrel's Bling-Marbling Grade 1 Rib Eye.png",
+   "grade": 4,
+   "base_treasure_id": null,
+   "is_evolved": false,
+   "release_date": "2017-02-10T00:00:00Z",
+   "unlock_cookie_id": null,
+   "unlock_pet_id": null
+  },
+  {
+   "treasure_id": 832,
+   "image": "Squirrel's Shining Dark Moon's Manju.png",
+   "grade": 4,
+   "base_treasure_id": null,
+   "is_evolved": false,
+   "release_date": "2017-02-10T00:00:00Z",
+   "unlock_cookie_id": null,
+   "unlock_pet_id": null
+  },
+  {
+   "treasure_id": 833,
+   "image": "Crystal Pearl Ring.png",
+   "grade": 3,
+   "base_treasure_id": null,
+   "is_evolved": false,
+   "release_date": "2017-03-01T00:00:00Z",
+   "unlock_cookie_id": null,
+   "unlock_pet_id": null,
+   "is_power_plus": true
+  },
+  {
+   "treasure_id": 834,
+   "image": "Shiny Crystal Snowflake Brooch.png",
+   "grade": 4,
+   "base_treasure_id": null,
+   "is_evolved": false,
+   "release_date": "2016-11-25T00:00:00Z",
+   "unlock_cookie_id": null,
+   "unlock_pet_id": null,
+   "is_power_plus": true
+  },
+  {
+   "treasure_id": 835,
+   "image": "Trophy Treasure King IV.png",
+   "grade": 4,
+   "base_treasure_id": null,
+   "is_evolved": false,
+   "release_date": "2016-06-28T00:00:00Z",
+   "unlock_cookie_id": null,
+   "unlock_pet_id": null,
+   "is_power_plus": true
+  },
+  {
+   "treasure_id": 836,
+   "image": "Trophy Treasure Legend I.png",
+   "grade": 4,
+   "base_treasure_id": null,
+   "is_evolved": false,
+   "release_date": "2016-06-28T00:00:00Z",
+   "unlock_cookie_id": null,
+   "unlock_pet_id": null,
+   "is_power_plus": true
+  },
+  {
+   "treasure_id": 837,
+   "image": "Trophy Treasure Legend II.png",
+   "grade": 4,
+   "base_treasure_id": null,
+   "is_evolved": false,
+   "release_date": "2016-06-28T00:00:00Z",
+   "unlock_cookie_id": null,
+   "unlock_pet_id": null,
+   "is_power_plus": true
+  },
+  {
+   "treasure_id": 838,
+   "image": null,
+   "grade": 4,
+   "base_treasure_id": null,
+   "is_evolved": false,
+   "release_date": "2016-06-28T00:00:00Z",
+   "unlock_cookie_id": null,
+   "unlock_pet_id": null,
+   "is_power_plus": true
+  },
+  {
+   "treasure_id": 842,
+   "image": "Little Cake Hound's Birthday Cake.png",
+   "grade": 4,
+   "base_treasure_id": null,
+   "is_evolved": false,
+   "release_date": "2024-04-01T17:00:00Z",
+   "unlock_cookie_id": null,
+   "unlock_pet_id": null,
+   "is_power_plus": true
+  },
+  {
+   "treasure_id": 844,
+   "image": "Macaroon Castanets' Electronic Metronome.png",
+   "grade": 4,
+   "base_treasure_id": 102,
+   "is_evolved": true,
+   "release_date": "2016-10-14T00:00:00Z",
+   "unlock_cookie_id": null,
+   "unlock_pet_id": null
+  },
+  {
+   "treasure_id": 845,
+   "image": "Wind Flavored Ice Sherbet.png",
+   "grade": 4,
+   "base_treasure_id": 71,
+   "is_evolved": true,
+   "release_date": "2016-11-11T00:00:00Z",
+   "unlock_cookie_id": null,
+   "unlock_pet_id": null
+  },
+  {
+   "treasure_id": 846,
+   "image": "Used Voodoo Doll.png",
+   "grade": 4,
+   "base_treasure_id": 13,
+   "is_evolved": true,
+   "release_date": "2016-11-11T00:00:00Z",
+   "unlock_cookie_id": null,
+   "unlock_pet_id": null
+  },
+  {
+   "treasure_id": 847,
+   "image": "Onion Cookie's Lace Pillow.png",
+   "grade": 4,
+   "base_treasure_id": 43,
+   "is_evolved": true,
+   "release_date": "2016-10-14T00:00:00Z",
+   "unlock_cookie_id": null,
+   "unlock_pet_id": null
+  },
+  {
+   "treasure_id": 848,
+   "image": "Pocket watch referees golden watch cover.png",
+   "grade": 4,
+   "base_treasure_id": 105,
+   "is_evolved": true,
+   "release_date": "2024-08-01T00:00:00Z",
+   "unlock_cookie_id": null,
+   "unlock_pet_id": null
+  },
+  {
+   "treasure_id": 849,
+   "image": "Panda dumplings well-trimmed bamboo shoots.png",
+   "grade": 4,
+   "base_treasure_id": 98,
+   "is_evolved": true,
+   "release_date": "2024-08-01T00:00:00Z",
+   "unlock_cookie_id": null,
+   "unlock_pet_id": null
+  },
+  {
+   "treasure_id": 850,
+   "image": "tr ch40 m.png",
+   "grade": 4,
+   "base_treasure_id": 22,
+   "is_evolved": true,
+   "release_date": "2025-06-30T00:00:00Z",
+   "unlock_cookie_id": null,
+   "unlock_pet_id": null
   }
  ],
  "treasure_translation": [
@@ -19586,6 +19880,202 @@
    "lang": "th",
    "name": "กระดิ่งเม็ดบัวของที่นั่งดอกบัว",
    "description": "ของเล่นเขย่านี้แสดงให้เห็นถึงฝีมือการเลี้ยงดูอันเชี่ยวชาญของ Lotus Sitter ของเล่นแฮนด์เมดชิ้นนี้ทำจากใบบัวนุ่ม ๆ เพื่อไม่ให้คุกกี้ตัวน้อยได้รับบาดเจ็บ และเมล็ดบัวที่ทาสีสันสดใสที่สุด ว่ากันว่าเคยเป็นของเล่นชิ้นโปรดของ Lotus Root Cookie ตอนยังเป็นแป้งตัวน้อย"
+  },
+  {
+   "treasure_translation_id": 1430,
+   "treasure_id": 819,
+   "lang": "en",
+   "name": "2025 Crystal Blue Snake",
+   "description": ""
+  },
+  {
+   "treasure_translation_id": 1431,
+   "treasure_id": 820,
+   "lang": "en",
+   "name": "Very Very Extreme Happy New Year Pufferfish",
+   "description": "A pufferfish that seems like to be saying the best new year presents are glittering gold. Though its eyes look a bit burdensome."
+  },
+  {
+   "treasure_translation_id": 1432,
+   "treasure_id": 821,
+   "lang": "en",
+   "name": "Cookies' 11th Freedom Frame",
+   "description": ""
+  },
+  {
+   "treasure_translation_id": 1433,
+   "treasure_id": 822,
+   "lang": "en",
+   "name": "Crystal Strawberry Shaved Ice",
+   "description": ""
+  },
+  {
+   "treasure_translation_id": 1434,
+   "treasure_id": 823,
+   "lang": "en",
+   "name": "Sweet Drumstick",
+   "description": ""
+  },
+  {
+   "treasure_translation_id": 1435,
+   "treasure_id": 824,
+   "lang": "en",
+   "name": "Squirrel's Holiday Cookie Box",
+   "description": ""
+  },
+  {
+   "treasure_translation_id": 1436,
+   "treasure_id": 825,
+   "lang": "en",
+   "name": "Squirrel's Crystal Star Ornament",
+   "description": "A star-shaped ornament made of sparkling crystals. With just this, even the darkest nights will be filled with a dazzling Christmas atmosphere!\n\n*PLEASE NOTE that it is not possible to rebuy this Treasure."
+  },
+  {
+   "treasure_translation_id": 1437,
+   "treasure_id": 826,
+   "lang": "en",
+   "name": "Squirrel's Marshmallow Santa Chocolate Cake",
+   "description": ""
+  },
+  {
+   "treasure_translation_id": 1438,
+   "treasure_id": 827,
+   "lang": "en",
+   "name": "Squirrel's Powder Magic Hangwa",
+   "description": ""
+  },
+  {
+   "treasure_translation_id": 1439,
+   "treasure_id": 828,
+   "lang": "en",
+   "name": "Squirrel's Sparkle Crystal Yut",
+   "description": ""
+  },
+  {
+   "treasure_translation_id": 1440,
+   "treasure_id": 829,
+   "lang": "en",
+   "name": "Squirrel's Dandan Sweet Okchudang",
+   "description": ""
+  },
+  {
+   "treasure_translation_id": 1441,
+   "treasure_id": 830,
+   "lang": "en",
+   "name": "Five Colors of Squirrel's Jelly Skewer Pancake",
+   "description": ""
+  },
+  {
+   "treasure_translation_id": 1442,
+   "treasure_id": 831,
+   "lang": "en",
+   "name": "Squirrel's Bling-Marbling Grade 1++ Rib Eye",
+   "description": ""
+  },
+  {
+   "treasure_translation_id": 1443,
+   "treasure_id": 832,
+   "lang": "en",
+   "name": "Squirrel's Shining Dark Moon's Manju",
+   "description": ""
+  },
+  {
+   "treasure_translation_id": 1444,
+   "treasure_id": 833,
+   "lang": "en",
+   "name": "Crystal Pearl Ring",
+   "description": "A fusion of pearls and crystals created this unusual ring."
+  },
+  {
+   "treasure_translation_id": 1445,
+   "treasure_id": 834,
+   "lang": "en",
+   "name": "Shiny Crystal Snowflake Brooch",
+   "description": "A precious brooch made with the desire to preserve the beauty of a snowflake forever more.\n\nPLEASE NOTE that if you sell this Treasure it can't be obtained again."
+  },
+  {
+   "treasure_translation_id": 1446,
+   "treasure_id": 835,
+   "lang": "en",
+   "name": "Trophy of Glory: King IV",
+   "description": ""
+  },
+  {
+   "treasure_translation_id": 1447,
+   "treasure_id": 836,
+   "lang": "en",
+   "name": "Trophy of Glory: Legend I",
+   "description": ""
+  },
+  {
+   "treasure_translation_id": 1448,
+   "treasure_id": 837,
+   "lang": "en",
+   "name": "Trophy of Glory: Legend II",
+   "description": ""
+  },
+  {
+   "treasure_translation_id": 1449,
+   "treasure_id": 838,
+   "lang": "en",
+   "name": "Trophy of Glory: Legend III",
+   "description": ""
+  },
+  {
+   "treasure_translation_id": 1453,
+   "treasure_id": 842,
+   "lang": "en",
+   "name": "Little Cake Hound's Cupcake",
+   "description": ""
+  },
+  {
+   "treasure_translation_id": 1455,
+   "treasure_id": 844,
+   "lang": "en",
+   "name": "Macaroon Castanets' Electronic Metronome",
+   "description": "One must admit, the technology in the Cookie World is amazing! The metronome now offers even more options."
+  },
+  {
+   "treasure_translation_id": 1456,
+   "treasure_id": 845,
+   "lang": "en",
+   "name": "Wind Flavored Ice Sherbet",
+   "description": "The wind blew this Ice Sherbet from the frosty Snow Village."
+  },
+  {
+   "treasure_translation_id": 1457,
+   "treasure_id": 846,
+   "lang": "en",
+   "name": "Used Voodoo Doll",
+   "description": "They must really hate someone. Watch out! This thing can cause disasters!"
+  },
+  {
+   "treasure_translation_id": 1458,
+   "treasure_id": 847,
+   "lang": "en",
+   "name": "Onion Cookie's Lace Pillow",
+   "description": "Maybe this pillow will help little Onion Cookie escape from her nightmares."
+  },
+  {
+   "treasure_translation_id": 1459,
+   "treasure_id": 848,
+   "lang": "en",
+   "name": "Pocket Watch Referee's Golden Watch Cover",
+   "description": ""
+  },
+  {
+   "treasure_translation_id": 1460,
+   "treasure_id": 849,
+   "lang": "en",
+   "name": "Panda Dumpling's Well-trimmed Bamboo Shoots",
+   "description": ""
+  },
+  {
+   "treasure_translation_id": 1461,
+   "treasure_id": 850,
+   "lang": "en",
+   "name": "Tiger Lily Cookie's Jelly Flower Wreath",
+   "description": "I made it by carefully stringing together jelly flowers that Butter Tiger brought me. It feels strangely nostalgic..."
   }
  ],
  "effect": [
@@ -20689,6 +21179,39 @@
   },
   {
    "effect_id": 849
+  },
+  {
+   "effect_id": 850
+  },
+  {
+   "effect_id": 851
+  },
+  {
+   "effect_id": 852
+  },
+  {
+   "effect_id": 853
+  },
+  {
+   "effect_id": 858
+  },
+  {
+   "effect_id": 859
+  },
+  {
+   "effect_id": 860
+  },
+  {
+   "effect_id": 861
+  },
+  {
+   "effect_id": 862
+  },
+  {
+   "effect_id": 863
+  },
+  {
+   "effect_id": 864
   }
  ],
  "effect_translation": [
@@ -25829,6 +26352,83 @@
    "lang": "th",
    "name": "คะแนนพิเศษ 1200 สำหรับเยลลี่ทั้งหมด",
    "description": "คะแนนพิเศษ 1200 สำหรับเยลลี่ทั้งหมด"
+  },
+  {
+   "effect_translation_id": 1699,
+   "effect_id": 850,
+   "lang": "en",
+   "name": "points for Gulab Jamun Jellies",
+   "description": "points for Gulab Jamun Jellies"
+  },
+  {
+   "effect_translation_id": 1700,
+   "effect_id": 851,
+   "lang": "en",
+   "name": "energy drains slower",
+   "description": "energy drains slower"
+  },
+  {
+   "effect_translation_id": 1701,
+   "effect_id": 852,
+   "lang": "en",
+   "name": "rescue/resurrection (health) 3 times in total",
+   "description": "rescue/resurrection (health) 3 times in total"
+  },
+  {
+   "effect_translation_id": 1702,
+   "effect_id": 853,
+   "lang": "en",
+   "name": "Revives/Lifts from a hole times with 20-40 Energy",
+   "description": "Revives/Lifts from a hole times with 20-40 Energy"
+  },
+  {
+   "effect_translation_id": 1707,
+   "effect_id": 858,
+   "lang": "en",
+   "name": "Lifts from hole time(s)",
+   "description": "Lifts from hole time(s)"
+  },
+  {
+   "effect_translation_id": 1708,
+   "effect_id": 859,
+   "lang": "en",
+   "name": "get extra points for double jumps",
+   "description": "get extra points for double jumps"
+  },
+  {
+   "effect_translation_id": 1709,
+   "effect_id": 860,
+   "lang": "en",
+   "name": "Increased blast speed by",
+   "description": "Increased blast speed by"
+  },
+  {
+   "effect_translation_id": 1710,
+   "effect_id": 861,
+   "lang": "en",
+   "name": "extra points for all jellies in blast mode",
+   "description": "extra points for all jellies in blast mode"
+  },
+  {
+   "effect_translation_id": 1711,
+   "effect_id": 862,
+   "lang": "en",
+   "name": "slower stamina drain",
+   "description": "slower stamina drain"
+  },
+  {
+   "effect_translation_id": 1712,
+   "effect_id": 863,
+   "lang": "en",
+   "name": "Increases Tiger Lily's Destruction Points by",
+   "description": "Increases Tiger Lily's Destruction Points by"
+  },
+  {
+   "effect_translation_id": 1713,
+   "effect_id": 864,
+   "lang": "en",
+   "name": "Decreases Energy Drain By",
+   "description": "Decreases Energy Drain By"
   }
  ],
  "treasure_effect": [
@@ -36970,6 +37570,306 @@
    "value_min": 400.0,
    "value_max": 600.0,
    "unit": "flat",
+   "state": "blessed"
+  },
+  {
+   "treasure_effect_id": 1484,
+   "treasure_id": 823,
+   "effect_id": 850,
+   "value": 130,
+   "value_min": null,
+   "value_max": null,
+   "unit": "flat",
+   "state": "normal"
+  },
+  {
+   "treasure_effect_id": 1485,
+   "treasure_id": 824,
+   "effect_id": 177,
+   "value": null,
+   "value_min": null,
+   "value_max": null,
+   "unit": "flat",
+   "state": "normal"
+  },
+  {
+   "treasure_effect_id": 1486,
+   "treasure_id": 826,
+   "effect_id": 851,
+   "value": null,
+   "value_min": 4,
+   "value_max": 7,
+   "unit": "percent",
+   "state": "normal"
+  },
+  {
+   "treasure_effect_id": 1487,
+   "treasure_id": 829,
+   "effect_id": 177,
+   "value": null,
+   "value_min": null,
+   "value_max": null,
+   "unit": "flat",
+   "state": "normal"
+  },
+  {
+   "treasure_effect_id": 1488,
+   "treasure_id": 829,
+   "effect_id": 851,
+   "value": null,
+   "value_min": 3,
+   "value_max": 5,
+   "unit": "percent",
+   "state": "normal"
+  },
+  {
+   "treasure_effect_id": 1489,
+   "treasure_id": 830,
+   "effect_id": 852,
+   "value": null,
+   "value_min": 10,
+   "value_max": 20,
+   "unit": "flat",
+   "state": "normal"
+  },
+  {
+   "treasure_effect_id": 1490,
+   "treasure_id": 830,
+   "effect_id": 150,
+   "value": null,
+   "value_min": 9,
+   "value_max": 11,
+   "unit": "percent",
+   "state": "normal"
+  },
+  {
+   "treasure_effect_id": 1491,
+   "treasure_id": 831,
+   "effect_id": 186,
+   "value": null,
+   "value_min": 5,
+   "value_max": 7,
+   "unit": "percent",
+   "state": "normal"
+  },
+  {
+   "treasure_effect_id": 1492,
+   "treasure_id": 831,
+   "effect_id": 11,
+   "value": null,
+   "value_min": 1,
+   "value_max": 3,
+   "unit": "flat",
+   "state": "normal"
+  },
+  {
+   "treasure_effect_id": 1493,
+   "treasure_id": 832,
+   "effect_id": 536,
+   "value": null,
+   "value_min": 500,
+   "value_max": 1000,
+   "unit": "flat",
+   "state": "normal"
+  },
+  {
+   "treasure_effect_id": 1494,
+   "treasure_id": 832,
+   "effect_id": 853,
+   "value": 2,
+   "value_min": null,
+   "value_max": null,
+   "unit": "flat",
+   "state": "normal"
+  },
+  {
+   "treasure_effect_id": 1504,
+   "treasure_id": 844,
+   "effect_id": 136,
+   "value": null,
+   "value_min": 10,
+   "value_max": 13,
+   "unit": "percent",
+   "state": "normal"
+  },
+  {
+   "treasure_effect_id": 1505,
+   "treasure_id": 844,
+   "effect_id": 858,
+   "value": null,
+   "value_min": 1,
+   "value_max": 3,
+   "unit": "flat",
+   "state": "normal"
+  },
+  {
+   "treasure_effect_id": 1506,
+   "treasure_id": 844,
+   "effect_id": 136,
+   "value": null,
+   "value_min": 12,
+   "value_max": 15,
+   "unit": "percent",
+   "state": "blessed"
+  },
+  {
+   "treasure_effect_id": 1507,
+   "treasure_id": 844,
+   "effect_id": 858,
+   "value": null,
+   "value_min": 1,
+   "value_max": 3,
+   "unit": "flat",
+   "state": "blessed"
+  },
+  {
+   "treasure_effect_id": 1508,
+   "treasure_id": 845,
+   "effect_id": 95,
+   "value": null,
+   "value_min": 5,
+   "value_max": 10,
+   "unit": "percent",
+   "state": "normal"
+  },
+  {
+   "treasure_effect_id": 1509,
+   "treasure_id": 846,
+   "effect_id": 859,
+   "value": null,
+   "value_min": 1000,
+   "value_max": 1500,
+   "unit": "flat",
+   "state": "normal"
+  },
+  {
+   "treasure_effect_id": 1510,
+   "treasure_id": 846,
+   "effect_id": 262,
+   "value": 1,
+   "value_min": null,
+   "value_max": null,
+   "unit": "flat",
+   "state": "normal"
+  },
+  {
+   "treasure_effect_id": 1511,
+   "treasure_id": 847,
+   "effect_id": 186,
+   "value": 7,
+   "value_min": null,
+   "value_max": null,
+   "unit": "percent",
+   "state": "normal"
+  },
+  {
+   "treasure_effect_id": 1512,
+   "treasure_id": 847,
+   "effect_id": 60,
+   "value": null,
+   "value_min": 1700,
+   "value_max": 2300,
+   "unit": "flat",
+   "state": "normal"
+  },
+  {
+   "treasure_effect_id": 1513,
+   "treasure_id": 847,
+   "effect_id": 186,
+   "value": 7,
+   "value_min": null,
+   "value_max": null,
+   "unit": "percent",
+   "state": "blessed"
+  },
+  {
+   "treasure_effect_id": 1514,
+   "treasure_id": 847,
+   "effect_id": 60,
+   "value": null,
+   "value_min": 1800,
+   "value_max": 2400,
+   "unit": "flat",
+   "state": "blessed"
+  },
+  {
+   "treasure_effect_id": 1515,
+   "treasure_id": 848,
+   "effect_id": 860,
+   "value": null,
+   "value_min": 5,
+   "value_max": 10,
+   "unit": "percent",
+   "state": "normal"
+  },
+  {
+   "treasure_effect_id": 1516,
+   "treasure_id": 848,
+   "effect_id": 861,
+   "value": null,
+   "value_min": 300,
+   "value_max": 500,
+   "unit": "flat",
+   "state": "normal"
+  },
+  {
+   "treasure_effect_id": 1517,
+   "treasure_id": 849,
+   "effect_id": 131,
+   "value": null,
+   "value_min": 2000,
+   "value_max": 4000,
+   "unit": "flat",
+   "state": "normal"
+  },
+  {
+   "treasure_effect_id": 1518,
+   "treasure_id": 849,
+   "effect_id": 862,
+   "value": null,
+   "value_min": 4,
+   "value_max": 7,
+   "unit": "percent",
+   "state": "normal"
+  },
+  {
+   "treasure_effect_id": 1519,
+   "treasure_id": 850,
+   "effect_id": 863,
+   "value": null,
+   "value_min": 20000,
+   "value_max": 29000,
+   "unit": "flat",
+   "state": "normal"
+  },
+  {
+   "treasure_effect_id": 1520,
+   "treasure_id": 850,
+   "effect_id": 864,
+   "value": null,
+   "value_min": 5,
+   "value_max": 7,
+   "unit": "percent",
+   "state": "normal"
+  },
+  {
+   "treasure_effect_id": 1521,
+   "treasure_id": 850,
+   "effect_id": 863,
+   "value": null,
+   "value_min": 22000,
+   "value_max": 31000,
+   "unit": "flat",
+   "state": "blessed"
+  },
+  {
+   "treasure_effect_id": 1522,
+   "treasure_id": 850,
+   "effect_id": 864,
+   "value": null,
+   "value_min": 6,
+   "value_max": 8,
+   "unit": "percent",
    "state": "blessed"
   }
  ],
