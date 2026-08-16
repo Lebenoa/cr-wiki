@@ -23,7 +23,7 @@
             class="bg-surface border-2 border-secondary/50 focus:border-primary focus:ring-0 rounded-full py-2 pl-4 pr-6 w-72 transition-all outline-none text-sm text-foreground" />
         <div id="filter-grade" class="flex flex-wrap gap-2 items-center">
             @for g in grades
-            <button type="button" class="grade-filter" data-grade="@g" title="@{g.to_upper()}">
+            <button type="button" class="grade-filter" data-grade="@g" title="@{ctx.grade_label(g)}">
                 <img src="/img/grades/@{g}.png" alt="@g"
                     class="size-9 rounded-lg border-2 border-transparent transition-all" />
             </button>

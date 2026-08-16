@@ -158,6 +158,12 @@ pub fn (ctx &Context) theme_label(name string) string {
 	return veb.tr(ctx.lang, 'theme_${name}')
 }
 
+// grade_label renders a grade value as its short label for tooltips and
+// option text: "s_plus" -> "S+", other grades their uppercase letter.
+pub fn (ctx &Context) grade_label(g string) string {
+	return if g == 's_plus' { 'S+' } else { g.to_upper() }
+}
+
 // is_admin reports whether the current session belongs to an admin user.
 pub fn (ctx &Context) is_admin() bool {
 	if user := ctx.user {

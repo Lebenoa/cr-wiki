@@ -101,7 +101,7 @@
                             @if g == state.grade
                             selected
                             @endif
-                        >@{g.to_upper()}</option>
+                        >@{ctx.grade_label(g)}</option>
                         @endfor
                     </select>
                 </div>
