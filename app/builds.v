@@ -385,12 +385,12 @@ fn build_form_fields(wapp &App, ctx &Context) !BuildForm {
 fn submit_build(wapp &App, mut ctx Context) veb.Result {
 	if !verify_turnstile(ctx, 'build_form') {
 		ctx.res.set_status(.forbidden)
-		return submit_error(mut ctx, veb.tr(ctx.lang, 'turnstile_form_failed'))
+		return submit_error(veb.tr(ctx.lang, 'turnstile_form_failed'), mut ctx)
 	}
 
 	form := build_form_fields(wapp, ctx) or {
 		ctx.res.set_status(.bad_request)
-		return submit_error(mut ctx, err.msg())
+		return submit_error(err.msg(), mut ctx)
 	}
 	user := ctx.user
 	mut author := (ctx.form['author'] or { '' }).trim_space()
@@ -408,7 +408,7 @@ fn submit_build(wapp &App, mut ctx Context) veb.Result {
 
 	database.create_build(wapp.db, form.sel.cookie, form.sel.cookie2, form.sel.pet, form.sel.treasure1, form.sel.treasure2, form.sel.treasure3, form.blessed1, form.blessed2, form.blessed3, form.ep, form.ep_special, form.tags, form.boosts, form.boost, form.power_effects, form.score, form.coin, form.time_ms, form.boxes, form.description, form.youtube_url, author, user_id, expires) or {
 		ctx.res.set_status(.bad_request)
-		return submit_error(mut ctx, err.msg())
+		return submit_error(err.msg(), mut ctx)
 	}
 	return submit_success(mut ctx, '/builds')
 }
@@ -479,16 +479,16 @@ pub fn (wapp &App) build_edit(mut ctx Context, id int) veb.Result {
 fn update_build_submit(wapp &App, mut ctx Context, id int) veb.Result {
 	if !verify_turnstile(ctx, 'build_form') {
 		ctx.res.set_status(.forbidden)
-		return submit_error(mut ctx, veb.tr(ctx.lang, 'turnstile_form_failed'))
+		return submit_error(veb.tr(ctx.lang, 'turnstile_form_failed'), mut ctx)
 	}
 
 	form := build_form_fields(wapp, ctx) or {
 		ctx.res.set_status(.bad_request)
-		return submit_error(mut ctx, err.msg())
+		return submit_error(err.msg(), mut ctx)
 	}
 	database.update_build(wapp.db, id, form.sel.cookie, form.sel.cookie2, form.sel.pet, form.sel.treasure1, form.sel.treasure2, form.sel.treasure3, form.blessed1, form.blessed2, form.blessed3, form.ep, form.ep_special, form.tags, form.boosts, form.boost, form.power_effects, form.score, form.coin, form.time_ms, form.boxes, form.description, form.youtube_url) or {
 		ctx.res.set_status(.bad_request)
-		return submit_error(mut ctx, err.msg())
+		return submit_error(err.msg(), mut ctx)
 	}
 	return submit_success(mut ctx, '/builds/${id}')
 }
@@ -502,11 +502,11 @@ pub fn (wapp &App) build_delete(mut ctx Context, id int) veb.Result {
 	}
 	if !verify_turnstile(ctx, 'build_delete') {
 		ctx.res.set_status(.forbidden)
-		return submit_error(mut ctx, veb.tr(ctx.lang, 'turnstile_form_failed'))
+		return submit_error(veb.tr(ctx.lang, 'turnstile_form_failed'), mut ctx)
 	}
 	database.delete_build(wapp.db, id) or {
 		ctx.res.set_status(.bad_request)
-		return submit_error(mut ctx, err.msg())
+		return submit_error(err.msg(), mut ctx)
 	}
 	return submit_success(mut ctx, '/builds')
 }

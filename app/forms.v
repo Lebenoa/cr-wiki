@@ -435,7 +435,10 @@ fn submit_success(mut ctx Context, redirect_url string) veb.Result {
 // re-renderable state (login/register/builds): htmx requests get the OOB
 // error banner fragment (the form stays in place, input preserved); plain
 // requests keep the bare error text. The caller sets the status first.
-fn submit_error(mut ctx Context, form_error string) veb.Result {
+// NOTE: `form_error` comes FIRST because this V fork's `$veb.html`
+// codegen assumes the Context is the second parameter (params[1]); with
+// `mut ctx` first it would emit `veb__Context_html(form_error, ...)`.
+fn submit_error(form_error string, mut ctx Context) veb.Result {
 	if ctx.is_htmx_request() {
 		err_msg := form_error
 		return $veb.html('./templates/components/form_error.html')

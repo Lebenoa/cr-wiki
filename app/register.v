@@ -14,31 +14,31 @@ pub fn (mut wapp App) register(mut ctx Context) veb.Result {
 	if ctx.req.method == .post {
 		if !verify_turnstile(ctx, 'register') {
 			ctx.res.set_status(.forbidden)
-			return submit_error(mut ctx, veb.tr(ctx.lang, 'turnstile_form_failed'))
+			return submit_error(veb.tr(ctx.lang, 'turnstile_form_failed'), mut ctx)
 		}
 
 		username := ctx.form['username'] or {
 			ctx.res.set_status(.bad_request)
-			return submit_error(mut ctx, 'Username is required')
+			return submit_error('Username is required', mut ctx)
 		}
 		password := ctx.form['password'] or {
 			ctx.res.set_status(.bad_request)
-			return submit_error(mut ctx, 'Password is required')
+			return submit_error('Password is required', mut ctx)
 		}
 		confirm_password := ctx.form['confirm_password'] or {
 			ctx.res.set_status(.bad_request)
-			return submit_error(mut ctx, 'Confirm password is required')
+			return submit_error('Confirm password is required', mut ctx)
 		}
 
 		if password != confirm_password {
 			ctx.res.set_status(.bad_request)
-			return submit_error(mut ctx, 'Passwords do not match')
+			return submit_error('Passwords do not match', mut ctx)
 		}
 
 		new_user_id := database.create_user(wapp.db, username, password) or {
 			eprintln(err)
 			ctx.res.set_status(.internal_server_error)
-			return submit_error(mut ctx, 'Failed to create user')
+			return submit_error('Failed to create user', mut ctx)
 		}
 
 		session_id := rand.uuid_v4()
