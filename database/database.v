@@ -1,5 +1,6 @@
 module database
 
+import log
 import db.sqlite
 import strings
 import os
@@ -575,7 +576,7 @@ fn migrate(conn sqlite.DB) ! {
 @[inline]
 fn exec(conn sqlite.DB, nq string) ! {
 	query := nq.trim_space()
-	println("Executing: `${query}`")
+	log.debug("Executing: `${query}`")
 	result := conn.exec_none(query)
 	if !sqlite_success(result) {
 		return conn.error_message(result, query)
