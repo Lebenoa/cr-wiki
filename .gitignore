@@ -51,5 +51,6 @@ __pycache__/
 *.py
 
 # Scraper/seed helper scripts stay local
-scripts/*.v
+scripts/*
+!scripts/seed_data.json
 scripts/th/
