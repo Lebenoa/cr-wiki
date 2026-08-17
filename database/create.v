@@ -451,9 +451,9 @@ pub fn create_build(conn sqlite.DB, cookie_id int, cookie2_id int, pet_id int, t
 		treasure1_id:    treasure1_id
 		treasure2_id:    treasure2_id
 		treasure3_id:    treasure3_id
-		treasure1_blessed: treasure1_blessed
-		treasure2_blessed: treasure2_blessed
-		treasure3_blessed: treasure3_blessed
+		treasure1_blessed: sanitize_blessed(conn, treasure1_id, treasure1_blessed)
+		treasure2_blessed: sanitize_blessed(conn, treasure2_id, treasure2_blessed)
+		treasure3_blessed: sanitize_blessed(conn, treasure3_id, treasure3_blessed)
 		treasure1_level: clamp_level(treasure1_level)
 		treasure2_level: clamp_level(treasure2_level)
 		treasure3_level: clamp_level(treasure3_level)

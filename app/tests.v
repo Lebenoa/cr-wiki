@@ -898,7 +898,7 @@ fn test_build_detail(mut tc TestContext) ! {
 	}
 	bid := tc.db.exec("SELECT build_id FROM build WHERE author = 'detailtest' ORDER BY build_id DESC LIMIT 1")![0].get_int('build_id')
 	// the purchased boost and Power+ keys round-trip into the build row
-	row := tc.db.exec("SELECT boost, power_effects, combi_bonus_id, treasure1_level, treasure2_level, treasure3_level FROM build WHERE build_id = ${bid}")![0]
+	row := tc.db.exec("SELECT boost, power_effects, combi_bonus_id, treasure1_blessed, treasure2_blessed, treasure1_level, treasure2_level, treasure3_level FROM build WHERE build_id = ${bid}")![0]
 	if row.get_string('boost') != 'base_speed_up'
 		|| row.get_string('power_effects') != 'cheerleader,serenade' {
 		return error('build round-trip: want boost=base_speed_up, power_effects=cheerleader,serenade; got boost=${row.get_string('boost')}, power_effects=${row.get_string('power_effects')}')
@@ -917,14 +917,22 @@ fn test_build_detail(mut tc TestContext) ! {
 	if l1 != 9 || l2 != 9 || l3 != 5 {
 		return error('build level validation: want 9/9/5, got ${l1}/${l2}/${l3}')
 	}
+	// blessed flags are sanitized at the persistence layer: the POST asks for
+	// blessed1=1 on treasure 180 (Ruby Ring, no blessed form) which must be
+	// stripped, while blessed2=1 on treasure 284 (blessed-capable) survives
+	b1 := row.get_int('treasure1_blessed')
+	b2 := row.get_int('treasure2_blessed')
+	if b1 != 0 || b2 != 1 {
+		return error('build blessed sanitize: want 0/1, got ${b1}/${b2}')
+	}
 	resp := http.get('${tc.base}/builds/${bid}') or { return error('GET /builds/${bid}: ${err}') }
 	if resp.status_code != 200 {
 		return error('GET /builds/${bid}: expected 200, got ${resp.status_code}')
 	}
 	// the treasure cards render effect values at their stored slot levels:
-	// slot 2 (treasure 284) is level 9 -> 130, slot 3 (treasure 378) is level
-	// 5 -> 45; the Lv badges echo the same stored levels
-	for needle in ['href="/builds"', '/cookies/23', '/pets/58', '/treasures/180', 'Detail page strat', '12,345', 'Energy', 'Fast Start', 'Base Speed Up 17%', '/img/boosts/base_speed_up.png', 'text-accent">130</span>', 'text-accent">45</span>', 'Lv 9', 'Lv 5'] {
+	// slot 2 (treasure 284) is blessed level 9 -> 150, slot 3 (treasure 378)
+	// is level 5 -> 45; the +N badges echo the same stored levels
+	for needle in ['href="/builds"', '/cookies/23', '/pets/58', '/treasures/180', 'Detail page strat', '12,345', 'Energy', 'Fast Start', 'Base Speed Up 17%', '/img/boosts/base_speed_up.png', 'text-accent">150</span>', 'text-accent">45</span>', '>+9<', '>+5<'] {
 		if !resp.body.contains(needle) {
 			return error('build detail missing "${needle}"')
 		}
@@ -1137,7 +1145,10 @@ fn test_build_edit_delete(mut tc TestContext) ! {
 	if edit_after.status_code != 200 {
 		return error('GET edit after: expected 200, got ${edit_after.status_code}')
 	}
-	for name, want in {'blessed1': true, 'blessed2': false, 'blessed3': true} {
+	// the edit POST asked for blessed1=1 (treasure 180) and blessed3=1
+	// (treasure 378), both non-blessable: the flags are stripped at the
+	// persistence layer, so the form prefills all three unchecked
+	for name, want in {'blessed1': false, 'blessed2': false, 'blessed3': false} {
 		marker := 'name="${name}" value="1"'
 		start := edit_after.body.index(marker) or { return error('edit form missing ${marker}') }
 		seg := edit_after.body[start..(start + 160)]

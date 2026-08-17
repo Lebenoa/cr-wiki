@@ -552,6 +552,25 @@ fn clamp_level(l int) int {
 	return l
 }
 
+// sanitize_blessed clears a treasure slot's blessed flag when the equipped
+// treasure has no blessed effect rows, so a build can never persist a blessed
+// state the detail/list pages cannot render values for (e.g. from a tampered
+// or stale request). The flag survives only when the treasure is
+// blessed-capable; an unselected slot (id 0) is never blessed.
+fn sanitize_blessed(conn sqlite.DB, treasure_id int, blessed int) int {
+	if treasure_id == 0 || blessed == 0 {
+		return 0
+	}
+	rows := sql conn {
+		select from models.TreasureEffect where treasure_id == treasure_id
+			&& state == models.EffectState.blessed limit 1
+	} or { [] }
+	if rows.len == 0 {
+		return 0
+	}
+	return 1
+}
+
 fn exec(conn sqlite.DB, nq string) ! {
 	query := nq.trim_space()
 	log.debug("Executing: `${query}`")

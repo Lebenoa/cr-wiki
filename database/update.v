@@ -244,8 +244,10 @@ pub fn update_build(conn sqlite.DB, id int, new_cookie int, new_cookie2 int, new
 			none
 		},
 		treasure1_id = new_t1, treasure2_id = new_t2, treasure3_id = new_t3,
-		treasure1_blessed = new_t1_blessed, treasure2_blessed = new_t2_blessed,
-		treasure3_blessed = new_t3_blessed, treasure1_level = clamp_level(new_t1_level),
+		treasure1_blessed = sanitize_blessed(conn, new_t1, new_t1_blessed),
+		treasure2_blessed = sanitize_blessed(conn, new_t2, new_t2_blessed),
+		treasure3_blessed = sanitize_blessed(conn, new_t3, new_t3_blessed),
+		treasure1_level = clamp_level(new_t1_level),
 		treasure2_level = clamp_level(new_t2_level), treasure3_level = clamp_level(new_t3_level),
 		ep = new_ep,
 		ep_special = new_ep_special, tag = new_tags.join(','), boosts = new_boosts.join(','),
