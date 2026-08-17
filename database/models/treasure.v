@@ -12,6 +12,10 @@ pub:
 	unlock_pet_id ?int // treasure unlocked by upgrading this pet to max level
 	is_evolved bool
 	is_power_plus bool // POWER+ treasures (friendly-run bonus items) cannot be equipped in a run
+	// catalog metadata from cookierundb (source of truth for the rebuilt seed):
+	family string // draw | pet | cookie | consumable | special — list-page filter code
+	source string // draw | pet_draw | recipe | event | login | special | cookie_upgrade | pet_upgrade — mapped to .tr keys in the UI
+	sub    string // one-line effect summary (English catalog text; display fallback)
 	release_date time.Time
 }
 
@@ -46,12 +50,6 @@ pub:
     description string
 }
 
-pub enum EffectUnit {
-	flat
-	percent
-	second
-}
-
 // EffectState distinguishes a treasure's normal effects from its blessed
 // (evolved) effects; both live in treasure_effect, one row per state.
 pub enum EffectState {
@@ -66,15 +64,11 @@ pub:
 	treasure_effect_id ?int @[primary; serial]
 
 	treasure_id int @[required; references: 'treasure'; index]
-	effect_id int @[required; references: 'effect'; index]
+	effect_id   int @[required; references: 'effect'; index]
 
-	// value holds a single number (12 -> "12%"); value_min/value_max hold a
-	// range (0.3, 0.8 -> "0.3-0.8s"). All are optional; names carry no numbers
-	// (they were migrated into these columns), so a missing value means the
-	// effect has none to show.
-	value     ?f64
-	value_min ?f64
-	value_max ?f64
-	unit      EffectUnit @[required]
-	state     EffectState @[required]
+	// membership only: the effect's +0/+9 column values and the per-level
+	// +1..+9 progression live in treasure_level (one row per level per
+	// effect); the runtime splits those values and substitutes them into the
+	// effect translation's {value} placeholders.
+	state EffectState @[required]
 }

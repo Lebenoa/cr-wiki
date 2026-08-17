@@ -839,12 +839,29 @@ pub fn combi_edit_rows(conn sqlite.DB, lang string, kind string, id int) ![]Comb
 
 // EffectOption is one treasure effect line for the build planner picker:
 // the display text ("gives extra points for Jellies") plus its compact value
-// ("2-4", "12%", ""). Both come from split_effect_value/compact_effect_value
-// so the picker text matches the treasure detail page.
+// ("2-4", "12%", "") and per-level values (`values`, index = level, from the
+// treasure_level rows) so the picker can show the value at the level the
+// planner is inspecting. Both come from split_effect_value/
+// compact_effect_value so the picker text matches the treasure detail page.
 pub struct EffectOption {
+pub:
+	text   string
+	value  string
+	values []string
+}
+
+// SlotEffect is one equipped treasure's effect line on the build cards
+// (detail and list): the display text plus the value already resolved at
+// the slot's stored level ('' when the effect has no number there).
+pub struct SlotEffect {
 pub:
 	text  string
 	value string
+pub mut:
+	// best/worst mark among matching effect lines across a build's slots:
+	// 1 = highest value, 2 = lowest, 0 = unranked. Filled by
+	// tag_slot_compare on the detail page only.
+	rank int
 }
 
 // IdNameOption is a lightweight (id, name) pair for admin-form dropdowns;
@@ -895,7 +912,23 @@ pub:
 	pet             IdNameOption
 	treasures       []IdNameOption
 	treasure_blessed []bool // per-slot blessed state, aligned with treasures
+	treasure_levels  []int  // per-slot equipped level 0-9, aligned with treasures
+pub mut:
+	slot_effects [][]SlotEffect // per-slot effect lines at the stored level; detail page only
 	combi_bonus_id   int    // combi_bonus row id for the cookie+pet pair; 0 = no combo
+	slot_compare []SlotCompare // per-slot totals + strength rank; detail page only
+}
+
+// SlotCompare is one treasure slot's comparison summary on a build detail
+// page: the summed numeric strength of its effect lines at the stored level
+// ('' when nothing was parseable) and its rank among the build's slots —
+// 1 = strongest, then middle, then weakest; 0 when the slot wasn't ranked.
+// ranked carries how many slots were ranked (0/1 = no comparison to show).
+pub struct SlotCompare {
+pub:
+	total  string
+	rank   int
+	ranked int
 }
 
 // select_builds returns non-expired community builds, filtered by
@@ -929,7 +962,7 @@ pub fn select_builds(conn sqlite.DB, lang string, f_cookie int, f_pet int, f_tre
 		else { 'created_at DESC, build_id DESC' } // latest
 	}
 
-	rows := conn.exec('SELECT build_id, cookie_id, cookie2_id, pet_id, combi_bonus_id, treasure1_id, treasure2_id, treasure3_id, treasure1_blessed, treasure2_blessed, treasure3_blessed, ep, ep_special, tag, boosts, boost, power_effects, score, coin, time, boxes, description, youtube_url, author, user_id, expires_at, created_at FROM build WHERE ${where} ORDER BY ${order} LIMIT ${limit} OFFSET ${offset}')!
+	rows := conn.exec('SELECT build_id, cookie_id, cookie2_id, pet_id, combi_bonus_id, treasure1_id, treasure2_id, treasure3_id, treasure1_blessed, treasure2_blessed, treasure3_blessed, treasure1_level, treasure2_level, treasure3_level, ep, ep_special, tag, boosts, boost, power_effects, score, coin, time, boxes, description, youtube_url, author, user_id, expires_at, created_at FROM build WHERE ${where} ORDER BY ${order} LIMIT ${limit} OFFSET ${offset}')!
 	if rows.len == 0 {
 		return []
 	}
@@ -939,6 +972,7 @@ pub fn select_builds(conn sqlite.DB, lang string, f_cookie int, f_pet int, f_tre
 	for row in rows {
 		result << build_card_from_row(row, lookups)
 	}
+	build_slot_effects_batch(conn, lang, mut result)
 	return result
 }
 // BuildCardLookups holds the localized names and sprites every card on a
@@ -1095,6 +1129,8 @@ fn build_card_from_row(row sqlite.Row, lookups BuildCardLookups) BuildCard {
 	}
 	treasure_blessed := [row.get_int('treasure1_blessed') != 0, row.get_int('treasure2_blessed') != 0,
 		row.get_int('treasure3_blessed') != 0]
+	treasure_levels := [row.get_int('treasure1_level'), row.get_int('treasure2_level'),
+		row.get_int('treasure3_level')]
 	return BuildCard{
 		build_id:     row.get_int('build_id')
 		ep:           row.get_int('ep')
@@ -1135,6 +1171,7 @@ fn build_card_from_row(row sqlite.Row, lookups BuildCardLookups) BuildCard {
 		}
 		treasures:       treasures
 		treasure_blessed: treasure_blessed
+		treasure_levels:  treasure_levels
 		combi_bonus_id:  row.get_int('combi_bonus_id')
 	}
 }
@@ -1143,12 +1180,256 @@ fn build_card_from_row(row sqlite.Row, lookups BuildCardLookups) BuildCard {
 // direct link should still render), or an error when it doesn't exist. Used
 // by the /builds/:id detail page the list cards link to.
 pub fn select_build(conn sqlite.DB, lang string, id int) !BuildCard {
-	rows := conn.exec('SELECT build_id, cookie_id, cookie2_id, pet_id, combi_bonus_id, treasure1_id, treasure2_id, treasure3_id, treasure1_blessed, treasure2_blessed, treasure3_blessed, ep, ep_special, tag, boosts, boost, power_effects, score, coin, time, boxes, description, youtube_url, author, user_id, expires_at, created_at FROM build WHERE build_id = ${id}')!
+	rows := conn.exec('SELECT build_id, cookie_id, cookie2_id, pet_id, combi_bonus_id, treasure1_id, treasure2_id, treasure3_id, treasure1_blessed, treasure2_blessed, treasure3_blessed, treasure1_level, treasure2_level, treasure3_level, ep, ep_special, tag, boosts, boost, power_effects, score, coin, time, boxes, description, youtube_url, author, user_id, expires_at, created_at FROM build WHERE build_id = ${id}')!
 	if rows.len == 0 {
 		return error('build (${id}) not found')
 	}
 	lookups := build_card_lookups(conn, lang, rows)
-	return build_card_from_row(rows.first(), lookups)
+	mut card := build_card_from_row(rows.first(), lookups)
+	// resolve each equipped treasure's effect lines at its stored slot level,
+	// in the equipped state (normal/blessed per slot), so the detail cards
+	// show the same per-level values the planner previewed at pick time.
+	card.slot_effects = build_slot_effects(conn, lang, card.treasures, card.treasure_blessed, card.treasure_levels)
+	card.slot_compare = tag_slot_compare(mut card.slot_effects)
+	return card
+}
+
+// build_slot_effects loads each equipped treasure's effect lines at its
+// stored slot level, in the equipped state, for the build detail page.
+fn build_slot_effects(conn sqlite.DB, lang string, treasures []IdNameOption, blessed []bool, levels []int) [][]SlotEffect {
+	mut out := [][]SlotEffect{}
+	for i, t in treasures {
+		st := if blessed.len > i && blessed[i] {
+			models.EffectState.blessed
+		} else {
+			models.EffectState.normal
+		}
+		views := effects_by_state(conn, lang, t.id, st) or { [] }
+		lvl := if levels.len > i {
+			levels[i]
+		} else {
+			9
+		}
+		mut lines := []SlotEffect{}
+		for v in views {
+			val := if lvl >= 0 && lvl < v.values.len {
+				v.values[lvl]
+			} else {
+				''
+			}
+			lines << SlotEffect{
+				text:  v.name
+				value: val
+			}
+		}
+		out << lines
+	}
+	return out
+}
+
+// build_slot_effects_batch resolves every equipped treasure's effect lines at
+// its stored slot level for a page of build cards — the /builds list path.
+// Three queries total (effect links, level pairs, translations), independent
+// of the row count, so list cards preview per-level values without the
+// per-slot query storm the detail page would otherwise pay per card.
+fn build_slot_effects_batch(conn sqlite.DB, lang string, mut cards []BuildCard) {
+	mut tids := []int{}
+	mut seen_t := map[int]bool{}
+	mut keys := map[string]bool{} // 'treasure_id/state' pairs needed
+	for card in cards {
+		for i, t in card.treasures {
+			if t.id > 0 {
+				if t.id !in seen_t {
+					tids << t.id
+					seen_t[t.id] = true
+				}
+				st := if card.treasure_blessed.len > i && card.treasure_blessed[i] {
+					models.EffectState.blessed
+				} else {
+					models.EffectState.normal
+				}
+				keys['${t.id}/${int(st)}'] = true
+			}
+		}
+	}
+	if tids.len == 0 {
+		return
+	}
+	// one query: effect links for every (treasure, state) on the page, in
+	// wiki order (the primary key order the detail path relies on)
+	links := sql conn {
+		select from models.TreasureEffect where treasure_id in tids order by treasure_effect_id
+	} or { [] }
+	// one query: level pairs for all the page's treasures, both states
+	lvl := effect_level_pairs(conn, tids)
+	// one query: translations for every distinct effect referenced
+	mut effect_ids := []int{}
+	mut seen_e := map[int]bool{}
+	for link in links {
+		if link.effect_id !in seen_e {
+			effect_ids << link.effect_id
+			seen_e[link.effect_id] = true
+		}
+	}
+	mut translation_map := map[int]models.EffectTranslation{}
+	if effect_ids.len > 0 {
+		user_lang := lang
+		trs := sql conn {
+			select from models.EffectTranslation where effect_id in effect_ids
+			&& (lang == user_lang || lang == 'en')
+		} or { [] }
+		for tr in trs {
+			if tr.lang == lang {
+				translation_map[tr.effect_id] = tr
+			}
+		}
+		for tr in trs {
+			if tr.effect_id !in translation_map {
+				translation_map[tr.effect_id] = tr
+			}
+		}
+	}
+	// group links by (treasure, state) so each slot resolves independently
+	mut grouped := map[string][]models.TreasureEffect{}
+	for link in links {
+		key := '${link.treasure_id}/${int(link.state)}'
+		mut arr := grouped[key] or { [] }
+		arr << link
+		grouped[key] = arr
+	}
+	for c in 0 .. cards.len {
+		mut slots := [][]SlotEffect{}
+		for i, t in cards[c].treasures {
+			if t.id <= 0 {
+				slots << []SlotEffect{}
+				continue
+			}
+			st := if cards[c].treasure_blessed.len > i && cards[c].treasure_blessed[i] {
+				models.EffectState.blessed
+			} else {
+				models.EffectState.normal
+			}
+			views := effects_from_links_maps(grouped['${t.id}/${int(st)}'] or { [] }, lvl, translation_map)
+			lvl_i := if cards[c].treasure_levels.len > i {
+				cards[c].treasure_levels[i]
+			} else {
+				9
+			}
+			mut lines := []SlotEffect{}
+			for v in views {
+				val := if lvl_i >= 0 && lvl_i < v.values.len {
+					v.values[lvl_i]
+				} else {
+					''
+				}
+				lines << SlotEffect{
+					text:  v.name
+					value: val
+				}
+			}
+			slots << lines
+		}
+		cards[c].slot_effects = slots
+	}
+}
+
+// tag_slot_compare ranks a build's equipped treasures against each other
+// after their per-level effect lines are resolved: each slot gets a numeric
+// total (the sum of its lines' values at the stored level) and a rank, and
+// matching effect lines (identical text across slots) get their rank field
+// set to 1 (highest value) or 2 (lowest value) so the template can tint the
+// best/worst occurrence. Heterogeneous lines are never compared with each
+// other, and slots with nothing parseable are never ranked.
+fn tag_slot_compare(mut slots [][]SlotEffect) []SlotCompare {
+	n := slots.len
+	mut totals := []f64{len: n}
+	mut parseable := []bool{len: n}
+	for i, lines in slots {
+		for e in lines {
+			v, ok := util.value_num(e.value)
+			if ok {
+				totals[i] += v
+				parseable[i] = true
+			}
+		}
+	}
+	mut ranked := 0
+	for i in 0 .. n {
+		if parseable[i] {
+			ranked++
+		}
+	}
+	mut ranks := []int{len: n}
+	if ranked >= 2 {
+		for i in 0 .. n {
+			if !parseable[i] {
+				continue
+			}
+			mut r := 1
+			for j in 0 .. n {
+				if j != i && parseable[j] && totals[j] > totals[i] {
+					r++
+				}
+			}
+			ranks[i] = r
+		}
+	}
+	// matching-text lines across slots: tag the highest and lowest value
+	mut groups := map[string][]int{} // text -> encoded slot*100+line positions
+	for i, lines in slots {
+		for j, e in lines {
+			if e.value == '' {
+				continue
+			}
+			mut arr := groups[e.text] or { []int{} }
+			arr << i * 100 + j
+			groups[e.text] = arr
+		}
+	}
+	for _, pos in groups {
+		if pos.len < 2 {
+			continue
+		}
+		mut best_p := -1
+		mut best_v := 0.0
+		mut worst_p := -1
+		mut worst_v := 0.0
+		for p in pos {
+			v, ok := util.value_num(slots[p / 100][p % 100].value)
+			if !ok {
+				continue
+			}
+			if best_p == -1 || v > best_v {
+				best_v = v
+				best_p = p
+			}
+			if worst_p == -1 || v < worst_v {
+				worst_v = v
+				worst_p = p
+			}
+		}
+		// the comparison is across slots: when the highest and lowest value
+		// land in the same slot (two effects sharing an identical text on one
+		// treasure), tagging them would mislabel an intra-slot difference
+		if best_p == -1 || best_p == worst_p || best_v == worst_v || best_p / 100 == worst_p / 100 {
+			continue
+		}
+		slots[best_p / 100][best_p % 100].rank = 1
+		slots[worst_p / 100][worst_p % 100].rank = 2
+	}
+	mut out := []SlotCompare{}
+	for i in 0 .. n {
+		out << SlotCompare{
+			total:  if parseable[i] {
+				util.format_total(totals[i])
+			} else {
+				''
+			}
+			rank:   ranks[i]
+			ranked: ranked
+		}
+	}
+	return out
 }
 
 // build_review_counts returns the verified and issue totals for one build,
@@ -1303,14 +1584,19 @@ pub fn treasure_options(conn sqlite.DB, lang string, equippable bool) ![]IdNameO
 				etmap[tr.effect_id] = tr
 			}
 		}
+		lvl := effect_level_pairs(conn, tids)
 		mut seen_tid := map[int]map[int]bool{} // treasure_id -> effect_id dedupe
 		mut seen_tid_b := map[int]map[int]bool{}
 		for l in links {
 			if tr := etmap[l.effect_id] {
-				v0, v9, text := util.split_effect_value(l, tr.name)
+				pair := lvl[effect_level_key(l.treasure_id, l.effect_id, l.state)] or {
+					EffectLevelPair{}
+				}
+				v0, v9, text := util.split_effect_value(pair.value0, pair.value9, tr.name)
 				opt := EffectOption{
-					text:  text
-					value: util.compact_effect_value(v0, v9)
+					text:   text
+					value:  util.compact_effect_value(v0, v9)
+					values: pair.values
 				}
 				if l.state == models.EffectState.blessed {
 					if l.effect_id in (seen_tid_b[l.treasure_id] or { map[int]bool{} }) {
@@ -1509,9 +1795,55 @@ pub fn get_unlocked_treasure(conn sqlite.DB, lang string, kind string, id int) !
 	return treasure_view(t, best_treasure_translation(conn, lang, t.treasure_id or { 0 })!, '')
 }
 
+// EffectLevelPair carries the level values of one treasure effect at one
+// state, read from treasure_level: value0/value9 are the +0/+9 endpoints,
+// `values` every level's value (index = level, '' where the level has none).
+pub struct EffectLevelPair {
+pub mut:
+	value0 string
+	value9 string
+	values []string
+}
+
+// effect_level_key builds the map key for one (treasure, effect, state).
+fn effect_level_key(tid int, eid int, st models.EffectState) string {
+	return '${tid}/${int(st)}/${eid}'
+}
+
+// effect_level_pairs loads the +0/+9 column values for every effect of the
+// given treasures (both states) in one query, so detail pages and pickers
+// render effect columns without per-effect lookups.
+fn effect_level_pairs(conn sqlite.DB, ids []int) map[string]EffectLevelPair {
+	mut out := map[string]EffectLevelPair{}
+	if ids.len == 0 {
+		return out
+	}
+	levels := sql conn {
+		select from models.TreasureLevel where treasure_id in ids
+	} or { return out }
+	for l in levels {
+		key := effect_level_key(l.treasure_id, l.effect_id, l.state)
+		mut pair := out[key] or { EffectLevelPair{ values: []string{len: 10} } }
+		if l.level >= 0 && l.level <= 9 {
+			for pair.values.len <= l.level {
+				pair.values << ''
+			}
+			pair.values[l.level] = l.values
+		}
+		if l.level == 0 {
+			pair.value0 = l.values
+		} else if l.level == 9 {
+			pair.value9 = l.values
+		}
+		out[key] = pair
+	}
+	return out
+}
+
 // effects_from_links resolves effect translations and formats each link into
-// an EffectView, preserving link order and dropping duplicate effects
-fn effects_from_links(conn sqlite.DB, lang string, links []models.TreasureEffect) ![]util.EffectView {
+// an EffectView, preserving link order and dropping duplicate effects. The
+// +0/+9 column values come from `lvl` (effect_level_pairs), not the link.
+fn effects_from_links(conn sqlite.DB, lang string, links []models.TreasureEffect, lvl map[string]EffectLevelPair) ![]util.EffectView {
 	if links.len == 0 {
 		return []
 	}
@@ -1543,6 +1875,13 @@ fn effects_from_links(conn sqlite.DB, lang string, links []models.TreasureEffect
 		}
 	}
 
+	return effects_from_links_maps(links, lvl, translation_map)
+}
+
+// effects_from_links_maps formats links into EffectViews using preloaded
+// level pairs and translations (the batched list path fetches both once per
+// page); dedupes by effect_id, preserving link order.
+fn effects_from_links_maps(links []models.TreasureEffect, lvl map[string]EffectLevelPair, translation_map map[int]models.EffectTranslation) []util.EffectView {
 	mut emitted := map[int]bool{}
 	mut result := []util.EffectView{}
 	for link in links {
@@ -1551,12 +1890,16 @@ fn effects_from_links(conn sqlite.DB, lang string, links []models.TreasureEffect
 		}
 		emitted[link.effect_id] = true
 		if tr := translation_map[link.effect_id] {
-			v0, v9, text := util.split_effect_value(link, tr.name)
+			pair := lvl[effect_level_key(link.treasure_id, link.effect_id, link.state)] or {
+				EffectLevelPair{}
+			}
+			v0, v9, text := util.split_effect_value(pair.value0, pair.value9, tr.name)
 			result << util.EffectView{
 				effect_id: link.effect_id
 				name:      text
 				value0:    v0
 				value9:    v9
+				values:    pair.values
 			}
 		}
 	}
@@ -1569,7 +1912,8 @@ fn effects_by_state(conn sqlite.DB, lang string, id int, st models.EffectState) 
 	links := sql conn {
 		select from models.TreasureEffect where treasure_id == id && state == st order by treasure_effect_id
 	}!
-	return effects_from_links(conn, lang, links)
+	lvl := effect_level_pairs(conn, [id])
+	return effects_from_links(conn, lang, links, lvl)
 }
 
 // get_treasure_effects returns one row per distinct normal effect of the
@@ -2010,16 +2354,12 @@ pub fn search_all(conn sqlite.DB, lang string, q string, limit int) !SearchResul
 		'treasure_translation_id', 'treasure_id', q, limit)!
 	results.treasures = treasures_by_ids(conn, lang, treasure_ids)!
 	return results
-} // EffectRowData is one editable treasure effect: a display name plus the raw
-
-// numeric value and unit, ready for the admin form's structured editor.
+}// EffectRowData is one editable treasure effect: a display name plus the
+// stored value string, ready for the admin form's structured editor.
 pub struct EffectRowData {
 pub:
-	name      string
-	value     ?f64
-	value_min ?f64
-	value_max ?f64
-	unit      models.EffectUnit
+	name  string
+	value string
 }
 
 // treasure_effect_rows returns the treasure's effects for one state as
@@ -2067,6 +2407,9 @@ pub fn treasure_effect_rows(conn sqlite.DB, lang string, id int, st models.Effec
 		}
 	}
 
+	// the editor edits one range per effect; the +0/+9 column values come from
+	// treasure_level (levels 0 and 9), compacted back into that range string
+	lvl := effect_level_pairs(conn, [id])
 	mut emitted := map[int]bool{}
 	mut rows := []EffectRowData{}
 	for link in links {
@@ -2075,12 +2418,12 @@ pub fn treasure_effect_rows(conn sqlite.DB, lang string, id int, st models.Effec
 		}
 		emitted[link.effect_id] = true
 		name := name_map[link.effect_id] or { continue }
+		pair := lvl[effect_level_key(link.treasure_id, link.effect_id, link.state)] or {
+			EffectLevelPair{}
+		}
 		rows << EffectRowData{
-			name:      name
-			value:     link.value
-			value_min: link.value_min
-			value_max: link.value_max
-			unit:      link.unit
+			name:  name
+			value: util.compact_effect_value(pair.value0, pair.value9)
 		}
 	}
 	return rows

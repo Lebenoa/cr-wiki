@@ -28,6 +28,28 @@ pub fn initialize(path string) !sqlite.DB {
 		create table models.TreasureEffect
 		create table models.Build
 		create table models.BuildReview
+		// cookierundb catalog tables (episode first: relic/quest/stage rows
+		// reference it; treasure/pet/cookie already exist above).
+		create table models.Episode
+		create table models.EpisodeTranslation
+		create table models.EpisodeStage
+		create table models.Relic
+		create table models.RelicTranslation
+		create table models.EpisodeRelic
+		create table models.EpisodeDrawReward
+		create table models.EpisodeBoxOdds
+		create table models.Quest
+		create table models.Ingredient
+		create table models.IngredientTranslation
+		create table models.IngredientRecipe
+		create table models.Jelly
+		create table models.JellyTranslation
+		create table models.JellyMaker
+		create table models.Skin
+		create table models.SkinTranslation
+		create table models.TreasureLevel
+		create table models.GachaPool
+		create table models.GachaPoolEntry
 	}!
 
 	migrate(conn)!
@@ -56,6 +78,7 @@ pub struct SeedFixture {
 	effect               []models.Effect
 	effect_translation   []models.EffectTranslation
 	treasure_effect      []models.TreasureEffect
+	treasure_level       []models.TreasureLevel
 	combi_bonus          []models.CombiBonus
 	build                []models.Build
 }
@@ -131,6 +154,11 @@ fn insert_fixture(conn sqlite.DB, fixture SeedFixture) ! {
 	for te in fixture.treasure_effect {
 		sql conn {
 			insert te into models.TreasureEffect
+		}!
+	}
+	for tl in fixture.treasure_level {
+		sql conn {
+			insert tl into models.TreasureLevel
 		}!
 	}
 	for cb in fixture.combi_bonus {
@@ -308,6 +336,21 @@ fn create_indexes(conn sqlite.DB) ! {
 		'CREATE INDEX IF NOT EXISTS idx_build_treasure1_id ON build (treasure1_id)',
 		'CREATE INDEX IF NOT EXISTS idx_build_treasure2_id ON build (treasure2_id)',
 		'CREATE INDEX IF NOT EXISTS idx_build_treasure3_id ON build (treasure3_id)',
+		// cookierundb catalog tables: every FK WHERE below (the ORM never
+		// materializes @[index] annotations — only UNIQUE auto-indexes).
+		'CREATE INDEX IF NOT EXISTS idx_relic_episode ON relic (episode_id)',
+		'CREATE INDEX IF NOT EXISTS idx_relic_unlock_cookie ON relic (unlock_cookie_id)',
+		'CREATE INDEX IF NOT EXISTS idx_ingredient_drop_episode ON ingredient (drop_episode_id)',
+		'CREATE INDEX IF NOT EXISTS idx_ingredient_recipe_treasure ON ingredient_recipe (treasure_id)',
+		'CREATE INDEX IF NOT EXISTS idx_episode_relic_relic ON episode_relic (relic_id)',
+		'CREATE INDEX IF NOT EXISTS idx_episode_draw_reward ON episode_draw_reward (episode_id)',
+		'CREATE INDEX IF NOT EXISTS idx_episode_box_odds ON episode_box_odds (episode_id)',
+		'CREATE INDEX IF NOT EXISTS idx_quest_episode ON quest (episode_id)',
+		'CREATE INDEX IF NOT EXISTS idx_jelly_maker_entity ON jelly_maker (entity_kind, entity_id)',
+		'CREATE INDEX IF NOT EXISTS idx_skin_cookie ON skin (cookie_id)',
+		'CREATE INDEX IF NOT EXISTS idx_gacha_pool_entry_pool ON gacha_pool_entry (pool_id)',
+		'CREATE INDEX IF NOT EXISTS idx_gacha_pool_entry_treasure ON gacha_pool_entry (treasure_id)',
+		'CREATE INDEX IF NOT EXISTS idx_gacha_pool_entry_pet ON gacha_pool_entry (pet_id)',
 	]
 	for stmt in indexes {
 		result := conn.exec_none(stmt)
@@ -384,6 +427,15 @@ fn migrate(conn sqlite.DB) ! {
 			}
 		}
 	}
+	// per-slot treasure equipped level (0-9), added later; old rows default to max.
+	for col in ['treasure1_level', 'treasure2_level', 'treasure3_level'] {
+		if col !in build_cols {
+			result := conn.exec_none('ALTER TABLE build ADD COLUMN ${col} INTEGER NOT NULL DEFAULT 9')
+			if !sqlite_success(result) {
+				return conn.error_message(result, 'add build ${col} column')
+			}
+		}
+	}
 	// build.combi_bonus_id snapshots the combi_bonus row for the cookie+pet
 	// pair (none when the pair has no combo); added later, old rows stay null.
 	if 'combi_bonus_id' !in build_cols {
@@ -399,30 +451,6 @@ fn migrate(conn sqlite.DB) ! {
 	for col in ['power_plus', 'power_plus_requirement', 'unlock_goal'] {
 		if col !in translation_cols {
 			query := 'ALTER TABLE cookie_translation ADD COLUMN ${col} TEXT NOT NULL DEFAULT ""'
-			result := conn.exec_none(query)
-			if !sqlite_success(result) {
-				return conn.error_message(result, query)
-			}
-		}
-	}
-
-	// treasure_effect.sort_order existed in an early model revision and was
-	// later removed; the NOT NULL column blocks inserts from the current model.
-	treasure_effect_cols := conn.columns('treasure_effect') or { return }
-	if 'sort_order' in treasure_effect_cols {
-		query := 'ALTER TABLE treasure_effect DROP COLUMN sort_order'
-		result := conn.exec_none(query)
-		if !sqlite_success(result) {
-			return conn.error_message(result, query)
-		}
-	}
-	// treasure_effect value ranges: value_min/value_max added so the value
-	// column can express "2-3%" ranges (previously the range was baked into
-	// the effect name, fragmenting the effect namespace); nullable because a
-	// single value or no value at all are both valid.
-	for col in ['value_min', 'value_max'] {
-		if col !in conn.columns('treasure_effect') or { [] } {
-			query := 'ALTER TABLE treasure_effect ADD COLUMN ${col} INTEGER'
 			result := conn.exec_none(query)
 			if !sqlite_success(result) {
 				return conn.error_message(result, query)
@@ -476,111 +504,6 @@ fn migrate(conn sqlite.DB) ! {
 		}
 	}
 
-	// merge blessed states into their evolved row: move the blessed effects to
-	// treasure_blessed_effect (created by the ORM) keyed by the sibling
-	// normal-state evolved row, drop the blessed treasure rows, then remove the
-	// is_blessed column. Each step is idempotent so a partially-applied
-	// migration recovers on reboot.
-	current_cols := conn.columns('treasure') or { return }
-	if 'is_blessed' in current_cols {
-		// this step targets treasure_blessed_effect, which the ORM used to
-		// create from its model; the model is gone (the tables were collapsed
-		// below), so create the transient table here for this migration only
-		mut result := conn.exec_none("
-			CREATE TABLE IF NOT EXISTS treasure_blessed_effect (
-				treasure_blessed_effect_id INTEGER PRIMARY KEY AUTOINCREMENT,
-				treasure_id INTEGER NOT NULL,
-				effect_id INTEGER NOT NULL,
-				value REAL,
-				unit INTEGER NOT NULL,
-				UNIQUE(treasure_id, effect_id)
-			)
-		")
-		if !sqlite_success(result) {
-			return conn.error_message(result, 'create transient treasure_blessed_effect')
-		}
-		result = conn.exec_none("
-			INSERT OR IGNORE INTO treasure_blessed_effect (treasure_id, effect_id, value, unit)
-			SELECT e2.treasure_id, te.effect_id, te.value, te.unit
-			FROM treasure t1
-			JOIN treasure_effect te ON te.treasure_id = t1.treasure_id
-			JOIN treasure e2 ON e2.is_evolved = 1 AND e2.is_blessed = 0
-				AND e2.base_treasure_id = t1.base_treasure_id
-			WHERE t1.is_blessed = 1
-		")
-		if !sqlite_success(result) {
-			return conn.error_message(result, 'merge treasure blessed effects')
-		}
-		// translations reference treasure, so drop the orphaned ones first
-		result = conn.exec_none('DELETE FROM treasure_translation WHERE treasure_id IN (SELECT treasure_id FROM treasure WHERE is_blessed = 1)')
-		if !sqlite_success(result) {
-			return conn.error_message(result, 'delete blessed treasure translations')
-		}
-		result = conn.exec_none('DELETE FROM treasure WHERE is_blessed = 1')
-		if !sqlite_success(result) {
-			return conn.error_message(result, 'delete blessed treasure rows')
-		}
-		result = conn.exec_none('ALTER TABLE treasure DROP COLUMN is_blessed')
-		if !sqlite_success(result) {
-			return conn.error_message(result, 'drop treasure is_blessed column')
-		}
-	}
-
-	// treasure effects were split across treasure_effect (normal state) and
-	// treasure_blessed_effect (blessed state); collapse to one table with a
-	// state column. The unique key gains `state` (a treasure can list the
-	// same effect in both states), so the table is rebuilt rather than
-	// altered. All steps run in one transaction, so a partial failure rolls
-	// back and the migration retries cleanly on the next boot.
-	if 'state' !in treasure_effect_cols {
-		conn.begin()!
-		mut result := conn.exec_none('ALTER TABLE treasure_effect RENAME TO treasure_effect_old')
-		if !sqlite_success(result) {
-			return conn.error_message(result, 'rename treasure_effect')
-		}
-		// the ORM creates the fresh table from the current model (state
-		// column + the three-column unique key)
-		sql conn {
-			create table models.TreasureEffect
-		}!
-		// only keep effects whose treasure still exists: the blessed-state
-		// merge deleted the blessed treasure rows, orphaning their original
-		// effect rows here (the same effects live on in the blessed state)
-		// ORDER BY preserves the wiki listing order: the new serial ids must
-		// follow the old ones so display stays in the order effects were
-		// scraped (INSERT..SELECT without ORDER BY is not guaranteed ordered)
-		result = conn.exec_none("
-			INSERT INTO treasure_effect (treasure_id, effect_id, value, unit, state)
-			SELECT treasure_id, effect_id, value, unit, 0
-			FROM treasure_effect_old
-			WHERE treasure_id IN (SELECT treasure_id FROM treasure)
-			ORDER BY treasure_effect_id
-		")
-		if !sqlite_success(result) {
-			return conn.error_message(result, 'copy normal treasure effects')
-		}
-		if _ := conn.columns('treasure_blessed_effect') {
-			result = conn.exec_none("
-				INSERT INTO treasure_effect (treasure_id, effect_id, value, unit, state)
-				SELECT treasure_id, effect_id, value, unit, 1
-				FROM treasure_blessed_effect
-				ORDER BY treasure_blessed_effect_id
-			")
-			if !sqlite_success(result) {
-				return conn.error_message(result, 'copy blessed treasure effects')
-			}
-			result = conn.exec_none('DROP TABLE treasure_blessed_effect')
-			if !sqlite_success(result) {
-				return conn.error_message(result, 'drop treasure_blessed_effect')
-			}
-		}
-		result = conn.exec_none('DROP TABLE treasure_effect_old')
-		if !sqlite_success(result) {
-			return conn.error_message(result, 'drop treasure_effect_old')
-		}
-		conn.commit()!
-	}
-
 	// combi_bonus.effect text moved to a reference into the shared effect
 	// table (effect_id); the effect text was English, so find-or-create an
 	// effect row by the English name and link it. Idempotent: once the
@@ -616,6 +539,19 @@ fn migrate(conn sqlite.DB) ! {
 }
 
 @[inline]
+// clamp_level bounds a treasure slot level to the valid 0-9 range. The form
+// parse already clamps, but the persistence layer must not trust callers:
+// no code path can write an out-of-range level into the build table.
+fn clamp_level(l int) int {
+	if l < 0 {
+		return 0
+	}
+	if l > 9 {
+		return 9
+	}
+	return l
+}
+
 fn exec(conn sqlite.DB, nq string) ! {
 	query := nq.trim_space()
 	log.debug("Executing: `${query}`")

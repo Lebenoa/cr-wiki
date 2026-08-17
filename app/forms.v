@@ -5,7 +5,6 @@ import api
 import veb
 import database
 import database.models
-import app.util
 
 // parse_release_date reads the 'release_date' form field as YYYY-MM-DD,
 // defaulting to now when the field is empty.
@@ -77,44 +76,34 @@ pub:
 
 
 // effect_rows_from_db maps the treasure's stored effect rows to form rows,
-// formatting the numeric value with its unit suffix for the editor.
+// using the stored value string directly for the editor.
 fn effect_rows_from_db(rows []database.EffectRowData) []EffectRow {
 	mut out := []EffectRow{}
 	for r in rows {
 		out << EffectRow{
 			name:  r.name
-			value: util.format_effect_value(r.value, r.value_min, r.value_max, r.unit)
+			value: r.value
 		}
 	}
 	return out
 }
 
-// EffectValueParts is the parsed form of an effect's value text.
-pub struct EffectValueParts {
-pub:
-	value     ?f64
-	value_min ?f64
-	value_max ?f64
-	unit      models.EffectUnit
-}
-
-// parse_effect_value splits the effect value text into its numeric parts and
-// the unit derived from the suffix: "12%" -> value 12 percent, "2-3%" ->
-// min 2 max 3 percent, "3s" -> value 3 second, "500000" -> value 500000
-// flat, "" -> no value. Anything else is rejected here at submit time.
-fn parse_effect_value(raw string) !EffectValueParts {
+// parse_effect_value validates an effect's value text and returns it
+// normalized (trimmed): a single value ("12%", "3s", "500000", "-2"), a
+// min/max range ("2-3%", "-2--3%", "0.3-0.8s"), or "" for no value. The
+// unit suffix (%, s) stays part of the string. Anything else is rejected
+// here at submit time.
+fn parse_effect_value(raw string) !string {
 	mut s := raw.trim_space()
 	if s == '' {
-		return EffectValueParts{
-			unit: models.EffectUnit.flat
-		}
+		return ''
 	}
-	mut unit := models.EffectUnit.flat
+	mut suffix := ''
 	if s.ends_with('%') {
-		unit = models.EffectUnit.percent
+		suffix = '%'
 		s = s[..s.len - 1]
 	} else if s.ends_with('s') {
-		unit = models.EffectUnit.second
+		suffix = 's'
 		s = s[..s.len - 1]
 	}
 	if s == '' {
@@ -124,7 +113,7 @@ fn parse_effect_value(raw string) !EffectValueParts {
 	// values, decimals allowed). A single '-' after a number is the range
 	// separator; the next number consumes its own optional sign, so '-2--3'
 	// means min -2, max -3.
-	mut nums := []f64{}
+	mut nums := []string{}
 	mut i := 0
 	for i < s.len {
 		// one number: optional sign then digits and a single decimal point
@@ -145,7 +134,7 @@ fn parse_effect_value(raw string) !EffectValueParts {
 			}
 			j++
 		}
-		nums << s[i..j].f64()
+		nums << s[i..j]
 		i = j
 		// separator: exactly one '-' before the next number
 		if i < s.len {
@@ -158,20 +147,10 @@ fn parse_effect_value(raw string) !EffectValueParts {
 			}
 		}
 	}
-	if nums.len > 2 {
-		return error('expected a number or range like 12% or 2-3%')
-	}
-	if nums.len == 1 {
-		return EffectValueParts{
-			value: nums[0]
-			unit:  unit
-		}
-	}
-	return EffectValueParts{
-		value_min: nums[0]
-		value_max: nums[1]
-		unit:      unit
-	}
+	// any count of values is legal (some effects carry several, e.g. "1-2-3%");
+	// the stored string keeps them all, and the +0/+9 columns render the
+	// first/last endpoints
+	return nums.join('-') + suffix
 }
 
 // TreasureForm carries the form state shared by the treasure create/edit pages.
@@ -343,15 +322,12 @@ fn parse_effect_inputs(mut ctx Context, prefix string) ![]database.EffectInput {
 		// {value}-placeholder names must carry a value on the link — the page
 		// substitutes it into the text, so a placeholder without a value would
 		// render as a literal "{value}" token
-		if name.contains('{value}') && parts.value == none && parts.value_min == none && parts.value_max == none {
+		if name.contains('{value}') && parts == '' {
 			return error('Effect ${i + 1}: name uses a {value} placeholder but no value was entered')
 		}
 		effects << database.EffectInput{
-			name:      name
-			value:     parts.value
-			value_min: parts.value_min
-			value_max: parts.value_max
-			unit:      parts.unit
+			name:  name
+			value: parts
 		}
 		i++
 	}

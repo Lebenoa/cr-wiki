@@ -146,7 +146,7 @@
         <form method="dialog" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 overflow-y-auto">
             @for c in cookies
             <button type="submit" value="@c.id" data-name="@c.name" data-name-en="@c.en_name" onclick="setPicked(this)"
-                class="pick-option border border-secondary px-4 py-2 rounded flex flex-col items-center justify-start hover:border-primary transition-colors group gap-2">
+                class="pick-option relative border border-secondary px-4 py-2 rounded flex flex-col items-center justify-start hover:border-primary transition-colors group gap-2">
                 <img src="@{ctx.img_src('cookies', c.image)}" alt="@c.name"
                     class="h-36 w-full object-contain" />
                 <span class="text-2xl group-hover:text-primary text-secondary text-center leading-tight">@c.name</span>
@@ -165,7 +165,7 @@
         <form method="dialog" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 overflow-y-auto">
             @for p in pets
             <button type="submit" value="@p.id" data-name="@p.name" data-name-en="@p.en_name" onclick="setPicked(this)"
-                class="pick-option border border-secondary px-4 py-2 rounded flex flex-col items-center justify-start hover:border-primary transition-colors group gap-2">
+                class="pick-option relative border border-secondary px-4 py-2 rounded flex flex-col items-center justify-start hover:border-primary transition-colors group gap-2">
                 <img src="@{ctx.img_src('pets', p.image)}" alt="@p.name"
                     class="h-36 w-full object-contain" />
                 <span class="text-2xl group-hover:text-primary text-secondary text-center leading-tight">@p.name</span>
@@ -189,11 +189,14 @@
         </div>
         <input type="search" placeholder="%build_search_placeholder" oninput="filterOptions('treasure', this.value)"
             class="w-full shrink-0 bg-surface border-2 border-primary/30 rounded-xl py-2 px-3 text-foreground mb-4" />
+        <div class="shrink-0 mb-4">
+            @include 'components/level_slider'
+        </div>
         <form method="dialog" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 overflow-y-auto">
             @for t in treasures
             <button type="submit" value="@t.id" data-name="@t.name" data-name-en="@t.en_name" data-evolved="@t.is_evolved"
                 onclick="setPicked(this)"
-                class="pick-option border border-secondary px-4 py-2 rounded flex flex-col items-center justify-start hover:border-primary transition-colors group gap-2">
+                class="pick-option relative border border-secondary px-4 py-2 rounded flex flex-col items-center justify-start hover:border-primary transition-colors group gap-2">
                 <img src="@{ctx.img_src('treasures', t.image)}" alt="@t.name"
                     class="h-36 w-full object-contain" />
                 <span class="text-2xl group-hover:text-primary text-secondary text-center leading-tight">@t.name</span>
@@ -202,8 +205,12 @@
                     <span class="fx-effects flex flex-col items-center gap-0.5" data-state="normal">
                         @for e in t.effects
                         <span class="fx-effect text-xs text-foreground-muted text-center leading-snug">
-                            @if e.value != ''
-                            <span class="fx-val text-accent">@e.value</span>
+                            @if e.values.len > 0
+                            <span class="fx-val text-accent" data-values="@{e.values.join('|')}">
+                                @if e.values.len > 9
+                                @{e.values.last()}
+                                @end
+                            </span>
                             @end
                             <span class="fx-name">@e.text</span>
                         </span>
@@ -213,8 +220,12 @@
                     <span class="fx-effects hidden flex flex-col items-center gap-0.5" data-state="blessed">
                         @for e in t.effects_blessed
                         <span class="fx-effect text-xs text-foreground-muted text-center leading-snug">
-                            @if e.value != ''
-                            <span class="fx-val text-accent">@e.value</span>
+                            @if e.values.len > 0
+                            <span class="fx-val text-accent" data-values="@{e.values.join('|')}">
+                                @if e.values.len > 9
+                                @{e.values.last()}
+                                @end
+                            </span>
                             @end
                             <span class="fx-name">@e.text</span>
                         </span>
@@ -228,6 +239,13 @@
                             data-state="blessed" onclick="toggleFx(event, this)">%state_blessed</span>
                     </span>
                     @end
+                    <!-- per-card 0-9 level stepper: lets planners compare two
+                         treasures at different levels side by side. The step
+                         buttons are built lazily by picker.js on dialog open;
+                         this container's stopPropagation keeps clicks in the
+                         row from activating the card's submit button. -->
+                    <span class="fx-stepper flex items-center justify-center gap-0.5 mt-1 text-[10px] font-bold leading-tight"
+                        onclick="event.stopPropagation()"></span>
                 </span>
                 @end
             </button>
@@ -235,6 +253,7 @@
         </form>
     </dialog>
 
+    <script src="/js/level_slider.js"></script>
     <script src="/js/picker.js"></script>
 </body>
 

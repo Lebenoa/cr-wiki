@@ -328,25 +328,22 @@ fn test_combi_bonus_resolves(mut tc TestContext) ! {
 }
 
 fn test_effect_value_parse(mut _tc TestContext) ! {
-	// round-trip: parse(raw) -> format_effect_value(...) must reproduce raw
-	for raw in ['12%', '2-3%', '-2%', '-2--3%', '2--3%', '-2-3%', '-5-10s', '500000', ''] {
-		parts := parse_effect_value(raw) or { return error('parse ${raw}: ${err}') }
-		got := util.format_effect_value(parts.value, parts.value_min, parts.value_max, parts.unit)
+	// parse validates the value text and returns it unchanged (the unit suffix
+	// and every number — including multi-value lists — stay in the string)
+	for raw in ['12%', '2-3%', '-2%', '-2--3%', '2--3%', '-2-3%', '-5-10s', '500000',
+		'0.3-0.8s', '1-2-3%', ''] {
+		got := parse_effect_value(raw) or { return error('parse ${raw}: ${err}') }
 		if got != raw {
 			return error('parse ${raw}: round-trip mismatch, got ${got}')
 		}
 	}
-	// unit detection
-	pct := parse_effect_value('-2--3%')!
-	if pct.unit != models.EffectUnit.percent {
-		return error('parse -2--3%: expected percent unit')
-	}
-	sec := parse_effect_value('-5-10s')!
-	if sec.unit != models.EffectUnit.second {
-		return error('parse -5-10s: expected second unit')
+	// whitespace is trimmed
+	got := parse_effect_value('  12%  ')!
+	if got != '12%' {
+		return error('parse trimmed = ${got}, want 12%')
 	}
 	// malformed inputs must error
-	for bad in ['abc', '1-2-3', '-', '12-', '2..3', '%', '--2'] {
+	for bad in ['abc', '-', '12-', '2..3', '%', '--2', '12-%'] {
 		if _ := parse_effect_value(bad) {
 			return error('parse ${bad}: expected an error')
 		}
@@ -354,204 +351,189 @@ fn test_effect_value_parse(mut _tc TestContext) ! {
 }
 
 fn test_effect_placeholder(mut tc TestContext) ! {
+	// the effect catalog + all per-level values, loaded once and scanned in
+	// memory (the per-level table is the new home of every value)
+	links := sql tc.db {
+		select from models.TreasureEffect
+	}!
+	levels := sql tc.db {
+		select from models.TreasureLevel
+}!
+	all_trs := sql tc.db {
+		select from models.EffectTranslation
+	}!
+	mut en_name := map[int]string{}
+	mut placeholder := map[int]bool{}
+	for tr in all_trs {
+		if tr.lang == 'en' && tr.name != '' {
+			en_name[tr.effect_id] = tr.name
+		}
+		if tr.name.contains('{value}') {
+			placeholder[tr.effect_id] = true
+		}
+	}
 	// invariant 1: a {value} placeholder on a linked effect must resolve — the
-	// link has to carry the value, or the render strips the token and the
-	// reader sees mangled text. Orphan translations (nothing links them) never
-	// render, so they are harmless and excluded by the JOIN.
-	bad := tc.db.exec('SELECT COUNT(DISTINCT et.effect_id) AS n FROM effect_translation et JOIN treasure_effect te ON te.effect_id = et.effect_id WHERE et.name LIKE "%{value}%" AND te.value IS NULL AND te.value_min IS NULL AND te.value_max IS NULL')![0].get_int('n')
-	if bad > 0 {
-		return error('${bad} linked effects carry a {value} placeholder with no structured value')
+	// per-level values have to carry the number, or the render strips the
+	// token and the reader sees mangled text. Orphan translations (nothing
+	// links them) never render, so they are harmless and excluded.
+	mut lvl0 := map[string]string{} // (treasure, effect, state) -> level-0 values
+	for l in levels {
+		if l.level == 0 {
+			key := '${l.treasure_id}/${int(l.state)}/${l.effect_id}'
+			lvl0[key] = l.values
+		}
+	}
+	mut unresolved := 0
+	for link in links {
+		if placeholder[link.effect_id] {
+			key := '${link.treasure_id}/${int(link.state)}/${link.effect_id}'
+			if (lvl0[key] or { '' }) == '' {
+				unresolved++
+			}
+		}
+	}
+	if unresolved > 0 {
+		return error('${unresolved} linked effects carry a {value} placeholder with no structured value')
 	}
 	// invariant 2: no effect translation bakes its own structured value into
-	// the name — numbers live on the link (per treasure/state), so identical
-	// effects with different values dedupe. Token-boundary compare so a bare
-	// "2" never matches inside "20 Energy" (a legitimate secondary number).
+	// the name — numbers live in treasure_level (per treasure/level/effect),
+	// so identical effects with different values dedupe. Token-boundary
+	// compare so a bare "2" never matches inside "20 Energy" (a legitimate
+	// secondary number); a magnitude-qualified count ("collision recoveries
+	// + 2 million points" with value 2) is the same category — the number
+	// qualifies the noun, it is not the rendered value.
 	mut baked := []string{}
-	links := sql tc.db {
-		select from models.TreasureEffect where value !is none || value_min !is none || value_max !is none
-	}!
-	for link in links {
-		fv := util.format_effect_value(link.value, link.value_min, link.value_max, link.unit)
+	for l in levels {
+		fv := l.values
 		if fv == '' {
 			continue
 		}
-		translations := sql tc.db {
-			select from models.EffectTranslation where effect_id == link.effect_id
-		}!
-		for tr in translations {
-			if ' ${tr.name} '.contains(' ${fv} ') {
-				baked << 'effect ${link.effect_id} "${tr.name}" carries ${fv}'
+		name := en_name[l.effect_id]
+		if name == '' {
+			continue
+		}
+		if ' ${name} '.contains(' ${fv} ') {
+			// skip magnitude qualifiers: "2" inside "2 million points"
+			at := name.index(' ${fv} ') or { continue }
+			after := name[at + fv.len + 2..]
+			if after.starts_with('million') || after.starts_with('thousand')
+				|| after.starts_with('hundred') || after.starts_with('billion') {
+				continue
 			}
+			baked << 'effect ${l.effect_id} "${name}" carries ${fv}'
 		}
 	}
 	if baked.len > 0 {
 		return error('${baked.len} effect translations bake their structured value: ${baked}')
 	}
 	// the placeholder renders into the +0/+9 columns with no literal token:
-	// treasure 482 normal "Base speed 6%" is a flat single value
-	effects := database.get_treasure_effects(tc.db, 'en', 482)!
+	// treasure 299 (Cherished Light Stick) "XP and +5% Coins" is a single
+	// percent value — the name keeps its +5% flavor, the columns carry 20%
+	effects := database.get_treasure_effects(tc.db, 'en', 299)!
 	mut saw := false
 	for e in effects {
 		if e.name.contains('{value}') {
 			return error('placeholder token leaked into rendered name: ${e.name}')
 		}
-		if e.name == 'Base speed' && e.value0 == '6%' && e.value9 == '6%' {
+		if e.name == 'XP and +5% Coins' && e.value0 == '20%' && e.value9 == '20%' {
 			saw = true
 		}
 	}
 	if !saw {
-		return error('expected "Base speed" 6%/6% on treasure 482, got ${effects}')
+		return error('expected "XP and +5% Coins" 20%/20% on treasure 299, got ${effects}')
 	}
-	// th renders the unit in Thai word order
-	th := database.get_treasure_effects(tc.db, 'th', 482)!
+	// th names mirror the en catalog text (cookierundb is English-only)
+	th := database.get_treasure_effects(tc.db, 'th', 299)!
 	mut saw_th := false
 	for e in th {
-		if e.name == 'ความเร็วพื้นฐาน' && e.value0 == '6%' && e.value9 == '6%' {
+		if e.name == 'XP and +5% Coins' && e.value0 == '20%' && e.value9 == '20%' {
 			saw_th = true
 		}
 	}
 	if !saw_th {
-		return error('expected th "ความเร็วพื้นฐาน" 6%/6% on treasure 482, got ${th}')
+		return error('expected th "XP and +5% Coins" 20%/20% on treasure 299, got ${th}')
 	}
-	// bare formatter: no unit suffix — the unit lives in the translation text
-	bare := util.format_effect_bare_value(6, none, none)
-	if bare != '6' {
-		return error('format_effect_bare_value(6) = ${bare}, want 6')
-	}
-	rng := util.format_effect_bare_value(none, 2, 3)
-	if rng != '2-3' {
-		return error('format_effect_bare_value range = ${rng}, want 2-3')
+	// multi-value strings: the +0/+9 columns render the first/last endpoints
+	// of the level values, and the {value} placeholder substitutes the level-0
+	// value's numbers inline ("1-2-3%" -> level 0 "1%", level 9 "3%")
+	mv0, mv9, mtext := util.split_effect_value('1%', '3%', 'Extra Jellies {value}')
+	if mv0 != '1%' || mv9 != '3%' || mtext != 'Extra Jellies 1' {
+		return error('split multi-value = ${mv0}/${mv9}/${mtext}, want 1%/3% + inline 1')
 	}
 }
 
 fn test_effect_pairs(mut tc TestContext) ! {
-	// treasure 482 (Young Girly Apple), normal tab:
-	// - placeholder effect: flat single value repeats in both columns
-	// - name-baked range: endpoints split into the +0/+9 columns
-	effects := database.get_treasure_effects(tc.db, 'en', 482)!
+	// treasure 788 (Tasting Spoon), normal tab: percent range + no-value flavor
+	effects := database.get_treasure_effects(tc.db, 'en', 788)!
 	if effects.len != 2 {
-		return error('482 effects = ${effects.len}, want 2')
+		return error('788 effects = ${effects.len}, want 2')
 	}
-	if effects[0].name != 'Base speed' || effects[0].value0 != '6%' || effects[0].value9 != '6%' {
-		return error('482 effect0 = ${effects[0]}, want Base speed 6%/6%')
+	if effects[0].name != 'base speed' || effects[0].value0 != '2%' || effects[0].value9 != '4%' {
+		return error('788 effect0 = ${effects[0]}, want base speed 2%/4%')
 	}
-	if effects[1].name != 'extra Energy during Cookie Relays' {
-		return error('482 effect1 name = ${effects[1].name}, want stripped text')
+	if effects[1].name != 'Mini Magnetic Aura' || effects[1].value0 != '' || effects[1].value9 != '' {
+		return error('788 effect1 = ${effects[1]}, want no-value flavor text')
 	}
-	if effects[1].value0 != '30' || effects[1].value9 != '75' {
-		return error('482 effect1 values = ${effects[1].value0}/${effects[1].value9}, want 30/75')
+	// flat range + flat single value on one treasure (538 Macaron Blusher Brush)
+	multi := database.get_treasure_effects(tc.db, 'en', 538)!
+	if multi[0].name != 'Macaron Parade Jelly Points' || multi[0].value0 != '500' || multi[0].value9 != '1000' {
+		return error('538 effect0 = ${multi[0]}, want Macaron Parade Jelly Points 500/1000')
 	}
-	// blessed tab of the same treasure: per-state values 8% and 40-85
-	blessed := database.get_treasure_blessed_effects(tc.db, 'en', 482)!
-	if blessed[0].value0 != '8%' || blessed[0].value9 != '8%' {
-		return error('482 blessed0 values = ${blessed[0].value0}/${blessed[0].value9}, want 8%/8%')
+	if multi[1].name != 'Revive with 50 HP' || multi[1].value0 != '1' || multi[1].value9 != '1' {
+		return error('538 effect1 = ${multi[1]}, want Revive with 50 HP 1/1')
 	}
-	if blessed[1].value0 != '40' || blessed[1].value9 != '85' {
-		return error('482 blessed1 values = ${blessed[1].value0}/${blessed[1].value9}, want 40/85')
+	// single percent value repeats in both columns (299 Cherished Light Stick)
+	single := database.get_treasure_effects(tc.db, 'en', 299)!
+	if single[1].value0 != '20%' || single[1].value9 != '20%' {
+		return error('299 single values = ${single[1].value0}/${single[1].value9}, want 20%/20%')
 	}
-	// blessed tab shows the per-column delta vs the normal state: 6%->8% and
-	// 30->40 / 75->85; raw values stay available on the same rows
-	diffs := util.blessed_diffs(effects, blessed)
-	if diffs[0].diff0 != '+2%' || diffs[0].diff9 != '+2%' {
-		return error('482 blessed delta0 = ${diffs[0].diff0}/${diffs[0].diff9}, want +2%/+2%')
+	// blessed tab: per-state values and the per-column delta vs normal
+	// (183 Skeleton Necklace of Bravery: HP 15-25 -> 20-30, Revive 1/1 -> 1/1)
+	blessed := database.get_treasure_blessed_effects(tc.db, 'en', 183)!
+	if blessed[0].value0 != '20' || blessed[0].value9 != '30' {
+		return error('183 blessed0 values = ${blessed[0].value0}/${blessed[0].value9}, want 20/30')
 	}
-	if diffs[0].value0 != '8%' {
-		return error('482 blessed raw value0 = ${diffs[0].value0}, want 8%')
+	diffs := util.blessed_diffs(database.get_treasure_effects(tc.db, 'en', 183)!, blessed)
+	if diffs[0].diff0 != '+5' || diffs[0].diff9 != '+5' {
+		return error('183 blessed delta0 = ${diffs[0].diff0}/${diffs[0].diff9}, want +5/+5')
 	}
-	if diffs[1].diff0 != '+10' || diffs[1].diff9 != '+10' {
-		return error('482 blessed delta1 = ${diffs[1].diff0}/${diffs[1].diff9}, want +10/+10')
-	}
-	// unchanged values delta to 0; missing normal counterpart keeps its value
-	d398 := util.blessed_diffs(database.get_treasure_effects(tc.db, 'en', 398)!,
-		database.get_treasure_blessed_effects(tc.db, 'en', 398)!)
-	if d398[0].diff0 != '0' || d398[0].diff9 != '0' {
-		return error('398 blessed delta0 = ${d398[0].diff0}/${d398[0].diff9}, want 0/0')
-	}
-	if d398[1].diff0 != '' || d398[1].diff9 != '' {
-		return error('398 unpaired blessed = ${d398[1].diff0}/${d398[1].diff9}, want no diff')
+	if diffs[1].diff0 != '0' || diffs[1].diff9 != '0' {
+		return error('183 blessed delta1 = ${diffs[1].diff0}/${diffs[1].diff9}, want 0/0')
 	}
 	// same value but different text: the blessed text carries a word diff
-	d434 := util.blessed_diffs(database.get_treasure_effects(tc.db, 'en', 434)!,
-		database.get_treasure_blessed_effects(tc.db, 'en', 434)!)
-	if d434[1].diff0 != '0' || d434[1].diff9 != '0' {
-		return error('434 blessed values = ${d434[1].diff0}/${d434[1].diff9}, want 0/0')
-	}
-	dh := d434[1].name_html.str()
+	// (507 Jumpy Jelly Horse: Giant Landing Jellies Intermediate -> Advanced)
+	d507 := util.blessed_diffs(database.get_treasure_effects(tc.db, 'en', 507)!,
+		database.get_treasure_blessed_effects(tc.db, 'en', 507)!)
+	dh := d507[1].name_html.str()
 	if !dh.contains('<del') || !dh.contains('>Intermediate<') || !dh.contains('<ins') || !dh.contains('>Advanced<') {
-		return error('434 blessed text diff = ${dh}, want Intermediate struck + Advanced added')
+		return error('507 blessed text diff = ${dh}, want Intermediate struck + Advanced added')
 	}
 	// identical texts carry no diff HTML
-	if d434[0].name_html.str() != '' {
-		return error('434 same-text blessed = ${d434[0].name_html.str()}, want empty')
+	if d507[0].name_html.str() != '' {
+		return error('507 same-text blessed = ${d507[0].name_html.str()}, want empty')
 	}
-	// Thai values parse the same way (suffix-aware, byte-safe)
-	thd := util.blessed_diffs(database.get_treasure_effects(tc.db, 'th', 482)!,
-		database.get_treasure_blessed_effects(tc.db, 'th', 482)!)
-	if thd[0].diff0 != '+2%' || thd[1].diff0 != '+10' {
-		return error('482 th blessed deltas = ${thd[0].diff0}/${thd[1].diff0}, want +2%/+10')
+	// renamed blessed text with identical values still shows 0 deltas
+	// (250 Artist's Palette)
+	d250 := util.blessed_diffs(database.get_treasure_effects(tc.db, 'en', 250)!,
+		database.get_treasure_blessed_effects(tc.db, 'en', 250)!)
+	if d250[0].diff0 != '0' || d250[0].diff9 != '0' {
+		return error('250 blessed values = ${d250[0].diff0}/${d250[0].diff9}, want 0/0')
 	}
-	// range with a % unit keeps the symbol on both columns
-	w := database.get_treasure_effects(tc.db, 'en', 368)!
-	if w[0].value0 != '6%' || w[0].value9 != '11%' {
-		return error('368 effect0 values = ${w[0].value0}/${w[0].value9}, want 6%/11%')
-	}
-	if w[0].name != 'higher base speed' {
-		return error('368 effect0 name = ${w[0].name}, want "higher base speed"')
-	}
-	// {value} word-unit names strip the placeholder, keeping the sentence
-	if w[1].name != 'Revives once with energy' {
-		return error('368 effect1 name = ${w[1].name}, want "Revives once with energy"')
-	}
-	if w[1].value0 != '20' || w[1].value9 != '20' {
-		return error('368 effect1 values = ${w[1].value0}/${w[1].value9}, want 20/20')
-	}
-	q := database.get_treasure_effects(tc.db, 'en', 390)!
-	if q[0].value0 != '3%' || q[0].value9 != '4%' {
-		return error('390 effect0 values = ${q[0].value0}/${q[0].value9}, want 3%/4%')
-	}
-	if q[0].name != 'Energy Drain slower' {
-		return error('390 effect0 name = ${q[0].name}, want stripped text')
-	}
-	// dangling preposition: the value stays in the text instead of dangling
-	inc := database.get_treasure_effects(tc.db, 'en', 15)!
-	if inc[0].name != 'Base speed increased by 5%' {
-		return error('treasure 15 name = ${inc[0].name}, want "Base speed increased by 5%"')
-	}
-	if inc[0].value0 != '5%' || inc[0].value9 != '5%' {
-		return error('treasure 15 values = ${inc[0].value0}/${inc[0].value9}, want 5%/5%')
-	}
-	// Thai: byte-wise stripping keeps multi-byte text intact
-	th := database.get_treasure_effects(tc.db, 'th', 482)!
-	if th[0].name != 'ความเร็วพื้นฐาน' || th[0].value0 != '6%' {
-		return error('482 th effect0 = ${th[0]}, want "ความเร็วพื้นฐาน" 6%')
-	}
-	if th[1].name != 'พลังงานพิเศษ ระหว่างรีเลย์คุกกี้' {
-		return error('482 th effect1 name = ${th[1].name}, want intact Thai text')
-	}
-	if th[1].value0 != '30' || th[1].value9 != '75' {
-		return error('482 th effect1 values = ${th[1].value0}/${th[1].value9}, want 30/75')
-	}
-	// no-value flavor text: both columns empty, text untouched
-	one := database.get_treasure_effects(tc.db, 'en', 1)!
-	if one.len != 1 {
-		return error('treasure 1 effects = ${one.len}, want 1')
-	}
-	if one[0].name != 'get more and more performance points' {
-		return error('treasure 1 name = ${one[0].name}, want upgraded prefix stripped')
-	}
-	if one[0].value0 != '' || one[0].value9 != '' {
-		return error('treasure 1 values = ${one[0].value0}/${one[0].value9}, want empty/empty')
+	if !d250[0].name_html.str().contains('<ins') {
+		return error('250 blessed must carry a word diff, got ${d250[0].name_html.str()}')
 	}
 	// binary-float noise: 0.5 - 0.3 computes as 0.19999999999999996;
-	// the delta must snap to a clean +0.2, not the full f64 expansion
-	// (values are name-baked: "0.3-0.8" normal -> "0.5-1.0" blessed, row 1)
-	d432 := util.blessed_diffs(database.get_treasure_effects(tc.db, 'en', 432)!,
-		database.get_treasure_blessed_effects(tc.db, 'en', 432)!)
-	if d432[0].diff0 != '0%' || d432[0].diff9 != '0%' {
-		return error('432 same-text delta = ${d432[0].diff0}/${d432[0].diff9}, want 0%/0%')
+	// the delta must snap to a clean +0.2s, not the full f64 expansion
+	// (400 Flavorful Sunflower Seed: Blast from HP Potions 0.3-0.8s -> 0.5-1.0s)
+	d400 := util.blessed_diffs(database.get_treasure_effects(tc.db, 'en', 400)!,
+		database.get_treasure_blessed_effects(tc.db, 'en', 400)!)
+	if d400[0].diff0 != '+0.2s' || d400[0].diff9 != '+0.2s' {
+		return error('400 blessed delta = ${d400[0].diff0}/${d400[0].diff9}, want +0.2s/+0.2s')
 	}
-	if d432[1].diff0 != '+0.2' || d432[1].diff9 != '+0.2' {
-		return error('432 blessed delta = ${d432[1].diff0}/${d432[1].diff9}, want +0.2/+0.2')
+	// th names mirror the en catalog text (cookierundb is English-only)
+	th := database.get_treasure_effects(tc.db, 'th', 538)!
+	if th[1].name != 'Revive with 50 HP' || th[1].value0 != '1' || th[1].value9 != '1' {
+		return error('538 th effect1 = ${th[1]}, want Revive with 50 HP 1/1')
 	}
 }
 
@@ -893,6 +875,11 @@ fn test_build_detail(mut tc TestContext) ! {
 			't3':          '378'
 			'blessed1':    '1'
 			'blessed2':    '1'
+			// level validation: 999 out-of-range clamps to 9, 'abc' non-numeric
+			// is treated as untouched (9), 5 is a valid value kept as-is
+			't1_level':    '999'
+			't2_level':    'abc'
+			't3_level':    '5'
 			'ep':          '5'
 			'tag_score':   'score'
 			'boost_energy': 'energy'
@@ -911,7 +898,7 @@ fn test_build_detail(mut tc TestContext) ! {
 	}
 	bid := tc.db.exec("SELECT build_id FROM build WHERE author = 'detailtest' ORDER BY build_id DESC LIMIT 1")![0].get_int('build_id')
 	// the purchased boost and Power+ keys round-trip into the build row
-	row := tc.db.exec("SELECT boost, power_effects, combi_bonus_id FROM build WHERE build_id = ${bid}")![0]
+	row := tc.db.exec("SELECT boost, power_effects, combi_bonus_id, treasure1_level, treasure2_level, treasure3_level FROM build WHERE build_id = ${bid}")![0]
 	if row.get_string('boost') != 'base_speed_up'
 		|| row.get_string('power_effects') != 'cheerleader,serenade' {
 		return error('build round-trip: want boost=base_speed_up, power_effects=cheerleader,serenade; got boost=${row.get_string('boost')}, power_effects=${row.get_string('power_effects')}')
@@ -921,11 +908,23 @@ fn test_build_detail(mut tc TestContext) ! {
 	if row.get_int('combi_bonus_id') != 16 {
 		return error('build combi snapshot: want combi_bonus_id=16, got ${row.get_int('combi_bonus_id')}')
 	}
+	// out-of-range (999) and non-numeric ('abc') levels must not persist as-is:
+	// 999 clamps to 9, 'abc' falls back to the untouched default 9, and a
+	// valid '5' is stored unchanged
+	l1 := row.get_int('treasure1_level')
+	l2 := row.get_int('treasure2_level')
+	l3 := row.get_int('treasure3_level')
+	if l1 != 9 || l2 != 9 || l3 != 5 {
+		return error('build level validation: want 9/9/5, got ${l1}/${l2}/${l3}')
+	}
 	resp := http.get('${tc.base}/builds/${bid}') or { return error('GET /builds/${bid}: ${err}') }
 	if resp.status_code != 200 {
 		return error('GET /builds/${bid}: expected 200, got ${resp.status_code}')
 	}
-	for needle in ['href="/builds"', '/cookies/23', '/pets/58', '/treasures/180', 'Detail page strat', '12,345', 'Energy', 'Fast Start', 'Base Speed Up 17%', '/img/boosts/base_speed_up.png'] {
+	// the treasure cards render effect values at their stored slot levels:
+	// slot 2 (treasure 284) is level 9 -> 130, slot 3 (treasure 378) is level
+	// 5 -> 45; the Lv badges echo the same stored levels
+	for needle in ['href="/builds"', '/cookies/23', '/pets/58', '/treasures/180', 'Detail page strat', '12,345', 'Energy', 'Fast Start', 'Base Speed Up 17%', '/img/boosts/base_speed_up.png', 'text-accent">130</span>', 'text-accent">45</span>', 'Lv 9', 'Lv 5'] {
 		if !resp.body.contains(needle) {
 			return error('build detail missing "${needle}"')
 		}
@@ -1426,11 +1425,11 @@ fn test_builds(mut tc TestContext) ! {
 	}
 	// a multi-effect treasure's picker option shows every effect, not just
 	// the first
-	multi_at := planner.body.index("data-name=\"Macaron Cookie's Blusher Brush\"") or {
+	multi_at := planner.body.index("data-name=\"Macaron Blusher Brush\"") or {
 		return error('planner missing multi-effect treasure option')
 	}
 	multi_block := planner.body[multi_at..multi_at + 1800]
-	for fx in ['gives extra points for Macaron Parade Jelly', 'Revives once with energy'] {
+	for fx in ['Macaron Parade Jelly Points', 'Revive with 50 HP'] {
 		if !multi_block.contains(fx) {
 			return error('treasure picker option missing effect "${fx}"')
 		}
@@ -1440,7 +1439,7 @@ fn test_builds(mut tc TestContext) ! {
 		return error('GET /builds/new (t1=180): ${err}')
 	}
 	t1_at := tslot.body.index('id="slot-t1"') or { return error('planner missing slot-t1') }
-	for fx in ['Miniscule Magnetic Aura', 'Giant landing makes Jelly sprout from the ground'] {
+	for fx in ['collision damage'] {
 		if !tslot.body[t1_at..t1_at + 1200].contains(fx) {
 			return error('filled treasure slot missing effect "${fx}"')
 		}
@@ -1460,8 +1459,8 @@ fn test_builds(mut tc TestContext) ! {
 		return error('evolved treasure option missing blessed toggle')
 	}
 	// a filled evolved slot shows its value alongside the effect
-	evo_slot := http.get('${tc.base}/builds/new?t1=364') or {
-		return error('GET /builds/new (t1=364): ${err}')
+	evo_slot := http.get('${tc.base}/builds/new?t1=437') or {
+		return error('GET /builds/new (t1=437): ${err}')
 	}
 	evo_at := evo_slot.body.index('id="slot-t1"') or { return error('planner missing slot-t1') }
 	if !evo_slot.body[evo_at..evo_at + 1200].contains('2-4') {

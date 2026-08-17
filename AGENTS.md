@@ -42,7 +42,7 @@ The repository implements a web platform written in V (V Language) using a speci
 - Use explicit imports rather than implicit paths.
 - **Module boundaries**: `database/` is for DB-coupled code only (queries,
   models, migrations). Effect *presentation* — value formatting
-  (`format_effect_value`, `split_effect_value`, `compact_effect_value`),
+  (`split_effect_value`, `compact_effect_value`),
   blessed diffs, and the `EffectView` struct — lives in `app/util/effects.v`.
   Keep new pure helpers there, not in `database/`; the import direction is
   `database` → `app.util` (never the reverse).

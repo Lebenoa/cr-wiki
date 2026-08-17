@@ -247,6 +247,12 @@ toggle_off
 treasure_effects
 เอฟเฟกต์
 -----
+level
+เลเวล
+-----
+level_badge
+เลเวล
+-----
 blessed_effects
 เอฟเฟกต์ได้รับพร
 -----
@@ -432,6 +438,15 @@ build_treasure_two
 -----
 build_treasure_three
 สมบัติ 3
+-----
+build_slot_total
+รวม
+-----
+build_slot_best
+ดีที่สุด
+-----
+build_slot_worst
+แย่ที่สุด
 -----
 build_none_label
 เลือก…

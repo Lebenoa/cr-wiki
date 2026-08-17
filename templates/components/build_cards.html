@@ -43,25 +43,55 @@
 
     @if b.treasures.len > 0
     <div class="hidden lg:block self-stretch w-1 bg-accent/30 rounded"></div>
-    <div class="hidden lg:flex self-center items-center gap-2">
+    <div class="hidden lg:flex self-center min-w-0">
         <button type="button" popovertarget="treasure-pop-@b.build_id" popovertargetaction="toggle"
-            class="relative z-10 inline-flex items-center gap-2 text-xs font-bold text-accent hover:underline transition-colors">
-            <span class="flex items-center gap-1">
-                @for t in b.treasures
+            class="relative z-10 inline-flex flex-wrap items-center gap-x-4 gap-y-2 text-xs font-bold text-accent hover:underline transition-colors">
+            @for i, t in b.treasures
+            <span class="flex items-center gap-1.5 min-w-0">
                 <img src="@{ctx.img_src('treasures', t.image)}" alt=""
-                    class="size-14 shrink-0 rounded object-contain ring-1 ring-surface transition-transform hover:scale-110" />
-                @endfor
+                    class="size-12 shrink-0 rounded object-contain ring-1 ring-surface transition-transform hover:scale-110" />
+                <span class="flex flex-col items-start gap-0.5 text-left">
+                    @if b.treasure_levels.len > i
+                    <span class="text-[10px] font-label uppercase text-foreground-muted">%level @{b.treasure_levels[i]}</span>
+                    @end
+                    @if b.slot_effects.len > i
+                    @for e in b.slot_effects[i]
+                    <span class="text-[11px] text-foreground-muted leading-snug">
+                        @if e.value != ''
+                        <span class="text-accent font-bold">@e.value</span>
+                        @end
+                        @e.text
+                    </span>
+                    @endfor
+                    @end
+                </span>
             </span>
+            @endfor
         </button>
     </div>
     <div id="treasure-pop-@b.build_id" popover
         class="p-4 m-0 w-64 bg-background text-foreground rounded border border-accent flex-col gap-2 hidden popover-open:flex">
         <div class="text-xs font-label uppercase text-foreground-muted px-1">%build_treasure_label</div>
-        @for t in b.treasures
+        @for i, t in b.treasures
         <a href="/treasures/@t.id" class="relative z-10 group flex items-center gap-2" title="@t.name">
             <img src="@{ctx.img_src('treasures', t.image)}" alt="@t.name"
                 class="size-10 shrink-0 rounded object-contain" />
-            <span class="font-bold text-on-surface group-hover:text-primary transition-colors">@t.name</span>
+            <span class="min-w-0 flex flex-col">
+                <span class="font-bold text-on-surface group-hover:text-primary transition-colors">@t.name</span>
+                @if b.treasure_levels.len > i
+                <span class="text-[10px] font-label uppercase text-foreground-muted">%level @{b.treasure_levels[i]}</span>
+                @end
+                @if b.slot_effects.len > i
+                @for e in b.slot_effects[i]
+                <span class="text-[11px] text-foreground-muted leading-snug">
+                    @if e.value != ''
+                    <span class="text-accent font-bold">@e.value</span>
+                    @end
+                    @e.text
+                </span>
+                @endfor
+                @end
+            </span>
         </a>
         @endfor
     </div>

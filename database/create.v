@@ -4,6 +4,7 @@ import db.sqlite
 import crypto.argon2
 import models
 import time
+import app.util
 
 pub fn create_user(conn sqlite.DB, username string, password string) !int {
 	new_user := models.User{
@@ -239,16 +240,14 @@ pub fn create_pet(conn sqlite.DB, params CreatePetParams) !int {
 }
 
 // EffectInput is one effect entered in the treasure form: a display name plus
-// an optional numeric value. The value is a single number, a min/max range
-// ("2-3%"), or absent (legacy names carry their own numbers); the unit comes
-// from the typed suffix (%, s, or a bare number) and is validated at submit.
+// an optional value string. The value is the display text for the +0..+9
+// columns — a single value ("12%", "3s", "500000"), a min/max range
+// ("2-3%"), or absent (legacy names carry their own numbers); its format is
+// validated at submit.
 pub struct EffectInput {
 pub:
-	name      string
-	value     ?f64
-	value_min ?f64
-	value_max ?f64
-	unit      models.EffectUnit
+	name  string
+	value string
 }
 
 pub struct CreateTreasureParams {
@@ -325,12 +324,15 @@ pub fn create_treasure(conn sqlite.DB, params CreateTreasureParams) !int {
 	return treasure_id
 }
 
-// replace_effects rewrites the treasure's effect links for one state: existing
-// links are dropped and the submitted effects re-created, so the saved order
-// always matches the form. Effect names are matched in the form's language so
-// re-saving an edit reuses the same effect row (translations are per-lang).
-// The delete + re-insert runs in one transaction, so a failed insert cannot
-// leave the treasure with its effects half-removed.
+// replace_effects rewrites the treasure's effect links AND their per-level
+// values for one state: existing links and treasure_level rows are dropped,
+// then each submitted effect is re-created (so the saved order always matches
+// the form). The +0/+9 column values live in treasure_level: the form edits
+// one range string per effect ("2-4%" -> level 0 "2%", level 9 "4%"), while
+// the catalog seed carries the full per-level rows. Effect names are matched
+// in the form's language so re-saving an edit reuses the same effect row
+// (translations are per-lang). The delete + re-insert runs in one transaction,
+// so a failed insert cannot leave the treasure with its effects half-removed.
 pub fn replace_effects(conn sqlite.DB, treasure_id int, lang string, effects []EffectInput, state models.EffectState) ! {
 	conn.begin()!
 	defer {
@@ -343,6 +345,14 @@ pub fn replace_effects(conn sqlite.DB, treasure_id int, lang string, effects []E
 	for link in existing {
 		sql conn {
 			delete from models.TreasureEffect where treasure_effect_id == link.treasure_effect_id
+		}!
+	}
+	old_levels := sql conn {
+		select from models.TreasureLevel where treasure_id == treasure_id && state == state
+	}!
+	for tl in old_levels {
+		sql conn {
+			delete from models.TreasureLevel where treasure_level_id == tl.treasure_level_id
 		}!
 	}
 
@@ -359,15 +369,34 @@ pub fn replace_effects(conn sqlite.DB, treasure_id int, lang string, effects []E
 		new_link := models.TreasureEffect{
 			treasure_id: treasure_id
 			effect_id:   effect_id
-			value:       e.value
-			value_min:   e.value_min
-			value_max:   e.value_max
-			unit:        e.unit
 			state:       state
 		}
 		sql conn {
 			insert new_link into models.TreasureEffect
 		}!
+		if e.value != '' {
+			v0, v9, _ := util.split_value_text(e.value)
+			lv0 := models.TreasureLevel{
+				treasure_id: treasure_id
+				level:       0
+				effect_id:   effect_id
+				state:       state
+				values:      v0
+			}
+			lv9 := models.TreasureLevel{
+				treasure_id: treasure_id
+				level:       9
+				effect_id:   effect_id
+				state:       state
+				values:      v9
+			}
+			sql conn {
+				insert lv0 into models.TreasureLevel
+			}!
+			sql conn {
+				insert lv9 into models.TreasureLevel
+			}!
+		}
 	}
 
 	conn.commit()!
@@ -408,7 +437,7 @@ fn find_or_create_effect(conn sqlite.DB, lang string, name string) !int {
 // `tags` is the score/coin/autofarm list, stored comma-separated.
 // `description`/`youtube_url` are optional and may be empty; the run-result
 // stats (score/coin/time_ms/boxes) are unsigned and 0 when not submitted.
-pub fn create_build(conn sqlite.DB, cookie_id int, cookie2_id int, pet_id int, treasure1_id int, treasure2_id int, treasure3_id int, treasure1_blessed int, treasure2_blessed int, treasure3_blessed int, ep int, ep_special int, tags []string, boosts []string, boost string, power_effects []string, score u64, coin u64, time_ms u64, boxes u64, description string, youtube_url string, author string, user_id ?int, expires_at ?time.Time) !int {
+pub fn create_build(conn sqlite.DB, cookie_id int, cookie2_id int, pet_id int, treasure1_id int, treasure2_id int, treasure3_id int, treasure1_blessed int, treasure2_blessed int, treasure3_blessed int, treasure1_level int, treasure2_level int, treasure3_level int, ep int, ep_special int, tags []string, boosts []string, boost string, power_effects []string, score u64, coin u64, time_ms u64, boxes u64, description string, youtube_url string, author string, user_id ?int, expires_at ?time.Time) !int {
 	combi_id := combi_bonus_id_for(conn, cookie_id, pet_id)!
 	build := models.Build{
 		cookie_id:       cookie_id
@@ -425,6 +454,9 @@ pub fn create_build(conn sqlite.DB, cookie_id int, cookie2_id int, pet_id int, t
 		treasure1_blessed: treasure1_blessed
 		treasure2_blessed: treasure2_blessed
 		treasure3_blessed: treasure3_blessed
+		treasure1_level: clamp_level(treasure1_level)
+		treasure2_level: clamp_level(treasure2_level)
+		treasure3_level: clamp_level(treasure3_level)
 		ep:           ep
 		ep_special:   ep_special
 		tag:          tags.join(',')

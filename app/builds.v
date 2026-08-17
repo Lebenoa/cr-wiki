@@ -278,12 +278,37 @@ fn parse_ep_tier(raw string) (int, int) {
 	return 0, 0
 }
 
+// treasure_level_field parses one treasure slot's level form value: empty
+// (field absent, e.g. pre-level forms) or non-numeric (tampered) means the
+// level wasn't set and defaults to max; out-of-range values clamp to 0-9.
+// Only a strict 0-9 digit string is accepted, so a bogus value can never be
+// stored as level 0 — which is a legitimate level, so a naive `.int()` of
+// 'abc' would silently persist the wrong value.
+fn treasure_level_field(raw string) int {
+	if raw == '' {
+		return 9
+	}
+	for c in raw {
+		if c < `0` || c > `9` {
+			return 9
+		}
+	}
+	l := raw.int()
+	if l > 9 {
+		return 9
+	}
+	return l
+}
+
 // BuildForm is the parsed planner fields shared by create and edit.
 struct BuildForm {
 	sel         BuildSelection
 	blessed1    int // 1 when treasure slot 1 is blessed
 	blessed2    int
 	blessed3    int
+	level1      int // equipped treasure level 0-9 per slot
+	level2      int
+	level3      int
 	ep          int
 	ep_special  int
 	score       u64
@@ -311,6 +336,9 @@ fn build_form_fields(wapp &App, ctx &Context) !BuildForm {
 	}	blessed1 := (ctx.form['blessed1'] or { '' }).int()
 	blessed2 := (ctx.form['blessed2'] or { '' }).int()
 	blessed3 := (ctx.form['blessed3'] or { '' }).int()
+	level1 := treasure_level_field(ctx.form['t1_level'] or { '' })
+	level2 := treasure_level_field(ctx.form['t2_level'] or { '' })
+	level3 := treasure_level_field(ctx.form['t3_level'] or { '' })
 	ep, ep_special := parse_ep_tier(ctx.form['ep'] or { '' })
 	score := (ctx.form['score'] or { '' }).u64()
 	coin := (ctx.form['coin'] or { '' }).u64()
@@ -367,6 +395,9 @@ fn build_form_fields(wapp &App, ctx &Context) !BuildForm {
 		blessed1:    if blessed1 > 0 { 1 } else { 0 }
 		blessed2:    if blessed2 > 0 { 1 } else { 0 }
 		blessed3:    if blessed3 > 0 { 1 } else { 0 }
+		level1:      level1
+		level2:      level2
+		level3:      level3
 		ep:          ep
 		ep_special:  ep_special
 		score:       score
@@ -406,7 +437,7 @@ fn submit_build(wapp &App, mut ctx Context) veb.Result {
 		expires = time.now().add(anon_build_ttl)
 	}
 
-	database.create_build(wapp.db, form.sel.cookie, form.sel.cookie2, form.sel.pet, form.sel.treasure1, form.sel.treasure2, form.sel.treasure3, form.blessed1, form.blessed2, form.blessed3, form.ep, form.ep_special, form.tags, form.boosts, form.boost, form.power_effects, form.score, form.coin, form.time_ms, form.boxes, form.description, form.youtube_url, author, user_id, expires) or {
+	database.create_build(wapp.db, form.sel.cookie, form.sel.cookie2, form.sel.pet, form.sel.treasure1, form.sel.treasure2, form.sel.treasure3, form.blessed1, form.blessed2, form.blessed3, form.level1, form.level2, form.level3, form.ep, form.ep_special, form.tags, form.boosts, form.boost, form.power_effects, form.score, form.coin, form.time_ms, form.boxes, form.description, form.youtube_url, author, user_id, expires) or {
 		ctx.res.set_status(.bad_request)
 		return submit_error(err.msg(), mut ctx)
 	}
@@ -514,6 +545,21 @@ pub fn (wapp &App) build_edit(mut ctx Context, id int) veb.Result {
 	t1_id := if b.treasures.len > 0 { b.treasures[0].id } else { 0 }
 	t2_id := if b.treasures.len > 1 { b.treasures[1].id } else { 0 }
 	t3_id := if b.treasures.len > 2 { b.treasures[2].id } else { 0 }
+	t1_level := if b.treasure_levels.len > 0 { b.treasure_levels[0] } else { 9 }
+	t2_level := if b.treasure_levels.len > 1 { b.treasure_levels[1] } else { 9 }
+	t3_level := if b.treasure_levels.len > 2 { b.treasure_levels[2] } else { 9 }
+	t1_blessed := if b.treasure_blessed.len > 0 && b.treasure_blessed[0] { 1 } else { 0 }
+	t2_blessed := if b.treasure_blessed.len > 1 && b.treasure_blessed[1] { 1 } else { 0 }
+	t3_blessed := if b.treasure_blessed.len > 2 && b.treasure_blessed[2] { 1 } else { 0 }
+	// the slot prefills resolve from the FULL treasure list (Power+ included):
+	// a stored build may legitimately reference a treasure the equippable
+	// picker excludes (the catalog was rebuilt since some builds were saved),
+	// and an empty slot would silently hide the stored pick. The dialog
+	// itself keeps the equippable list, matching the planner.
+	all_treasures := database.treasure_options(wapp.db, ctx.lang, false) or { [] }
+	sel_t1 := resolve_option(all_treasures, t1_id)
+	sel_t2 := resolve_option(all_treasures, t2_id)
+	sel_t3 := resolve_option(all_treasures, t3_id)
 	return $veb.html('./templates/build_edit.html')
 }
 
@@ -528,7 +574,7 @@ fn update_build_submit(wapp &App, mut ctx Context, id int) veb.Result {
 		ctx.res.set_status(.bad_request)
 		return submit_error(err.msg(), mut ctx)
 	}
-	database.update_build(wapp.db, id, form.sel.cookie, form.sel.cookie2, form.sel.pet, form.sel.treasure1, form.sel.treasure2, form.sel.treasure3, form.blessed1, form.blessed2, form.blessed3, form.ep, form.ep_special, form.tags, form.boosts, form.boost, form.power_effects, form.score, form.coin, form.time_ms, form.boxes, form.description, form.youtube_url) or {
+	database.update_build(wapp.db, id, form.sel.cookie, form.sel.cookie2, form.sel.pet, form.sel.treasure1, form.sel.treasure2, form.sel.treasure3, form.blessed1, form.blessed2, form.blessed3, form.level1, form.level2, form.level3, form.ep, form.ep_special, form.tags, form.boosts, form.boost, form.power_effects, form.score, form.coin, form.time_ms, form.boxes, form.description, form.youtube_url) or {
 		ctx.res.set_status(.bad_request)
 		return submit_error(err.msg(), mut ctx)
 	}

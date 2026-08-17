@@ -1,68 +1,26 @@
 module util
 
-import database.models
 import encoding.html
 import strings
 import veb
 
-// EffectView is one rendered treasure effect: the +0/+9 column values and the
-// display text (numbers stripped / {value} handled). diff0/diff9 and name_html
-// are the blessed-tab-only deltas vs the normal state. Pure presentation —
-// lives in util, not the database module.
+// EffectView is one rendered treasure effect: the +0/+9 level values and the
+// display text (numbers stripped / {value} handled). `values` carries every
+// level's value (index = level, '' where the level has none) so the detail
+// page's level slider can switch without a round-trip. diff0/diff9/diffs and
+// name_html are the blessed-tab-only deltas vs the normal state. Pure
+// presentation — lives in util, not the database module.
 pub struct EffectView {
 pub:
 	effect_id int
 	name      string // effect text (numbers stripped / {value} handled)
-	value0    string // +0 column ("6%", "30"); empty when the effect carries no value
-	value9    string // +9 column ("11%", "75")
-	diff0     string // blessed tab only: delta vs the normal state ("+2%")
-	diff9     string // blessed tab only: delta vs the normal state ("+10")
+	value0    string // level-0 value ("6%", "30"); empty when the effect carries no value
+	value9    string // level-9 value ("11%", "75")
+	values    []string // every level's value, index = level ('' where the level has none)
+	diff0     string // blessed tab only: delta vs the normal state at level 0 ("+2%")
+	diff9     string // blessed tab only: delta vs the normal state at level 9 ("+10")
+	diffs     []string // blessed tab only: per-level deltas vs normal, index = level
 	name_html veb.RawHtml // blessed tab only: word diff vs the normal text
-}
-
-// fmt_f64 renders a value without a trailing .0 on whole numbers
-// (5.0 -> "5", 0.3 -> "0.3", 7000.0 -> "7000").
-pub fn fmt_f64(n f64) string {
-	if n == f64(int(n)) {
-		return '${int(n)}'
-	}
-	return '${n}'
-}
-
-// format_effect_value renders the numeric value with its unit suffix
-// ("12%", "3s", "5000", "0.3-0.8s"); empty when the effect has no value.
-pub fn format_effect_value(value ?f64, value_min ?f64, value_max ?f64, unit models.EffectUnit) string {
-	suffix := match unit {
-		.percent { '%' }
-		.second { 's' }
-		.flat { '' }
-	}
-	if mn := value_min {
-		if mx := value_max {
-			return '${fmt_f64(mn)}-${fmt_f64(mx)}${suffix}'
-		}
-		return '${fmt_f64(mn)}${suffix}'
-	}
-	if v := value {
-		return '${fmt_f64(v)}${suffix}'
-	}
-	return ''
-}
-
-// format_effect_bare_value renders the bare number/range without a unit
-// suffix ("5", "2-3") for substitution into {value} placeholders — the unit
-// word/symbol lives in each language's translation text.
-pub fn format_effect_bare_value(value ?f64, value_min ?f64, value_max ?f64) string {
-	if mn := value_min {
-		if mx := value_max {
-			return '${fmt_f64(mn)}-${fmt_f64(mx)}'
-		}
-		return '${fmt_f64(mn)}'
-	}
-	if v := value {
-		return '${fmt_f64(v)}'
-	}
-	return ''
 }
 
 // parse_value_cell splits one +0/+9 column value ("6%", "30", "1.5s") into
@@ -139,9 +97,18 @@ fn value_delta(normal string, blessed string) string {
 	return txt + unit
 }
 
+// level_at returns an effect view's value at the given level, '' when the
+// view carries no per-level values for it.
+fn level_at(e EffectView, l int) string {
+	if l >= 0 && l < e.values.len {
+		return e.values[l]
+	}
+	return ''
+}
+
 // blessed_diffs pairs each blessed-state effect with the normal-state effect
 // at the same position (the wiki lists both states in the same order) and
-// fills the blessed rows' diff0/diff9 columns with the per-column delta. Rows
+// fills the blessed rows' diff0/diff9/diffs with the per-level delta. Rows
 // without a normal counterpart (or with unparseable values) carry no diff.
 // When the blessed text differs from the normal one (same effect, different
 // wording), name_html carries a word-level diff of the change.
@@ -150,10 +117,14 @@ pub fn blessed_diffs(normal []EffectView, blessed []EffectView) []EffectView {
 	for i, e in blessed {
 		mut d0 := ''
 		mut d9 := ''
+		mut diffs := []string{}
 		mut name_html := veb.RawHtml('')
 		if i < normal.len {
 			d0 = value_delta(normal[i].value0, e.value0)
 			d9 = value_delta(normal[i].value9, e.value9)
+			for l in 0 .. 10 {
+				diffs << value_delta(level_at(normal[i], l), level_at(e, l))
+			}
 			if normal[i].name != e.name {
 				name_html = veb.RawHtml(word_diff(normal[i].name, e.name))
 			}
@@ -163,8 +134,10 @@ pub fn blessed_diffs(normal []EffectView, blessed []EffectView) []EffectView {
 			name:      e.name
 			value0:    e.value0
 			value9:    e.value9
+			values:    e.values
 			diff0:     d0
 			diff9:     d9
+			diffs:     diffs
 			name_html: name_html
 		}
 	}
@@ -224,61 +197,6 @@ fn word_diff(normal string, blessed string) string {
 	return b.str().trim_space()
 }
 
-// effect_name_tokens returns the number-like tokens of an effect name:
-// "get 5-15 extra points" -> ["5-15"], "6-11% higher" -> ["6-11%"],
-// "get 1.5-3.3 extra seconds" -> ["1.5-3.3"]. Both '-' and '~' separate
-// ranges. Scanning is byte-wise but only advances through ASCII digits and
-// separators, so multi-byte runes (Thai) are never sliced mid-rune.
-fn effect_name_tokens(s string) []string {
-	mut out := []string{}
-	mut i := 0
-	for i < s.len {
-		if !s[i].is_digit() {
-			i++
-			continue
-		}
-		mut j := i
-		for j < s.len && (s[j].is_digit() || s[j] == `.`) {
-			j++
-		}
-		// optional range separator then a second number
-		if j < s.len && (s[j] == `-` || s[j] == `~`) && j + 1 < s.len && s[j + 1].is_digit() {
-			j++
-			for j < s.len && (s[j].is_digit() || s[j] == `.`) {
-				j++
-			}
-		}
-		// optional unit symbol
-		if j < s.len && (s[j] == `%` || s[j] == `s`) {
-			j++
-		}
-		out << s[i..j]
-		i = j
-	}
-	return out
-}
-
-// split_token splits one token into low, high (empty for a single) and the
-// unit symbol ("30-75%" -> 30, 75, "%"; "6" -> 6, "", "").
-fn split_token(t string) (string, string, string) {
-	mut i := 0
-	for i < t.len && (t[i].is_digit() || t[i] == `.`) {
-		i++
-	}
-	low := t[..i]
-	mut rest := t[i..]
-	mut high := ''
-	if rest.len > 0 && (rest[0] == `-` || rest[0] == `~`) {
-		mut j := 1
-		for j < rest.len && (rest[j].is_digit() || rest[j] == `.`) {
-			j++
-		}
-		high = rest[1..j]
-		rest = rest[j..]
-	}
-	return low, high, rest
-}
-
 // collapse_spaces trims s and collapses runs of whitespace into one space,
 // byte-wise so multi-byte runes (Thai) survive untouched.
 fn collapse_spaces(s string) string {
@@ -296,16 +214,6 @@ fn collapse_spaces(s string) string {
 		}
 	}
 	return b.str().trim_space()
-}
-
-// strip_tokens removes the given tokens from s and collapses leftover
-// whitespace ("get 5-15 extra points" -> "get extra points").
-fn strip_tokens(s string, tokens []string) string {
-	mut out := s
-	for t in tokens {
-		out = out.replace(t, ' ')
-	}
-	return collapse_spaces(out)
 }
 
 // strip_value_placeholder removes the {value} placeholder (and an attached
@@ -333,37 +241,87 @@ fn ends_dangling(s string) bool {
 	return false
 }
 
-// split_structured_value renders the +0/+9 columns from the link's stored
-// value (range -> endpoints, single -> repeated for both levels) and the
-// display text with the {value} placeholder stripped when it reads cleanly.
-fn split_structured_value(link models.TreasureEffect, name string) (string, string, string) {
-	suffix := match link.unit {
-		.percent { '%' }
-		.second { 's' }
-		.flat { '' }
+// scan_value_num consumes one signed decimal number ("-2", "0.3", "5000")
+// starting at i and returns its text plus the index just past it; the second
+// return equals i when no number starts there.
+fn scan_value_num(s string, i int) (string, int) {
+	mut j := i
+	if j < s.len && s[j] == `-` {
+		j++
 	}
-	mut v0 := ''
-	mut v9 := ''
-	mut bare := ''
-	if mn := link.value_min {
-		if mx := link.value_max {
-			v0 = '${fmt_f64(mn)}${suffix}'
-			v9 = '${fmt_f64(mx)}${suffix}'
-			bare = '${fmt_f64(mn)}-${fmt_f64(mx)}'
-		} else {
-			v0 = '${fmt_f64(mn)}${suffix}'
-			v9 = v0
-			bare = '${fmt_f64(mn)}'
+	start := j
+	mut dots := 0
+	for j < s.len && (s[j].is_digit() || s[j] == `.`) {
+		if s[j] == `.` {
+			dots++
 		}
-	} else if v := link.value {
-		v0 = '${fmt_f64(v)}${suffix}'
-		v9 = v0
-		bare = '${fmt_f64(v)}'
+		j++
 	}
+	if j == start || dots > 1 {
+		return '', i
+	}
+	return s[start..j], j
+}
+
+// split_value_text parses a stored effect value string into its +0/+9
+// columns and the bare number list: "6-11%" -> "6%", "11%", "6-11"; "12%"
+// -> "12%", "12%", "12"; "-2--3%" -> "-2%", "-3%", "-2--3" (min -2, max -3);
+// a multi-value effect ("1-2-3%") renders its first/last endpoints in the
+// columns and keeps the whole list as the bare value; "" -> all empty. The
+// unit suffix (%, s) rides on the string.
+pub fn split_value_text(value string) (string, string, string) {
+	if value == '' {
+		return '', '', ''
+	}
+	mut s := value
+	mut suffix := ''
+	if s.ends_with('%') {
+		suffix = '%'
+		s = s[..s.len - 1]
+	} else if s.ends_with('s') {
+		suffix = 's'
+		s = s[..s.len - 1]
+	}
+	// one or more signed decimal numbers joined by '-' ("12", "0.3-0.8",
+	// "1-2-3"); anything else is not a stored value
+	mut nums := []string{}
+	mut i := 0
+	for i < s.len {
+		num, j := scan_value_num(s, i)
+		if j == i {
+			return '', '', ''
+		}
+		nums << num
+		i = j
+		if i < s.len {
+			if s[i] != `-` {
+				return '', '', ''
+			}
+			i++
+			if i >= s.len {
+				return '', '', ''
+			}
+		}
+	}
+	if nums.len == 1 {
+		return nums[0] + suffix, nums[0] + suffix, nums[0]
+	}
+	return nums[0] + suffix, nums[nums.len - 1] + suffix, nums.join('-')
+}
+
+// split_effect_value renders one treasure effect from its +0/+9 column
+// values (read from the treasure_level rows at levels 0 and 9) and the
+// effect's localized name: the columns pass through unchanged, and a {value}
+// placeholder in the name is substituted with the level-0 value's numbers
+// ("15/25" -> "15", "0.3-0.8s" -> "0.3-0.8") so the text reads inline; when
+// the substituted form would dangle ("Base speed increased by") the
+// placeholder is stripped instead and the columns carry the numbers.
+pub fn split_effect_value(value0 string, value9 string, name string) (string, string, string) {
 	mut text := name
 	if name.contains('{value}') {
+		_, _, bare := split_value_text(value0)
 		if bare == '' {
-			// legacy placeholder with no structured value: never leak the token
+			// placeholder with no structured value at level 0: never leak the token
 			text = strip_value_placeholder(name)
 		} else if bare.contains('-') {
 			// a range reads naturally inline; keep the substituted form
@@ -377,50 +335,32 @@ fn split_structured_value(link models.TreasureEffect, name string) (string, stri
 			}
 		}
 	}
-	return v0, v9, text
+	return value0, value9, text
 }
 
-// split_baked_value derives the +0/+9 columns from the number baked into the
-// translation name (the wiki recorded the range/single inline): the first
-// range token splits into its endpoints, a lone single token repeats for both
-// levels. Unrelated extra tokens stay in the text untouched.
-fn split_baked_value(name string) (string, string, string) {
-	toks := effect_name_tokens(name)
-	mut v0 := ''
-	mut v9 := ''
-	mut strip := []string{}
-	for t in toks {
-		low, high, suffix := split_token(t)
-		if high != '' {
-			v0 = low + suffix
-			v9 = high + suffix
-			strip = [t]
-			break
-		}
-	}
-	if v0 == '' && toks.len == 1 {
-		low, _, suffix := split_token(toks[0])
-		v0 = low + suffix
-		v9 = v0
-		strip = [toks[0]]
-	}
-	mut text := if strip.len > 0 { strip_tokens(name, strip) } else { name }
-	// "increased by X-Y" phrases would dangle without their number — keep the
-	// inline form then (the columns stay filled; mild redundancy is fine)
-	if strip.len > 0 && ends_dangling(text) {
-		text = name
-	}
-	return v0, v9, text
+// value_num parses the numeric part of one effect value ("11.5%", "30",
+// "1.5s") for cross-slot comparison on build pages; ok=false when the value
+// is empty or not a plain number ("???").
+pub fn value_num(s string) (f64, bool) {
+	n, _, ok := parse_value_cell(s)
+	return n, ok
 }
 
-// split_effect_value derives the +0/+9 column values and the display text for
-// one treasure-effect link: columns come from the link's structured value
-// when present, else from the range/single number baked into the name.
-pub fn split_effect_value(link models.TreasureEffect, name string) (string, string, string) {
-	if link.value != none || link.value_min != none || link.value_max != none {
-		return split_structured_value(link, name)
+// format_total renders a summed effect value for the build comparison chip:
+// integers stay bare ("43"), decimals keep up to 2 places ("14.5").
+pub fn format_total(t f64) string {
+	// snap binary-float noise to 2 decimals (the data carries at most 2 dp)
+	mut r := t * 100
+	r = if r >= 0 {
+		f64(int(r + 0.5))
+	} else {
+		f64(int(r - 0.5))
 	}
-	return split_baked_value(name)
+	r /= 100
+	if r == f64(int(r)) {
+		return '${int(r)}'
+	}
+	return '${r}'
 }
 
 // compact_effect_value joins the +0/+9 column values into one picker line:

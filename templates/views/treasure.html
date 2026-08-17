@@ -184,13 +184,11 @@
                     </div>
                     @endif
                 </div>
+                <div class="mt-3">
+                    @include 'components/level_slider'
+                </div>
                 <div class="effects-panels">
                 <div id="effects-normal" class="mt-2">
-                    <div class="grid grid-cols-[4rem_4rem_1fr] px-4 py-1.5 rounded-t-xl bg-secondary/10">
-                        <span class="text-center text-xs font-label text-foreground-muted uppercase">+0</span>
-                        <span class="text-center text-xs font-label text-foreground-muted uppercase">+9</span>
-                        <span></span>
-                    </div>
                     <div class="mt-2 flex flex-col gap-2">
                         @for effect in effects
                         @include 'components/effect_card'
@@ -199,11 +197,6 @@
                 </div>
                 @if blessed_effects.len > 0
                 <div id="effects-blessed" class="blessed-effect mt-2 hidden">
-                    <div class="grid grid-cols-[4rem_4rem_1fr] px-4 py-1.5 rounded-t-xl bg-secondary/10">
-                        <span class="text-center text-xs font-label text-foreground-muted uppercase">+0</span>
-                        <span class="text-center text-xs font-label text-foreground-muted uppercase">+9</span>
-                        <span></span>
-                    </div>
                     <div class="mt-2 flex flex-col gap-2">
                         @for effect in blessed_effects
                         @include 'components/effect_card'
@@ -239,6 +232,7 @@
         </div>
     </section>
 
+    <script src="/js/level_slider.js"></script>
     <script>
         (function () {
             var exitTimer = null;

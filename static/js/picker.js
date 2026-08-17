@@ -11,6 +11,9 @@
     var treasureSlot = 't1';
     var cookieSlot = 'cookie';
     var lastPick = null;
+    // last level set on the picker's top slider, remembered across dialog
+    // opens (null = the user hasn't moved it yet, so slot/9 fallback applies).
+    var lastPickerLevel = null;
 
     // filter mode: /builds reuses the same picker dialogs for its cookie/pet/
     // treasure filters. A pick just re-filters the list via htmx — no planner
@@ -23,8 +26,18 @@
 
     // stepOrder is the picker flow; each dialog shows a step header ("2/6")
     // with the current slot's translated label and an animated progress fill.
-    var stepOrder = ['cookie', 'cookie2', 'pet', 't1', 't2', 't3'];
     var stepDialog = { cookie: 'cookie', cookie2: 'cookie', pet: 'pet', t1: 'treasure', t2: 'treasure', t3: 'treasure' };
+    // stepOrder is the picker flow, filtered to the dialogs actually present
+    // on this page: the planner has all of them (1/6..6/6), the build edit
+    // page only the treasure dialog (t1..t3 read 1/3..3/3), and the /builds
+    // filter page reuses all six slots across its three dialogs.
+    var presentDialogs = {};
+    document.querySelectorAll('dialog').forEach(function (d) {
+        presentDialogs[d.dataset.kind] = true;
+    });
+    var stepOrder = ['cookie', 'cookie2', 'pet', 't1', 't2', 't3'].filter(function (slot) {
+        return presentDialogs[stepDialog[slot]];
+    });
 
     // updateDialogStep fills the header inside the dialog that is about to
     // open: count ("n/6"), translated label (from the dialog's data-label-*
@@ -36,7 +49,7 @@
             return;
         }
         var step = stepOrder.indexOf(slot) + 1;
-        header.querySelector('.step-count').textContent = step + '/6';
+        header.querySelector('.step-count').textContent = step + '/' + stepOrder.length;
         header.querySelector('.step-name').textContent = header.getAttribute('data-label-' + slot) || '';
         var title = header.getAttribute('data-title-' + slot);
         if (title) {
@@ -130,6 +143,30 @@
                     p.classList.toggle('border-secondary/40', !on);
                 });
             });
+            // the picker's level: the last level the user set on the top
+            // slider (remembered across dialog opens), or — before any
+            // manual choice — the target slot's stored level so re-picking
+            // shows the values the build will store (9 when no slot exists,
+            // e.g. the /builds filter dialog). The slider wiring itself
+            // lives in level_slider.js (shared with the treasure detail
+            // page); only the per-open level choice is picker logic.
+            var slotScope = document.getElementById('slot-' + treasureSlot);
+            slotScope = slotScope ? slotScope.closest('[data-level-scope]') : null;
+            var slotLevel = window.getScopeLevel ? getScopeLevel(slotScope) : 9;
+            var level = lastPickerLevel !== null ? lastPickerLevel : slotLevel;
+            if (window.setPickerLevel) {
+                setPickerLevel(level);
+            } else if (window.resetLevelSlider) {
+                resetLevelSlider();
+            }
+            // build the per-card steppers (lazily, once) and set every card
+            // to the level above; individual cards can then be bumped via
+            // their own stepper for side-by-side comparison (those overrides
+            // reset when the dialog reopens).
+            ensureSteppers();
+            dlg.querySelectorAll('.pick-option').forEach(function (card) {
+                setCardLevel(card, level);
+            });
         }
         var q = dlg.querySelector('input[type="search"]');
         if (q) {
@@ -178,6 +215,177 @@
         });
     }
 
+    // setCardLevel re-renders one picker card at a given level: its value
+    // cells (from data-values; covers both the normal and hidden blessed
+    // groups) and the stepper's active button.
+    function setCardLevel(card, l) {
+        if (l < 0 || l > 9) {
+            l = 9;
+        }
+        // the card keeps its own displayed level: the picker captures it at
+        // pick time so the slot's stored level matches what the planner
+        // actually showed (per-card stepper override or top-slider default).
+        card.dataset.level = l;
+        card.querySelectorAll('.fx-val').forEach(function (el) {
+            var vals = (el.getAttribute('data-values') || '').split('|');
+            el.textContent = vals[l] || '';
+            // +9 delta badge next to the value: how much the effect gains at
+            // max level vs the level currently shown ('' at level 9, or when
+            // either end has no parseable number). Signed, so a drain-type
+            // value that goes -2.3% -> -3% reads "-0.7".
+            var up = el.parentNode.querySelector('.fx-up');
+            var cur = parseFloat(vals[l]);
+            var max = parseFloat(vals[9]);
+            if (l < 9 && !isNaN(cur) && !isNaN(max) && vals[l] !== undefined && vals[9] !== undefined) {
+                var d = Math.round((max - cur) * 100) / 100;
+                if (d !== 0) {
+                    if (!up) {
+                        up = document.createElement('span');
+                        up.className = 'fx-up text-[10px] text-foreground-muted font-semibold';
+                        up.setAttribute('aria-hidden', 'true');
+                        el.parentNode.insertBefore(up, el.nextSibling);
+                    }
+                    up.textContent = ' ' + (d > 0 ? '+' : '') + d;
+                    return;
+                }
+            }
+            if (up) {
+                up.remove();
+            }
+        });
+        card.querySelectorAll('.fx-step').forEach(function (s) {
+            var on = parseInt(s.getAttribute('data-l'), 10) === l;
+            s.classList.toggle('bg-primary', on);
+            s.classList.toggle('text-foreground', on);
+            s.classList.toggle('text-foreground-muted', !on);
+        });
+        // hover hint keeps the current level and the arrow shortcut visible;
+        // screen readers get the level from the live region (keyboard path)
+        card.title = (card.dataset.name || '') + ' - level ' + l + ' (use left/right arrows to change)';
+        // corner badge when this card's level differs from the top slider
+        updateOverrideBadge(card);
+    }
+
+    // updateOverrideBadge marks a card whose per-card level differs from the
+    // picker's top slider (the grid default), so overrides are visible at a
+    // glance. The badge is a tiny accent chip in the card's top-right corner
+    // showing the overridden level; it appears/updates as levels change and
+    // is removed when the card matches the slider again (slider move or
+    // dialog open). Clicking the badge must not pick the treasure, so its
+    // click is swallowed like the stepper's.
+    function updateOverrideBadge(card) {
+        var dlg = card.closest('dialog');
+        var slider = dlg ? dlg.querySelector('.level-slider') : null;
+        var grid = slider ? parseInt(slider.value, 10) : 9;
+        if (isNaN(grid) || grid < 0 || grid > 9) {
+            grid = 9;
+        }
+        var lvl = parseInt(card.dataset.level, 10);
+        if (isNaN(lvl) || lvl < 0 || lvl > 9) {
+            lvl = 9;
+        }
+        var host = card.querySelector('.fx-override-badge');
+        if (lvl === grid) {
+            if (host) {
+                host.remove();
+            }
+            return;
+        }
+        if (!host) {
+            host = document.createElement('span');
+            host.className = 'fx-override-badge absolute -top-2 -right-2 size-5 rounded-full bg-accent text-on-accent text-[10px] font-bold flex items-center justify-center shadow';
+            host.addEventListener('click', function (ev) {
+                ev.preventDefault();
+                ev.stopPropagation();
+            });
+            card.appendChild(host);
+        }
+        host.textContent = lvl;
+    }
+
+    // ensureSteppers builds each card's tiny 0-9 level stepper lazily on the
+    // first treasure-dialog open, so the initial page stays as light as it
+    // can be (the dialog already server-renders every treasure). The step
+    // buttons are JS-built; the container lives in the template. A click on
+    // a step overrides just that card; stopPropagation (here and inline on
+    // the container) keeps the event from activating the card's submit
+    // button, mirroring the fx-pill pattern.
+    function ensureSteppers() {
+        var dlg = document.getElementById('dialog-treasure');
+        if (!dlg || dlg.dataset.steppersBuilt === '1') {
+            return;
+        }
+        dlg.dataset.steppersBuilt = '1';
+        dlg.querySelectorAll('.pick-option').forEach(function (card) {
+            var host = card.querySelector('.fx-stepper');
+            if (!host) {
+                return;
+            }
+            for (var l = 0; l <= 9; l++) {
+                var s = document.createElement('span');
+                s.className = 'fx-step rounded px-1 cursor-pointer select-none text-foreground-muted hover:text-accent transition-colors';
+                s.setAttribute('data-l', l);
+                s.textContent = l;
+                host.appendChild(s);
+            }
+            host.addEventListener('click', function (ev) {
+                var step = ev.target.closest('.fx-step');
+                if (!step) {
+                    return;
+                }
+                ev.preventDefault();
+                ev.stopPropagation();
+                setCardLevel(card, parseInt(step.getAttribute('data-l'), 10));
+            });
+        });
+        // arrow-key cycling: the card is a single tab stop, so arrows set the
+        // level without precise clicks on the tiny digits. Delegated on the
+        // dialog (one listener, covers every card); the search box and any
+        // inner spans are either inside a .pick-option or ignored.
+        dlg.addEventListener('keydown', function (ev) {
+            var card = ev.target && ev.target.closest ? ev.target.closest('.pick-option') : null;
+            if (!card || !dlg.contains(card)) {
+                return;
+            }
+            var lvl = parseInt(card.dataset.level, 10);
+            if (isNaN(lvl) || lvl < 0 || lvl > 9) {
+                lvl = 9;
+            }
+            var next = -1;
+            if (ev.key === 'ArrowLeft') {
+                next = lvl - 1;
+            } else if (ev.key === 'ArrowRight') {
+                next = lvl + 1;
+            } else if (ev.key === 'Home') {
+                next = 0;
+            } else if (ev.key === 'End') {
+                next = 9;
+            } else {
+                return;
+            }
+            // clamp first, then bail on a real no-op: ArrowRight at max must
+            // neither re-render nor announce a phantom change
+            next = Math.max(0, Math.min(9, next));
+            if (next === lvl) {
+                return;
+            }
+            ev.preventDefault();
+            ev.stopPropagation();
+            setCardLevel(card, next);
+            // announce to assistive tech; the live region is created below
+            // (before this handler can run)
+            var live = dlg.querySelector('.fx-level-live');
+            if (live) {
+                live.textContent = (card.dataset.name || 'Treasure') + ', level ' + next;
+            }
+        });
+        // sr-only polite live region for keyboard level announcements
+        var live = document.createElement('span');
+        live.className = 'sr-only fx-level-live';
+        live.setAttribute('aria-live', 'polite');
+        dlg.appendChild(live);
+    }
+
     function setPicked(btn) {
         var line = btn.querySelector('.fx-line');
         var blessedGroup = line ? line.querySelector('.fx-effects[data-state="blessed"]') : null;
@@ -193,11 +401,16 @@
                 });
             });
         }
+        var lvl = parseInt(btn.dataset.level, 10);
+        if (isNaN(lvl) || lvl < 0 || lvl > 9) {
+            lvl = 9;
+        }
         lastPick = {
             name: btn.dataset.name,
             img: btn.querySelector('img').getAttribute('src'),
             effects: effects,
             blessed: blessed,
+            level: lvl,
         };
     }
 
@@ -412,6 +625,19 @@
                 if (blessed) {
                     blessed.value = lastPick.blessed ? '1' : '0';
                 }
+                // store the level the picked card displayed (its per-card
+                // stepper or the picker's top slider) on the slot: the hidden
+                // field, the scoped slider/input knobs and the slot's value
+                // cells all follow, so the build records what the planner
+                // showed. The /builds filter dialog has no slot scope —
+                // nothing to sync there.
+                if (window.setScopeLevel) {
+                    var slotBtn = document.getElementById('slot-' + target);
+                    var slotScope = slotBtn ? slotBtn.closest('[data-level-scope]') : null;
+                    if (slotScope) {
+                        setScopeLevel(slotScope, lastPick.level);
+                    }
+                }
             }
             updateSlot(target);
             if (filterMode) {
@@ -474,6 +700,23 @@
         document.querySelectorAll('label.group input[type="checkbox"]').forEach(function (input) {
             input.closest('label').classList.toggle('is-on', input.checked);
         });
+    }
+
+    // the picker's top slider is the grid default: when it moves, reset
+    // every card to the new level (clearing any per-card stepper override)
+    // so the slider stays the source of truth for the grid.
+    var treasureDlg = document.getElementById('dialog-treasure');
+    if (treasureDlg) {
+        var treasureSlider = treasureDlg.querySelector('.level-slider');
+        if (treasureSlider) {
+            treasureSlider.addEventListener('input', function () {
+                var v = parseInt(treasureSlider.value, 10);
+                lastPickerLevel = v;
+                treasureDlg.querySelectorAll('.pick-option').forEach(function (card) {
+                    setCardLevel(card, v);
+                });
+            });
+        }
     }
 
     document.addEventListener('change', function (ev) {

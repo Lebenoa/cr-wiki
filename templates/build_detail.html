@@ -82,6 +82,77 @@
                     class="font-bold text-accent uppercase border border-accent/50 rounded-full px-2 py-0.5 text-[10px]">%state_blessed</span>
                 @endif
                 @endif
+                @if b.treasure_levels.len > i
+                <span
+                    class="hidden md:flex items-center gap-0.5 rounded-full bg-surface border border-primary/20 px-2 py-0.5"
+                    title="%level_badge @{b.treasure_levels[i]}">
+                    <span class="text-[10px] font-label uppercase text-foreground-muted">%level</span>
+                    @for l in [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+                    @if l == b.treasure_levels[i]
+                    <span
+                        class="fx-step min-w-4 h-4 rounded-full flex items-center justify-center text-[10px] leading-none bg-primary text-foreground font-bold">@l</span>
+                    @else
+                    <span
+                        class="fx-step min-w-4 h-4 rounded-full flex items-center justify-center text-[10px] leading-none text-foreground-muted">@l</span>
+                    @end
+                    @endfor
+                </span>
+                <span class="md:hidden flex items-center gap-1 rounded-full bg-surface border border-primary/20 px-2 py-0.5"
+                    title="%level_badge @{b.treasure_levels[i]}">
+                    <span class="text-[10px] font-label uppercase text-foreground-muted">%level</span>
+                    <span
+                        class="fx-step min-w-4 h-4 rounded-full flex items-center justify-center text-[10px] leading-none bg-primary text-foreground font-bold">@{b.treasure_levels[i]}</span>
+                </span>
+                @endif
+                @if b.slot_effects.len > i
+                <span class="flex flex-col items-center gap-0.5">
+                    @for e in b.slot_effects[i]
+                    <span class="text-center text-xs leading-snug
+                        @if e.rank == 1
+                        bg-accent/10 rounded px-1 text-accent font-bold
+                        @end
+                        @if e.rank == 2
+                        opacity-70 text-foreground-muted
+                        @end
+                        @if e.rank == 0
+                        text-foreground-muted
+                        @end
+                        ">
+                        @if e.value != ''
+                        <span class="text-accent">@e.value</span>
+                        @end
+                        @e.text
+                    </span>
+                    @endfor
+                </span>
+                @end
+                @if b.slot_compare.len > i
+                @if sc := b.slot_compare[i]
+                @if sc.total != ''
+                <span
+                    class="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase
+                    @if sc.rank == 1 && sc.ranked > 1
+                    border-accent bg-accent text-on-accent
+                    @end
+                    @if sc.rank == sc.ranked && sc.ranked > 1
+                    border-secondary/40 text-foreground-muted
+                    @end
+                    @if !(sc.rank == 1 && sc.ranked > 1) && !(sc.rank == sc.ranked && sc.ranked > 1)
+                    border-primary/30 text-foreground-muted
+                    @end
+                    ">
+                    @if sc.rank == 1 && sc.ranked > 1
+                    %build_slot_best
+                    @else if sc.rank == sc.ranked && sc.ranked > 1
+                    %build_slot_worst
+                    @else
+                    %build_slot_total
+                    @end
+                    @{sc.total}
+                </span>
+                @end
+                @end
+                @end
             </a>
             @endfor
         </div>
