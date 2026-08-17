@@ -73,36 +73,20 @@
             @for i, t in b.treasures
             <a href="/treasures/@t.id" title="@t.name"
                 class="group rounded-2xl border-2 border-primary/30 bg-surface/50 p-4 flex flex-col items-center gap-2 transition-colors hover:border-primary">
-                <img src="@{ctx.img_src('treasures', t.image)}" alt="@t.name"
-                    class="h-20 w-full object-contain" />
+                <span class="relative block w-full">
+                    <img src="@{ctx.img_src('treasures', t.image)}" alt="@t.name"
+                        class="h-20 w-full object-contain" />
+                    @if b.treasure_levels.len > i
+                    <span
+                        class="absolute -top-2 -right-2 size-5 rounded-full bg-primary text-foreground text-[10px] font-bold flex items-center justify-center shadow">+@{b.treasure_levels[i]}</span>
+                    @end
+                </span>
                 <span class="text-center text-sm font-bold text-on-surface group-hover:text-primary leading-tight">@t.name</span>
                 @if b.treasure_blessed.len > i
                 @if b.treasure_blessed[i]
                 <span
                     class="font-bold text-accent uppercase border border-accent/50 rounded-full px-2 py-0.5 text-[10px]">%state_blessed</span>
                 @endif
-                @endif
-                @if b.treasure_levels.len > i
-                <span
-                    class="hidden md:flex items-center gap-0.5 rounded-full bg-surface border border-primary/20 px-2 py-0.5"
-                    title="%level_badge @{b.treasure_levels[i]}">
-                    <span class="text-[10px] font-label uppercase text-foreground-muted">%level</span>
-                    @for l in [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
-                    @if l == b.treasure_levels[i]
-                    <span
-                        class="fx-step min-w-4 h-4 rounded-full flex items-center justify-center text-[10px] leading-none bg-primary text-foreground font-bold">@l</span>
-                    @else
-                    <span
-                        class="fx-step min-w-4 h-4 rounded-full flex items-center justify-center text-[10px] leading-none text-foreground-muted">@l</span>
-                    @end
-                    @endfor
-                </span>
-                <span class="md:hidden flex items-center gap-1 rounded-full bg-surface border border-primary/20 px-2 py-0.5"
-                    title="%level_badge @{b.treasure_levels[i]}">
-                    <span class="text-[10px] font-label uppercase text-foreground-muted">%level</span>
-                    <span
-                        class="fx-step min-w-4 h-4 rounded-full flex items-center justify-center text-[10px] leading-none bg-primary text-foreground font-bold">@{b.treasure_levels[i]}</span>
-                </span>
                 @endif
                 @if b.slot_effects.len > i
                 <span class="flex flex-col items-center gap-0.5">

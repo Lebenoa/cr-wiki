@@ -31,9 +31,15 @@
             <button type="button" popovertarget="treasure-pop-@b.build_id" popovertargetaction="toggle"
                 class="relative z-10 inline-flex items-center gap-2 text-xs font-bold text-accent hover:underline transition-colors">
                 <span class="flex items-center gap-1">
-                    @for t in b.treasures
-                    <img src="@{ctx.img_src('treasures', t.image)}" alt=""
-                        class="size-14 shrink-0 rounded object-contain ring-1 ring-surface transition-transform hover:scale-110" />
+                    @for i, t in b.treasures
+                    <span class="relative shrink-0">
+                        <img src="@{ctx.img_src('treasures', t.image)}" alt=""
+                            class="size-14 shrink-0 rounded object-contain ring-1 ring-surface transition-transform hover:scale-110" />
+                        @if b.treasure_levels.len > i
+                        <span
+                            class="absolute -top-2 -right-2 size-5 rounded-full bg-primary text-foreground text-[10px] font-bold flex items-center justify-center shadow">+@{b.treasure_levels[i]}</span>
+                        @end
+                    </span>
                     @endfor
                 </span>
             </button>
@@ -48,12 +54,15 @@
             class="relative z-10 inline-flex flex-wrap items-center gap-x-4 gap-y-2 text-xs font-bold text-accent hover:underline transition-colors">
             @for i, t in b.treasures
             <span class="flex items-center gap-1.5 min-w-0">
-                <img src="@{ctx.img_src('treasures', t.image)}" alt=""
-                    class="size-12 shrink-0 rounded object-contain ring-1 ring-surface transition-transform hover:scale-110" />
-                <span class="flex flex-col items-start gap-0.5 text-left">
+                <span class="relative shrink-0">
+                    <img src="@{ctx.img_src('treasures', t.image)}" alt=""
+                        class="size-12 shrink-0 rounded object-contain ring-1 ring-surface transition-transform hover:scale-110" />
                     @if b.treasure_levels.len > i
-                    <span class="text-[10px] font-label uppercase text-foreground-muted">%level @{b.treasure_levels[i]}</span>
+                    <span
+                        class="absolute -top-2 -right-2 size-5 rounded-full bg-primary text-foreground text-[10px] font-bold flex items-center justify-center shadow">+@{b.treasure_levels[i]}</span>
                     @end
+                </span>
+                <span class="flex flex-col items-start gap-0.5 text-left">
                     @if b.slot_effects.len > i
                     @for e in b.slot_effects[i]
                     <span class="text-[11px] text-foreground-muted leading-snug">
@@ -74,13 +83,16 @@
         <div class="text-xs font-label uppercase text-foreground-muted px-1">%build_treasure_label</div>
         @for i, t in b.treasures
         <a href="/treasures/@t.id" class="relative z-10 group flex items-center gap-2" title="@t.name">
-            <img src="@{ctx.img_src('treasures', t.image)}" alt="@t.name"
-                class="size-10 shrink-0 rounded object-contain" />
+            <span class="relative shrink-0">
+                <img src="@{ctx.img_src('treasures', t.image)}" alt="@t.name"
+                    class="size-10 shrink-0 rounded object-contain" />
+                @if b.treasure_levels.len > i
+                <span
+                    class="absolute -top-2 -right-2 size-5 rounded-full bg-primary text-foreground text-[10px] font-bold flex items-center justify-center shadow">+@{b.treasure_levels[i]}</span>
+                @end
+            </span>
             <span class="min-w-0 flex flex-col">
                 <span class="font-bold text-on-surface group-hover:text-primary transition-colors">@t.name</span>
-                @if b.treasure_levels.len > i
-                <span class="text-[10px] font-label uppercase text-foreground-muted">%level @{b.treasure_levels[i]}</span>
-                @end
                 @if b.slot_effects.len > i
                 @for e in b.slot_effects[i]
                 <span class="text-[11px] text-foreground-muted leading-snug">

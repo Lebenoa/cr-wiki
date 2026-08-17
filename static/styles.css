@@ -661,7 +661,8 @@
 .gap-x-4{column-gap:calc(var(--spacing) * 4);}
 .gap-y-1{row-gap:calc(var(--spacing) * 1);}
 .gap-y-2{row-gap:calc(var(--spacing) * 2);}
-.grid{display:grid;}
+.grid,
+[grid=""]{display:grid;}
 .grid-cols-\[4rem_1fr\]{grid-template-columns:4rem 1fr;}
 .grid-cols-1{grid-template-columns:repeat(1,minmax(0,1fr));}
 .grid-cols-2{grid-template-columns:repeat(2,minmax(0,1fr));}
@@ -708,7 +709,6 @@
 .min-h-36{min-height:calc(var(--spacing) * 36);}
 .min-w-0{min-width:calc(var(--spacing) * 0);}
 .min-w-16{min-width:calc(var(--spacing) * 16);}
-.min-w-4{min-width:calc(var(--spacing) * 4);}
 .min-w-40{min-width:calc(var(--spacing) * 40);}
 .w-\[min\(80rem\,95vw\)\]{width:min(80rem,95vw);}
 .w-\[min\(90vw\,40rem\)\]{width:min(90vw,40rem);}
