@@ -646,6 +646,7 @@ pub:
 	ingredient_id int
 	name          string
 	image         ?string
+	grade         ?int
 }
 
 // select_treasure_ingredients loads the ingredients a treasure is crafted
@@ -679,12 +680,17 @@ pub fn select_treasure_ingredients(conn sqlite.DB, lang string, tid int) []Treas
 	for i in ings {
 		images[i.ingredient_id or { 0 }] = i.image
 	}
+	mut grades := map[int]?int{}
+	for i in ings {
+		grades[i.ingredient_id or { 0 }] = i.grade
+	}
 	mut out := []TreasureIngredientView{}
 	for rid in ids {
 		out << TreasureIngredientView{
 			ingredient_id: rid
 			name:          lang_name(names, rid, lang)
 			image:         images[rid]
+			grade:         grades[rid]
 		}
 	}
 	return out
@@ -725,10 +731,11 @@ pub:
 }
 
 // GachaEntryView is one disclosed draw-pool row: prize name/image, grade and
-// odds.
+// odds. id is the prize entity's id (route link derives from kind).
 pub struct GachaEntryView {
 pub mut:
-	kind  string // 'treasure' | 'pet' (image dir)
+	kind  string // 'treasure' | 'pet' (image dir + route prefix)
+	id    int
 	name  string
 	image ?string
 	grade ?int
@@ -1034,10 +1041,12 @@ pub fn select_gacha(conn sqlite.DB, lang string) []GachaPoolView {
 			}
 			if tid := e.treasure_id {
 				v.kind = 'treasure'
+				v.id = tid
 				v.name = lang_name(tr_info.names, tid, lang)
 				v.image = tr_info.images[tid]
 			} else if p_id := e.pet_id {
 				v.kind = 'pet'
+				v.id = p_id
 				v.name = lang_name(pt.names, p_id, lang)
 				v.image = pt.images[p_id]
 			}

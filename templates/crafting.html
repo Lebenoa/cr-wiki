@@ -15,10 +15,10 @@
         <a href="/crafting/@i.ingredient_id" hx-boost="true"
             class="rounded-2xl border-2 border-primary/20 bg-surface/50 p-4 flex flex-col items-center gap-2 hover:border-primary transition-colors">
             <img src="@{ctx.img_src('ingredients', i.image)}" alt="@i.name" class="h-20 w-full object-contain" />
-            <span class="text-center text-sm font-bold text-on-surface leading-tight">@i.name</span>
             @if ig := i.grade
-            <span class="text-[10px] font-bold text-accent uppercase">@{ctx.grade_label_int(ig)}</span>
+            <span class="@{ctx.grade_badge_cls(ig)}">@{ctx.grade_label_int(ig)}</span>
             @end
+            <span class="text-center text-sm font-bold text-on-surface leading-tight">@i.name</span>
             @if i.recipe_count > 0
             <span class="text-[10px] font-label uppercase text-foreground-muted">@i.recipe_count
                 %crafting_recipes_label</span>

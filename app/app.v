@@ -164,6 +164,28 @@ pub fn (ctx &Context) grade_label(g string) string {
 	return if g == 's_plus' { 'S+' } else { g.to_upper() }
 }
 
+// grade_badge_cls returns the full badge class list for a stored grade value
+// (models.Grade), so each grade renders with its own border/text color. The
+// badge base (size, pill shape, border width) is baked in so every call site
+// shares one look. Returns '' when the row has no grade.
+pub fn (ctx &Context) grade_badge_cls(grade ?int) string {
+	if g := grade {
+		gr := models.Grade.from(g) or { return '' }
+		base := 'text-xs font-bold uppercase rounded-full border px-2 py-0.5 '
+		return base + match gr.str() {
+			'e' { 'border-emerald-400 text-emerald-400' }
+			'c' { 'border-stone-400 text-stone-400' }
+			'b' { 'border-sky-400 text-sky-400' }
+			'a' { 'border-purple-400 text-purple-400' }
+			's' { 'border-amber-400 text-amber-400' }
+			's_plus' { 'border-rose-400 text-rose-400' }
+			'l' { 'border-orange-400 text-orange-400' }
+			else { 'border-foreground-muted text-foreground-muted' }
+		}
+	}
+	return ''
+}
+
 // is_admin reports whether the current session belongs to an admin user.
 pub fn (ctx &Context) is_admin() bool {
 	if user := ctx.user {
