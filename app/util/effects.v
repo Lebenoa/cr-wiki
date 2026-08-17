@@ -338,31 +338,6 @@ pub fn split_effect_value(value0 string, value9 string, name string) (string, st
 	return value0, value9, text
 }
 
-// value_num parses the numeric part of one effect value ("11.5%", "30",
-// "1.5s") for cross-slot comparison on build pages; ok=false when the value
-// is empty or not a plain number ("???").
-pub fn value_num(s string) (f64, bool) {
-	n, _, ok := parse_value_cell(s)
-	return n, ok
-}
-
-// format_total renders a summed effect value for the build comparison chip:
-// integers stay bare ("43"), decimals keep up to 2 places ("14.5").
-pub fn format_total(t f64) string {
-	// snap binary-float noise to 2 decimals (the data carries at most 2 dp)
-	mut r := t * 100
-	r = if r >= 0 {
-		f64(int(r + 0.5))
-	} else {
-		f64(int(r - 0.5))
-	}
-	r /= 100
-	if r == f64(int(r)) {
-		return '${int(r)}'
-	}
-	return '${r}'
-}
-
 // compact_effect_value joins the +0/+9 column values into one picker line:
 // empty when the effect has no value, the single value when both levels match
 // ("12%"), or a range with the shared unit hoisted ("6-11%", "0.3-0.8s").

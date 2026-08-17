@@ -627,7 +627,6 @@
 .not-\[\.hidden\]\:opacity-100:not(.hidden){opacity:100%;}
 .opacity-0{opacity:0%;}
 .opacity-60{opacity:60%;}
-.opacity-70{opacity:70%;}
 [backdrop\:opacity-0=""]::backdrop{opacity:0%;}
 [backdrop\:open\:opacity-40=""][open]::backdrop{opacity:40%;}
 .open\:opacity-100[open]{opacity:100%;}

@@ -857,11 +857,6 @@ pub struct SlotEffect {
 pub:
 	text  string
 	value string
-pub mut:
-	// best/worst mark among matching effect lines across a build's slots:
-	// 1 = highest value, 2 = lowest, 0 = unranked. Filled by
-	// tag_slot_compare on the detail page only.
-	rank int
 }
 
 // IdNameOption is a lightweight (id, name) pair for admin-form dropdowns;
@@ -916,19 +911,6 @@ pub:
 pub mut:
 	slot_effects [][]SlotEffect // per-slot effect lines at the stored level; detail page only
 	combi_bonus_id   int    // combi_bonus row id for the cookie+pet pair; 0 = no combo
-	slot_compare []SlotCompare // per-slot totals + strength rank; detail page only
-}
-
-// SlotCompare is one treasure slot's comparison summary on a build detail
-// page: the summed numeric strength of its effect lines at the stored level
-// ('' when nothing was parseable) and its rank among the build's slots —
-// 1 = strongest, then middle, then weakest; 0 when the slot wasn't ranked.
-// ranked carries how many slots were ranked (0/1 = no comparison to show).
-pub struct SlotCompare {
-pub:
-	total  string
-	rank   int
-	ranked int
 }
 
 // select_builds returns non-expired community builds, filtered by
@@ -1190,7 +1172,6 @@ pub fn select_build(conn sqlite.DB, lang string, id int) !BuildCard {
 	// in the equipped state (normal/blessed per slot), so the detail cards
 	// show the same per-level values the planner previewed at pick time.
 	card.slot_effects = build_slot_effects(conn, lang, card.treasures, card.treasure_blessed, card.treasure_levels)
-	card.slot_compare = tag_slot_compare(mut card.slot_effects)
 	return card
 }
 
@@ -1331,105 +1312,6 @@ fn build_slot_effects_batch(conn sqlite.DB, lang string, mut cards []BuildCard) 
 		}
 		cards[c].slot_effects = slots
 	}
-}
-
-// tag_slot_compare ranks a build's equipped treasures against each other
-// after their per-level effect lines are resolved: each slot gets a numeric
-// total (the sum of its lines' values at the stored level) and a rank, and
-// matching effect lines (identical text across slots) get their rank field
-// set to 1 (highest value) or 2 (lowest value) so the template can tint the
-// best/worst occurrence. Heterogeneous lines are never compared with each
-// other, and slots with nothing parseable are never ranked.
-fn tag_slot_compare(mut slots [][]SlotEffect) []SlotCompare {
-	n := slots.len
-	mut totals := []f64{len: n}
-	mut parseable := []bool{len: n}
-	for i, lines in slots {
-		for e in lines {
-			v, ok := util.value_num(e.value)
-			if ok {
-				totals[i] += v
-				parseable[i] = true
-			}
-		}
-	}
-	mut ranked := 0
-	for i in 0 .. n {
-		if parseable[i] {
-			ranked++
-		}
-	}
-	mut ranks := []int{len: n}
-	if ranked >= 2 {
-		for i in 0 .. n {
-			if !parseable[i] {
-				continue
-			}
-			mut r := 1
-			for j in 0 .. n {
-				if j != i && parseable[j] && totals[j] > totals[i] {
-					r++
-				}
-			}
-			ranks[i] = r
-		}
-	}
-	// matching-text lines across slots: tag the highest and lowest value
-	mut groups := map[string][]int{} // text -> encoded slot*100+line positions
-	for i, lines in slots {
-		for j, e in lines {
-			if e.value == '' {
-				continue
-			}
-			mut arr := groups[e.text] or { []int{} }
-			arr << i * 100 + j
-			groups[e.text] = arr
-		}
-	}
-	for _, pos in groups {
-		if pos.len < 2 {
-			continue
-		}
-		mut best_p := -1
-		mut best_v := 0.0
-		mut worst_p := -1
-		mut worst_v := 0.0
-		for p in pos {
-			v, ok := util.value_num(slots[p / 100][p % 100].value)
-			if !ok {
-				continue
-			}
-			if best_p == -1 || v > best_v {
-				best_v = v
-				best_p = p
-			}
-			if worst_p == -1 || v < worst_v {
-				worst_v = v
-				worst_p = p
-			}
-		}
-		// the comparison is across slots: when the highest and lowest value
-		// land in the same slot (two effects sharing an identical text on one
-		// treasure), tagging them would mislabel an intra-slot difference
-		if best_p == -1 || best_p == worst_p || best_v == worst_v || best_p / 100 == worst_p / 100 {
-			continue
-		}
-		slots[best_p / 100][best_p % 100].rank = 1
-		slots[worst_p / 100][worst_p % 100].rank = 2
-	}
-	mut out := []SlotCompare{}
-	for i in 0 .. n {
-		out << SlotCompare{
-			total:  if parseable[i] {
-				util.format_total(totals[i])
-			} else {
-				''
-			}
-			rank:   ranks[i]
-			ranked: ranked
-		}
-	}
-	return out
 }
 
 // build_review_counts returns the verified and issue totals for one build,

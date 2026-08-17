@@ -439,15 +439,6 @@ Treasure 2
 build_treasure_three
 Treasure 3
 -----
-build_slot_total
-Total
------
-build_slot_best
-Best
------
-build_slot_worst
-Worst
------
 build_none_label
 Select…
 -----
