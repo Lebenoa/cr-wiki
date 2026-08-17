@@ -229,6 +229,21 @@
                     </span>
                 </div>
             </div>
+            @if craft_ingredients.len > 0
+            <div class="mt-8 w-full">
+                <h2 class="text-sm font-label text-foreground-muted uppercase mb-3">%craft_ingredients_label</h2>
+                <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+                    @for ci in craft_ingredients
+                    <a href="/crafting/@ci.ingredient_id" hx-boost="true"
+                        class="rounded-2xl border-2 border-primary/20 bg-surface/50 p-3 flex flex-col items-center gap-1 hover:border-primary transition-colors">
+                        <img src="@{ctx.img_src('ingredients', ci.image)}" alt="@ci.name"
+                            class="h-14 w-full object-contain" />
+                        <span class="text-center text-xs font-bold text-on-surface leading-tight">@ci.name</span>
+                    </a>
+                    @endfor
+                </div>
+            </div>
+            @endif
         </div>
     </section>
 

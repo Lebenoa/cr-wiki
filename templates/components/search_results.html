@@ -1,4 +1,4 @@
-@if cookies.len == 0 && pets.len == 0 && treasures.len == 0
+@if cookies.len == 0 && pets.len == 0 && treasures.len == 0 && relics.len == 0 && episodes.len == 0 && ingredients.len == 0 && quests.len == 0
 <div class="px-2 py-2 text-sm text-foreground-muted">%search_no_results</div>
 @else
 @if cookies.len > 0
@@ -38,6 +38,49 @@
         class="ml-auto shrink-0 bg-primary text-foreground font-bold uppercase text-[10px] px-1.5 py-0.5 rounded-full">%evolved</span>
     @endif
 </a>
+@endfor
+@endif
+@if relics.len > 0
+<div class="px-2 mt-2 text-xs font-label uppercase text-foreground-muted">%relics</div>
+@for relic in relics
+<a href="/relics" class="flex items-center gap-2 px-2 py-1.5 rounded text-sm text-foreground hover:bg-secondary/20">
+    <img src="@{ctx.img_src('relics', relic.image)}" alt="" class="size-8 shrink-0 rounded object-contain">
+    <span class="truncate">@relic.name</span>
+    @if relic.episode != ''
+    <span class="ml-auto shrink-0 text-[10px] font-label uppercase text-foreground-muted">@relic.episode</span>
+    @end
+</a>
+@endfor
+@endif
+@if episodes.len > 0
+<div class="px-2 mt-2 text-xs font-label uppercase text-foreground-muted">%episodes</div>
+@for episode in episodes
+<a href="/episodes/@episode.id" class="flex items-center gap-2 px-2 py-1.5 rounded text-sm text-foreground hover:bg-secondary/20">
+    <img src="@{ctx.img_src('episodes', episode.image)}" alt="" class="size-8 shrink-0 rounded object-contain">
+    <span class="truncate">@episode.name</span>
+</a>
+@endfor
+@endif
+@if ingredients.len > 0
+<div class="px-2 mt-2 text-xs font-label uppercase text-foreground-muted">%ingredients_label</div>
+@for ingredient in ingredients
+<a href="/crafting/@ingredient.id" class="flex items-center gap-2 px-2 py-1.5 rounded text-sm text-foreground hover:bg-secondary/20">
+    <img src="@{ctx.img_src('ingredients', ingredient.image)}" alt="" class="size-8 shrink-0 rounded object-contain">
+    <span class="truncate">@ingredient.name</span>
+</a>
+@endfor
+@endif
+@if quests.len > 0
+<div class="px-2 mt-2 text-xs font-label uppercase text-foreground-muted">%quests_label</div>
+@for quest in quests
+@if eid := quest.episode_id
+<a href="/episodes/@eid" class="flex items-center gap-2 px-2 py-1.5 rounded text-sm text-foreground hover:bg-secondary/20">
+    <span class="truncate">@quest.name</span>
+    @if quest.description != ''
+    <span class="ml-auto shrink-0 text-[10px] font-label uppercase text-foreground-muted">@quest.description</span>
+    @end
+</a>
+@end
 @endfor
 @endif
 <a href="/search?q=@q_url"

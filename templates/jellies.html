@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="@ctx.lang">
+
+<head>
+    @include 'layout/head.html'
+</head>
+
+<body>
+    @include 'layout/navbar.html'
+
+    <h1 class="text-4xl font-bold my-4 text-center">%jellies_page_header</h1>
+
+    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 p-8 max-w-6xl mx-auto">
+        @for j in jelly_views
+        <a href="/jellies/@j.jelly_id" hx-boost="true"
+            class="rounded-2xl border-2 border-primary/20 bg-surface/50 p-4 flex flex-col items-center gap-2 hover:border-primary transition-colors">
+            <img src="@{ctx.img_src('jellies', j.image)}" alt="@j.name" class="h-20 w-full object-contain" />
+            <span class="text-center text-sm font-bold text-on-surface leading-tight">@j.name</span>
+            <span class="text-[10px] font-label uppercase text-foreground-muted">@ctx.score_label(j.score)
+                %score</span>
+        </a>
+        @endfor
+    </div>
+</body>
+
+</html>

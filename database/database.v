@@ -91,6 +91,13 @@ pub struct SeedFixture {
 	quest                []models.Quest
 	ingredient           []models.Ingredient
 	ingredient_translation []models.IngredientTranslation
+	jelly                []models.Jelly
+	jelly_translation    []models.JellyTranslation
+	jelly_maker          []models.JellyMaker
+	skin                 []models.Skin
+	skin_translation     []models.SkinTranslation
+	gacha_pool           []models.GachaPool
+	gacha_pool_entry     []models.GachaPoolEntry
 	build                []models.Build
 }
 
@@ -234,6 +241,41 @@ fn insert_fixture(conn sqlite.DB, fixture SeedFixture) ! {
 			insert tr into models.IngredientTranslation
 		}!
 	}
+	for j in fixture.jelly {
+		sql conn {
+			insert j into models.Jelly
+		}!
+	}
+	for tr in fixture.jelly_translation {
+		sql conn {
+			insert tr into models.JellyTranslation
+		}!
+	}
+	for jm in fixture.jelly_maker {
+		sql conn {
+			insert jm into models.JellyMaker
+		}!
+	}
+	for s in fixture.skin {
+		sql conn {
+			insert s into models.Skin
+		}!
+	}
+	for tr in fixture.skin_translation {
+		sql conn {
+			insert tr into models.SkinTranslation
+		}!
+	}
+	for p in fixture.gacha_pool {
+		sql conn {
+			insert p into models.GachaPool
+		}!
+	}
+	for e in fixture.gacha_pool_entry {
+		sql conn {
+			insert e into models.GachaPoolEntry
+		}!
+	}
 }
 
 struct FtsTable {
@@ -258,6 +300,25 @@ const fts_tables = [
 		table: 'effect_translation'
 		columns: ['name', 'description', 'lang']
 	},
+	FtsTable{
+		table: 'relic_translation'
+		columns: ['name', 'description', 'lang']
+	},
+	FtsTable{
+		table: 'episode_translation'
+		columns: ['name', 'description', 'lang']
+	},
+	FtsTable{
+		table: 'ingredient_translation'
+		columns: ['name', 'description', 'lang']
+	},
+	FtsTable{
+		table: 'quest'
+		// group is a reserved word in SQL (new.group is a syntax error); the
+		// FTS column keeps the real name and the generated trigger/backfill
+		// SQL quotes it. See create_fts_table.
+		columns: ['name', 'requirement', 'reward', 'group']
+	},
 ]
 
 fn create_fts(conn sqlite.DB) {
@@ -269,6 +330,10 @@ fn create_fts(conn sqlite.DB) {
 fn create_fts_table(conn sqlite.DB, table FtsTable) ! {
 	cols := table.columns.join(', ')
 
+	// Reserved words (quest.group) are quoted with a safe identifier
+	// ("group"); everything else stays plain. Quoting is applied in the
+	// trigger bodies and the backfill SELECT, where the column is referenced
+	// as new.col / old.col / bare col — the FTS CREATE keeps the bare names.
 	mut insert_cols := strings.new_builder(256)
 	mut new_cols := strings.new_builder(256)
 	mut old_cols := strings.new_builder(256)
@@ -280,14 +345,17 @@ fn create_fts_table(conn sqlite.DB, table FtsTable) ! {
 			old_cols.write_string(', ')
 		}
 
-		insert_cols.write_string(col)
-		new_cols.write_string('new.${col}')
-		old_cols.write_string('old.${col}')
+		qcol := if col == 'group' { '"group"' } else { col }
+		insert_cols.write_string(qcol)
+		new_cols.write_string('new.' + qcol)
+		old_cols.write_string('old.' + qcol)
 	}
 
 	insert_cols_str := insert_cols.str()
 	new_cols_str := new_cols.str()
 	old_cols_str := old_cols.str()
+	// backfill SELECT mirrors insert_cols: quoted names survive reserved words
+	backfill_cols_str := insert_cols_str
 
 	exec(conn, "
 		CREATE VIRTUAL TABLE IF NOT EXISTS ${table.table}_fts
@@ -363,13 +431,8 @@ fn create_fts_table(conn sqlite.DB, table FtsTable) ! {
 		)
 		SELECT
 			${table.table}_id,
-			${insert_cols_str}
-		FROM ${table.table}
-		WHERE NOT EXISTS (
-			SELECT 1
-			FROM ${table.table}_fts
-			LIMIT 1
-		);
+			${backfill_cols_str}
+		FROM ${table.table};
 	")!
 }
 

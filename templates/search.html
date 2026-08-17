@@ -13,7 +13,7 @@
     @if q == ""
     <p class="text-center text-foreground-muted my-12">%search_hint</p>
     @else
-    @if cookies.len == 0 && pets.len == 0 && treasures.len == 0
+    @if cookies.len == 0 && pets.len == 0 && treasures.len == 0 && relics.len == 0 && episodes.len == 0 && ingredients.len == 0 && quests.len == 0
     <p class="text-center text-foreground-muted my-12">%search_no_results</p>
     @else
     <p class="text-center text-foreground-muted mb-2">
@@ -35,6 +35,74 @@
     <h2 class="text-2xl font-bold px-8 mt-8">%treasures</h2>
     <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 p-8">
         @include 'components/treasure_cards.html'
+    </div>
+    @endif
+    @if relics.len > 0
+    <h2 class="text-2xl font-bold px-8 mt-8">%relics</h2>
+    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 p-8">
+        @for hit in relics
+        <a href="/relics" hx-boost="true"
+            class="rounded-2xl border-2 border-primary/20 bg-surface/50 p-4 flex flex-col items-center gap-2 hover:border-primary transition-colors">
+            @if hit.image != none
+            <img src="@{ctx.img_src('relics', hit.image)}" alt="@hit.name" class="h-16 w-full object-contain" />
+            @else
+            <span class="h-16 w-full flex items-center justify-center text-[10px] font-label uppercase text-foreground-muted">%relics</span>
+            @end
+            <span class="text-center text-sm font-bold text-on-surface leading-tight">@hit.name</span>
+            @if hit.episode != ''
+            <span class="text-[10px] font-label uppercase text-foreground-muted">@hit.episode</span>
+            @end
+        </a>
+        @endfor
+    </div>
+    @endif
+    @if episodes.len > 0
+    <h2 class="text-2xl font-bold px-8 mt-8">%episodes</h2>
+    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 p-8">
+        @for hit in episodes
+        <a href="/episodes/@hit.id" hx-boost="true"
+            class="rounded-2xl border-2 border-primary/20 bg-surface/50 p-4 flex flex-col items-center gap-2 hover:border-primary transition-colors">
+            @if hit.image != none
+            <img src="@{ctx.img_src('episodes', hit.image)}" alt="@hit.name" class="h-16 w-full object-contain" />
+            @else
+            <span class="h-16 w-full flex items-center justify-center text-[10px] font-label uppercase text-foreground-muted">%episodes</span>
+            @end
+            <span class="text-center text-sm font-bold text-on-surface leading-tight">@hit.name</span>
+        </a>
+        @endfor
+    </div>
+    @endif
+    @if ingredients.len > 0
+    <h2 class="text-2xl font-bold px-8 mt-8">%ingredients_label</h2>
+    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 p-8">
+        @for hit in ingredients
+        <a href="/crafting/@hit.id" hx-boost="true"
+            class="rounded-2xl border-2 border-primary/20 bg-surface/50 p-4 flex flex-col items-center gap-2 hover:border-primary transition-colors">
+            @if hit.image != none
+            <img src="@{ctx.img_src('ingredients', hit.image)}" alt="@hit.name" class="h-16 w-full object-contain" />
+            @else
+            <span class="h-16 w-full flex items-center justify-center text-[10px] font-label uppercase text-foreground-muted">%ingredients_label</span>
+            @end
+            <span class="text-center text-sm font-bold text-on-surface leading-tight">@hit.name</span>
+        </a>
+        @endfor
+    </div>
+    @endif
+    @if quests.len > 0
+    <h2 class="text-2xl font-bold px-8 mt-8">%quests_label</h2>
+    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 p-8">
+        @for hit in quests
+        @if eid := hit.episode_id
+        <a href="/episodes/@eid" hx-boost="true"
+            class="rounded-2xl border-2 border-primary/20 bg-surface/50 p-4 flex flex-col items-center gap-2 hover:border-primary transition-colors">
+            <span class="h-16 w-full flex items-center justify-center text-[10px] font-label uppercase text-foreground-muted">@hit.episode</span>
+            <span class="text-center text-sm font-bold text-on-surface leading-tight">@hit.name</span>
+            @if hit.description != ''
+            <span class="text-[10px] font-label uppercase text-foreground-muted">@hit.description</span>
+            @end
+        </a>
+        @end
+        @endfor
     </div>
     @endif
     @endif

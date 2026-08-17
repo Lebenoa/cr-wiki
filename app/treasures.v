@@ -125,6 +125,8 @@ pub fn (mut wapp App) treasure_info(mut ctx Context, id int) veb.Result {
 	is_admin := ctx.is_admin()
 	// rich text: [[Cookie Name]] links + {color:x} spans in the description
 	description_html := render_rich_text(wapp.db, ctx.lang, treasure.description)
+	// the ingredients this treasure is crafted from (empty for non-recipe rows)
+	craft_ingredients := database.select_treasure_ingredients(wapp.db, ctx.lang, id)
 	return $veb.html('./templates/views/treasure.html')
 }
 

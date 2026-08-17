@@ -76,6 +76,18 @@ Episodes
 relics
 Relics
 -----
+crafting
+Crafting
+-----
+jellies
+Jellies
+-----
+skins
+Skins
+-----
+gacha
+Gacha
+-----
 choose_language
 Choose Language
 -----
@@ -415,6 +427,9 @@ Quests
 relics_label
 Relics
 -----
+ingredients_label
+Ingredients
+-----
 entry_cost_label
 Entry cost
 -----
@@ -441,6 +456,111 @@ Ingredient drops
 -----
 coin_value_label
 Sell value
+-----
+crafting_page_title
+Crafting
+-----
+crafting_page_description
+Every ingredient of Cookie Run Classic and the treasures it is used to craft
+-----
+crafting_page_header
+Crafting Ingredients
+-----
+crafting_ingredient_title
+{name} — Ingredient
+-----
+crafting_ingredient_description
+{name} ingredient: sell value, powder yields and the treasures it crafts
+-----
+crafting_recipes_label
+recipes
+-----
+crafted_into_label
+Used to craft
+-----
+craft_ingredients_label
+Crafting ingredients
+-----
+crafting_no_recipes
+Not used in any treasure recipe.
+-----
+jellies_page_title
+Jellies
+-----
+jellies_page_description
+Every in-run jelly with its score and the cookies, pets and treasures that create it
+-----
+jellies_page_header
+Jelly Catalog
+-----
+jelly_detail_title
+{name} — Jelly
+-----
+jelly_detail_description
+Jelly {name}: score value and creators
+-----
+jelly_makers_label
+Made by
+-----
+skins_page_title
+Skins
+-----
+skins_page_description
+Every cookie and pet costume with its grade and collab badge
+-----
+skins_page_header
+Skin Catalog
+-----
+skin_for_label
+For
+-----
+collab_label
+Collab
+-----
+gacha_page_title
+Gacha
+-----
+gacha_page_description
+Disclosed draw and hatch odds for every pool
+-----
+gacha_page_header
+Gacha & Drop Rates
+-----
+gacha_tier_normal
+Normal Chest
+-----
+gacha_tier_great
+Great Treasure Chest
+-----
+gacha_tier_supreme
+Supreme Treasure Chest
+-----
+gacha_tier_hatch
+Hatch Pet Egg
+-----
+gacha_tier_special
+Special Egg
+-----
+gacha_tier_luxury
+Luxury Egg
+-----
+gacha_prize_label
+Prize
+-----
+gacha_grade_label
+Grade
+-----
+gacha_odds_label
+Odds
+-----
+breaks_into_label
+Breaks into
+-----
+craft_from_label
+Craft from
+-----
+obtained_from_label
+Obtained from
 -----
 unlock_pet_label
 Unlocked by pet

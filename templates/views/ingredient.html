@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="@ctx.lang">
+
+<head>
+    @include 'layout/head.html'
+</head>
+
+<body>
+    @include 'layout/navbar.html'
+
+    <div class="max-w-5xl mx-auto px-8 py-8">
+        <a href="/crafting" hx-boost="true" class="text-sm text-foreground-muted hover:text-primary transition-colors">←
+            %crafting_page_header</a>
+
+        <div class="mt-4 flex items-center gap-4">
+            <img src="@{ctx.img_src('ingredients', ingredient.image)}" alt="@ingredient.name"
+                class="h-24 w-24 object-contain rounded-2xl border-2 border-primary/20 bg-surface/50 p-2" />
+            <div>
+                <div class="flex items-center gap-2">
+                    <h1 class="text-3xl font-headline font-bold text-primary">@ingredient.name</h1>
+                    @if ig := ingredient.grade
+                    <span class="text-xs font-bold text-accent uppercase border border-accent/40 rounded-full px-2 py-0.5">@{ctx.grade_label_int(ig)}</span>
+                    @end
+                </div>
+                @if ingredient.description != ''
+                <p class="mt-1 text-sm text-foreground-muted">@ingredient.description</p>
+                @end
+            </div>
+        </div>
+
+        @if ingredient.coin_value > 0 || ingredient.breaks_into_powder > 0 || ingredient.craft_from_powder > 0 || ingredient.obtained_from != ''
+        <div class="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-sm">
+            @if ingredient.coin_value > 0
+            <div class="rounded-xl border border-secondary/40 bg-surface/50 px-4 py-3">
+                <span class="block text-[10px] font-label uppercase text-foreground-muted">%coin_value_label</span>
+                <span class="font-bold text-on-surface">@ingredient.coin_value</span>
+            </div>
+            @end
+            @if ingredient.breaks_into_powder > 0
+            <div class="rounded-xl border border-secondary/40 bg-surface/50 px-4 py-3">
+                <span class="block text-[10px] font-label uppercase text-foreground-muted">%breaks_into_label</span>
+                <span class="font-bold text-on-surface">@ingredient.breaks_into_powder</span>
+            </div>
+            @end
+            @if ingredient.craft_from_powder > 0
+            <div class="rounded-xl border border-secondary/40 bg-surface/50 px-4 py-3">
+                <span class="block text-[10px] font-label uppercase text-foreground-muted">%craft_from_label</span>
+                <span class="font-bold text-on-surface">@ingredient.craft_from_powder</span>
+            </div>
+            @end
+            @if ingredient.obtained_from != ''
+            <div class="rounded-xl border border-secondary/40 bg-surface/50 px-4 py-3">
+                <span class="block text-[10px] font-label uppercase text-foreground-muted">%obtained_from_label</span>
+                <span class="font-bold text-on-surface">@ingredient.obtained_from</span>
+            </div>
+            @end
+        </div>
+        @end
+
+        @if ingredient.recipes.len > 0
+        <h2 class="text-xl font-headline font-bold text-primary mt-10 mb-3">%crafted_into_label
+            (@ingredient.recipes.len)</h2>
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+            @for r in ingredient.recipes
+            <a href="/treasures/@r.treasure_id" hx-boost="true"
+                class="rounded-2xl border-2 border-primary/20 bg-surface/50 p-3 flex flex-col items-center gap-1 hover:border-primary transition-colors">
+                <img src="@{ctx.img_src('treasures', r.image)}" alt="@r.name" class="h-16 w-full object-contain" />
+                <span class="text-center text-xs font-bold text-on-surface leading-tight">@r.name</span>
+            </a>
+            @endfor
+        </div>
+        @else
+        <p class="mt-10 text-sm text-foreground-muted">%crafting_no_recipes</p>
+        @end
+    </div>
+</body>
+
+</html>

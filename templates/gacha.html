@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="@ctx.lang">
+
+<head>
+    @include 'layout/head.html'
+</head>
+
+<body>
+    @include 'layout/navbar.html'
+
+    <h1 class="text-4xl font-bold my-4 text-center">%gacha_page_header</h1>
+
+    <div class="max-w-4xl mx-auto px-8 py-4 flex flex-col gap-10">
+        @for p in pools
+        <section>
+            <h2 class="text-xl font-headline font-bold text-primary mb-4">@{ctx.gacha_tier_label(p.tier)}</h2>
+            <div class="rounded-2xl border-2 border-primary/20 bg-surface/50 overflow-hidden">
+                <table class="w-full text-sm">
+                    <thead>
+                        <tr class="border-b-2 border-primary/20 text-left text-xs font-label uppercase text-foreground-muted">
+                            <th class="px-4 py-2">%gacha_prize_label</th>
+                            <th class="px-4 py-2">%gacha_grade_label</th>
+                            <th class="px-4 py-2 text-right">%gacha_odds_label</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for e in p.entries
+                        <tr class="border-b border-primary/10">
+                            <td class="px-4 py-2">
+                                <div class="flex items-center gap-3">
+                                    <img src="@{ctx.img_src(e.kind + 's', e.image)}" alt="@e.name"
+                                        class="h-8 w-8 object-contain" />
+                                    <span class="font-bold text-on-surface">@e.name</span>
+                                </div>
+                            </td>
+                            <td class="px-4 py-2">
+                                @if g := e.grade
+                                <span class="text-xs font-bold text-accent uppercase">@{ctx.grade_label_int(g)}</span>
+                                @end
+                            </td>
+                            <td class="px-4 py-2 text-right font-mono text-foreground-muted">@e.odds%</td>
+                        </tr>
+                        @endfor
+                    </tbody>
+                </table>
+            </div>
+        </section>
+        @endfor
+    </div>
+</body>
+
+</html>

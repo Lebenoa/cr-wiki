@@ -28,6 +28,17 @@ pub fn (mut wapp App) search(mut ctx Context) veb.Result {
 	cookies := results.cookies
 	pets := results.pets
 	treasures := results.treasures
+	relics := results.relics
+	episodes := results.episodes
+	ingredients := results.ingredients
+	quests := results.quests
+	// flattened catalog hits for the full-page sections (kind drives the
+	// link target and icon directory in the template)
+	mut hits := []database.CatalogHit{}
+	hits << relics
+	hits << episodes
+	hits << ingredients
+	hits << quests
 	next_page := 0
 	tab := 'all'
 	q_url := urllib.query_escape(q)

@@ -496,3 +496,559 @@ pub fn select_episode(conn sqlite.DB, lang string, id int) !EpisodeView {
 	view.relic_count = view.relics.len
 	return view
 }
+
+// CraftRecipeView is one treasure an ingredient crafts (from
+// ingredient_recipe), with its localized name.
+pub struct CraftRecipeView {
+pub:
+	treasure_id int
+	name        string
+	image       ?string
+}
+
+// IngredientCraftView is one ingredient for the /crafting pages: its catalog
+// row plus the treasures it crafts (filled by select_ingredient).
+pub struct IngredientCraftView {
+pub:
+	ingredient_id      int
+	name               string
+	description        string
+	image              ?string
+	grade              ?int
+	coin_value         int
+	breaks_into_powder int
+	craft_from_powder  int
+	obtained_from      string
+	drop_episode_id    ?int
+pub mut:
+	recipe_count       int
+	recipes            []CraftRecipeView
+}
+
+// select_ingredients loads every ingredient with its localized name and the
+// number of treasures it crafts, for the /crafting index.
+pub fn select_ingredients(conn sqlite.DB, lang string) []IngredientCraftView {
+	ings := sql conn {
+		select from models.Ingredient order by ingredient_id
+	} or { return [] }
+	itrs := sql conn {
+		select from models.IngredientTranslation where lang == lang || lang == 'en'
+	} or { return [] }
+	mut names := map[int]map[string]string{}
+	for tr in itrs {
+		if tr.ingredient_id !in names {
+			names[tr.ingredient_id] = {}
+		}
+		names[tr.ingredient_id][tr.lang] = tr.name
+	}
+	recs := sql conn {
+		select from models.IngredientRecipe
+	} or { return [] }
+	mut counts := map[int]int{}
+	for r in recs {
+		counts[r.ingredient_id]++
+	}
+	mut out := []IngredientCraftView{}
+	for i in ings {
+		iid := i.ingredient_id or { 0 }
+		out << IngredientCraftView{
+			ingredient_id:      iid
+			name:               lang_name(names, iid, lang)
+			image:              i.image
+			grade:              i.grade
+			coin_value:         i.coin_value
+			breaks_into_powder: i.breaks_into_powder
+			craft_from_powder:  i.craft_from_powder
+			obtained_from:      i.obtained_from
+			drop_episode_id:    i.drop_episode_id
+			recipe_count:       counts[iid]
+		}
+	}
+	return out
+}
+
+// select_ingredient loads one ingredient with the treasures it crafts.
+// Returns an error when the ingredient is unknown (404 for the detail route).
+pub fn select_ingredient(conn sqlite.DB, lang string, id int) !IngredientCraftView {
+	ings := sql conn {
+		select from models.Ingredient where ingredient_id == id
+	}!
+	if ings.len == 0 {
+		return error('ingredient (${id}) not found')
+	}
+	i := ings.first()
+	itrs := sql conn {
+		select from models.IngredientTranslation where ingredient_id == id && (lang == lang
+			|| lang == 'en')
+	} or { return error('ingredient translations missing') }
+	mut names := map[int]map[string]string{}
+	mut descs := map[int]map[string]string{}
+	for tr in itrs {
+		if tr.ingredient_id !in names {
+			names[tr.ingredient_id] = {}
+			descs[tr.ingredient_id] = {}
+		}
+		names[tr.ingredient_id][tr.lang] = tr.name
+		descs[tr.ingredient_id][tr.lang] = tr.description
+	}
+	recs := sql conn {
+		select from models.IngredientRecipe where ingredient_id == id order by treasure_id
+	} or { return error('ingredient recipes missing') }
+	mut tids := []int{}
+	for r in recs {
+		tids << r.treasure_id
+	}
+	ttrs := sql conn {
+		select from models.TreasureTranslation where treasure_id in tids && (lang == lang
+			|| lang == 'en')
+	} or { return error('treasure translations missing') }
+	mut tnames := map[int]map[string]string{}
+	for tr in ttrs {
+		if tr.treasure_id !in tnames {
+			tnames[tr.treasure_id] = {}
+		}
+		tnames[tr.treasure_id][tr.lang] = tr.name
+	}
+	treasures := sql conn {
+		select from models.Treasure
+	} or { return error('treasures missing') }
+	mut timages := map[int]?string{}
+	for t in treasures {
+		timages[t.treasure_id or { 0 }] = t.image
+	}
+	mut view := IngredientCraftView{
+		ingredient_id:      id
+		name:               lang_name(names, id, lang)
+		description:        lang_name(descs, id, lang)
+		image:              i.image
+		grade:              i.grade
+		coin_value:         i.coin_value
+		breaks_into_powder: i.breaks_into_powder
+		craft_from_powder:  i.craft_from_powder
+		obtained_from:      i.obtained_from
+		drop_episode_id:    i.drop_episode_id
+		recipe_count:       recs.len
+	}
+	for tid in tids {
+		view.recipes << CraftRecipeView{
+			treasure_id: tid
+			name:        lang_name(tnames, tid, lang)
+			image:       timages[tid]
+		}
+	}
+	return view
+}
+
+// TreasureIngredientView is one ingredient a treasure needs to be crafted
+// (the reverse of ingredient_recipe), for the treasure detail page.
+pub struct TreasureIngredientView {
+pub:
+	ingredient_id int
+	name          string
+	image         ?string
+}
+
+// select_treasure_ingredients loads the ingredients a treasure is crafted
+// from, in the user's language. Empty when the treasure has no recipe.
+pub fn select_treasure_ingredients(conn sqlite.DB, lang string, tid int) []TreasureIngredientView {
+	recs := sql conn {
+		select from models.IngredientRecipe where treasure_id == tid order by ingredient_id
+	} or { return [] }
+	mut ids := []int{cap: recs.len}
+	for r in recs {
+		ids << r.ingredient_id
+	}
+	if ids.len == 0 {
+		return []
+	}
+	itrs := sql conn {
+		select from models.IngredientTranslation where ingredient_id in ids && (lang == lang
+			|| lang == 'en')
+	} or { return [] }
+	mut names := map[int]map[string]string{}
+	for tr in itrs {
+		if tr.ingredient_id !in names {
+			names[tr.ingredient_id] = {}
+		}
+		names[tr.ingredient_id][tr.lang] = tr.name
+	}
+	ings := sql conn {
+		select from models.Ingredient
+	} or { return [] }
+	mut images := map[int]?string{}
+	for i in ings {
+		images[i.ingredient_id or { 0 }] = i.image
+	}
+	mut out := []TreasureIngredientView{}
+	for rid in ids {
+		out << TreasureIngredientView{
+			ingredient_id: rid
+			name:          lang_name(names, rid, lang)
+			image:         images[rid]
+		}
+	}
+	return out
+}
+// JellyMakerView is one creator of a jelly: the cookie/pet/treasure whose
+// skill produces it. href is that entity's page path.
+pub struct JellyMakerView {
+pub:
+	entity_kind string // 'cookie' | 'pet' | 'treasure'
+	entity_id   int
+	name        string
+	image       ?string
+	href        string
+}
+
+// JellyView is one in-run jelly with its score and makers, for the /jellies
+// list and detail page.
+pub struct JellyView {
+pub:
+	jelly_id int
+	name     string
+	image    ?string
+	score    f64
+	makers   []JellyMakerView
+}
+
+// SkinView is one cookie/pet costume with its owner, for the /skins list.
+pub struct SkinView {
+pub:
+	skin_id    int
+	name       string
+	subtitle   string
+	image      ?string
+	grade      ?int
+	collab     bool
+	owner_name string // cookie or pet name ('' when unresolvable)
+	owner_href string // '/cookies/:id' or '/pets/:id'
+}
+
+// GachaEntryView is one disclosed draw-pool row: prize name/image, grade and
+// odds.
+pub struct GachaEntryView {
+pub mut:
+	kind  string // 'treasure' | 'pet' (image dir)
+	name  string
+	image ?string
+	grade ?int
+	odds  f64
+}
+
+// GachaPoolView is one draw pool (treasure-draw chest tier or pet-hatch egg
+// tier) with its entries in disclosed order. tier is the tier code the
+// template turns into a tr key suffix.
+pub struct GachaPoolView {
+pub:
+	pool_id int
+	name    string // pool key ('treasure_draw_normal', …)
+	tier    string
+	entries []GachaEntryView
+}
+
+// EntityInfo is a batched name/image lookup for one entity kind.
+struct EntityInfo {
+pub mut:
+	names  map[int]map[string]string
+	images map[int]?string
+}
+
+fn cookie_info(conn sqlite.DB, lang string) EntityInfo {
+	mut out := EntityInfo{
+		names:  map[int]map[string]string{}
+		images: map[int]?string{}
+	}
+	trs := sql conn {
+		select from models.CookieTranslation where lang == lang || lang == 'en'
+	} or { return out }
+	for tr in trs {
+		if tr.owner_id !in out.names {
+			out.names[tr.owner_id] = {}
+		}
+		out.names[tr.owner_id][tr.lang] = tr.name
+	}
+	rows := sql conn {
+		select from models.Cookie
+	} or { return out }
+	for c in rows {
+		out.images[c.cookie_id or { 0 }] = c.image
+	}
+	return out
+}
+
+fn pet_info(conn sqlite.DB, lang string) EntityInfo {
+	mut out := EntityInfo{
+		names:  map[int]map[string]string{}
+		images: map[int]?string{}
+	}
+	trs := sql conn {
+		select from models.PetTranslation where lang == lang || lang == 'en'
+	} or { return out }
+	for tr in trs {
+		if tr.pet_id !in out.names {
+			out.names[tr.pet_id] = {}
+		}
+		out.names[tr.pet_id][tr.lang] = tr.name
+	}
+	rows := sql conn {
+		select from models.Pet
+	} or { return out }
+	for p in rows {
+		out.images[p.pet_id or { 0 }] = p.image
+	}
+	return out
+}
+
+fn treasure_info(conn sqlite.DB, lang string) EntityInfo {
+	mut out := EntityInfo{
+		names:  map[int]map[string]string{}
+		images: map[int]?string{}
+	}
+	trs := sql conn {
+		select from models.TreasureTranslation where lang == lang || lang == 'en'
+	} or { return out }
+	for tr in trs {
+		if tr.treasure_id !in out.names {
+			out.names[tr.treasure_id] = {}
+		}
+		out.names[tr.treasure_id][tr.lang] = tr.name
+	}
+	rows := sql conn {
+		select from models.Treasure
+	} or { return out }
+	for t in rows {
+		out.images[t.treasure_id or { 0 }] = t.image
+	}
+	return out
+}
+
+// select_jellies loads every jelly with its localized name and maker links.
+pub fn select_jellies(conn sqlite.DB, lang string) []JellyView {
+	jellies := sql conn {
+		select from models.Jelly order by jelly_id
+	} or { return [] }
+	trs := sql conn {
+		select from models.JellyTranslation where lang == lang || lang == 'en'
+	} or { return [] }
+	mut names := map[int]map[string]string{}
+	for tr in trs {
+		if tr.jelly_id !in names {
+			names[tr.jelly_id] = {}
+		}
+		names[tr.jelly_id][tr.lang] = tr.name
+	}
+	makers := sql conn {
+		select from models.JellyMaker order by jelly_id
+	} or { return [] }
+	ck := cookie_info(conn, lang)
+	pt := pet_info(conn, lang)
+	tr_info := treasure_info(conn, lang)
+	mut by_jelly := map[int][]JellyMakerView{}
+	for m in makers {
+		v := match m.entity_kind {
+			'cookie' {
+				JellyMakerView{
+					entity_kind: 'cookie'
+					entity_id:   m.entity_id
+					name:        lang_name(ck.names, m.entity_id, lang)
+					image:       ck.images[m.entity_id]
+					href:        '/cookies/${m.entity_id}'
+				}
+			}
+			'pet' {
+				JellyMakerView{
+					entity_kind: 'pet'
+					entity_id:   m.entity_id
+					name:        lang_name(pt.names, m.entity_id, lang)
+					image:       pt.images[m.entity_id]
+					href:        '/pets/${m.entity_id}'
+				}
+			}
+			else {
+				JellyMakerView{
+					entity_kind: 'treasure'
+					entity_id:   m.entity_id
+					name:        lang_name(tr_info.names, m.entity_id, lang)
+					image:       tr_info.images[m.entity_id]
+					href:        '/treasures/${m.entity_id}'
+				}
+			}
+		}
+		if m.jelly_id !in by_jelly {
+			by_jelly[m.jelly_id] = []
+		}
+		by_jelly[m.jelly_id] << v
+	}
+	mut out := []JellyView{}
+	for j in jellies {
+		jid := j.jelly_id or { 0 }
+		out << JellyView{
+			jelly_id: jid
+			name:     lang_name(names, jid, lang)
+			image:    j.image
+			score:    j.score
+			makers:   by_jelly[jid] or { [] }
+		}
+	}
+	return out
+}
+
+// select_jelly loads one jelly with its localized text and makers.
+pub fn select_jelly(conn sqlite.DB, jelly_id int, lang string) ?JellyView {
+	rows := sql conn {
+		select from models.Jelly where jelly_id == jelly_id limit 1
+	} or { return none }
+	if rows.len == 0 {
+		return none
+	}
+	j := rows.first()
+	trs := sql conn {
+		select from models.JellyTranslation where jelly_id == jelly_id && (lang == lang
+			|| lang == 'en')
+	} or { return none }
+	mut names := map[int]map[string]string{}
+	for tr in trs {
+		if tr.jelly_id !in names {
+			names[tr.jelly_id] = {}
+		}
+		names[tr.jelly_id][tr.lang] = tr.name
+	}
+	makers := sql conn {
+		select from models.JellyMaker where jelly_id == jelly_id order by jelly_maker_id
+	} or { return none }
+	ck := cookie_info(conn, lang)
+	pt := pet_info(conn, lang)
+	tr_info := treasure_info(conn, lang)
+	mut maker_views := []JellyMakerView{}
+	for m in makers {
+		v := match m.entity_kind {
+			'cookie' {
+				JellyMakerView{
+					entity_kind: 'cookie'
+					entity_id:   m.entity_id
+					name:        lang_name(ck.names, m.entity_id, lang)
+					image:       ck.images[m.entity_id]
+					href:        '/cookies/${m.entity_id}'
+				}
+			}
+			'pet' {
+				JellyMakerView{
+					entity_kind: 'pet'
+					entity_id:   m.entity_id
+					name:        lang_name(pt.names, m.entity_id, lang)
+					image:       pt.images[m.entity_id]
+					href:        '/pets/${m.entity_id}'
+				}
+			}
+			else {
+				JellyMakerView{
+					entity_kind: 'treasure'
+					entity_id:   m.entity_id
+					name:        lang_name(tr_info.names, m.entity_id, lang)
+					image:       tr_info.images[m.entity_id]
+					href:        '/treasures/${m.entity_id}'
+				}
+			}
+		}
+		maker_views << v
+	}
+	return JellyView{
+		jelly_id: j.jelly_id or { jelly_id }
+		name:     lang_name(names, jelly_id, lang)
+		image:    j.image
+		score:    j.score
+		makers:   maker_views
+	}
+}
+
+// select_skins loads every costume with its localized name and owner link.
+pub fn select_skins(conn sqlite.DB, lang string) []SkinView {
+	skins := sql conn {
+		select from models.Skin order by skin_id
+	} or { return [] }
+	trs := sql conn {
+		select from models.SkinTranslation where lang == lang || lang == 'en'
+	} or { return [] }
+	mut names := map[int]map[string]string{}
+	for tr in trs {
+		if tr.skin_id !in names {
+			names[tr.skin_id] = {}
+		}
+		names[tr.skin_id][tr.lang] = tr.name
+	}
+	ck := cookie_info(conn, lang)
+	pt := pet_info(conn, lang)
+	mut out := []SkinView{}
+	for s in skins {
+		sid := s.skin_id or { 0 }
+		mut owner_name := ''
+		mut owner_href := ''
+		if cid := s.cookie_id {
+			owner_name = lang_name(ck.names, cid, lang)
+			owner_href = '/cookies/${cid}'
+		} else if pid := s.pet_id {
+			owner_name = lang_name(pt.names, pid, lang)
+			owner_href = '/pets/${pid}'
+		}
+		out << SkinView{
+			skin_id:    sid
+			name:       lang_name(names, sid, lang)
+			subtitle:   s.subtitle
+			image:      s.image
+			grade:      s.grade
+			collab:     s.collab
+			owner_name: owner_name
+			owner_href: owner_href
+		}
+	}
+	return out
+}
+
+// select_gacha loads every disclosed draw pool with its entries in order.
+pub fn select_gacha(conn sqlite.DB, lang string) []GachaPoolView {
+	pools := sql conn {
+		select from models.GachaPool order by pool_id
+	} or { return [] }
+	entries := sql conn {
+		select from models.GachaPoolEntry order by pool_id
+	} or { return [] }
+	tr_info := treasure_info(conn, lang)
+	pt := pet_info(conn, lang)
+	mut by_pool := map[int][]models.GachaPoolEntry{}
+	for e in entries {
+		if e.pool_id !in by_pool {
+			by_pool[e.pool_id] = []
+		}
+		by_pool[e.pool_id] << e
+	}
+	mut out := []GachaPoolView{}
+	for p in pools {
+		pid := p.pool_id or { 0 }
+		mut es := by_pool[pid] or { [] }
+		es.sort(a.sort_order < b.sort_order)
+		mut views := []GachaEntryView{}
+		for e in es {
+			mut v := GachaEntryView{
+				grade: e.grade
+				odds:  e.odds
+			}
+			if tid := e.treasure_id {
+				v.kind = 'treasure'
+				v.name = lang_name(tr_info.names, tid, lang)
+				v.image = tr_info.images[tid]
+			} else if p_id := e.pet_id {
+				v.kind = 'pet'
+				v.name = lang_name(pt.names, p_id, lang)
+				v.image = pt.images[p_id]
+			}
+			views << v
+		}
+		out << GachaPoolView{
+			pool_id: pid
+			name:    p.name
+			tier:    p.tier
+			entries: views
+		}
+	}
+	return out
+}

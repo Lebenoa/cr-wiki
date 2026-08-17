@@ -1911,9 +1911,13 @@ pub fn select_treasures(conn sqlite.DB, lang string, limit int, offset int, tab 
 
 pub struct SearchResults {
 pub mut:
-	cookies   []CookieView
-	pets      []PetView
-	treasures []TreasureView
+	cookies     []CookieView
+	pets        []PetView
+	treasures   []TreasureView
+	relics      []CatalogHit
+	episodes    []CatalogHit
+	ingredients []CatalogHit
+	quests      []CatalogHit
 }
 
 // fts_match_query turns free-text input into an FTS5 MATCH expression: each
@@ -1944,6 +1948,12 @@ fn thai_search_cols(table string) []string {
 		}
 		'treasure_translation' {
 			['name', 'description']
+		}
+		'relic_translation', 'episode_translation', 'ingredient_translation' {
+			['name', 'description']
+		}
+		'quest' {
+			['name', 'requirement', 'reward', 'group']
 		}
 		else {
 			[]
@@ -2009,6 +2019,12 @@ fn fts_rank_clause(fts_table string) string {
 		'cookie_translation_fts' { 'bm25(${fts_table}, 10.0, 2.0, 1.0, 0.0)' }
 		'pet_translation_fts', 'treasure_translation_fts', 'effect_translation_fts' {
 			'bm25(${fts_table}, 10.0, 1.0, 0.0)'
+		}
+		'relic_translation_fts', 'episode_translation_fts', 'ingredient_translation_fts' {
+			'bm25(${fts_table}, 10.0, 1.0, 0.0)'
+		}
+		'quest_fts' {
+			'bm25(${fts_table}, 10.0, 2.0, 1.0, 1.0)'
 		}
 		else { 'rank' }
 	}
@@ -2235,6 +2251,19 @@ pub fn search_all(conn sqlite.DB, lang string, q string, limit int) !SearchResul
 	treasure_ids := fts_owner_ids(conn, 'treasure_translation_fts', 'treasure_translation',
 		'treasure_translation_id', 'treasure_id', q, limit)!
 	results.treasures = treasures_by_ids(conn, lang, treasure_ids)!
+	// cookierundb catalog entities (relics/episodes/ingredients follow the
+	// translation-table pattern; quests are a direct FTS table)
+	relic_ids := fts_owner_ids(conn, 'relic_translation_fts', 'relic_translation',
+		'relic_translation_id', 'relic_id', q, limit)!
+	results.relics = relics_by_ids(conn, lang, relic_ids)
+	episode_ids := fts_owner_ids(conn, 'episode_translation_fts', 'episode_translation',
+		'episode_translation_id', 'episode_id', q, limit)!
+	results.episodes = episodes_by_ids(conn, lang, episode_ids)
+	ingredient_ids := fts_owner_ids(conn, 'ingredient_translation_fts', 'ingredient_translation',
+		'ingredient_translation_id', 'ingredient_id', q, limit)!
+	results.ingredients = ingredients_by_ids(conn, lang, ingredient_ids)
+	quest_ids := quest_owner_ids(conn, q, limit) or { []int{} }
+	results.quests = quests_by_ids(conn, quest_ids)
 	return results
 }// EffectRowData is one editable treasure effect: a display name plus the
 // stored value string, ready for the admin form's structured editor.

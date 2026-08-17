@@ -1,17 +1,19 @@
 module models
 
-// Skin is one costume skin for a cookie. skin_id is the stable game id
-// (1800001-...), not a serial. subtitle is the catalog's long name
-// ("Gingerbrave's Celestial Emperor"), English as scraped.
+// Skin is one costume skin for a cookie or pet. skin_id is the stable game
+// id (1800001-...), not a serial. cookie_id/pet_id are mutually exclusive
+// (one collab skin is for pet Choco Drop); subtitle is the catalog's long
+// name ("Gingerbrave's Celestial Emperor"), English as scraped.
 @[table: 'skin']
 pub struct Skin {
 pub:
-	skin_id  ?int @[primary]
-	cookie_id int @[required; references: 'cookie(cookie_id)'; index]
-	image    ?string
-	grade    ?int // models.Grade value (scrape: E for collab skins, S, …)
-	collab   bool
-	subtitle string
+	skin_id   ?int @[primary]
+	cookie_id ?int @[references: 'cookie(cookie_id)'; index]
+	pet_id    ?int @[references: 'pet(pet_id)'; index]
+	image     ?string
+	grade     ?int // models.Grade value (scrape: E for collab skins, S, …)
+	collab    bool
+	subtitle  string
 }
 
 @[table: 'skin_translation']
