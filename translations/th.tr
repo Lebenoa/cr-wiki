@@ -688,3 +688,9 @@ builds_page_description
 entity_detail_description
 {name}: สถิติ เอฟเฟกต์ คอมโบโบนัส และสมบัติที่เกี่ยวข้อง บนวิกิแฟน CookieRun: Classic
 -----
+login_loading
+กำลังเข้าสู่ระบบ...
+-----
+register_loading
+กำลังสร้างบัญชี...
+-----

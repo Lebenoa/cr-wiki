@@ -688,3 +688,9 @@ Community CookieRun: Classic builds: cookie, pet, and treasure loadouts with EP,
 entity_detail_description
 {name}: stats, effects, combo bonuses, and linked treasures on the CookieRun: Classic fan wiki.
 -----
+login_loading
+Signing in...
+-----
+register_loading
+Creating account...
+-----

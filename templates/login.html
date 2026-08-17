@@ -50,15 +50,25 @@
             </div>
             <div class="cf-turnstile" data-sitekey="@{ctx.turnstile_sitekey_for_template()}" data-action="login"></div>
             <button type="submit"
-                class="w-full bg-primary hover:bg-primary/90 text-foreground font-headline py-4 rounded-xl shadow-lg transition-all active:scale-[0.98] neon-glow flex items-center justify-center gap-2 group">
-                <span class="group-hover:-translate-x-1 transition-transform"><svg xmlns="http://www.w3.org/2000/svg"
-                        width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                        stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-key-icon lucide-key">
-                        <path d="m15.5 7.5 2.3 2.3a1 1 0 0 0 1.4 0l2.1-2.1a1 1 0 0 0 0-1.4L19 4" />
-                        <path d="m21 2-9.6 9.6" />
-                        <circle cx="7.5" cy="15.5" r="5.5" />
-                    </svg></span>
-                %login_button_text
+                class="w-full relative bg-primary hover:bg-primary/90 text-foreground font-headline py-4 rounded-xl shadow-lg transition-all active:scale-[0.98] neon-glow flex items-center justify-center gap-2 group">
+                <span class="htmx-indicator absolute inset-0 flex items-center justify-center gap-2" role="status">
+                    <svg class="size-5 animate-spin" xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                        viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+                    </svg>
+                    %login_loading
+                </span>
+                <span class="[.htmx-request_&]:invisible flex items-center justify-center gap-2">
+                    <span class="group-hover:-translate-x-1 transition-transform"><svg xmlns="http://www.w3.org/2000/svg"
+                            width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-key-icon lucide-key">
+                            <path d="m15.5 7.5 2.3 2.3a1 1 0 0 0 1.4 0l2.1-2.1a1 1 0 0 0 0-1.4L19 4" />
+                            <path d="m21 2-9.6 9.6" />
+                            <circle cx="7.5" cy="15.5" r="5.5" />
+                        </svg></span>
+                    %login_button_text
+                </span>
             </button>
         </form>
         <div class="mt-8 pt-8 border-t border-secondary/30 flex flex-row gap-2 items-center justify-center">
