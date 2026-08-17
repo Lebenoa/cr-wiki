@@ -694,3 +694,36 @@ login_loading
 register_loading
 กำลังสร้างบัญชี...
 -----
+build_verify_label
+การยืนยันบิลด์
+-----
+build_verified_count
+ยืนยันแล้ว
+-----
+build_issue_count
+ปัญหา
+-----
+build_you_verified
+คุณยืนยันว่าบิลด์นี้ใช้งานได้
+-----
+build_you_flagged
+คุณรายงานปัญหาแล้ว
+-----
+build_verify_works
+บิลด์นี้ใช้งานได้
+-----
+build_report_issue
+รายงานปัญหา
+-----
+build_issue_reason_placeholder
+มีอะไรผิดปกติ? (จำเป็นเมื่อรายงานปัญหา)
+-----
+build_issue_reason_required
+โปรดระบุรายละเอียดปัญหา
+-----
+build_issue_reason_too_long
+รายละเอียดปัญหายาวเกินไป (สูงสุด 500 ตัวอักษร)
+-----
+build_login_to_verify
+เข้าสู่ระบบเพื่อยืนยันบิลด์นี้
+-----

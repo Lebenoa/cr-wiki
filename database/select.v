@@ -1151,6 +1151,68 @@ pub fn select_build(conn sqlite.DB, lang string, id int) !BuildCard {
 	return build_card_from_row(rows.first(), lookups)
 }
 
+// build_review_counts returns the verified and issue totals for one build,
+// for the detail page's verdict summary. The UNIQUE(build_id, user_id)
+// auto-index serves the by-build lookup (leftmost column).
+pub fn build_review_counts(conn sqlite.DB, build_id int) (int, int) {
+	rows := sql conn {
+		select from models.BuildReview where build_id == build_id
+	} or { return 0, 0 }
+	mut verified := 0
+	mut issues := 0
+	for r in rows {
+		if r.verified {
+			verified++
+		} else {
+			issues++
+		}
+	}
+	return verified, issues
+}
+
+// get_build_review returns the current user's verdict on a build, or none
+// when they haven't reviewed it yet. Used to render the detail page's
+// "your verdict" state and pre-fill the change form.
+pub fn get_build_review(conn sqlite.DB, build_id int, user_id int) ?models.BuildReview {
+	rows := sql conn {
+		select from models.BuildReview where build_id == build_id && user_id == user_id limit 1
+	} or { return none }
+	if rows.len == 0 {
+		return none
+	}
+	return rows.first()
+}
+
+// BuildIssueView is one reported issue on a build detail page: the reason
+// text plus the reporter's username ('' when the user row is gone).
+pub struct BuildIssueView {
+pub:
+	reason string
+	author string
+}
+
+// build_review_issues returns the reported issues on a build (reason +
+// reporter username), newest first. The reasons are public — a visitor needs
+// to see why a build is flagged, not just that it is — so the detail page
+// lists them under the issue count.
+pub fn build_review_issues(conn sqlite.DB, build_id int) []BuildIssueView {
+	rows := conn.exec('SELECT r.reason, u.username FROM build_review r LEFT JOIN user u ON u.user_id = r.user_id WHERE r.build_id = ${build_id} AND r.verified = 0 ORDER BY r.updated_at DESC, r.build_review_id DESC') or {
+		return []
+	}
+	mut out := []BuildIssueView{}
+	for row in rows {
+		reason := row.get_string('reason').trim_space()
+		if reason == '' {
+			continue
+		}
+		out << BuildIssueView{
+			reason: reason
+			author: row.get_string('username')
+		}
+	}
+	return out
+}
+
 // treasure_options lists every treasure's id, localized name and first
 // normal effect text (the picker shows effects in the modal and on slots) for
 // the build planner and the cookie/pet admin forms' "unlocks treasure"

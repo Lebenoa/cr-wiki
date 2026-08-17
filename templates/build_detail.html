@@ -204,6 +204,100 @@
         </a>
         @end
 
+        <!-- verification: authenticated users vouch for or flag the build -->
+        <div class="mt-6 rounded-2xl border border-primary/20 bg-surface/50 p-5">
+            <div class="text-xs font-label uppercase text-foreground-muted">%build_verify_label</div>
+            @if verify_count > 0 || issue_count > 0
+            <div class="mt-2 flex flex-wrap items-center gap-4 text-sm">
+                @if verify_count > 0
+                <span class="inline-flex items-center gap-1.5 font-bold text-success">
+                    <svg class="size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M20 6 9 17l-5-5" />
+                    </svg>
+                    @{ctx.format_num(u64(verify_count))} %build_verified_count
+                </span>
+                @end
+                @if issue_count > 0
+                <span class="inline-flex items-center gap-1.5 font-bold text-error">
+                    <svg class="size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
+                        <path d="M12 9v4" />
+                        <path d="M12 17h.01" />
+                    </svg>
+                    @{ctx.format_num(u64(issue_count))} %build_issue_count
+                </span>
+                @end
+            </div>
+            @end
+
+            @if issues.len > 0
+            <ul class="mt-3 space-y-2">
+                @for iv in issues
+                <li class="flex items-start gap-2 rounded-xl border border-error/30 bg-error/10 px-3 py-2 text-sm">
+                    <svg class="size-4 mt-0.5 shrink-0 text-error" xmlns="http://www.w3.org/2000/svg" width="24"
+                        height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
+                        <path d="M12 9v4" />
+                        <path d="M12 17h.01" />
+                    </svg>
+                    <span class="text-foreground">@iv.reason</span>
+                    @if iv.author != ""
+                    <span class="text-foreground-muted">— @iv.author</span>
+                    @end
+                </li>
+                @end
+            </ul>
+            @end
+
+            @if mr := my_review
+            <p class="mt-2 text-sm text-foreground">
+                @if mr.verified
+                <span class="font-bold text-success">%build_you_verified</span>
+                @else
+                <span class="font-bold text-error">%build_you_flagged</span>
+                @if mr.reason != ""
+                <span class="text-foreground-muted">@mr.reason</span>
+                @end
+                @end
+            </p>
+            @end
+
+            @if _ := ctx.user
+            <form method="post" action="/builds/@b.build_id/verify" hx-post="/builds/@b.build_id/verify"
+                hx-swap="none" hx-disable="find button[type=submit]" class="mt-3 space-y-3">
+                <div id="form-error"></div>
+                <div class="cf-turnstile" data-sitekey="@{ctx.turnstile_sitekey_for_template()}" data-action="build_verify"></div>
+                <textarea name="reason" rows="2" maxlength="500"
+                    class="w-full bg-surface border-2 border-primary/30 rounded-xl p-3 text-foreground placeholder:text-foreground/30 focus:border-primary focus:ring-0 transition-all outline-none resize-y"
+                    placeholder="%build_issue_reason_placeholder"></textarea>
+                <div class="flex flex-wrap gap-2">
+                    <button type="submit" name="verified" value="1"
+                        class="inline-flex items-center gap-1.5 rounded-xl bg-success px-5 py-2.5 font-bold text-on-success hover:opacity-90 transition-opacity">
+                        <svg class="size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                            fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                            stroke-linejoin="round">
+                            <path d="M20 6 9 17l-5-5" />
+                        </svg>
+                        %build_verify_works
+                    </button>
+                    <button type="submit" name="verified" value="0"
+                        class="rounded-xl border-2 border-error/50 px-5 py-2.5 font-bold text-error hover:border-error transition-colors">
+                        %build_report_issue
+                    </button>
+                </div>
+            </form>
+            @else
+            <p class="mt-2 text-sm text-foreground-muted">
+                <a href="/login" class="font-bold text-accent hover:underline">%build_login_to_verify</a>
+            </p>
+            @end
+        </div>
+
         @if can_edit
         <div class="mt-6 flex items-center gap-3">
             <a href="/builds/@b.build_id/edit"

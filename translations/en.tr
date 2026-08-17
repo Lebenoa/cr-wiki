@@ -694,3 +694,36 @@ Signing in...
 register_loading
 Creating account...
 -----
+build_verify_label
+Build Verification
+-----
+build_verified_count
+verified
+-----
+build_issue_count
+issue
+-----
+build_you_verified
+You verified this build works
+-----
+build_you_flagged
+You reported an issue
+-----
+build_verify_works
+This build works
+-----
+build_report_issue
+Report an issue
+-----
+build_issue_reason_placeholder
+What went wrong? (required when reporting an issue)
+-----
+build_issue_reason_required
+Please describe the issue
+-----
+build_issue_reason_too_long
+Issue description is too long (max 500 characters)
+-----
+build_login_to_verify
+Log in to verify this build
+-----

@@ -428,11 +428,53 @@ pub fn (mut wapp App) build_info(mut ctx Context, id int) veb.Result {
 	ctx.set_og_image('cookies', b.cookie.image)
 	combi := find_combi(wapp, ctx, b.cookie.id, b.pet.id)
 	can_edit := can_edit_build(ctx, b)
+	// verification section: the public verdict totals and the issue list,
+	// plus the current session's own verdict so the template can render it
+	verify_count, issue_count := database.build_review_counts(wapp.db, b.build_id)
+	issues := database.build_review_issues(wapp.db, b.build_id)
+	my_review := if u := ctx.user {
+		database.get_build_review(wapp.db, b.build_id, u.user_id or { 0 })
+	} else {
+		none
+	}
 	// the detail page renders the full boost/Power+ catalogs with the used
 	// ones marked, hub-style — not just the ones this build has
 	boost_keys := ['energy', 'item_time', 'fast_start']
 	power_effect_keys := util.power_effect_keys()
 	return $veb.html('./templates/build_detail.html')
+}
+
+// build_verify records the current session's verdict on a build: verified
+// (tried the loadout, it works) or a reported issue with a reason. One
+// verdict per user per build — re-submitting overwrites the previous one.
+// Authenticated users only; anonymous requests get 404, matching the
+// edit/delete convention of not revealing whether the resource exists.
+@['/builds/:id/verify'; post]
+pub fn (wapp &App) build_verify(mut ctx Context, id int) veb.Result {
+	u := ctx.user or { return ctx.not_found() }
+	uid := u.user_id or { return ctx.not_found() }
+	_ := database.select_build(wapp.db, ctx.lang, id) or { return ctx.not_found() }
+	if !verify_turnstile(ctx, 'build_verify') {
+		ctx.res.set_status(.forbidden)
+		return submit_error(veb.tr(ctx.lang, 'turnstile_form_failed'), mut ctx)
+	}
+	verified := (ctx.form['verified'] or { '' }) == '1'
+	reason := (ctx.form['reason'] or { '' }).trim_space()
+	if !verified && reason == '' {
+		ctx.res.set_status(.bad_request)
+		return submit_error(veb.tr(ctx.lang, 'build_issue_reason_required'), mut ctx)
+	}
+	// runes not bytes: the 500-char limit is about content, and Thai/emoji
+	// reasons would otherwise be rejected at a third of the stated length
+	if reason.runes().len > 500 {
+		ctx.res.set_status(.bad_request)
+		return submit_error(veb.tr(ctx.lang, 'build_issue_reason_too_long'), mut ctx)
+	}
+	database.upsert_build_review(wapp.db, id, uid, verified, reason) or {
+		ctx.res.set_status(.internal_server_error)
+		return submit_error('Unexpected Error', mut ctx)
+	}
+	return submit_success(mut ctx, '/builds/${id}')
 }
 
 // can_edit_build reports whether the current session may modify a build:

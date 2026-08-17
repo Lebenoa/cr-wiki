@@ -161,6 +161,10 @@ pub fn run_test_session() {
 			run:  test_build_edit_delete
 		},
 		TestCase{
+			name: 'build verify and issue report'
+			run:  test_build_verify
+		},
+		TestCase{
 			name: 'effect {value} placeholder submission guards'
 			run:  test_placeholder_submission_guards
 		},
@@ -1179,6 +1183,140 @@ fn test_build_edit_delete(mut tc TestContext) ! {
 	gone := http.get('${tc.base}/builds/${bid}') or { return error('GET deleted build: ${err}') }
 	if gone.status_code != 404 {
 		return error('GET deleted build: expected 404, got ${gone.status_code}')
+	}
+}
+
+fn test_build_verify(mut tc TestContext) ! {
+	// a build to review (anonymous submit — anyone can post one)
+	post := http.fetch(
+		method: .post
+		url:    '${tc.base}/builds/new'
+		header: http.new_header(key: .content_type, value: 'application/x-www-form-urlencoded')
+		data: http.url_encode_form_data({
+			'cookie':    '23'
+			'pet':       '58'
+			't1':        '180'
+			't2':        '284'
+			't3':        '378'
+			'ep':        '5'
+			'tag_score': 'score'
+			'author':    'verifytest'
+		})
+		allow_redirect: false
+	) or { return error('verify test submit: ${err}') }
+	if post.status_code != 302 {
+		return error('verify test submit: expected 302, got ${post.status_code}')
+	}
+	bid := tc.db.exec("SELECT build_id FROM build WHERE author = 'verifytest' ORDER BY build_id DESC LIMIT 1")![0].get_int('build_id')
+
+	// anonymous: the detail page invites login and renders no verify form;
+	// the POST 404s (authenticated-only, matching the edit/delete convention)
+	anon := http.get('${tc.base}/builds/${bid}') or { return error('GET /builds/${bid}: ${err}') }
+	if anon.status_code != 200 || !anon.body.contains('Log in to verify this build') {
+		return error('anon build detail must invite login to verify')
+	}
+	if anon.body.contains('name="verified"') {
+		return error('anon build detail must not render the verify form')
+	}
+	anon_post := http.fetch(method: .post, url: '${tc.base}/builds/${bid}/verify', allow_redirect: false) or {
+		return error('anon verify POST: ${err}')
+	}
+	if anon_post.status_code != 404 {
+		return error('verify without a session: expected 404, got ${anon_post.status_code}')
+	}
+
+	// register a non-admin user (register auto-logs-in) to do the verifying
+	reg := http.fetch(
+		method: .post
+		url:    '${tc.base}/register'
+		header: http.new_header(key: .content_type, value: 'application/x-www-form-urlencoded')
+		data:   http.url_encode_form_data({
+			'username':         'build_verifier'
+			'password':         'pw123'
+			'confirm_password': 'pw123'
+		})
+		allow_redirect: false
+	) or { return error('register verifier: ${err}') }
+	if reg.status_code != 302 {
+		return error('register verifier: expected 302, got ${reg.status_code}')
+	}
+	mut sid := ''
+	for c in reg.header.values(.set_cookie) {
+		if c.all_before('=').trim_space() == session_cookie_key {
+			sid = c.all_after('=').all_before(';')
+			break
+		}
+	}
+	if sid == '' {
+		return error('register verifier: no ${session_cookie_key} cookie in Set-Cookie')
+	}
+
+	// verify: the build works
+	v1 := http.fetch(
+		method: .post
+		url:    '${tc.base}/builds/${bid}/verify'
+		header: http.new_header(key: .content_type, value: 'application/x-www-form-urlencoded')
+		data:   http.url_encode_form_data({'verified': '1'})
+		cookies: {
+			session_cookie_key: sid
+		}
+		allow_redirect: false
+	) or { return error('verify POST (works): ${err}') }
+	if v1.status_code != 302 {
+		return error('verify POST: expected 302, got ${v1.status_code}')
+	}
+	det1 := http.fetch(method: .get, url: '${tc.base}/builds/${bid}', cookies: {
+		session_cookie_key: sid
+	}) or { return error('GET /builds/${bid} after verify: ${err}') }
+	if det1.status_code != 200 || !det1.body.contains('1 verified') || !det1.body.contains('You verified this build works') {
+		return error('detail after verify must show the verified count and the user verdict')
+	}
+
+	// an issue with a reason overwrites the verdict (one review per user)
+	v2 := http.fetch(
+		method: .post
+		url:    '${tc.base}/builds/${bid}/verify'
+		header: http.new_header(key: .content_type, value: 'application/x-www-form-urlencoded')
+		data:   http.url_encode_form_data({'verified': '0', 'reason': 'ep is wrong'})
+		cookies: {
+			session_cookie_key: sid
+		}
+		allow_redirect: false
+	) or { return error('verify POST (issue): ${err}') }
+	if v2.status_code != 302 {
+		return error('issue POST: expected 302, got ${v2.status_code}')
+	}
+	det2 := http.fetch(method: .get, url: '${tc.base}/builds/${bid}', cookies: {
+		session_cookie_key: sid
+	}) or { return error('GET /builds/${bid} after issue: ${err}') }
+	if det2.status_code != 200 || !det2.body.contains('1 issue')
+		|| !det2.body.contains('You reported an issue') || !det2.body.contains('ep is wrong') {
+		return error('detail after issue must show the issue count, verdict and reason')
+	}
+	// the reason is public: an anonymous visitor sees the issue list too
+	anon2 := http.get('${tc.base}/builds/${bid}') or { return error('GET /builds/${bid} (anon after issue): ${err}') }
+	if anon2.status_code != 200 || !anon2.body.contains('ep is wrong') {
+		return error('anon detail must list the public issue reason')
+	}
+
+	// an issue without a reason is rejected
+	v3 := http.fetch(
+		method: .post
+		url:    '${tc.base}/builds/${bid}/verify'
+		header: http.new_header(key: .content_type, value: 'application/x-www-form-urlencoded')
+		data:   http.url_encode_form_data({'verified': '0'})
+		cookies: {
+			session_cookie_key: sid
+		}
+		allow_redirect: false
+	) or { return error('issue POST (no reason): ${err}') }
+	if v3.status_code != 400 {
+		return error('issue without a reason: expected 400, got ${v3.status_code}')
+	}
+	// the upsert kept a single row through verify -> issue -> rejected issue
+	n := tc.db.exec('SELECT COUNT(*) AS n FROM build_review WHERE build_id = ${bid}')![0].get_int('n')
+	if n != 1 {
+		return error('build_review upsert: want 1 row, got ${n}')
 	}
 }
 

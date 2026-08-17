@@ -27,6 +27,7 @@ pub fn initialize(path string) !sqlite.DB {
 		create table models.EffectTranslation
 		create table models.TreasureEffect
 		create table models.Build
+		create table models.BuildReview
 	}!
 
 	migrate(conn)!

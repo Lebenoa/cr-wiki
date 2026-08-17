@@ -446,3 +446,34 @@ pub fn create_build(conn sqlite.DB, cookie_id int, cookie2_id int, pet_id int, t
 		insert build into models.Build
 	}!
 }
+
+// upsert_build_review records (or overwrites) one user's verdict on a build:
+// verified = the loadout works, otherwise a reported issue with a reason.
+// The UNIQUE(build_id, user_id) key means re-submitting flips the previous
+// verdict instead of stacking duplicates. `reason` is only meaningful for
+// reported issues (verified=false); verified reviews pass ''.
+pub fn upsert_build_review(conn sqlite.DB, build_id int, user_id int, verified bool, reason string) ! {
+	existing := sql conn {
+		select from models.BuildReview where build_id == build_id && user_id == user_id limit 1
+	}!
+	if existing.len > 0 {
+		review_id := existing.first().build_review_id or { return }
+		now := time.now()
+		sql conn {
+			update models.BuildReview set verified = verified, reason = reason, updated_at = now where build_review_id == review_id
+		}!
+		return
+	}
+	now := time.now()
+	new_review := models.BuildReview{
+		build_id:   build_id
+		user_id:    user_id
+		verified:   verified
+		reason:     reason
+		created_at: now
+		updated_at: now
+	}
+	sql conn {
+		insert new_review into models.BuildReview
+	}!
+}
