@@ -70,6 +70,12 @@ Treasures
 builds
 Builds
 -----
+episodes
+Episodes
+-----
+relics
+Relics
+-----
 choose_language
 Choose Language
 -----
@@ -357,6 +363,84 @@ Treasure unlocked at max level
 -----
 unlock_cookie_label
 Unlocked by cookie
+-----
+relics_page_title
+Relics
+-----
+relics_page_description
+Browse every relic set by episode and the event relics of Cookie Run Classic
+-----
+relics_page_header
+Relic Catalog
+-----
+relic_set_label
+Relic set
+-----
+event_relics_label
+Event Relics
+-----
+episodes_page_title
+Episodes
+-----
+episodes_page_description
+Browse every episode of Cookie Run Classic with its stages, quests and relics
+-----
+episodes_page_header
+Episodes
+-----
+episode_detail_title
+{name} — Episode
+-----
+episode_detail_description
+{name} episode: stages, quests, relic set, relic-draw rewards and mystery-box odds
+-----
+episode_kind_story
+Story
+-----
+episode_kind_special
+Special
+-----
+episode_kind_event
+Event
+-----
+league_ranked_badge
+League ranked
+-----
+stages_label
+Stages
+-----
+quests_label
+Quests
+-----
+relics_label
+Relics
+-----
+entry_cost_label
+Entry cost
+-----
+draw_rewards_label
+Relic draw rewards
+-----
+mystery_box_label
+Mystery box odds
+-----
+box_grade_label
+Box grade
+-----
+box_first_label
+1st box
+-----
+box_second_label
+2nd box
+-----
+box_third_label
+3rd+ box
+-----
+ingredient_drops_label
+Ingredient drops
+-----
+coin_value_label
+Sell value
 -----
 unlock_pet_label
 Unlocked by pet

@@ -80,6 +80,17 @@ pub struct SeedFixture {
 	treasure_effect      []models.TreasureEffect
 	treasure_level       []models.TreasureLevel
 	combi_bonus          []models.CombiBonus
+	relic                []models.Relic
+	relic_translation    []models.RelicTranslation
+	episode              []models.Episode
+	episode_translation  []models.EpisodeTranslation
+	episode_stage        []models.EpisodeStage
+	episode_relic        []models.EpisodeRelic
+	episode_draw_reward  []models.EpisodeDrawReward
+	episode_box_odds     []models.EpisodeBoxOdds
+	quest                []models.Quest
+	ingredient           []models.Ingredient
+	ingredient_translation []models.IngredientTranslation
 	build                []models.Build
 }
 
@@ -164,6 +175,63 @@ fn insert_fixture(conn sqlite.DB, fixture SeedFixture) ! {
 	for cb in fixture.combi_bonus {
 		sql conn {
 			insert cb into models.CombiBonus
+		}!
+	}
+	// Phase A catalog tables, in FK order (episode before the tables that
+	// reference it; relic after episode and cookie; ingredient after episode).
+	for e in fixture.episode {
+		sql conn {
+			insert e into models.Episode
+		}!
+	}
+	for tr in fixture.episode_translation {
+		sql conn {
+			insert tr into models.EpisodeTranslation
+		}!
+	}
+	for s in fixture.episode_stage {
+		sql conn {
+			insert s into models.EpisodeStage
+		}!
+	}
+	for r in fixture.relic {
+		sql conn {
+			insert r into models.Relic
+		}!
+	}
+	for tr in fixture.relic_translation {
+		sql conn {
+			insert tr into models.RelicTranslation
+		}!
+	}
+	for er in fixture.episode_relic {
+		sql conn {
+			insert er into models.EpisodeRelic
+		}!
+	}
+	for dr in fixture.episode_draw_reward {
+		sql conn {
+			insert dr into models.EpisodeDrawReward
+		}!
+	}
+	for bo in fixture.episode_box_odds {
+		sql conn {
+			insert bo into models.EpisodeBoxOdds
+		}!
+	}
+	for q in fixture.quest {
+		sql conn {
+			insert q into models.Quest
+		}!
+	}
+	for i in fixture.ingredient {
+		sql conn {
+			insert i into models.Ingredient
+		}!
+	}
+	for tr in fixture.ingredient_translation {
+		sql conn {
+			insert tr into models.IngredientTranslation
 		}!
 	}
 }

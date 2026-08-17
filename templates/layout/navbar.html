@@ -17,11 +17,13 @@
                     <line x1="4" x2="20" y1="18" y2="18" />
                 </svg>
             </button>
-            <div class="hidden md:flex gap-8 items-center">
-                @{ctx.nav_link('cookies')}
-                @{ctx.nav_link('pets')}
-                @{ctx.nav_link('treasures')}
-                @{ctx.nav_link('builds')}
+            <div class="hidden md:flex gap-8 items-center">                    @{ctx.nav_link('cookies')}
+                    @{ctx.nav_link('pets')}
+                    @{ctx.nav_link('treasures')}
+                    @{ctx.nav_link('builds')}
+                    @{ctx.nav_link('episodes')}
+                    @{ctx.nav_link('relics')}
+
             </div>
         </div>
         <div class="flex items-center gap-6 max-md:gap-3">
@@ -65,11 +67,13 @@
                 @include 'icons/user.html'
             </button>
             <div id="mobile-nav" popover
-                class="p-4 m-bs-1 inline-64 bg-background text-foreground rounded border border-accent transition-discrete transition-all duration-300 flex-col gap-2 hidden popover-open:flex">
-                @{ctx.nav_link('cookies')}
-                @{ctx.nav_link('pets')}
-                @{ctx.nav_link('treasures')}
-                @{ctx.nav_link('builds')}
+                class="p-4 m-bs-1 inline-64 bg-background text-foreground rounded border border-accent transition-discrete transition-all duration-300 flex-col gap-2 hidden popover-open:flex">                    @{ctx.nav_link('cookies')}
+                    @{ctx.nav_link('pets')}
+                    @{ctx.nav_link('treasures')}
+                    @{ctx.nav_link('builds')}
+                    @{ctx.nav_link('episodes')}
+                    @{ctx.nav_link('relics')}
+
             </div>
             <div id="account-dropdown"
                 class="p-4 m-bs-1 inline-64 bg-background text-foreground rounded border border-accent transition-discrete transition-all duration-300 flex-col gap-2 hidden popover-open:flex"

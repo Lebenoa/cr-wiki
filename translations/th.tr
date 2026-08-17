@@ -70,6 +70,12 @@ treasures
 builds
 บิลด์
 -----
+episodes
+ตอน
+-----
+relics
+เรลิก
+-----
 choose_language
 เลือกภาษา
 -----
@@ -357,6 +363,84 @@ unlock_treasure_label
 -----
 unlock_cookie_label
 ปลดล็อกโดยคุกกี้
+-----
+relics_page_title
+เรลิก
+-----
+relics_page_description
+เรียกดูชุดเรลิกทั้งหมดของแต่ละตอนและเรลิกอีเวนต์ใน Cookie Run Classic
+-----
+relics_page_header
+แคตตาล็อกเรลิก
+-----
+relic_set_label
+ชุดเรลิก
+-----
+event_relics_label
+เรลิกอีเวนต์
+-----
+episodes_page_title
+ตอน
+-----
+episodes_page_description
+เรียกดูทุกตอนของ Cookie Run Classic พร้อมสเตจ เควสต์ และเรลิก
+-----
+episodes_page_header
+ตอน
+-----
+episode_detail_title
+{name} — ตอน
+-----
+episode_detail_description
+ตอน {name}: สเตจ เควสต์ ชุดเรลิก รางวัลการอัญเชิญเรลิก และอัตรากล่องปริศนา
+-----
+episode_kind_story
+เนื้อเรื่อง
+-----
+episode_kind_special
+พิเศษ
+-----
+episode_kind_event
+อีเวนต์
+-----
+league_ranked_badge
+จัดอันดับลีก
+-----
+stages_label
+สเตจ
+-----
+quests_label
+เควสต์
+-----
+relics_label
+เรลิก
+-----
+entry_cost_label
+ค่าเข้าตอน
+-----
+draw_rewards_label
+รางวัลอัญเชิญเรลิก
+-----
+mystery_box_label
+อัตรากล่องปริศนา
+-----
+box_grade_label
+เกรดกล่อง
+-----
+box_first_label
+กล่องที่ 1
+-----
+box_second_label
+กล่องที่ 2
+-----
+box_third_label
+กล่องที่ 3 ขึ้นไป
+-----
+ingredient_drops_label
+ไอเท็มที่ดรอป
+-----
+coin_value_label
+ราคาขาย
 -----
 unlock_pet_label
 ปลดล็อกโดยสัตว์เลี้ยง

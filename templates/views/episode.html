@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="@ctx.lang">
+
+<head>
+    @include 'layout/head.html'
+</head>
+
+<body>
+    @include 'layout/navbar.html'
+
+    <div class="max-w-5xl mx-auto px-8 py-8">
+        <a href="/episodes" hx-boost="true" class="text-sm text-foreground-muted hover:text-primary transition-colors">←
+            %episodes_page_header</a>
+
+        <div class="mt-4 flex flex-wrap items-center gap-2">
+            <span class="text-[10px] font-label uppercase text-foreground-muted">@{ctx.episode_kind_label(episode.kind)}</span>
+            @if s := episode.stars
+            <span class="text-sm text-primary">@{ctx.stars_label(s)}</span>
+            @end
+            @if episode.league_ranked
+            <span
+                class="text-[10px] font-bold text-accent uppercase border border-accent/40 rounded-full px-2 py-0.5">%league_ranked_badge</span>
+            @end
+        </div>
+        <h1 class="text-4xl font-headline font-bold text-primary mt-2">@episode.name</h1>
+        @if episode.entry_cost != ''
+        <p class="mt-2 text-sm text-foreground-muted">%entry_cost_label: @episode.entry_cost</p>
+        @end
+        @if episode.description != ''
+        <p class="mt-4 text-on-surface leading-relaxed">@episode.description</p>
+        @end
+
+        @if episode.stages.len > 0
+        <h2 class="text-xl font-headline font-bold text-primary mt-10 mb-3">%stages_label</h2>
+        <div class="flex flex-wrap gap-2">
+            @for st in episode.stages
+            <span class="rounded-full bg-surface border border-primary/20 px-3 py-1 text-sm text-foreground">@st.stage_no.
+                @st.name</span>
+            @end
+        </div>
+        @end
+
+        @if episode.relics.len > 0
+        <h2 class="text-xl font-headline font-bold text-primary mt-10 mb-3">%relic_set_label</h2>
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+            @for r in episode.relics
+            <div class="rounded-2xl border-2 border-primary/20 bg-surface/50 p-3 flex flex-col items-center gap-1">
+                <img src="@{ctx.img_src('relics', r.image)}" alt="@r.name" class="h-16 w-full object-contain" />
+                <span class="text-center text-xs font-bold text-on-surface leading-tight">@r.name</span>
+            </div>
+            @endfor
+        </div>
+        @end
+
+        @if episode.quest_groups.len > 0
+        <h2 class="text-xl font-headline font-bold text-primary mt-10 mb-3">%quests_label (@episode.quest_count)</h2>
+        @for g in episode.quest_groups
+        <h3 class="text-sm font-label uppercase text-accent mt-6 mb-2">@g.group</h3>
+        <div class="rounded-xl border border-secondary/40 divide-y divide-secondary/30">
+            @for q in g.quests
+            <div class="px-4 py-2 flex flex-wrap items-center gap-x-3 gap-y-1">
+                <span class="text-sm text-foreground">@q.name</span>
+                @if q.reward != ''
+                <span
+                    class="text-[10px] font-bold text-accent uppercase rounded-full border border-accent/40 px-2 py-0.5 ml-auto">@q.reward</span>
+                @end
+            </div>
+            @endfor
+        </div>
+        @endfor
+        @end
+
+        @if episode.draw_rewards.len > 0
+        <h2 class="text-xl font-headline font-bold text-primary mt-10 mb-3">%draw_rewards_label</h2>
+        <div class="rounded-xl border border-secondary/40 divide-y divide-secondary/30 max-w-md">
+            @for dr in episode.draw_rewards
+            <div class="px-4 py-2 flex items-center gap-3 text-sm">
+                <span class="text-foreground-muted w-6 text-right shrink-0">@dr.rank</span>
+                <span class="text-foreground flex-1">@dr.reward</span>
+                <span class="text-accent font-bold">@{ctx.odds_label(dr.odds)}</span>
+            </div>
+            @endfor
+        </div>
+        @end
+
+        @if episode.box_grades.len > 0
+        <h2 class="text-xl font-headline font-bold text-primary mt-10 mb-3">%mystery_box_label</h2>
+        <table class="w-full max-w-md text-sm">
+            <thead>
+                <tr class="text-left text-[10px] font-label uppercase text-foreground-muted">
+                    <th class="px-3 py-2">%box_grade_label</th>
+                    <th class="px-3 py-2">%box_first_label</th>
+                    <th class="px-3 py-2">%box_second_label</th>
+                    <th class="px-3 py-2">%box_third_label</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-secondary/30">
+                @for bg in episode.box_grades
+                <tr>
+                    <td class="px-3 py-2 font-bold text-on-surface">@bg.box_grade</td>
+                    <td class="px-3 py-2 text-accent">@{ctx.odds_label(bg.first)}</td>
+                    <td class="px-3 py-2 text-accent">@{ctx.odds_label(bg.second)}</td>
+                    <td class="px-3 py-2 text-accent">@{ctx.odds_label(bg.third)}</td>
+                </tr>
+                @endfor
+            </tbody>
+        </table>
+        @end
+
+        @if episode.ingredients.len > 0
+        <h2 class="text-xl font-headline font-bold text-primary mt-10 mb-3">%ingredient_drops_label
+            (@episode.ingredients.len)</h2>
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+            @for i in episode.ingredients
+            <div class="rounded-2xl border-2 border-primary/20 bg-surface/50 p-3 flex flex-col items-center gap-1">
+                <img src="@{ctx.img_src('ingredients', i.image)}" alt="@i.name" class="h-14 w-full object-contain" />
+                <span class="text-center text-xs font-bold text-on-surface leading-tight">@i.name</span>
+                @if ig := i.grade
+                <span class="text-[10px] font-bold text-accent uppercase">@{ctx.grade_label_int(ig)}</span>
+                @end
+                @if i.coin_value > 0
+                <span class="text-[10px] text-foreground-muted">%coin_value_label: @i.coin_value</span>
+                @end
+            </div>
+            @endfor
+        </div>
+        @end
+    </div>
+</body>
+
+</html>
