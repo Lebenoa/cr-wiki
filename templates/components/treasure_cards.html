@@ -1,14 +1,13 @@
 @for treasure in treasures
 <a href="/treasures/@treasure.treasure_id" data-cr-card data-name="@treasure.name" data-name-en="@treasure.en_name"
-    class="border border-secondary px-4 py-2 rounded flex flex-col items-center justify-start hover:border-primary transition-colors group gap-2">
+    class="entity-card">
     @if grade := treasure.grade
     <img src="/img/grades/@{grade}.png" alt="@grade" class="size-10 self-start">
     @endif
-    <img src="@{ctx.img_src('treasures', treasure.image)}" alt="@treasure.name"
-        class="h-28 w-full object-contain">
-    <h2 class="text-xl group-hover:text-primary text-secondary text-center">@treasure.name</h2>
+    <img src="@{ctx.img_src('treasures', treasure.image)}" alt="@treasure.name" class="h-20 w-full object-contain">
+    <span class="card-title">@treasure.name</span>
     @if treasure.is_evolved
-    <span class="bg-primary text-foreground font-bold uppercase text-xs mt-1 px-2 py-0.5 rounded-full">%evolved</span>
+    <span class="pill-primary">%evolved</span>
     @endif
 </a>
 @endfor

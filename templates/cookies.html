@@ -8,64 +8,24 @@
 <body>
     @include 'layout/navbar.html'
 
-    <h1 class="text-4xl font-bold my-4 text-center">%cookie_page_header</h1>
+    <h1 class="page-title">%cookie_page_header</h1>
 
     @if user := ctx.user
     @if user.is_admin
-    <div class="flex justify-end px-8">
+    <div class="admin-actions">
         <a href="/cookies/new" class="btn-primary">+ New Cookie</a>
     </div>
     @endif
     @endif
 
-    <div class="flex flex-wrap items-center justify-center gap-3 my-6 px-8">
-        <input id="filter-name" type="text" placeholder="%navbar_search_placeholder"
-            class="bg-surface border-2 border-secondary/50 focus:border-primary focus:ring-0 rounded-full py-2 pl-4 pr-6 w-72 transition-all outline-none text-sm text-foreground" />
-        <div id="filter-grade" class="flex flex-wrap gap-2 items-center">
-            @for g in grades
-            <button type="button" class="grade-filter" data-grade="@g" title="@{ctx.grade_label(g)}">
-                <img src="/img/grades/@{g}.png" alt="@g"
-                    class="size-9 rounded-lg border-2 border-transparent transition-all" />
-            </button>
-            @endfor
-        </div>
+    <div class="filter-bar">
+        @include 'components/filter_input.html'
+        @include 'components/grade_filter.html'
     </div>
-    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 p-8">
+    <div class="catalog-grid">
         @include 'components/cookie_cards.html'
     </div>
 
-    <script>
-        function crFilter() {
-            var q = (document.getElementById('filter-name')?.value || '').toLowerCase();
-            var g = (document.querySelector('.grade-filter.active')?.dataset.grade) || '';
-            document.querySelectorAll('[data-cr-card]').forEach(function (card) {
-                // match the localized name or the English name, so e.g. a th
-                // page still finds "Wizard" -> คุกกี้พ่อมด
-                var names = ((card.dataset.name || '') + ' ' + (card.dataset.nameEn || '')).toLowerCase();
-                var show = (!q || names.indexOf(q) !== -1) && (!g || card.dataset.grade === g);
-                card.style.display = show ? '' : 'none';
-            });
-        }
-        document.querySelectorAll('.grade-filter').forEach(function (btn) {
-            btn.addEventListener('click', function () {
-                var wasActive = btn.classList.contains('active');
-                document.querySelectorAll('.grade-filter').forEach(function (b) {
-                    b.classList.remove('active');
-                    b.querySelector('img').className = 'size-9 rounded-lg border-2 border-transparent transition-all';
-                });
-                if (!wasActive) {
-                    btn.classList.add('active');
-                    btn.querySelector('img').className = 'size-9 rounded-lg border-2 border-primary ring-2 ring-primary transition-all';
-                }
-                crFilter();
-            });
-        });
-        document.addEventListener('input', function (e) {
-            if (e.target.id === 'filter-name') crFilter();
-        });
-        // htmx 4 swaps don't fire DOMNodeInserted; re-filter after each infinite-scroll fetch
-        document.addEventListener('htmx:after:settle', crFilter);
-    </script>
 </body>
 
 </html>

@@ -8,19 +8,23 @@
 <body>
     @include 'layout/navbar.html'
 
-    <h1 class="text-4xl font-bold my-4 text-center">%gacha_page_header</h1>
+    <h1 class="page-title">%gacha_page_header</h1>
+
+    <div class="filter-bar">
+        @include 'components/filter_input.html'
+    </div>
 
     <div class="max-w-6xl mx-auto px-8 py-4 flex flex-col gap-10">
         @for p in pools
         <section>
-            <h2 class="text-xl font-headline font-bold text-primary mb-4">@{ctx.gacha_tier_label(p.tier)}
+            <h2 class="section-title">@{ctx.gacha_tier_label(p.tier)}
                 <span class="text-sm font-label font-normal text-foreground-muted">(@p.entries.len)</span></h2>
-            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+            <div class="card-grid">
                 @for e in p.entries
-                <a href="/@{e.kind}s/@e.id" hx-boost="true"
-                    class="rounded-2xl border-2 border-primary/20 bg-surface/50 p-4 flex flex-col items-center gap-2 hover:border-primary transition-colors">
+                <a href="/@{e.kind}s/@e.id" hx-boost="true" data-cr-card data-name="@e.name"
+                    class="entity-card">
                     <img src="@{ctx.img_src(e.kind + 's', e.image)}" alt="@e.name" class="h-20 w-full object-contain" />
-                    <span class="text-center text-sm font-bold text-on-surface leading-tight">@e.name</span>
+                    <span class="card-title">@e.name</span>
                     @if g := e.grade
                     <span class="@{ctx.grade_badge_cls(g)}">@{ctx.grade_label_int(g)}</span>
                     @end

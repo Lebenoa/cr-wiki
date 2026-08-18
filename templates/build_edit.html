@@ -364,7 +364,7 @@
         <div class="shrink-0 mb-4">
             @include 'components/level_slider'
         </div>
-        <form method="dialog" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 overflow-y-auto">
+        <form method="dialog" class="card-grid overflow-y-auto">
             @for t in treasures
             <button type="submit" value="@t.id" data-name="@t.name" data-name-en="@t.en_name" data-evolved="@t.is_evolved" onclick="setPicked(this)"
                 class="pick-option border border-secondary px-4 py-2 rounded flex flex-col items-center justify-start hover:border-primary transition-colors group gap-2">

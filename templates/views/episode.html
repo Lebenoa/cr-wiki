@@ -8,18 +8,18 @@
 <body>
     @include 'layout/navbar.html'
 
-    <div class="max-w-5xl mx-auto px-8 py-8">
-        <a href="/episodes" hx-boost="true" class="text-sm text-foreground-muted hover:text-primary transition-colors">←
+    <div class="page-shell">
+        <a href="/episodes" hx-boost="true" class="back-link">←
             %episodes_page_header</a>
 
         <div class="mt-4 flex flex-wrap items-center gap-2">
-            <span class="text-[10px] font-label uppercase text-foreground-muted">@{ctx.episode_kind_label(episode.kind)}</span>
+            <span class="card-meta">@{ctx.episode_kind_label(episode.kind)}</span>
             @if s := episode.stars
             <span class="text-sm text-primary">@{ctx.stars_label(s)}</span>
             @end
             @if episode.league_ranked
             <span
-                class="text-[10px] font-bold text-accent uppercase border border-accent/40 rounded-full px-2 py-0.5">%league_ranked_badge</span>
+                class="pill-accent">%league_ranked_badge</span>
             @end
         </div>
         <h1 class="text-4xl font-headline font-bold text-primary mt-2">@episode.name</h1>
@@ -42,11 +42,11 @@
 
         @if episode.relics.len > 0
         <h2 class="text-xl font-headline font-bold text-primary mt-10 mb-3">%relic_set_label</h2>
-        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+        <div class="card-grid">
             @for r in episode.relics
             <div class="rounded-2xl border-2 border-primary/20 bg-surface/50 p-3 flex flex-col items-center gap-1">
                 <img src="@{ctx.img_src('relics', r.image)}" alt="@r.name" class="h-16 w-full object-contain" />
-                <span class="text-center text-xs font-bold text-on-surface leading-tight">@r.name</span>
+                <span class="card-title-sm">@r.name</span>
             </div>
             @endfor
         </div>
@@ -110,11 +110,11 @@
         @if episode.ingredients.len > 0
         <h2 class="text-xl font-headline font-bold text-primary mt-10 mb-3">%ingredient_drops_label
             (@episode.ingredients.len)</h2>
-        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+        <div class="card-grid">
             @for i in episode.ingredients
             <div class="rounded-2xl border-2 border-primary/20 bg-surface/50 p-3 flex flex-col items-center gap-1">
                 <img src="@{ctx.img_src('ingredients', i.image)}" alt="@i.name" class="h-14 w-full object-contain" />
-                <span class="text-center text-xs font-bold text-on-surface leading-tight">@i.name</span>
+                <span class="card-title-sm">@i.name</span>
                 @if ig := i.grade
                 <span class="text-[10px] font-bold text-accent uppercase">@{ctx.grade_label_int(ig)}</span>
                 @end

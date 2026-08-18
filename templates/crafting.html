@@ -8,22 +8,26 @@
 <body>
     @include 'layout/navbar.html'
 
-    <h1 class="text-4xl font-bold my-4 text-center">%crafting_page_header</h1>
+    <h1 class="page-title">%crafting_page_header</h1>
 
-    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 p-8 max-w-6xl mx-auto">
+    <div class="filter-bar">
+        @include 'components/filter_input.html'
+    </div>
+
+    <div class="catalog-grid">
         @for i in ingredients
-        <a href="/crafting/@i.ingredient_id" hx-boost="true"
-            class="rounded-2xl border-2 border-primary/20 bg-surface/50 p-4 flex flex-col items-center gap-2 hover:border-primary transition-colors">
+        <a href="/crafting/@i.ingredient_id" hx-boost="true" data-cr-card data-name="@i.name"
+            class="entity-card">
             <img src="@{ctx.img_src('ingredients', i.image)}" alt="@i.name" class="h-20 w-full object-contain" />
             @if ig := i.grade
             <span class="@{ctx.grade_badge_cls(ig)}">@{ctx.grade_label_int(ig)}</span>
             @end
-            <span class="text-center text-sm font-bold text-on-surface leading-tight">@i.name</span>
+            <span class="card-title">@i.name</span>
             @if ctx.episode_short(i.drop_episode_id) != ''
             <span class="@{ctx.episode_badge_cls(i.drop_episode_id)}">@{ctx.episode_short(i.drop_episode_id)}</span>
             @end
             @if i.recipe_count > 0
-            <span class="text-[10px] font-label uppercase text-foreground-muted">@i.recipe_count
+            <span class="card-meta">@i.recipe_count
                 %crafting_recipes_label</span>
             @end
         </a>

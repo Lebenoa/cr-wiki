@@ -332,6 +332,44 @@ export default defineConfig({
         },
     ],
     shortcuts: {
+        // Page scaffolding. Every catalog page is a title, an optional filter
+        // bar and one grid; every detail page is a back link inside the same
+        // shell. Keeping those as shortcuts means a page cannot drift into its
+        // own spacing or breakpoints by copy-paste.
+        "page-title": "text-4xl font-bold my-4 text-center",
+        "page-shell": "max-w-6xl mx-auto px-8 py-8",
+        "section-title": "text-xl font-headline font-bold text-primary mb-4",
+        "back-link":
+            "text-sm text-foreground-muted hover:text-primary transition-colors",
+        "admin-actions": "flex justify-end px-8 max-w-6xl mx-auto",
+        "filter-bar": "flex flex-wrap items-center justify-center gap-3 my-6 px-8",
+        "filter-input":
+            "bg-surface border-2 border-secondary/50 focus:border-primary focus:ring-0 rounded-full py-2 pl-4 pr-6 w-72 transition-all outline-none text-sm text-foreground",
+
+        // Catalog grids: one ladder for icon cards, one for the wider episode
+        // cards. Nothing else should define its own column counts.
+        "catalog-grid":
+            "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 p-8 max-w-6xl mx-auto",
+        "catalog-grid-wide":
+            "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 p-8 max-w-6xl mx-auto",
+        "card-grid":
+            "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4",
+
+        // Cards. entity-card is the one card shell; -sm is the denser variant
+        // used inside a detail page's sub-grids.
+        "entity-card":
+            "rounded-2xl border-2 border-primary/20 bg-surface/50 p-4 flex flex-col items-center gap-2 hover:border-primary transition-colors",
+        "entity-card-sm":
+            "rounded-2xl border-2 border-primary/20 bg-surface/50 p-3 flex flex-col items-center gap-1 hover:border-primary transition-colors",
+        "card-title": "text-center text-sm font-bold text-on-surface leading-tight",
+        "card-title-sm": "text-center text-xs font-bold text-on-surface leading-tight",
+        "card-note": "text-center text-xs text-foreground-muted leading-snug",
+        "card-meta": "text-[10px] font-label uppercase text-foreground-muted",
+        "pill-accent":
+            "text-[10px] font-bold text-accent uppercase border border-accent/40 rounded-full px-2 py-0.5",
+        "pill-primary":
+            "text-[10px] font-bold text-primary uppercase border border-primary/40 rounded-full px-2 py-0.5",
+
         btn: "inline-flex items-center justify-center px-4 py-2 rounded transition-colors duration-300",
         "btn-primary": "btn bg-primary text-on-primary hover:bg-primary/90",
         "btn-secondary": "btn bg-secondary text-on-secondary hover:bg-secondary/90",

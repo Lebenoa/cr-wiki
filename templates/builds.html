@@ -143,7 +143,7 @@
         <h2 class="font-headline text-accent text-2xl mb-4">%build_pick_cookie</h2>
         <input type="search" placeholder="%build_search_placeholder" oninput="filterOptions('cookie', this.value)"
             class="w-full shrink-0 bg-surface border-2 border-primary/30 rounded-xl py-2 px-3 text-foreground mb-4" />
-        <form method="dialog" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 overflow-y-auto">
+        <form method="dialog" class="card-grid overflow-y-auto">
             @for c in cookies
             <button type="submit" value="@c.id" data-name="@c.name" data-name-en="@c.en_name" onclick="setPicked(this)"
                 class="pick-option relative border border-secondary px-4 py-2 rounded flex flex-col items-center justify-start hover:border-primary transition-colors group gap-2">
@@ -162,7 +162,7 @@
         <h2 class="font-headline text-accent text-2xl mb-4">%build_pick_pet</h2>
         <input type="search" placeholder="%build_search_placeholder" oninput="filterOptions('pet', this.value)"
             class="w-full shrink-0 bg-surface border-2 border-primary/30 rounded-xl py-2 px-3 text-foreground mb-4" />
-        <form method="dialog" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 overflow-y-auto">
+        <form method="dialog" class="card-grid overflow-y-auto">
             @for p in pets
             <button type="submit" value="@p.id" data-name="@p.name" data-name-en="@p.en_name" onclick="setPicked(this)"
                 class="pick-option relative border border-secondary px-4 py-2 rounded flex flex-col items-center justify-start hover:border-primary transition-colors group gap-2">
@@ -192,7 +192,7 @@
         <div class="shrink-0 mb-4">
             @include 'components/level_slider'
         </div>
-        <form method="dialog" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 overflow-y-auto">
+        <form method="dialog" class="card-grid overflow-y-auto">
             @for t in treasures
             <button type="submit" value="@t.id" data-name="@t.name" data-name-en="@t.en_name" data-evolved="@t.is_evolved"
                 onclick="setPicked(this)"

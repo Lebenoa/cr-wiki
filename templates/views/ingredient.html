@@ -8,8 +8,8 @@
 <body>
     @include 'layout/navbar.html'
 
-    <div class="max-w-5xl mx-auto px-8 py-8">
-        <a href="/crafting" hx-boost="true" class="text-sm text-foreground-muted hover:text-primary transition-colors">←
+    <div class="page-shell">
+        <a href="/crafting" hx-boost="true" class="back-link">←
             %crafting_page_header</a>
 
         <div class="mt-4 flex items-center gap-4">
@@ -73,12 +73,12 @@
         @if ingredient.recipes.len > 0
         <h2 class="text-xl font-headline font-bold text-primary mt-10 mb-3">%crafted_into_label
             (@ingredient.recipes.len)</h2>
-        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+        <div class="card-grid">
             @for r in ingredient.recipes
             <a href="/treasures/@r.treasure_id" hx-boost="true"
-                class="rounded-2xl border-2 border-primary/20 bg-surface/50 p-3 flex flex-col items-center gap-1 hover:border-primary transition-colors">
+                class="entity-card-sm">
                 <img src="@{ctx.img_src('treasures', r.image)}" alt="@r.name" class="h-16 w-full object-contain" />
-                <span class="text-center text-xs font-bold text-on-surface leading-tight">@r.name</span>
+                <span class="card-title-sm">@r.name</span>
             </a>
             @endfor
         </div>

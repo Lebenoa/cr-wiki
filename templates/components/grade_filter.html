@@ -1,0 +1,7 @@
+<div id="filter-grade" class="flex flex-wrap gap-2 items-center">
+    @for g in grades
+    <button type="button" class="grade-filter" data-grade="@g" title="@{ctx.grade_label(g)}">
+        <img src="/img/grades/@{g}.png" alt="@g" class="size-9 rounded-lg border-2 border-transparent transition-all" />
+    </button>
+    @endfor
+</div>

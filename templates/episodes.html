@@ -8,29 +8,33 @@
 <body>
     @include 'layout/navbar.html'
 
-    <h1 class="text-4xl font-bold my-4 text-center">%episodes_page_header</h1>
+    <h1 class="page-title">%episodes_page_header</h1>
 
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 p-8 max-w-6xl mx-auto">
+    <div class="filter-bar">
+        @include 'components/filter_input.html'
+    </div>
+
+    <div class="catalog-grid-wide">
         @for e in episodes
-        <a href="/episodes/@e.episode_id" hx-boost="true"
-            class="rounded-2xl border-2 border-primary/20 bg-surface/50 p-4 flex flex-col items-center gap-2 hover:border-primary transition-colors">
+        <a href="/episodes/@e.episode_id" hx-boost="true" data-cr-card data-name="@e.name"
+            class="entity-card">
             <span class="flex items-center gap-2">
-                <span class="text-[10px] font-label uppercase text-foreground-muted">@{ctx.episode_kind_label(e.kind)}</span>
+                <span class="card-meta">@{ctx.episode_kind_label(e.kind)}</span>
                 @if e.league_ranked
                 <span
-                    class="text-[10px] font-bold text-accent uppercase border border-accent/40 rounded-full px-2 py-0.5">%league_ranked_badge</span>
+                    class="pill-accent">%league_ranked_badge</span>
                 @end
             </span>
             <img src="@{ctx.img_src('episodes', e.image)}" alt="@e.name" class="h-24 w-full object-contain" />
-            <span class="text-center text-sm font-bold text-on-surface leading-tight">@e.name</span>
+            <span class="card-title">@e.name</span>
             @if s := e.stars
             <span class="text-xs text-primary">@{ctx.stars_label(s)}</span>
             @end
-            <span class="text-[10px] font-label uppercase text-foreground-muted">
+            <span class="card-meta">
                 @e.stage_count %stages_label · @e.quest_count %quests_label · @e.relic_count %relics_label
             </span>
             @if e.entry_cost != ''
-            <span class="text-[10px] font-label uppercase text-foreground-muted">%entry_cost_label: @e.entry_cost</span>
+            <span class="card-meta">%entry_cost_label: @e.entry_cost</span>
             @end
         </a>
         @endfor

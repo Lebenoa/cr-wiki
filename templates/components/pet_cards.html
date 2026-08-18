@@ -1,10 +1,9 @@
 @for pet in pets
 <a href="/pets/@pet.pet_id" data-cr-card data-name="@pet.name" data-name-en="@pet.en_name" data-grade="@pet.grade"
-    class="border border-secondary px-4 py-2 rounded flex flex-col items-center justify-start hover:border-primary transition-colors group gap-2">
+    class="entity-card">
     <img src="/img/grades/@{pet.grade}.png" alt="@pet.grade" class="size-10 self-start">
-    <img src="@{ctx.img_src('pets', pet.image)}" alt="@pet.name"
-        class="h-28 w-full object-contain">
-    <h2 class="text-xl group-hover:text-primary text-secondary text-center">@pet.name</h2>
+    <img src="@{ctx.img_src('pets', pet.image)}" alt="@pet.name" class="h-20 w-full object-contain">
+    <span class="card-title">@pet.name</span>
 </a>
 @endfor
 @if next_page > 0

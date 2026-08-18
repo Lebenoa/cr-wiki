@@ -8,11 +8,15 @@
 <body>
     @include 'layout/navbar.html'
 
-    <h1 class="text-4xl font-bold my-4 text-center">%skins_page_header</h1>
+    <h1 class="page-title">%skins_page_header</h1>
 
-    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 p-8 max-w-6xl mx-auto">
+    <div class="filter-bar">
+        @include 'components/filter_input.html'
+    </div>
+
+    <div class="catalog-grid">
         @for s in skin_views
-        <div class="rounded-2xl border-2 border-primary/20 bg-surface/50 p-4 flex flex-col items-center gap-2 hover:border-primary transition-colors">
+        <div data-cr-card data-name="@s.name" class="entity-card">
             <div class="relative w-full flex justify-center">
                 <img src="@{ctx.img_src('skins', s.image)}" alt="@s.name" class="h-24 object-contain" />
                 @if s.collab
@@ -20,14 +24,14 @@
                     class="absolute top-0 right-0 text-[10px] font-bold uppercase bg-accent text-background rounded-full px-2 py-0.5">%collab_label</span>
                 @end
             </div>
-            <span class="text-center text-sm font-bold text-on-surface leading-tight">@s.name</span>
-            <span class="text-center text-xs text-foreground-muted leading-snug">@s.subtitle</span>
+            <span class="card-title">@s.name</span>
+            <span class="card-note">@s.subtitle</span>
             @if g := s.grade
             <span class="text-[10px] font-bold text-accent uppercase">@{ctx.grade_label_int(g)}</span>
             @end
             @if s.owner_name != ''
             <a href="@s.owner_href" hx-boost="true"
-                class="text-[10px] font-bold text-primary uppercase border border-primary/40 rounded-full px-2 py-0.5">%skin_for_label
+                class="pill-primary">%skin_for_label
                 @s.owner_name</a>
             @end
         </div>
