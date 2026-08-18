@@ -14,7 +14,7 @@
         <!-- one tab card per pool; the prize grids below start closed -->
         <div class="card-grid" role="tablist" aria-label="%gacha_page_header">
             @for p in pools
-            <button type="button" role="tab" data-gacha-tab id="gacha-tab-@p.pool_id"
+            <button type="button" role="tab" data-gacha-tab="@p.pool_id" id="gacha-tab-@p.pool_id"
                 aria-controls="gacha-panel-@p.pool_id" aria-selected="false"
                 class="entity-card cursor-pointer">
                 @if p.entries.len > 0
