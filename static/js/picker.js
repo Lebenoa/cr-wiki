@@ -164,9 +164,8 @@
             // their own stepper for side-by-side comparison (those overrides
             // reset when the dialog reopens).
             ensureSteppers();
-            dlg.querySelectorAll('.pick-option').forEach(function (card) {
-                setCardLevel(card, level);
-            });
+            cancelGridLevel();
+            paintGridLevel(level);
         }
         var q = dlg.querySelector('input[type="search"]');
         if (q) {
@@ -213,6 +212,65 @@
         line.querySelectorAll('.fx-effects').forEach(function (g) {
             g.classList.toggle('hidden', (g.dataset.state === 'blessed') !== blessed);
         });
+    }
+
+    // Repainting the treasure grid at a new level is O(cards x effect cells)
+    // and the dialog server-renders the whole catalog, so a slider drag —
+    // which fires `input` per pixel — would rebuild it dozens of times over.
+    // Grid repaints are therefore debounced to the last level of a burst;
+    // anything that needs the grid settled (slider release, a pick, a stepper
+    // override, a dialog open) flushes or cancels the pending paint first.
+    var GRID_LEVEL_DELAY = 120;
+    var gridLevelTimer = null;
+    var pendingGridLevel = null;
+
+    function paintGridLevel(level) {
+        var dlg = document.getElementById('dialog-treasure');
+        if (!dlg) {
+            return;
+        }
+        dlg.querySelectorAll('.pick-option').forEach(function (card) {
+            setCardLevel(card, level);
+        });
+    }
+
+    function queueGridLevel(level) {
+        pendingGridLevel = level;
+        if (gridLevelTimer !== null) {
+            clearTimeout(gridLevelTimer);
+        }
+        gridLevelTimer = setTimeout(flushGridLevel, GRID_LEVEL_DELAY);
+    }
+
+    // flushGridLevel paints a pending level now; a no-op when nothing is
+    // pending, so callers can use it as a "settle the grid" guard.
+    function flushGridLevel() {
+        // level_slider.js debounces its own cell repaint (an unscoped control
+        // repaints every [data-values] on the page); settle that too, or it
+        // lands after ours and overwrites the level we just painted.
+        if (window.flushLevelSlider) {
+            flushLevelSlider();
+        }
+        if (gridLevelTimer !== null) {
+            clearTimeout(gridLevelTimer);
+            gridLevelTimer = null;
+        }
+        if (pendingGridLevel === null) {
+            return;
+        }
+        var level = pendingGridLevel;
+        pendingGridLevel = null;
+        paintGridLevel(level);
+    }
+
+    // cancelGridLevel drops a pending paint: the dialog open path paints
+    // every card itself, and a late repaint would fight it.
+    function cancelGridLevel() {
+        if (gridLevelTimer !== null) {
+            clearTimeout(gridLevelTimer);
+            gridLevelTimer = null;
+        }
+        pendingGridLevel = null;
     }
 
     // setCardLevel re-renders one picker card at a given level: its value
@@ -335,6 +393,9 @@
                 }
                 ev.preventDefault();
                 ev.stopPropagation();
+                // settle the grid first: a queued paint would wipe this
+                // override when it lands
+                flushGridLevel();
                 setCardLevel(card, parseInt(step.getAttribute('data-l'), 10));
             });
         });
@@ -347,6 +408,9 @@
             if (!card || !dlg.contains(card)) {
                 return;
             }
+            // step from what the card actually shows: a queued slider paint
+            // has not written dataset.level yet
+            flushGridLevel();
             var lvl = parseInt(card.dataset.level, 10);
             if (isNaN(lvl) || lvl < 0 || lvl > 9) {
                 lvl = 9;
@@ -387,6 +451,9 @@
     }
 
     function setPicked(btn) {
+        // a pending slider repaint would leave this card showing the previous
+        // level's values, which are what gets captured below
+        flushGridLevel();
         var line = btn.querySelector('.fx-line');
         var blessedGroup = line ? line.querySelector('.fx-effects[data-state="blessed"]') : null;
         var blessed = !!blessedGroup && !blessedGroup.classList.contains('hidden');
@@ -712,10 +779,11 @@
             treasureSlider.addEventListener('input', function () {
                 var v = parseInt(treasureSlider.value, 10);
                 lastPickerLevel = v;
-                treasureDlg.querySelectorAll('.pick-option').forEach(function (card) {
-                    setCardLevel(card, v);
-                });
+                queueGridLevel(v);
             });
+            // pointer release / keyboard commit: the drag is over, so paint
+            // immediately instead of sitting out the debounce window.
+            treasureSlider.addEventListener('change', flushGridLevel);
         }
     }
 

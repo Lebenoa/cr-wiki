@@ -9,11 +9,32 @@
 // form submission. resetLevelSlider() returns only the unscoped controls
 // (treasure detail page, planner picker) to 9 — the picker calls it on each
 // dialog open so every pick starts deterministic; scoped editor controls
-// keep their prefilled level.
+// keep their prefilled level. Large value grids (the picker's, hundreds of
+// cells) repaint on a debounce so a drag does not rebuild them per pixel;
+// flushLevelSlider() settles a pending repaint for code that reads the cells.
 (function () {
     'use strict';
 
     var controls = [];
+    // Value cells are the expensive half of a level change: an unscoped
+    // control (the picker dialogs) repaints every [data-values] cell on the
+    // page, which in the treasure picker is one per effect of the whole
+    // server-rendered catalog. A drag fires `input` per pixel, so the cell
+    // repaint is debounced to the last level of the burst while the knob,
+    // ticks, fill and hidden field keep updating immediately. flushLevelCells
+    // settles a pending repaint for callers that read the cells back.
+    var CELL_DELAY = 120;
+    // below this many cells the repaint is not worth deferring: the treasure
+    // detail page and the build editor's slot controls stay instant, only the
+    // picker-sized grids (hundreds of cells) debounce.
+    var CELL_DEBOUNCE_MIN = 64;
+    var pending = [];
+
+    function flushLevelCells() {
+        while (pending.length > 0) {
+            pending.shift()();
+        }
+    }
 
     document.querySelectorAll('.level-slider-control').forEach(function (control) {
         var slider = control.querySelector('.level-slider');
@@ -35,7 +56,14 @@
             current = 9;
         }
 
-        function setLevel(l) {
+        var cellTimer = null;
+        var cellPending = null;
+        // cells are server-rendered and never added after load, so the count
+        // that decides debounce-or-not is measured once
+        var cellCount = scope.querySelectorAll('[data-values]').length +
+            scope.querySelectorAll('[data-diffs]').length;
+
+        function paintCells(l) {
             scope.querySelectorAll('[data-values]').forEach(function (el) {
                 var vals = (el.getAttribute('data-values') || '').split('|');
                 el.textContent = vals[l] || '';
@@ -44,6 +72,52 @@
                 var diffs = (el.getAttribute('data-diffs') || '').split('|');
                 el.textContent = diffs[l] || '';
             });
+        }
+
+        // flushCells is queued in `pending` while a repaint is scheduled, so
+        // flushLevelCells() can run it early; it is a no-op once it has.
+        function flushCells() {
+            if (cellTimer !== null) {
+                clearTimeout(cellTimer);
+                cellTimer = null;
+            }
+            if (cellPending === null) {
+                return;
+            }
+            var l = cellPending;
+            cellPending = null;
+            var at = pending.indexOf(flushCells);
+            if (at !== -1) {
+                pending.splice(at, 1);
+            }
+            paintCells(l);
+        }
+
+        // immediate paints the cells right away: the one-shot entry points
+        // (dialog open, prefill, a slot's stored level) have nothing to
+        // coalesce and their caller may read the cells back at once.
+        function setLevel(l, immediate) {
+            if (immediate || cellCount <= CELL_DEBOUNCE_MIN) {
+                cellPending = null;
+                if (cellTimer !== null) {
+                    clearTimeout(cellTimer);
+                    cellTimer = null;
+                }
+                var at = pending.indexOf(flushCells);
+                if (at !== -1) {
+                    pending.splice(at, 1);
+                }
+                paintCells(l);
+            } else {
+                cellPending = l;
+                if (pending.indexOf(flushCells) === -1) {
+                    pending.push(flushCells);
+                }
+                if (cellTimer !== null) {
+                    clearTimeout(cellTimer);
+                }
+                cellTimer = setTimeout(flushCells, CELL_DELAY);
+            }
             ticks.forEach(function (t) {
                 t.classList.toggle('bg-primary', parseInt(t.getAttribute('data-tick'), 10) <= l);
             });
@@ -66,6 +140,11 @@
                 setLevel(v);
             }
         });
+        // pointer release / keyboard commit ends the drag: no reason to sit
+        // out the debounce window.
+        slider.addEventListener('change', function () {
+            flushLevelCells();
+        });
         input.addEventListener('blur', function () {
             var v = parseInt(input.value, 10);
             if (isNaN(v) || v < 0 || v > 9) {
@@ -74,7 +153,7 @@
         });
         // the cells are server-rendered at the default level; re-applying it
         // paints the fill/ticks and writes the form field.
-        setLevel(current);
+        setLevel(current, true);
 
         // setControl also moves the slider/input knobs — setLevel alone only
         // repaints cells/ticks/fill (the input handlers already positioned
@@ -83,7 +162,7 @@
         function setControl(l) {
             slider.value = l;
             input.value = l;
-            setLevel(l);
+            setLevel(l, true);
         }
 
         controls.push({
@@ -92,6 +171,10 @@
             scoped: !!control.closest('[data-level-scope]')
         });
     });
+
+    // flushLevelSlider settles every pending cell repaint. The picker calls it
+    // before reading a card's values (a pick) or applying a per-card override.
+    window.flushLevelSlider = flushLevelCells;
 
     window.resetLevelSlider = function () {
         controls.forEach(function (c) {
