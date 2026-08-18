@@ -31,3 +31,18 @@ pub fn (mut wapp App) ingredient_info(mut ctx Context, id int) veb.Result {
 	ctx.set_og_image('ingredients', ingredient.image)
 	return $veb.html('./templates/views/ingredient.html')
 }
+
+// episode_short renders an episode id as the short badge the ingredient cards
+// and the drop-location tile use: "EP 2" for a story episode, "SP 1" for a
+// special one (ids 501+), "EP 6-1" for an event episode nested under a story
+// one (ids 601/602/701). Empty for none, so a template can test it directly.
+pub fn (ctx &Context) episode_short(id ?int) string {
+	eid := id or { return '' }
+	if eid >= 500 && eid < 600 {
+		return '${veb.tr(ctx.lang, 'special_episode_abbrev')} ${eid - 500}'
+	}
+	if eid >= 600 {
+		return '${veb.tr(ctx.lang, 'episode_abbrev')} ${eid / 100}-${eid % 100}'
+	}
+	return '${veb.tr(ctx.lang, 'episode_abbrev')} ${eid}'
+}

@@ -19,6 +19,9 @@
             <span class="@{ctx.grade_badge_cls(ig)}">@{ctx.grade_label_int(ig)}</span>
             @end
             <span class="text-center text-sm font-bold text-on-surface leading-tight">@i.name</span>
+            @if ctx.episode_short(i.drop_episode_id) != ''
+            <span class="text-[10px] font-label uppercase text-foreground-muted border border-secondary/40 rounded-full px-2 py-0.5">@{ctx.episode_short(i.drop_episode_id)}</span>
+            @end
             @if i.recipe_count > 0
             <span class="text-[10px] font-label uppercase text-foreground-muted">@i.recipe_count
                 %crafting_recipes_label</span>

@@ -698,10 +698,11 @@ pub fn select_ingredient(conn sqlite.DB, lang string, id int) !IngredientCraftVi
 // (the reverse of ingredient_recipe), for the treasure detail page.
 pub struct TreasureIngredientView {
 pub:
-	ingredient_id int
-	name          string
-	image         ?string
-	grade         ?int
+	ingredient_id   int
+	name            string
+	image           ?string
+	grade           ?int
+	drop_episode_id ?int
 }
 
 // select_treasure_ingredients loads the ingredients a treasure is crafted
@@ -739,13 +740,18 @@ pub fn select_treasure_ingredients(conn sqlite.DB, lang string, tid int) []Treas
 	for i in ings {
 		grades[i.ingredient_id or { 0 }] = i.grade
 	}
+	mut drops := map[int]?int{}
+	for i in ings {
+		drops[i.ingredient_id or { 0 }] = i.drop_episode_id
+	}
 	mut out := []TreasureIngredientView{}
 	for rid in ids {
 		out << TreasureIngredientView{
-			ingredient_id: rid
-			name:          lang_name(names, rid, lang)
-			image:         images[rid]
-			grade:         grades[rid]
+			ingredient_id:   rid
+			name:            lang_name(names, rid, lang)
+			image:           images[rid]
+			grade:           grades[rid]
+			drop_episode_id: drops[rid]
 		}
 	}
 	return out

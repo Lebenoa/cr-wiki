@@ -559,6 +559,12 @@ breaks_into_label
 craft_from_label
 คราฟต์จาก
 -----
+episode_abbrev
+ตอน
+-----
+special_episode_abbrev
+พิเศษ
+-----
 drop_location_label
 จุดที่พบ
 -----

@@ -559,6 +559,12 @@ Breaks into
 craft_from_label
 Craft from
 -----
+episode_abbrev
+EP
+-----
+special_episode_abbrev
+SP
+-----
 drop_location_label
 Drop location
 -----
