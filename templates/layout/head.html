@@ -29,10 +29,12 @@
 <meta property="og:description" content="@ctx.meta_description()">
 <meta property="og:url" content="@ctx.canonical_url()">
 <meta property="og:locale" content="@ctx.og_locale()">
-@if ctx.og_image != ''
-<meta property="og:image" content="@ctx.og_image">
-@end
-<meta name="twitter:card" content="summary">
+<meta property="og:image" content="@ctx.social_image()">
+<meta property="og:image:alt" content="@ctx.page_title">
+<meta name="twitter:card" content="@ctx.social_card_type()">
+<meta name="twitter:title" content="@ctx.page_title">
+<meta name="twitter:description" content="@ctx.meta_description()">
+<meta name="twitter:image" content="@ctx.social_image()">
 <script>
     htmx.config.globalViewTransitions = true;
 </script>

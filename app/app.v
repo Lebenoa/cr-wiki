@@ -99,6 +99,23 @@ pub fn (mut ctx Context) set_og_image(dir string, image ?string) {
 	}
 }
 
+// social_image is the absolute URL a share card should show: the page's own
+// entity image, else the site banner — a link with no image gets a bare text
+// card, which is what every list page used to produce.
+pub fn (ctx &Context) social_image() string {
+	if ctx.og_image != '' {
+		return ctx.og_image
+	}
+	return ctx.site_url() + '/img/landscape.jpg'
+}
+
+// social_card_type is the Twitter/X card kind: an entity image is a square
+// icon, so it reads better as a summary thumbnail, while the wide banner
+// wants the large card.
+pub fn (ctx &Context) social_card_type() string {
+	return if ctx.og_image != '' { 'summary' } else { 'summary_large_image' }
+}
+
 // site_url returns the public origin used for canonical/OG URLs. Derived
 // from the request Host header so it stays correct behind proxies/domains;
 // CR_BASE_URL still wins when set (Host can be spoofed, so an explicit
