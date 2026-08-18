@@ -3,6 +3,7 @@ module database
 import db.sqlite
 import log
 import models
+import strings
 import time
 import app.util
 
@@ -330,23 +331,53 @@ fn best_treasure_translation(conn sqlite.DB, lang string, tid int) !models.Treas
 	return tr
 }
 
+// grade_rank_table maps a Grade's enum value to its sort position in
+// grade_values. Built once at startup from grade_values, which stays the
+// single source of truth (the enum declaration order and grade_values differ:
+// E ranks above L). Ungraded rows get -1 via grade_rank.
+const grade_rank_table = build_grade_rank_table()
+
+fn build_grade_rank_table() []int {
+	// index = int(Grade); the enum has one member per grade_values entry
+	mut t := []int{len: models.grade_values.len, init: -1}
+	for i, name in models.grade_values {
+		g := models.Grade.from(name) or { continue }
+		idx := int(g)
+		if idx >= 0 && idx < t.len {
+			t[idx] = i
+		}
+	}
+	return t
+}
+
 // grade_rank maps a Grade to its sort position from grade_values (lowest to
 // highest); treasures without a wiki grade rank below all graded ones.
+// O(1) table lookup: this runs inside the sort comparators over the whole
+// treasure list, and the old linear scan allocated a string (`v.str()`) on
+// every comparison.
+@[inline]
 fn grade_rank(g ?models.Grade) int {
 	if v := g {
-		for i, name in models.grade_values {
-			if name == v.str() {
-				return i
-			}
+		idx := int(v)
+		if idx >= 0 && idx < grade_rank_table.len {
+			return grade_rank_table[idx]
 		}
 	}
 	return -1
 }
 
-// compare_treasures orders the list by grade (highest first, ungraded last)
-// and then by release date descending, with the name as a final tie-break.
-fn compare_treasures(a &TreasureView, b &TreasureView) int {
-	return compare_grade_date(a.grade, a.release_date, a.name, b.grade, b.release_date, b.name)
+// grade_rank_sql renders grade_rank as a SQL expression over a stored grade
+// column, so a list query can order by rank in SQLite instead of loading every
+// row into memory to sort it. Derived from grade_rank_table, so the two orders
+// cannot drift.
+fn grade_rank_sql(col string) string {
+	mut b := strings.new_builder(128)
+	b.write_string('CASE ${col}')
+	for enum_val, rank in grade_rank_table {
+		b.write_string(' WHEN ${enum_val} THEN ${rank}')
+	}
+	b.write_string(' ELSE -1 END')
+	return b.str()
 }
 
 // compare_treasure_options applies the same grade-then-date ordering to the
@@ -364,8 +395,10 @@ fn compare_grade_date(ag ?models.Grade, ad time.Time, an string, bg ?models.Grad
 		}
 		return 1
 	}
-	if ad.unix() != bd.unix() {
-		if ad.unix() > bd.unix() {
+	au := ad.unix()
+	bu := bd.unix()
+	if au != bu {
+		if au > bu {
 			return -1
 		}
 		return 1
@@ -659,7 +692,7 @@ fn combo_lookups(conn sqlite.DB, lang string, partner_kind string, partner_ids [
 				name_map[tr.pet_id] = tr.name
 			}
 		}
-		id_csv := partner_ids.map(it.str()).join(',')
+		id_csv := sql_id_list(partner_ids)
 		rows := conn.exec('SELECT pet_id, image FROM pet WHERE pet_id IN (${id_csv})') or { [] }
 		for row in rows {
 			// get_string maps SQL NULL to ''; map that to none so the
@@ -682,7 +715,7 @@ fn combo_lookups(conn sqlite.DB, lang string, partner_kind string, partner_ids [
 				name_map[tr.owner_id] = tr.name
 			}
 		}
-		id_csv := partner_ids.map(it.str()).join(',')
+		id_csv := sql_id_list(partner_ids)
 		rows := conn.exec('SELECT cookie_id, image FROM cookie WHERE cookie_id IN (${id_csv})') or { [] }
 		for row in rows {
 			// get_string maps SQL NULL to ''; map that to none so the
@@ -1074,7 +1107,7 @@ fn images_by_ids(conn sqlite.DB, table string, id_col string, ids []int) map[int
 	if ids.len == 0 {
 		return img_map
 	}
-	id_csv := ids.map(it.str()).join(',')
+	id_csv := sql_id_list(ids)
 	rows := conn.exec('SELECT ${id_col}, image FROM ${table} WHERE ${id_col} IN (${id_csv})') or { return img_map }
 	for row in rows {
 		// get_string maps SQL NULL to ''; map that to none so the template's
@@ -1216,20 +1249,11 @@ fn build_slot_effects(conn sqlite.DB, lang string, treasures []IdNameOption, ble
 fn build_slot_effects_batch(conn sqlite.DB, lang string, mut cards []BuildCard) {
 	mut tids := []int{}
 	mut seen_t := map[int]bool{}
-	mut keys := map[string]bool{} // 'treasure_id/state' pairs needed
 	for card in cards {
-		for i, t in card.treasures {
-			if t.id > 0 {
-				if t.id !in seen_t {
-					tids << t.id
-					seen_t[t.id] = true
-				}
-				st := if card.treasure_blessed.len > i && card.treasure_blessed[i] {
-					models.EffectState.blessed
-				} else {
-					models.EffectState.normal
-				}
-				keys['${t.id}/${int(st)}'] = true
+		for t in card.treasures {
+			if t.id > 0 && t.id !in seen_t {
+				tids << t.id
+				seen_t[t.id] = true
 			}
 		}
 	}
@@ -1271,9 +1295,10 @@ fn build_slot_effects_batch(conn sqlite.DB, lang string, mut cards []BuildCard) 
 		}
 	}
 	// group links by (treasure, state) so each slot resolves independently
-	mut grouped := map[string][]models.TreasureEffect{}
+	// (packed int key — see treasure_state_key)
+	mut grouped := map[i64][]models.TreasureEffect{}
 	for link in links {
-		key := '${link.treasure_id}/${int(link.state)}'
+		key := treasure_state_key(link.treasure_id, link.state)
 		mut arr := grouped[key] or { [] }
 		arr << link
 		grouped[key] = arr
@@ -1290,7 +1315,8 @@ fn build_slot_effects_batch(conn sqlite.DB, lang string, mut cards []BuildCard) 
 			} else {
 				models.EffectState.normal
 			}
-			views := effects_from_links_maps(grouped['${t.id}/${int(st)}'] or { [] }, lvl, translation_map)
+			views := effects_from_links_maps(grouped[treasure_state_key(t.id, st)] or { [] },
+				lvl, translation_map)
 			lvl_i := if cards[c].treasure_levels.len > i {
 				cards[c].treasure_levels[i]
 			} else {
@@ -1688,15 +1714,29 @@ pub mut:
 }
 
 // effect_level_key builds the map key for one (treasure, effect, state).
-fn effect_level_key(tid int, eid int, st models.EffectState) string {
-	return '${tid}/${int(st)}/${eid}'
+// Packed into an i64 instead of an interpolated string: effect_level_pairs
+// walks every treasure_level row of the page (10 levels × effects × states,
+// and the whole table for the build planner picker), so a string key meant an
+// allocation plus a string hash per row and per lookup.
+@[inline]
+fn effect_level_key(tid int, eid int, st models.EffectState) i64 {
+	// treasure_id and effect_id are serial ints (< 2^30 in practice); state is
+	// a 2-value enum, so 1 bit is enough but 2 are reserved.
+	return i64((u64(u32(tid)) << 34) | (u64(u32(int(st))) << 32) | u64(u32(eid)))
+}
+
+// treasure_state_key packs a (treasure, state) pair into an i64 map key, for
+// the per-slot grouping on the build list path.
+@[inline]
+fn treasure_state_key(tid int, st models.EffectState) i64 {
+	return i64((u64(u32(tid)) << 2) | u64(u32(int(st))))
 }
 
 // effect_level_pairs loads the +0/+9 column values for every effect of the
 // given treasures (both states) in one query, so detail pages and pickers
 // render effect columns without per-effect lookups.
-fn effect_level_pairs(conn sqlite.DB, ids []int) map[string]EffectLevelPair {
-	mut out := map[string]EffectLevelPair{}
+fn effect_level_pairs(conn sqlite.DB, ids []int) map[i64]EffectLevelPair {
+	mut out := map[i64]EffectLevelPair{}
 	if ids.len == 0 {
 		return out
 	}
@@ -1725,7 +1765,7 @@ fn effect_level_pairs(conn sqlite.DB, ids []int) map[string]EffectLevelPair {
 // effects_from_links resolves effect translations and formats each link into
 // an EffectView, preserving link order and dropping duplicate effects. The
 // +0/+9 column values come from `lvl` (effect_level_pairs), not the link.
-fn effects_from_links(conn sqlite.DB, lang string, links []models.TreasureEffect, lvl map[string]EffectLevelPair) ![]util.EffectView {
+fn effects_from_links(conn sqlite.DB, lang string, links []models.TreasureEffect, lvl map[i64]EffectLevelPair) ![]util.EffectView {
 	if links.len == 0 {
 		return []
 	}
@@ -1763,7 +1803,7 @@ fn effects_from_links(conn sqlite.DB, lang string, links []models.TreasureEffect
 // effects_from_links_maps formats links into EffectViews using preloaded
 // level pairs and translations (the batched list path fetches both once per
 // page); dedupes by effect_id, preserving link order.
-fn effects_from_links_maps(links []models.TreasureEffect, lvl map[string]EffectLevelPair, translation_map map[int]models.EffectTranslation) []util.EffectView {
+fn effects_from_links_maps(links []models.TreasureEffect, lvl map[i64]EffectLevelPair, translation_map map[int]models.EffectTranslation) []util.EffectView {
 	mut emitted := map[int]bool{}
 	mut result := []util.EffectView{}
 	for link in links {
@@ -1828,85 +1868,40 @@ fn effect_lists_differ(a []EffectOption, b []EffectOption) bool {
 
 // select_treasures lists treasures grade-first then newest; `tab` filters to
 // normal/evolved rows at the query level ('all' returns both).
+//
+// Ordering and pagination both run in SQLite. The previous implementation
+// loaded every treasure row *and* every translation row for the tab (~613 +
+// ~1200 rows), built a TreasureView for each, sorted the whole list in memory
+// with a comparator that allocated a string per comparison, and then discarded
+// all but the 30 rows on the page — on every /treasures request and every
+// infinite-scroll fetch. Now only the page's rows are hydrated.
+//
+// The ORDER BY mirrors compare_treasures exactly: grade rank descending
+// (ungraded last, see grade_rank_sql), then release date descending, then the
+// resolved name ascending — with the same user-lang-then-en fallback the view
+// uses, so a row's tie-break name matches what the card renders.
 pub fn select_treasures(conn sqlite.DB, lang string, limit int, offset int, tab string) ![]TreasureView {
-	// the tab filter is pushed into the query so the server never loads the
-	// rows it would only discard (613 rows on every /treasures request)
-	treasures := if tab == 'normal' {
-		sql conn {
-			select from models.Treasure where is_evolved == false
-		}!
-	} else if tab == 'evo' {
-		sql conn {
-			select from models.Treasure where is_evolved == true
-		}!
-	} else {
-		sql conn {
-			select from models.Treasure
-		}!
+	tab_where := match tab {
+		'normal' { ' AND t.is_evolved = 0' }
+		'evo' { ' AND t.is_evolved = 1' }
+		else { '' }
 	}
-
-	if treasures.len == 0 {
+	// rows with no translation in either language are dropped, matching the
+	// old translation_map miss (`continue`)
+	rows := conn.exec('SELECT t.treasure_id AS id FROM treasure t ' +
+		'LEFT JOIN treasure_translation tl ON tl.treasure_id = t.treasure_id AND tl.lang = ${sql_quote(lang)} ' +
+		"LEFT JOIN treasure_translation te ON te.treasure_id = t.treasure_id AND te.lang = 'en' " +
+		'WHERE (tl.name IS NOT NULL OR te.name IS NOT NULL)${tab_where} ' +
+		"ORDER BY ${grade_rank_sql('t.grade')} DESC, t.release_date DESC, COALESCE(tl.name, te.name) ASC " +
+		'LIMIT ${limit} OFFSET ${offset}')!
+	if rows.len == 0 {
 		return []
 	}
-
-	// narrow the translation fetch to the tab-filtered set (the ORM `in`
-	// works here — TreasureTranslation carries a plain `treasure_id int`).
-	user_lang := lang
-	mut tids := []int{}
-	for t in treasures {
-		if tid := t.treasure_id {
-			tids << tid
-		} else {
-			warn_missing_id('treasure')
-		}
+	mut ids := []int{cap: rows.len}
+	for row in rows {
+		ids << row.get_int('id')
 	}
-	translations := sql conn {
-		select from models.TreasureTranslation where treasure_id in tids
-		&& (lang == user_lang || lang == 'en')
-	}!
-
-	mut translation_map := map[int]models.TreasureTranslation{}
-	for tr in translations {
-		if tr.lang == lang {
-			translation_map[tr.treasure_id] = tr
-		}
-	}
-	for tr in translations {
-		if tr.treasure_id !in translation_map {
-			translation_map[tr.treasure_id] = tr
-		}
-	}
-
-	// English names power the cross-language list filter (the en rows are
-	// already in `translations`).
-	mut en_name_map := map[int]string{}
-	for tr in translations {
-		if tr.lang == 'en' && tr.name != '' {
-			en_name_map[tr.treasure_id] = tr.name
-		}
-	}
-
-	mut result := []TreasureView{}
-
-	for treasure in treasures {
-		if tr := translation_map[treasure.treasure_id or { continue }] {
-			result << treasure_view(treasure, tr, en_name_map[treasure.treasure_id or { 0 }])
-		}
-	}
-
-	result.sort_with_compare(compare_treasures)
-
-	// paginate after the in-memory sort (grade first, newest release first)
-	if offset >= result.len {
-		return []
-	}
-	if offset > 0 {
-		result = result[offset..].clone()
-	}
-	if result.len > limit {
-		result = result[..limit].clone()
-	}
-	return result
+	return treasures_by_ids(conn, lang, ids)!
 }
 
 pub struct SearchResults {
@@ -2079,29 +2074,20 @@ fn fts_owner_ids(conn sqlite.DB, fts_table string, translation_table string, tra
 // cookies_by_ids returns the cookies for the given ids, ordered by `ids` so
 // FTS5 rank order survives the batch fetch. Translations prefer `lang` with
 // English fallback, matching get_cookie but in two queries total instead of
-// two per cookie. Entities are fetched unfiltered (the ORM cannot use `in` on
-// the optional serial id column) and filtered in memory; the tables are small.
+// two per cookie. The entity rows come from raw SQL with an `IN` list: the ORM
+// cannot use `in` on the optional serial id column, so this used to load the
+// entire cookie table on every search and filter it in memory.
 fn cookies_by_ids(conn sqlite.DB, lang string, ids []int) ![]CookieView {
 	if ids.len == 0 {
 		return []
 	}
 	user_lang := lang
-	cookies := sql conn {
-		select from models.Cookie
-	}!
+	cookie_map := cookie_rows_by_ids(conn, ids)
 	translations := sql conn {
 		select from models.CookieTranslation where owner_id in ids
 		&& (lang == user_lang || lang == 'en')
 	}!
 
-	mut cookie_map := map[int]models.Cookie{}
-	for cookie in cookies {
-		if id := cookie.cookie_id {
-			cookie_map[id] = cookie
-		} else {
-			warn_missing_id('cookie')
-		}
-	}
 	mut translation_map := map[int]models.CookieTranslation{}
 	for tr in translations {
 		if tr.lang == user_lang {
@@ -2143,21 +2129,11 @@ fn pets_by_ids(conn sqlite.DB, lang string, ids []int) ![]PetView {
 		return []
 	}
 	user_lang := lang
-	pets := sql conn {
-		select from models.Pet
-	}!
+	pet_map := pet_rows_by_ids(conn, ids)
 	translations := sql conn {
 		select from models.PetTranslation where pet_id in ids && (lang == user_lang || lang == 'en')
 	}!
 
-	mut pet_map := map[int]models.Pet{}
-	for pet in pets {
-		if id := pet.pet_id {
-			pet_map[id] = pet
-		} else {
-			warn_missing_id('pet')
-		}
-	}
 	mut translation_map := map[int]models.PetTranslation{}
 	for tr in translations {
 		if tr.lang == user_lang {
@@ -2190,29 +2166,22 @@ fn pets_by_ids(conn sqlite.DB, lang string, ids []int) ![]PetView {
 	return result
 }
 
-// treasures_by_ids is the batched counterpart of get_treasure for search
-// results (effects are not loaded for search hits).
+// treasures_by_ids is the batched counterpart of get_treasure for the search
+// results and the /treasures list (effects are not loaded here). Rows come
+// back in `ids` order, so both FTS5 rank order and the list page's SQL
+// ordering survive the fetch. en_name is filled from the same translation
+// query, powering the list page's cross-language client filter.
 fn treasures_by_ids(conn sqlite.DB, lang string, ids []int) ![]TreasureView {
 	if ids.len == 0 {
 		return []
 	}
 	user_lang := lang
-	treasures := sql conn {
-		select from models.Treasure
-	}!
+	treasure_map := treasure_rows_by_ids(conn, ids)
 	translations := sql conn {
 		select from models.TreasureTranslation where treasure_id in ids
 		&& (lang == user_lang || lang == 'en')
 	}!
 
-	mut treasure_map := map[int]models.Treasure{}
-	for treasure in treasures {
-		if id := treasure.treasure_id {
-			treasure_map[id] = treasure
-		} else {
-			warn_missing_id('treasure')
-		}
-	}
 	mut translation_map := map[int]models.TreasureTranslation{}
 	for tr in translations {
 		if tr.lang == user_lang {
@@ -2224,16 +2193,135 @@ fn treasures_by_ids(conn sqlite.DB, lang string, ids []int) ![]TreasureView {
 			translation_map[tr.treasure_id] = tr
 		}
 	}
+	mut en_name_map := map[int]string{}
+	for tr in translations {
+		if tr.lang == 'en' && tr.name != '' {
+			en_name_map[tr.treasure_id] = tr.name
+		}
+	}
 
-	mut result := []TreasureView{}
+	mut result := []TreasureView{cap: ids.len}
 	for id in ids {
 		if treasure := treasure_map[id] {
 			if tr := translation_map[id] {
-				result << treasure_view(treasure, tr, '')
+				result << treasure_view(treasure, tr, en_name_map[id])
 			}
 		}
 	}
 	return result
+}
+
+// sql_id_list renders an int id slice as a bare SQL `IN` list. Ints only —
+// nothing user-supplied reaches it as text.
+fn sql_id_list(ids []int) string {
+	mut b := strings.new_builder(ids.len * 8)
+	for i, id in ids {
+		if i > 0 {
+			b.write_string(',')
+		}
+		b.write_string(id.str())
+	}
+	return b.str()
+}
+
+// sql_quote renders a string as a quoted SQL literal. The wiki language comes
+// straight from a user-controlled cookie, so it must never be interpolated
+// into a query unescaped.
+fn sql_quote(s string) string {
+	return "'" + s.replace("'", "''") + "'"
+}
+
+// treasure_rows_by_ids fetches the treasure rows for the given ids in one
+// query. Raw SQL because the ORM cannot put an optional serial primary key in
+// an `in` clause; grade is nullable *and* 0 is a valid grade (E), so NULL is
+// mapped to -1 rather than relying on get_int's 0.
+fn treasure_rows_by_ids(conn sqlite.DB, ids []int) map[int]models.Treasure {
+	mut out := map[int]models.Treasure{}
+	if ids.len == 0 {
+		return out
+	}
+	// only the columns treasure_view reads: the catalog metadata (family,
+	// source, sub) stays unfetched, so rows carry '' for it here.
+	rows := conn.exec('SELECT treasure_id, image, CASE WHEN grade IS NULL THEN -1 ELSE grade END AS grade, ' +
+		'base_treasure_id, unlock_cookie_id, unlock_pet_id, is_evolved, is_power_plus, release_date ' +
+		'FROM treasure WHERE treasure_id IN (${sql_id_list(ids)})') or { return out }
+	for row in rows {
+		tid := row.get_int('treasure_id')
+		if tid <= 0 {
+			warn_missing_id('treasure')
+			continue
+		}
+		// get_string maps SQL NULL to ''; ids are serial so 0 means NULL
+		img := row.get_string('image')
+		g := row.get_int('grade')
+		base := row.get_int('base_treasure_id')
+		uc := row.get_int('unlock_cookie_id')
+		up := row.get_int('unlock_pet_id')
+		out[tid] = models.Treasure{
+			treasure_id:      tid
+			image:            if img == '' { none } else { img }
+			grade:            if g < 0 { none } else { g }
+			base_treasure_id: if base <= 0 { none } else { base }
+			unlock_cookie_id: if uc <= 0 { none } else { uc }
+			unlock_pet_id:    if up <= 0 { none } else { up }
+			is_evolved:       row.get_int('is_evolved') != 0
+			is_power_plus:    row.get_int('is_power_plus') != 0
+			release_date:     time.unix(i64(row.get_int('release_date')))
+		}
+	}
+	return out
+}
+
+// cookie_rows_by_ids is the cookie counterpart of treasure_rows_by_ids.
+fn cookie_rows_by_ids(conn sqlite.DB, ids []int) map[int]models.Cookie {
+	mut out := map[int]models.Cookie{}
+	if ids.len == 0 {
+		return out
+	}
+	rows := conn.exec('SELECT cookie_id, image, grade, release_date FROM cookie WHERE cookie_id IN (${sql_id_list(ids)})') or {
+		return out
+	}
+	for row in rows {
+		cid := row.get_int('cookie_id')
+		if cid <= 0 {
+			warn_missing_id('cookie')
+			continue
+		}
+		img := row.get_string('image')
+		out[cid] = models.Cookie{
+			cookie_id:    cid
+			image:        if img == '' { none } else { img }
+			grade:        models.Grade.from(row.get_int('grade')) or { models.Grade.c }
+			release_date: time.unix(i64(row.get_int('release_date')))
+		}
+	}
+	return out
+}
+
+// pet_rows_by_ids is the pet counterpart of treasure_rows_by_ids.
+fn pet_rows_by_ids(conn sqlite.DB, ids []int) map[int]models.Pet {
+	mut out := map[int]models.Pet{}
+	if ids.len == 0 {
+		return out
+	}
+	rows := conn.exec('SELECT pet_id, image, grade, release_date FROM pet WHERE pet_id IN (${sql_id_list(ids)})') or {
+		return out
+	}
+	for row in rows {
+		pid := row.get_int('pet_id')
+		if pid <= 0 {
+			warn_missing_id('pet')
+			continue
+		}
+		img := row.get_string('image')
+		out[pid] = models.Pet{
+			pet_id:       pid
+			image:        if img == '' { none } else { img }
+			grade:        models.Grade.from(row.get_int('grade')) or { models.Grade.c }
+			release_date: time.unix(i64(row.get_int('release_date')))
+		}
+	}
+	return out
 }
 
 // search_all returns up to `limit` matches per entity type, ranked by FTS5.
