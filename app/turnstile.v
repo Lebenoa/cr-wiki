@@ -73,10 +73,12 @@ pub fn turnstile_hostnames() []string {
 // against Cloudflare's siteverify endpoint: the response must succeed, the
 // action must match the protected surface and the frontend hostname must be
 // in the allowlist. It fails closed on missing config or any network/parse
-// error. The debug (test-session) build skips verification — the suite posts
-// directly to protected handlers and cannot mint real browser tokens.
+// error. Non-production builds skip verification — the suite posts directly
+// to protected handlers and cannot mint real browser tokens. Deployments MUST
+// therefore be compiled with `-prod`; without it this returns true for every
+// submission.
 pub fn verify_turnstile(ctx &Context, expected_action string) bool {
-	$if debug ? {
+	$if !prod {
 		return true
 	}
 	secret := turnstile_secret()

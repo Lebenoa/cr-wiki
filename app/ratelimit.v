@@ -31,11 +31,11 @@ fn client_ip(ctx &Context) string {
 
 // rate_limit_ok applies the per-IP token bucket to the current request.
 // Returns true when the bucket had a token (the request proceeds); false
-// with a 429 status and a Retry-After header when the bucket is empty. The
-// debug (test-session) build skips limiting so the HTTP suite isn't
-// throttled.
+// with a 429 status and a Retry-After header when the bucket is empty.
+// Non-production builds skip limiting so the HTTP suite isn't throttled and
+// local development isn't rate limited.
 pub fn (mut wapp App) rate_limit_ok(mut ctx Context) bool {
-	$if debug ? {
+	$if !prod {
 		return true
 	}
 	now := time.now().unix()

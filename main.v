@@ -17,8 +17,9 @@ fn main() {
 	// console and in a persistent log.
 	setup_logging()
 
-	// Test session (debug builds only): fresh throwaway db + integration suite.
-	$if debug ? {
+	// Test session (non-production builds only): fresh throwaway db +
+	// integration suite.
+	$if !prod {
 		if os.getenv('CR_TEST') != '' {
 			app.run_test_session()
 			return

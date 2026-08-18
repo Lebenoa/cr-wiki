@@ -38,7 +38,7 @@ cookierun/
 │   ├── login.v / register.v / api.v
 │   ├── forms.v / uploads.v / richtext.v  # Admin form handling, image
 │   │                                           # uploads, [[link]] rendering
-│   └── tests.v             # Integration suite (compiled out unless -d debug)
+│   └── tests.v             # Integration suite (compiled out of -prod builds)
 ├── config/                 # Config.toml loading (host, port, db_file)
 ├── database/               # DB-coupled code only (queries + models)
 │   ├── models/             # Domain entities (User, Cookie, Pet, Treasure, …)
@@ -140,13 +140,13 @@ This regenerates `static/styles.css` on changes to scanned files. Commit the reg
 v -d sqlite_fts5 -d new_veb -check .
 ```
 
-### Test session (debug builds only)
+### Test session (non-`-prod` builds)
 
 ```bash
-CR_TEST=1 v -d sqlite_fts5 -d new_veb -d debug run .
+CR_TEST=1 v -d sqlite_fts5 -d new_veb run .
 ```
 
-Boots against a fresh throwaway `sqlite_test.db` on port 6798 and runs the data-integrity + HTTP suite. Exit 0 = pass, 1 = fail. Compiled out of release binaries unless `-d debug` is passed.
+Boots against a fresh throwaway `sqlite_test.db` on port 6798 and runs the data-integrity + HTTP suite. Exit 0 = pass, 1 = fail. Compiled out of binaries built with `-prod`, which also re-enable Turnstile verification and rate limiting — always deploy a `-prod` build.
 
 ### Database
 

@@ -28,7 +28,7 @@ struct TestCase {
 // run_test_session boots the app against a fresh throwaway database on a
 // dedicated port, runs the data-integrity + HTTP suite against it, and exits
 // the process with a pass/fail code. It is only reachable from main.v inside
-// `$if debug`, so non-debug binaries never contain the session.
+// `$if !prod`, so `-prod` binaries never contain the session.
 pub fn run_test_session() {
 	raw_port := os.getenv('CR_TEST_PORT')
 	mut port := if raw_port != '' {
