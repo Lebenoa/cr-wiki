@@ -64,7 +64,7 @@
 @if ingredients.len > 0
 <div class="px-2 mt-2 text-xs font-label uppercase text-foreground-muted">%ingredients_label</div>
 @for ingredient in ingredients
-<a href="/crafting/@ingredient.id" class="flex items-center gap-2 px-2 py-1.5 rounded text-sm text-foreground hover:bg-secondary/20">
+<a href="/ingredients/@ingredient.id" class="flex items-center gap-2 px-2 py-1.5 rounded text-sm text-foreground hover:bg-secondary/20">
     <img src="@{ctx.img_src('ingredients', ingredient.image)}" alt="" class="size-8 shrink-0 rounded object-contain">
     <span class="truncate">@ingredient.name</span>
 </a>

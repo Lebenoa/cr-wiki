@@ -76,7 +76,7 @@
     <h2 class="text-2xl font-bold px-8 mt-8">%ingredients_label</h2>
     <div class="catalog-grid">
         @for hit in ingredients
-        <a href="/crafting/@hit.id" hx-boost="true"
+        <a href="/ingredients/@hit.id" hx-boost="true"
             class="entity-card">
             @if hit.image != none
             <img src="@{ctx.img_src('ingredients', hit.image)}" alt="@hit.name" class="h-16 w-full object-contain" />

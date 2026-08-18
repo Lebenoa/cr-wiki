@@ -76,8 +76,8 @@ episodes
 relics
 เรลิก
 -----
-crafting
-คราฟต์
+ingredients
+ไอเท็ม
 -----
 jellies
 เยลลี่
@@ -466,22 +466,22 @@ ingredient_drops_label
 coin_value_label
 ราคาขาย
 -----
-crafting_page_title
-คราฟต์
+ingredients_page_title
+ไอเท็ม
 -----
-crafting_page_description
+ingredients_page_description
 ไอเท็มคราฟต์ทั้งหมดใน Cookie Run Classic และสมบัติที่ใช้คราฟต์ได้
 -----
-crafting_page_header
-ไอเท็มคราฟต์
+ingredients_page_header
+ไอเท็ม
 -----
-crafting_ingredient_title
+ingredient_detail_title
 {name} — ไอเท็ม
 -----
-crafting_ingredient_description
+ingredient_detail_description
 ไอเท็ม {name}: ราคาขาย ปริมาณผง และสมบัติที่ใช้คราฟต์
 -----
-crafting_recipes_label
+ingredient_recipes_label
 สูตร
 -----
 crafted_into_label
@@ -490,7 +490,7 @@ crafted_into_label
 craft_ingredients_label
 ไอเท็มที่ใช้คราฟต์
 -----
-crafting_no_recipes
+ingredient_no_recipes
 ไม่ได้ใช้ในสูตรคราฟต์ใด
 -----
 jellies_page_title

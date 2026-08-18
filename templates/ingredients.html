@@ -8,7 +8,7 @@
 <body>
     @include 'layout/navbar.html'
 
-    <h1 class="page-title">%crafting_page_header</h1>
+    <h1 class="page-title">%ingredients_page_header</h1>
 
     <div class="filter-bar">
         @include 'components/filter_input.html'
@@ -16,7 +16,7 @@
 
     <div class="catalog-grid">
         @for i in ingredients
-        <a href="/crafting/@i.ingredient_id" hx-boost="true" data-cr-card data-name="@i.name"
+        <a href="/ingredients/@i.ingredient_id" hx-boost="true" data-cr-card data-name="@i.name"
             class="entity-card">
             <img src="@{ctx.img_src('ingredients', i.image)}" alt="@i.name" class="h-20 w-full object-contain" />
             @if i.grade != none || ctx.episode_short(i.drop_episode_id) != ''
@@ -32,7 +32,7 @@
             <span class="card-title">@i.name</span>
             @if i.recipe_count > 0
             <span class="card-meta">@i.recipe_count
-                %crafting_recipes_label</span>
+                %ingredient_recipes_label</span>
             @end
         </a>
         @endfor

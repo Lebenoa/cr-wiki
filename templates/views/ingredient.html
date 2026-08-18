@@ -9,8 +9,8 @@
     @include 'layout/navbar.html'
 
     <div class="page-shell">
-        <a href="/crafting" hx-boost="true" class="back-link">←
-            %crafting_page_header</a>
+        <a href="/ingredients" hx-boost="true" class="back-link">←
+            %ingredients_page_header</a>
 
         <div class="mt-4 flex items-center gap-4">
             <img src="@{ctx.img_src('ingredients', ingredient.image)}" alt="@ingredient.name"
@@ -83,7 +83,7 @@
             @endfor
         </div>
         @else
-        <p class="mt-10 text-sm text-foreground-muted">%crafting_no_recipes</p>
+        <p class="mt-10 text-sm text-foreground-muted">%ingredient_no_recipes</p>
         @end
     </div>
 </body>

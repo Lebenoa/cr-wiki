@@ -486,7 +486,7 @@ pub:
 	image       ?string
 }
 
-// IngredientCraftView is one ingredient for the /crafting pages: its catalog
+// IngredientCraftView is one ingredient for the /ingredients pages: its catalog
 // row plus the treasures it crafts (filled by select_ingredient).
 pub struct IngredientCraftView {
 pub:
@@ -548,7 +548,7 @@ fn drop_location_text(raw string, episode_id ?int, names map[int]string) string 
 	return raw
 }
 
-// ingredient_catalog_sql orders the /crafting grid: grade first, rarest down
+// ingredient_catalog_sql orders the /ingredients grid: grade first, rarest down
 // to commonest (ungraded last — SQLite sorts NULL below every value, so DESC
 // puts them at the end), then drop episode in play order, since the id ranges
 // already ascend story (1-7) -> special (501+) -> event (601+). The nine
@@ -566,7 +566,7 @@ const ingredient_catalog_sql = 'SELECT ingredient_id, image, grade, drop_episode
 	'ORDER BY grade DESC, drop_episode_id IS NULL, drop_episode_id, ingredient_id'
 
 // select_ingredients loads every ingredient with its localized name and the
-// number of treasures it crafts, for the /crafting index.
+// number of treasures it crafts, for the /ingredients index.
 pub fn select_ingredients(conn sqlite.DB, lang string) []IngredientCraftView {
 	rows := conn.exec(ingredient_catalog_sql) or { return [] }
 	mut ings := []models.Ingredient{cap: rows.len}

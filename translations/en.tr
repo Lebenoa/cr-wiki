@@ -76,8 +76,8 @@ Episodes
 relics
 Relics
 -----
-crafting
-Crafting
+ingredients
+Ingredients
 -----
 jellies
 Jellies
@@ -466,22 +466,22 @@ Ingredient drops
 coin_value_label
 Sell value
 -----
-crafting_page_title
-Crafting
+ingredients_page_title
+Ingredients
 -----
-crafting_page_description
+ingredients_page_description
 Every ingredient of Cookie Run Classic and the treasures it is used to craft
 -----
-crafting_page_header
-Crafting Ingredients
+ingredients_page_header
+Ingredients
 -----
-crafting_ingredient_title
+ingredient_detail_title
 {name} — Ingredient
 -----
-crafting_ingredient_description
+ingredient_detail_description
 {name} ingredient: sell value, powder yields and the treasures it crafts
 -----
-crafting_recipes_label
+ingredient_recipes_label
 recipes
 -----
 crafted_into_label
@@ -490,7 +490,7 @@ Used to craft
 craft_ingredients_label
 Crafting ingredients
 -----
-crafting_no_recipes
+ingredient_no_recipes
 Not used in any treasure recipe.
 -----
 jellies_page_title
