@@ -1,12 +1,15 @@
 module app
 
 import veb
+import api
 import config
 import db.sqlite
 import os
 import database.models
 
 const lang_cookie_key = 'wikilang'
+// the locale served when nothing asks for another; its pages carry no ?lang=
+const default_lang = 'en'
 const session_cookie_key = 'CRSESSID'
 
 pub struct Context {
@@ -140,10 +143,59 @@ pub fn (ctx &Context) site_url() string {
 pub fn (ctx &Context) canonical_url() string {
 	// index_u8 + one slice, instead of split('?') building a whole []string
 	// just to read element 0 (runs on every rendered page)
+	return ctx.lang_url(ctx.lang)
+}
+
+// lang_url is this page's address in `lang`: the current path, plus ?lang= for
+// every locale but the default. Backs both the canonical tag and the hreflang
+// alternates, so the two can never disagree.
+pub fn (ctx &Context) lang_url(lang string) string {
 	url := ctx.req.url
 	qi := url.index_u8(`?`)
 	path := if qi >= 0 { url[..qi] } else { url }
-	return '${ctx.site_url()}${path}'
+	suffix := if lang == default_lang { '' } else { '?lang=${lang}' }
+	return '${ctx.site_url()}${path}${suffix}'
+}
+
+// switch_lang_url rewrites an arbitrary URL (the language dialog is fed
+// HX-Current-URL, which is absolute) to the same page in `lang`: the origin is
+// dropped, an existing lang param is replaced rather than appended, and the
+// default locale carries no param at all.
+pub fn (ctx &Context) switch_lang_url(current_url string, lang string) string {
+	mut path := current_url
+	if path.starts_with('http://') || path.starts_with('https://') {
+		rest := path.all_after('://')
+		slash := rest.index_u8(`/`)
+		path = if slash >= 0 { rest[slash..] } else { '/' }
+	}
+	if path == '' {
+		path = '/'
+	}
+	qi := path.index_u8(`?`)
+	base := if qi >= 0 { path[..qi] } else { path }
+	query := if qi >= 0 { path[qi + 1..] } else { '' }
+	mut parts := []string{}
+	for part in query.split('&') {
+		if part == '' || part.starts_with('lang=') {
+			continue
+		}
+		parts << part
+	}
+	if lang != default_lang {
+		parts << 'lang=${lang}'
+	}
+	return if parts.len > 0 { '${base}?${parts.join('&')}' } else { base }
+}
+
+// alt_langs lists the locales a page is served in, for the hreflang tags.
+pub fn (ctx &Context) alt_langs() []string {
+	return api.available_lang()
+}
+
+// default_lang_url is the x-default target: the locale served when a visitor
+// expresses no preference.
+pub fn (ctx &Context) default_lang_url() string {
+	return ctx.lang_url(default_lang)
 }
 
 // og_locale maps the wikilang cookie to an Open Graph locale tag.
@@ -293,16 +345,36 @@ pub fn (ctx &Context) is_boosted_request() bool {
 }
 
 pub fn (mut wapp App) before_request(mut ctx Context) bool {
-	ctx.lang = if lang_cookie := ctx.req.cookie('wikilang') {
-		lang_cookie.value
-	} else {
-		ctx.set_cookie(
-			name:  lang_cookie_key
-			value: 'en'
-			path:  '/'
-		)
-		'en'
+	// ?lang= wins over the cookie: the language has to live in the URL or the
+	// two locales share one address, which leaves only the default indexable
+	// and gives hreflang nothing to point at. The cookie still carries the
+	// choice across links that omit the param.
+	mut lang := ''
+	if q := ctx.query['lang'] {
+		if q in api.available_lang() {
+			lang = q
+			if c := ctx.req.cookie('wikilang') {
+				if c.value != q {
+					ctx.set_cookie(name: lang_cookie_key, value: q, path: '/')
+				}
+			} else {
+				ctx.set_cookie(name: lang_cookie_key, value: q, path: '/')
+			}
+		}
 	}
+	if lang == '' {
+		lang = if lang_cookie := ctx.req.cookie('wikilang') {
+			lang_cookie.value
+		} else {
+			ctx.set_cookie(
+				name:  lang_cookie_key
+				value: default_lang
+				path:  '/'
+			)
+			default_lang
+		}
+	}
+	ctx.lang = lang
 
 	ctx.user = if user_cookie := ctx.req.cookie(session_cookie_key) {
 		mut has_session := false

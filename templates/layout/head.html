@@ -18,6 +18,10 @@
 <title>@ctx.page_title</title>
 <meta name="description" content="@ctx.meta_description()">
 <link rel="canonical" href="@ctx.canonical_url()">
+@for alt_lang in ctx.alt_langs()
+<link rel="alternate" hreflang="@alt_lang" href="@{ctx.lang_url(alt_lang)}">
+@endfor
+<link rel="alternate" hreflang="x-default" href="@ctx.default_lang_url()">
 @if ctx.noindex
 <meta name="robots" content="noindex, nofollow">
 @else

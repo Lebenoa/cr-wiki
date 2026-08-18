@@ -1,16 +1,14 @@
 <h2 class="font-bold text-center text-xl">%choose_language</h2>
+<!-- plain links, not a POST: a locale has to be reachable by URL for a
+     crawler to index it, and the href matches the page's own hreflang -->
 <div class="flex items-center gap-2 w-full justify-center flex-row flex-wrap">
-    <form action="/api/set-lang" method="post" hx-post="/api/set-lang" hx-swap="none"
-        hx-disable="find button">
-        <input type="hidden" value="@current_url" name="url">
-        @for lang in languages
-        @if lang == ctx.lang
-        <button class="px-4 py-2 rounded bg-primary text-foreground" name="lang"
-            value="@lang">@{ctx.lang_map(lang)}</button>
-        @else
-        <button class="px-4 py-2 rounded bg-secondary/30 text-foreground" name="lang"
-            value="@lang">@{ctx.lang_map(lang)}</button>
-        @endif
-        @endfor
-    </form>
+    @for lang in languages
+    @if lang == ctx.lang
+    <a class="px-4 py-2 rounded bg-primary text-foreground" hreflang="@lang"
+        href="@{ctx.switch_lang_url(current_url, lang)}">@{ctx.lang_map(lang)}</a>
+    @else
+    <a class="px-4 py-2 rounded bg-secondary/30 text-foreground" hreflang="@lang"
+        href="@{ctx.switch_lang_url(current_url, lang)}">@{ctx.lang_map(lang)}</a>
+    @endif
+    @endfor
 </div>
