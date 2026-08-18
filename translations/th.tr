@@ -559,6 +559,9 @@ breaks_into_label
 craft_from_label
 คราฟต์จาก
 -----
+drop_location_label
+จุดที่พบ
+-----
 obtained_from_label
 ได้รับจาก
 -----

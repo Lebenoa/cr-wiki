@@ -28,8 +28,19 @@
             </div>
         </div>
 
-        @if ingredient.coin_value > 0 || ingredient.breaks_into_powder > 0 || ingredient.craft_from_powder > 0 || ingredient.obtained_from != ''
+        @if ingredient.coin_value > 0 || ingredient.breaks_into_powder > 0 || ingredient.craft_from_powder > 0 || ingredient.obtained_from != '' || ingredient.drop_location != ''
         <div class="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-sm">
+            @if ingredient.drop_location != ''
+            <div class="rounded-xl border border-secondary/40 bg-surface/50 px-4 py-3">
+                <span class="block text-[10px] font-label uppercase text-foreground-muted">%drop_location_label</span>
+                @if eid := ingredient.drop_episode_id
+                <a href="/episodes/@eid" hx-boost="true"
+                    class="font-bold text-on-surface hover:text-primary transition-colors">@ingredient.drop_location</a>
+                @else
+                <span class="font-bold text-on-surface">@ingredient.drop_location</span>
+                @end
+            </div>
+            @end
             @if ingredient.coin_value > 0
             <div class="rounded-xl border border-secondary/40 bg-surface/50 px-4 py-3">
                 <span class="block text-[10px] font-label uppercase text-foreground-muted">%coin_value_label</span>

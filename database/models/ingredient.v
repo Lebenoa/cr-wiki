@@ -9,6 +9,11 @@ pub:
 	image             ?string
 	grade             ?int // models.Grade value (scrape: A/B/C/S/S+); none = ungraded
 	drop_episode_id   ?int @[index; references: 'episode(episode_id)'] // episode it appears in
+	// the catalog's drop-location text as scraped ("Appears in Episode 2").
+	// drop_episode_id is its parsed form, but nine ingredients drop in every
+	// episode ("Appears in all Episodes") and so have no single episode to
+	// point at — the text is the only lossless form.
+	drop_location     string
 	coin_value        int
 	breaks_into_powder int
 	craft_from_powder int

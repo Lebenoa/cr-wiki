@@ -520,9 +520,52 @@ pub:
 	craft_from_powder  int
 	obtained_from      string
 	drop_episode_id    ?int
+	// the catalog's drop-location text, localized to the episode's own name
+	// when it names one episode ("Episode 2" -> the episode's localized
+	// title); the raw text otherwise ("Appears in all Episodes").
+	drop_location      string
 pub mut:
 	recipe_count       int
 	recipes            []CraftRecipeView
+}
+
+// episode_names_by_id resolves episode titles for `ids`, preferring `lang`
+// with the English fallback the rest of the catalog uses.
+fn episode_names_by_id(conn sqlite.DB, lang string, ids []int) map[int]string {
+	mut out := map[int]string{}
+	if ids.len == 0 {
+		return out
+	}
+	trs := sql conn {
+		select from models.EpisodeTranslation where episode_id in ids && (lang == lang
+			|| lang == 'en')
+	} or { return out }
+	mut names := map[int]map[string]string{}
+	for tr in trs {
+		if tr.episode_id !in names {
+			names[tr.episode_id] = {}
+		}
+		names[tr.episode_id][tr.lang] = tr.name
+	}
+	for id in ids {
+		out[id] = lang_name(names, id, lang)
+	}
+	return out
+}
+
+// drop_location_text prefers the episode's localized name over the catalog's
+// English drop text, so a Thai page reads the episode title in Thai. Falls
+// back to the raw text for the ingredients that drop in every episode (and
+// for any row whose episode failed to resolve).
+fn drop_location_text(raw string, episode_id ?int, names map[int]string) string {
+	if eid := episode_id {
+		if name := names[eid] {
+			if name != '' {
+				return name
+			}
+		}
+	}
+	return raw
 }
 
 // select_ingredients loads every ingredient with its localized name and the
@@ -548,6 +591,15 @@ pub fn select_ingredients(conn sqlite.DB, lang string) []IngredientCraftView {
 	for r in recs {
 		counts[r.ingredient_id]++
 	}
+	mut eids := []int{}
+	for i in ings {
+		if eid := i.drop_episode_id {
+			if eid !in eids {
+				eids << eid
+			}
+		}
+	}
+	enames := episode_names_by_id(conn, lang, eids)
 	mut out := []IngredientCraftView{}
 	for i in ings {
 		iid := i.ingredient_id or { 0 }
@@ -561,6 +613,7 @@ pub fn select_ingredients(conn sqlite.DB, lang string) []IngredientCraftView {
 			craft_from_powder:  i.craft_from_powder
 			obtained_from:      i.obtained_from
 			drop_episode_id:    i.drop_episode_id
+			drop_location:      drop_location_text(i.drop_location, i.drop_episode_id, enames)
 			recipe_count:       counts[iid]
 		}
 	}
@@ -627,6 +680,8 @@ pub fn select_ingredient(conn sqlite.DB, lang string, id int) !IngredientCraftVi
 		craft_from_powder:  i.craft_from_powder
 		obtained_from:      i.obtained_from
 		drop_episode_id:    i.drop_episode_id
+		drop_location:      drop_location_text(i.drop_location, i.drop_episode_id, episode_names_by_id(conn,
+			lang, if eid := i.drop_episode_id { [eid] } else { [] }))
 		recipe_count:       recs.len
 	}
 	for tid in tids {

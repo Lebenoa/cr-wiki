@@ -559,6 +559,9 @@ Breaks into
 craft_from_label
 Craft from
 -----
+drop_location_label
+Drop location
+-----
 obtained_from_label
 Obtained from
 -----
