@@ -490,6 +490,9 @@ crafted_into_label
 craft_ingredients_label
 ไอเท็มที่ใช้คราฟต์
 -----
+craft_ingredients_evolve_label
+ไอเท็มที่ใช้วิวัฒนาการ
+-----
 ingredient_no_recipes
 ไม่ได้ใช้ในสูตรคราฟต์ใด
 -----

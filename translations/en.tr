@@ -490,6 +490,9 @@ Used to craft
 craft_ingredients_label
 Crafting ingredients
 -----
+craft_ingredients_evolve_label
+Ingredients to evolve
+-----
 ingredient_no_recipes
 Not used in any treasure recipe.
 -----

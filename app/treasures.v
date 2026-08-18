@@ -124,8 +124,19 @@ pub fn (mut wapp App) treasure_info(mut ctx Context, id int) veb.Result {
 	is_admin := ctx.is_admin()
 	// rich text: [[Cookie Name]] links + {color:x} spans in the description
 	description_html := render_rich_text(wapp.db, ctx.lang, treasure.description)
-	// the ingredients this treasure is crafted from (empty for non-recipe rows)
-	craft_ingredients := database.select_treasure_ingredients(wapp.db, ctx.lang, id)
+	// the ingredients this treasure is crafted from (empty for non-recipe rows).
+	// Every recipe hangs off the evolved row — no base treasure has one — so a
+	// non-evolved page shows what its evolution costs instead, flagged so the
+	// template can say so.
+	mut craft_ingredients := database.select_treasure_ingredients(wapp.db, ctx.lang, id)
+	mut craft_is_evolution := false
+	if craft_ingredients.len == 0 && !treasure.is_evolved {
+		if evo := variant_treasure {
+			craft_ingredients = database.select_treasure_ingredients(wapp.db, ctx.lang,
+				evo.treasure_id)
+			craft_is_evolution = craft_ingredients.len > 0
+		}
+	}
 	return $veb.html('./templates/views/treasure.html')
 }
 
