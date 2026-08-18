@@ -105,7 +105,12 @@ pub fn (ctx &Context) site_url() string {
 
 // canonical_url is the clean (query-free) absolute URL of the current page.
 pub fn (ctx &Context) canonical_url() string {
-	return '${ctx.site_url()}${ctx.req.url.split('?')[0]}'
+	// index_u8 + one slice, instead of split('?') building a whole []string
+	// just to read element 0 (runs on every rendered page)
+	url := ctx.req.url
+	qi := url.index_u8(`?`)
+	path := if qi >= 0 { url[..qi] } else { url }
+	return '${ctx.site_url()}${path}'
 }
 
 // og_locale maps the wikilang cookie to an Open Graph locale tag.
@@ -150,8 +155,13 @@ pub fn (ctx &Context) nav_link(href string, tr_key ?string) veb.RawHtml {
 // preflight (`html[data-theme="..."]` blocks in uno.config.ts); the dropdown
 // just toggles the `data-theme` attribute (see static/js/theme.js).
 pub fn (ctx &Context) theme_options() []string {
-	return ['default', 'light', 'tokyo_night', 'cappuccino', 'dracula', 'nord', 'gruvbox', 'rose_pine']
+	return themes
 }
+
+// themes is a const so the navbar's theme dropdown doesn't rebuild the array
+// (and its 8 strings) on every page render.
+const themes = ['default', 'light', 'tokyo_night', 'cappuccino', 'dracula', 'nord', 'gruvbox',
+	'rose_pine']
 
 // theme_label localizes a theme name (theme_* keys in the .tr files).
 pub fn (ctx &Context) theme_label(name string) string {
@@ -171,16 +181,19 @@ pub fn (ctx &Context) grade_label(g string) string {
 pub fn (ctx &Context) grade_badge_cls(grade ?int) string {
 	if g := grade {
 		gr := models.Grade.from(g) or { return '' }
-		base := 'text-xs font-bold uppercase rounded-full border px-2 py-0.5 '
-		return base + match gr.str() {
-			'e' { 'border-emerald-400 text-emerald-400' }
-			'c' { 'border-stone-400 text-stone-400' }
-			'b' { 'border-sky-400 text-sky-400' }
-			'a' { 'border-purple-400 text-purple-400' }
-			's' { 'border-amber-400 text-amber-400' }
-			's_plus' { 'border-rose-400 text-rose-400' }
-			'l' { 'border-orange-400 text-orange-400' }
-			else { 'border-foreground-muted text-foreground-muted' }
+		// match on the enum, not gr.str(): this renders once per card (30+ per
+		// list page, plus every picker option), and .str() allocated a string
+		// that was then compared against seven literals.
+		// each arm is a whole literal (the shared base is repeated) so no
+		// concatenation happens at render time either
+		return match gr {
+			.e { 'text-xs font-bold uppercase rounded-full border px-2 py-0.5 border-emerald-400 text-emerald-400' }
+			.c { 'text-xs font-bold uppercase rounded-full border px-2 py-0.5 border-stone-400 text-stone-400' }
+			.b { 'text-xs font-bold uppercase rounded-full border px-2 py-0.5 border-sky-400 text-sky-400' }
+			.a { 'text-xs font-bold uppercase rounded-full border px-2 py-0.5 border-purple-400 text-purple-400' }
+			.s { 'text-xs font-bold uppercase rounded-full border px-2 py-0.5 border-amber-400 text-amber-400' }
+			.s_plus { 'text-xs font-bold uppercase rounded-full border px-2 py-0.5 border-rose-400 text-rose-400' }
+			.l { 'text-xs font-bold uppercase rounded-full border px-2 py-0.5 border-orange-400 text-orange-400' }
 		}
 	}
 	return ''

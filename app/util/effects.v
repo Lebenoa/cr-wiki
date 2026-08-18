@@ -32,12 +32,16 @@ fn parse_value_cell(s string) (f64, string, bool) {
 	}
 	mut num := s
 	mut suffix := ''
-	for u in ['%', 's'] {
-		if s.ends_with(u) {
-			num = s[..s.len - 1]
-			suffix = u
-			break
-		}
+	// byte compare instead of `for u in ['%', 's']`: that array literal was
+	// allocated on every call, and blessed_diffs calls this 24 times per
+	// blessed effect (12 level deltas × 2 sides).
+	last := s[s.len - 1]
+	if last == `%` {
+		num = s[..s.len - 1]
+		suffix = '%'
+	} else if last == `s` {
+		num = s[..s.len - 1]
+		suffix = 's'
 	}
 	if num.len == 0 {
 		return 0, '', false
@@ -113,11 +117,11 @@ fn level_at(e EffectView, l int) string {
 // When the blessed text differs from the normal one (same effect, different
 // wording), name_html carries a word-level diff of the change.
 pub fn blessed_diffs(normal []EffectView, blessed []EffectView) []EffectView {
-	mut out := []EffectView{}
+	mut out := []EffectView{cap: blessed.len}
 	for i, e in blessed {
 		mut d0 := ''
 		mut d9 := ''
-		mut diffs := []string{}
+		mut diffs := []string{cap: 10}
 		mut name_html := veb.RawHtml('')
 		if i < normal.len {
 			d0 = value_delta(normal[i].value0, e.value0)
@@ -200,7 +204,7 @@ fn word_diff(normal string, blessed string) string {
 // collapse_spaces trims s and collapses runs of whitespace into one space,
 // byte-wise so multi-byte runes (Thai) survive untouched.
 fn collapse_spaces(s string) string {
-	mut b := strings.Builder{}
+	mut b := strings.new_builder(s.len)
 	mut prev_space := false
 	for c in s {
 		if c == ` ` {
@@ -228,12 +232,15 @@ fn strip_value_placeholder(s string) string {
 // ends_dangling reports whether stripping the value from a {value} name left
 // a dangling word ("Base speed increased by") — the substituted form reads
 // better then.
+// dangling_suffixes is a const so the list isn't rebuilt on every call.
+const dangling_suffixes = [' by', ' with', ' for', ' to', ' of', ' from', ' an', ' a']
+
 fn ends_dangling(s string) bool {
 	t := s.trim_space()
 	if t == '' {
 		return true
 	}
-	for w in [' by', ' with', ' for', ' to', ' of', ' from', ' an', ' a'] {
+	for w in dangling_suffixes {
 		if t.ends_with(w) {
 			return true
 		}

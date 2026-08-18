@@ -22,15 +22,31 @@ import veb
 // brackets or malicious markup) renders as plain text. Returns veb.RawHtml so
 // the template emits it verbatim instead of re-escaping.
 pub fn render_rich_text(conn sqlite.DB, lang string, raw string) veb.RawHtml {
+	// fast path: prose without any markup (the overwhelming majority of
+	// description/ability fields) skips the scanner and the escape-then-rebuild
+	// entirely — one escape, no builder.
+	if !raw.contains('[[') && !raw.contains('{color:') {
+		return html.escape(raw)
+	}
 	s := html.escape(raw)
 	mut out := strings.new_builder(s.len + 64)
+	// entity names resolve with a DB query each; a description that links the
+	// same cookie three times used to pay for three round-trips. Memoized per
+	// render — one map per call, so an admin edit is still picked up on the
+	// next request.
+	mut name_cache := map[string]string{}
 	mut i := 0
 	for i < s.len {
 		// link: [[id]] or [[kind:id]] (kind: cookie|pet|treasure)
 		if s[i] == `[` && i + 1 < s.len && s[i + 1] == `[` {				if end := s.index_after(']]', i + 2) {
 			kind, eid, ok := split_link_ref(s[i + 2 .. end])
 			if ok {
-				display := database.entity_name_by_id(conn, kind, eid, lang)
+				cache_key := '${kind}:${eid}'
+				display := name_cache[cache_key] or {
+					n := database.entity_name_by_id(conn, kind, eid, lang)
+					name_cache[cache_key] = n
+					n
+				}
 				if display != '' {
 					href := match kind {
 						'pet' { '/pets/${eid}' }
@@ -48,7 +64,9 @@ pub fn render_rich_text(conn sqlite.DB, lang string, raw string) veb.RawHtml {
 		}
 		}
 		// color span: {color:VAL}...{/color}
-		if s[i] == `{` && s[i..].starts_with('{color:') {
+		// (byte compare, not `s[i..].starts_with(...)`: slicing copies the
+		// whole remaining string on every `{` in the text)
+		if s[i] == `{` && starts_at(s, i, '{color:') {
 			if close := s.index_after('}', i + 7) {
 				val := s[i + 7 .. close]
 				if valid_color(val) {
@@ -67,6 +85,21 @@ pub fn render_rich_text(conn sqlite.DB, lang string, raw string) veb.RawHtml {
 		i++
 	}
 	return out.str()
+}
+
+// starts_at reports whether `needle` occurs in `s` at byte offset `i`,
+// without materializing a substring.
+@[direct_array_access]
+fn starts_at(s string, i int, needle string) bool {
+	if i + needle.len > s.len {
+		return false
+	}
+	for k in 0 .. needle.len {
+		if s[i + k] != needle[k] {
+			return false
+		}
+	}
+	return true
 }
 
 // split_link_ref splits a [[...]] inner text into its link kind and entity
