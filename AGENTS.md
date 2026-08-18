@@ -61,6 +61,7 @@ The repository implements a web platform written in V (V Language) using a speci
 - **`database/models/*.v`**: Source of truth for schema definition and invariants.
 - **`app/cookies.v`**: Example controller handling GET (view) vs POST (submission).
 - **`app/app.v`**: `img_src()` returns the local image path or a `placehold.co` placeholder URL when missing — templates must use it, never build image paths directly.
+- **Image filenames**: every entity image is `static/img/<entity>/<english name in snake_case>.png` (Mint Choco Cookie -> `mint_choco_cookie.png`), with `_2`/`_3` suffixes when entities share a display name but not artwork. Never store the source catalog's coded icon names (`tr_ga034.png`, `mt_n2_5_04.png`). `image_slug()`/`upload_image()` in `app/uploads.v` name admin uploads that way; `image_slug()`/`named_image()` in `scripts/build_seed_cookierundb.py` do the same when regenerating the fixture (a name with no file on disk stores null, so `img_src()` shows the placeholder).
 - **Edit routes** live in the entity controllers (`app/{cookies,pets,treasures}.v` `/:id/edit`, `app/builds.v` `/builds/:id/edit`) with writes in `database/update.v`; admin routes (`/new/*`) are admin-only; test admin credentials are `test`/`test`. Unauthenticated access to admin routes returns **404**, not 401/403 — tests assert this.
 - **`templates/views/cookies.html`**: Entry point for cookie management UI.
 - **`README.md`** (if present): Project setup instructions.

@@ -243,7 +243,7 @@ fn parse_optional_id(mut ctx Context, field string) ?int {
 }
 
 fn parse_cookie_form(mut ctx Context) !database.CreateCookieParams {
-	image := upload_image(mut ctx, 'cookies')!
+	image := upload_image(mut ctx, 'cookies', ctx.form['name'] or { '' })!
 	grade := models.Grade.from(ctx.form['grade']) or {
 		return error('Invalid grade: expected one of e, c, b, a, s, s_plus, l')
 	}
@@ -272,7 +272,7 @@ fn parse_cookie_form(mut ctx Context) !database.CreateCookieParams {
 }
 
 fn parse_pet_form(mut ctx Context) !database.CreatePetParams {
-	image := upload_image(mut ctx, 'pets')!
+	image := upload_image(mut ctx, 'pets', ctx.form['name'] or { '' })!
 	grade := models.Grade.from(ctx.form['grade']) or {
 		return error('Invalid grade: expected one of e, c, b, a, s, s_plus, l')
 	}
@@ -365,7 +365,7 @@ fn parse_unlock_treasure(mut ctx Context) !UnlockTreasureChoice {
 }
 
 fn parse_treasure_form(mut ctx Context) !database.CreateTreasureParams {
-	image := upload_image(mut ctx, 'treasures')!
+	image := upload_image(mut ctx, 'treasures', ctx.form['name'] or { '' })!
 	// grade is optional: empty means no wiki grade (no badge on the detail page)
 	g := ctx.form['grade'] or { '' }
 	mut grade := ?int(none)
