@@ -7,16 +7,25 @@ pub:
 	host string = "127.0.0.1"
 	port int = 6785
 	db_file string = "sqlite.db"
-	// Cloudflare Turnstile: the secret used for server-side siteverify and
-	// the comma-separated frontend-hostname allowlist. The TURNSTILE_SECRET /
-	// TURNSTILE_HOSTNAMES env vars override these fields when set.
-	turnstile_secret string
-	turnstile_hostnames string
+	// Cloudflare Turnstile: the siteverify secret and the comma-separated
+	// frontend-hostname allowlist (the `[turnstile]` table in Config.toml).
+	// The TURNSTILE_SECRET / TURNSTILE_HOSTNAMES env vars override these
+	// fields when set.
+	turnstile TurnstileConfig
 pub mut:
 	// Per-IP token bucket for the public read endpoints (the `[ratelimit]`
 	// table in Config.toml). pub mut only so load() can clamp non-positive
 	// values back to the defaults; after boot it is read-only.
 	ratelimit RateLimitConfig
+}
+
+// TurnstileConfig holds the Cloudflare Turnstile siteverify credentials:
+// secret is the server-side secret, hostnames the comma-separated
+// frontend-hostname allowlist checked against the siteverify response.
+pub struct TurnstileConfig {
+pub:
+	secret    string
+	hostnames string
 }
 
 // RateLimitConfig tunes the per-IP token bucket. capacity is the burst

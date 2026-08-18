@@ -9,7 +9,7 @@ import time
 
 // turnstile_sitekey is the public Cloudflare Turnstile site key for this
 // site's widget. It ships in the frontend by design; only the secret stays
-// server-side (TURNSTILE_SECRET env var or Config.toml's turnstile_secret).
+// server-side (TURNSTILE_SECRET env var or Config.toml's [turnstile] secret).
 const turnstile_sitekey = '0x4AAAAAAERZ9YLl2pq5_2hu'
 
 // turnstile_sitekey_for_template exposes the site key to the view templates
@@ -27,26 +27,27 @@ struct SiteVerifyResponse {
 }
 
 // turnstile_secret returns the siteverify secret: the TURNSTILE_SECRET env
-// var wins, falling back to the turnstile_secret field of Config.toml (via
-// the config module). Empty when neither is configured.
+// var wins, falling back to the secret field of Config.toml's [turnstile]
+// table (via the config module). Empty when neither is configured.
 fn turnstile_secret() string {
 	s := os.getenv('TURNSTILE_SECRET')
 	if s != '' {
 		return s
 	}
 	cfg := config.load() or { return '' }
-	return cfg.turnstile_secret
+	return cfg.turnstile.secret
 }
 
 // turnstile_hostnames_raw returns the raw comma-separated hostname allowlist:
-// the TURNSTILE_HOSTNAMES env var wins, falling back to Config.toml.
+// the TURNSTILE_HOSTNAMES env var wins, falling back to the hostnames field
+// of Config.toml's [turnstile] table.
 fn turnstile_hostnames_raw() string {
 	s := os.getenv('TURNSTILE_HOSTNAMES')
 	if s != '' {
 		return s
 	}
 	cfg := config.load() or { return '' }
-	return cfg.turnstile_hostnames
+	return cfg.turnstile.hostnames
 }
 
 // turnstile_hostnames returns the frontend-hostname allowlist (comma-
@@ -80,7 +81,7 @@ pub fn verify_turnstile(ctx &Context, expected_action string) bool {
 	}
 	secret := turnstile_secret()
 	if secret == '' {
-		log.warn('turnstile: no TURNSTILE_SECRET / turnstile_secret configured, rejecting submission')
+		log.warn('turnstile: no TURNSTILE_SECRET / turnstile.secret configured, rejecting submission')
 		return false
 	}
 	token := ctx.form['cf-turnstile-response'] or { return false }

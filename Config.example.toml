@@ -2,26 +2,51 @@
 # omitted fields fall back to the defaults in config/config.v, and
 # non-positive [ratelimit] values are clamped back to those defaults at load.
 
+# Address the HTTP server binds to. 0.0.0.0 serves on all interfaces
+# (needed for LAN/container access); the default is 127.0.0.1 (loopback only).
 host = "0.0.0.0"
+
+# TCP port the server listens on. Default 6785. The debug test session runs
+# on 6798 (CR_TEST_PORT overrides it).
 port = 6785
+
+# Path to the SQLite database file, created and seeded on first boot. The
+# debug test session uses a throwaway sqlite_test.db instead (CR_TEST_DB
+# overrides it).
 db_file = "sqlite.db"
 
-# Cloudflare Turnstile bot protection (protected POST handlers reject with
-# 403 unless siteverify passes). Omit turnstile_secret to disable enforcement
-# only in the debug test-session build; the TURNSTILE_SECRET /
-# TURNSTILE_HOSTNAMES env vars override these fields when set.
-turnstile_secret = ""
-# comma-separated frontend-hostname allowlist checked against siteverify —
-# production deployments must set the real domain (never localhost)
-turnstile_hostnames = "localhost,127.0.0.1"
+# Cloudflare Turnstile bot protection. Protected POST handlers reject with
+# 403 unless siteverify passes; with no secret they reject every submission
+# in release builds (fail closed) — only the debug test-session build skips
+# verification. The TURNSTILE_SECRET / TURNSTILE_HOSTNAMES env vars override
+# these fields when set.
+[turnstile]
+# Server-side siteverify secret from Cloudflare's dashboard. Empty means
+# enforcement is skipped only in the debug test-session build; release
+# builds reject every protected submission (fail closed).
+secret = ""
+
+# Comma-separated frontend-hostname allowlist checked against the hostname
+# Cloudflare reports in the siteverify response. Empty falls back to
+# "localhost,127.0.0.1" so development works unconfigured; production
+# deployments must set the real domain or every protected submission is
+# rejected (fail closed).
+hostnames = "localhost,127.0.0.1"
 
 # Per-IP rate limiting for the public read endpoints (search, list/detail
-# pages, API/planner AJAX). A token bucket per IP: `capacity` burst tokens,
-# refilled at `refill` per second; 429 while empty. `idle_ttl` is the seconds
-# a bucket may sit unused before the sweep prunes it (the sweep only runs
-# once the bucket map grows past `sweep_above` entries).
+# pages, API/planner AJAX). One token bucket per IP covers all endpoints
+# together; a 429 is returned while the bucket is empty.
 [ratelimit]
+# Burst tokens granted to a fresh IP (the bucket's ceiling). Default 60.
+# Non-positive values clamp back to the default at load.
 capacity = 60
+# Tokens restored per second up to `capacity`. Default 20. Non-positive
+# values clamp back to the default at load.
 refill = 20
+# Seconds a bucket may sit unused before the sweep prunes it. Default 300.
+# Non-positive values clamp back to the default at load.
 idle_ttl = 300
+# The sweep only runs once the bucket map grows past this many entries, so
+# low-traffic servers never pay for it. Default 2048. Non-positive values
+# clamp back to the default at load.
 sweep_above = 2048
