@@ -36,7 +36,7 @@ pub fn (mut wapp App) cookies(mut ctx Context) veb.Result {
 }
 
 @['/cookies/new'; get; post]
-pub fn (wapp &App) new_cookie(mut ctx Context) veb.Result {
+pub fn (mut wapp App) new_cookie(mut ctx Context) veb.Result {
 	cur_user := ctx.user or { return ctx.not_found() }
 	if !cur_user.is_admin {
 		return ctx.not_found()
@@ -55,7 +55,7 @@ pub fn (wapp &App) new_cookie(mut ctx Context) veb.Result {
 			return cookie_submit_error(wapp, ctx, none, veb.tr(ctx.lang, 'turnstile_form_failed'))
 		}
 
-		params := parse_cookie_form(mut ctx) or {
+		params := parse_cookie_form(mut wapp, mut ctx) or {
 			ctx.res.set_status(.bad_request)
 			return cookie_submit_error(wapp, ctx, none, err.msg())
 		}
@@ -98,7 +98,7 @@ pub fn (mut wapp App) cookie_info(mut ctx Context, id int) veb.Result {
 }
 
 @['/cookies/:id/edit'; get; post]
-pub fn (wapp &App) edit_cookie(mut ctx Context, id int) veb.Result {
+pub fn (mut wapp App) edit_cookie(mut ctx Context, id int) veb.Result {
 	cur_user := ctx.user or { return ctx.not_found() }
 	if !cur_user.is_admin {
 		return ctx.not_found()
@@ -119,7 +119,7 @@ pub fn (wapp &App) edit_cookie(mut ctx Context, id int) veb.Result {
 			return cookie_submit_error(wapp, ctx, cookie, veb.tr(ctx.lang, 'turnstile_form_failed'))
 		}
 
-		params := parse_cookie_form(mut ctx) or {
+		params := parse_cookie_form(mut wapp, mut ctx) or {
 			ctx.res.set_status(.bad_request)
 			return cookie_submit_error(wapp, ctx, cookie, err.msg())
 		}

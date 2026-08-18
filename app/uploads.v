@@ -23,9 +23,11 @@ pub fn image_slug(name string) string {
 // named after the entity (image_slug(name) + the uploaded extension) so the
 // tree keeps one naming convention. Re-uploading for the same name overwrites,
 // which is what an edit wants; two entities sharing a display name also share
-// the file. Returns '' when no file was uploaded, the saved filename on
-// success, or an error for an unsupported file type / write failure.
-pub fn upload_image(mut ctx Context, dir string, name string) !string {
+// the file. The written file is added to the static cache, so it is served
+// from the next request on rather than only after a restart. Returns '' when
+// no file was uploaded, the saved filename on success, or an error for an
+// unsupported file type / write failure.
+pub fn upload_image(mut wapp App, mut ctx Context, dir string, name string) !string {
 	if files := ctx.files['image'] {
 		if files.len > 0 && files[0].filename != '' {
 			file := files[0]
@@ -39,9 +41,9 @@ pub fn upload_image(mut ctx Context, dir string, name string) !string {
 			}
 			filename := '${slug}.${ext}'
 			os.mkdir_all(os.join_path('static', 'img', dir)) or {}
-			os.write_file(os.join_path('static', 'img', dir, filename), file.data) or {
-				return error('Failed to save image: ${err}')
-			}
+			path := os.join_path('static', 'img', dir, filename)
+			os.write_file(path, file.data) or { return error('Failed to save image: ${err}') }
+			wapp.remember_static(path)
 			return filename
 		}
 	}

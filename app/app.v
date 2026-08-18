@@ -21,7 +21,6 @@ pub mut:
 }
 
 pub struct App {
-	veb.StaticHandler
 	veb.Middleware[Context]
 
 	db sqlite.DB
@@ -33,6 +32,10 @@ mut:
 	sessions shared map[string]models.User
 	// per-IP rate-limit buckets for the public read endpoints
 	rate_buckets shared map[string]RateBucket
+	// url -> file path for everything under static/. veb.StaticHandler is not
+	// embedded on purpose: its cache is built once at startup, while this one
+	// is extended by upload_image (see app/static.v).
+	static_files shared map[string]string
 }
 
 pub fn initialize(conn sqlite.DB) !&App {
@@ -41,8 +44,12 @@ pub fn initialize(conn sqlite.DB) !&App {
 		db:       conn
 		rate_cfg: cfg.ratelimit
 	}
-	new_app.static_mime_types['.avif'] = 'image/avif'
-	new_app.handle_static('static', true)!
+	lock new_app.static_files {
+		scan_static_dir(mut new_app.static_files, 'static')!
+	}
+	// static first: veb runs global middleware before routing, so a cached
+	// file still wins over a route with the same path
+	new_app.use(handler: new_app.serve_static)
 	new_app.use(handler: new_app.before_request)
 	// new_app.use(handler: after_request, after: true)
 	return new_app

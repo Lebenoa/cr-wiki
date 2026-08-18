@@ -54,7 +54,7 @@ fn pill_cls(active bool) string {
 }
 
 @['/treasures/new'; get; post]
-pub fn (wapp &App) new_treasure(mut ctx Context) veb.Result {
+pub fn (mut wapp App) new_treasure(mut ctx Context) veb.Result {
 	cur_user := ctx.user or { return ctx.not_found() }
 	if !cur_user.is_admin {
 		return ctx.not_found()
@@ -73,7 +73,7 @@ pub fn (wapp &App) new_treasure(mut ctx Context) veb.Result {
 			return treasure_submit_error(wapp, ctx, none, veb.tr(ctx.lang, 'turnstile_form_failed'))
 		}
 
-		params := parse_treasure_form(mut ctx) or {
+		params := parse_treasure_form(mut wapp, mut ctx) or {
 			ctx.res.set_status(.bad_request)
 			return treasure_submit_error(wapp, ctx, none, err.msg())
 		}
@@ -131,7 +131,7 @@ pub fn (mut wapp App) treasure_info(mut ctx Context, id int) veb.Result {
 }
 
 @['/treasures/:id/edit'; get; post]
-pub fn (wapp &App) edit_treasure(mut ctx Context, id int) veb.Result {
+pub fn (mut wapp App) edit_treasure(mut ctx Context, id int) veb.Result {
 	cur_user := ctx.user or { return ctx.not_found() }
 	if !cur_user.is_admin {
 		return ctx.not_found()
@@ -152,7 +152,7 @@ pub fn (wapp &App) edit_treasure(mut ctx Context, id int) veb.Result {
 			return treasure_submit_error(wapp, ctx, treasure, veb.tr(ctx.lang, 'turnstile_form_failed'))
 		}
 
-		params := parse_treasure_form(mut ctx) or {
+		params := parse_treasure_form(mut wapp, mut ctx) or {
 			ctx.res.set_status(.bad_request)
 			return treasure_submit_error(wapp, ctx, treasure, err.msg())
 		}
