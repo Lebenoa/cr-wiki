@@ -39,15 +39,44 @@
                 <span class="text-sm font-label font-normal text-foreground-muted">(@p.entries.len)</span></h2>
             <div class="card-grid">
                 @for e in p.entries
-                <a href="/@{e.kind}s/@e.id" hx-boost="true" data-cr-card data-name="@e.name"
-                    class="entity-card">
-                    <img src="@{ctx.img_src(e.kind + 's', e.image)}" alt="@e.name" class="h-20 w-full object-contain" />
+                @if e.kind == 'treasure'
+                <!-- same card as /treasures (grade badge, evolved pill), plus
+                     this page's odds line -->
+                <a href="/treasures/@e.id" hx-boost="true" data-cr-card data-name="@e.name"
+                    data-name-en="@e.en_name" data-grade="@{ctx.grade_img_int(e.grade)}" class="entity-card">
+                    <span class="flex w-full items-start justify-between gap-2">
+                        @if ctx.grade_img_int(e.grade) != ''
+                        <img src="/img/grades/@{ctx.grade_img_int(e.grade)}.png" alt="@{ctx.grade_label_int(e.grade)}"
+                            class="size-10">
+                        @else
+                        <span></span>
+                        @end
+                        <span class="text-xs font-mono text-foreground-muted">@e.odds%</span>
+                    </span>
+                    <img src="@{ctx.img_src('treasures', e.image)}" alt="@e.name"
+                        class="h-20 w-full object-contain">
                     <span class="card-title">@e.name</span>
-                    @if g := e.grade
-                    <span class="@{ctx.grade_badge_cls(g)}">@{ctx.grade_label_int(g)}</span>
+                    @if e.is_evolved
+                    <span class="pill-primary">%evolved</span>
                     @end
-                    <span class="text-xs font-mono text-foreground-muted">@e.odds%</span>
                 </a>
+                @else
+                <!-- same card as /pets, plus this page's odds line -->
+                <a href="/pets/@e.id" hx-boost="true" data-cr-card data-name="@e.name"
+                    data-name-en="@e.en_name" data-grade="@{ctx.grade_img_int(e.grade)}" class="entity-card">
+                    <span class="flex w-full items-start justify-between gap-2">
+                        @if ctx.grade_img_int(e.grade) != ''
+                        <img src="/img/grades/@{ctx.grade_img_int(e.grade)}.png" alt="@{ctx.grade_label_int(e.grade)}"
+                            class="size-10">
+                        @else
+                        <span></span>
+                        @end
+                        <span class="text-xs font-mono text-foreground-muted">@e.odds%</span>
+                    </span>
+                    <img src="@{ctx.img_src('pets', e.image)}" alt="@e.name" class="h-20 w-full object-contain">
+                    <span class="card-title">@e.name</span>
+                </a>
+                @end
                 @endfor
             </div>
         </section>

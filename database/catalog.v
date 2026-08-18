@@ -813,9 +813,15 @@ pub mut:
 	kind  string // 'treasure' | 'pet' (image dir + route prefix)
 	id    int
 	name  string
-	image ?string
-	grade ?int
-	odds  f64
+	// /gacha mirrors the catalog cards: /treasures for treasure entries,
+	// /pets for pet ones. en_name backs their cross-language filtering;
+	// is_evolved backs the treasure card's evolved pill (always false for
+	// pets, which have no evolved form).
+	en_name    string
+	is_evolved bool
+	image      ?string
+	grade      ?int
+	odds       f64
 }
 
 // GachaPoolView is one draw pool (treasure-draw chest tier or pet-hatch egg
@@ -834,6 +840,8 @@ struct EntityInfo {
 pub mut:
 	names  map[int]map[string]string
 	images map[int]?string
+	// treasures only: is_evolved per id, for the /gacha card's evolved pill
+	evolved map[int]bool
 }
 
 fn cookie_info(conn sqlite.DB, lang string) EntityInfo {
@@ -884,8 +892,9 @@ fn pet_info(conn sqlite.DB, lang string) EntityInfo {
 
 fn treasure_info(conn sqlite.DB, lang string) EntityInfo {
 	mut out := EntityInfo{
-		names:  map[int]map[string]string{}
-		images: map[int]?string{}
+		names:   map[int]map[string]string{}
+		images:  map[int]?string{}
+		evolved: map[int]bool{}
 	}
 	trs := sql conn {
 		select from models.TreasureTranslation where lang == lang || lang == 'en'
@@ -900,7 +909,9 @@ fn treasure_info(conn sqlite.DB, lang string) EntityInfo {
 		select from models.Treasure
 	} or { return out }
 	for t in rows {
-		out.images[t.treasure_id or { 0 }] = t.image
+		tid := t.treasure_id or { 0 }
+		out.images[tid] = t.image
+		out.evolved[tid] = t.is_evolved
 	}
 	return out
 }
@@ -1121,11 +1132,14 @@ pub fn select_gacha(conn sqlite.DB, lang string) []GachaPoolView {
 				v.kind = 'treasure'
 				v.id = tid
 				v.name = lang_name(tr_info.names, tid, lang)
+				v.en_name = (tr_info.names[tid] or { map[string]string{} })['en'] or { '' }
+				v.is_evolved = tr_info.evolved[tid] or { false }
 				v.image = tr_info.images[tid]
 			} else if p_id := e.pet_id {
 				v.kind = 'pet'
 				v.id = p_id
 				v.name = lang_name(pt.names, p_id, lang)
+				v.en_name = (pt.names[p_id] or { map[string]string{} })['en'] or { '' }
 				v.image = pt.images[p_id]
 			}
 			views << v
