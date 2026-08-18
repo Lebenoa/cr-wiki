@@ -48,4 +48,6 @@
     // htmx 4 swaps don't fire DOMNodeInserted; re-filter after each swap so
     // infinite-scroll pages keep the active filter applied
     document.addEventListener('htmx:after:settle', crFilter);
+    // gacha_tabs.js re-applies the filter to a panel it just revealed
+    window.crFilter = crFilter;
 })();

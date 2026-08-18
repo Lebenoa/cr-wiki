@@ -10,13 +10,31 @@
 
     <h1 class="page-title">%gacha_page_header</h1>
 
-    <div class="filter-bar">
-        @include 'components/filter_input.html'
-    </div>
+    <div class="max-w-screen-2xl mx-auto px-8 py-4 flex flex-col gap-8">
+        <!-- one tab card per pool; the prize grids below start closed -->
+        <div class="card-grid" role="tablist" aria-label="%gacha_page_header">
+            @for p in pools
+            <button type="button" role="tab" data-gacha-tab id="gacha-tab-@p.pool_id"
+                aria-controls="gacha-panel-@p.pool_id" aria-selected="false"
+                class="entity-card cursor-pointer">
+                @if p.entries.len > 0
+                <img src="@{ctx.img_src(p.entries[0].kind + 's', p.entries[0].image)}" alt=""
+                    class="h-20 w-full object-contain" />
+                @end
+                <span class="card-title">@{ctx.gacha_tier_label(p.tier)}</span>
+                <span class="card-meta">@p.entries.len</span>
+            </button>
+            @endfor
+        </div>
 
-    <div class="max-w-screen-2xl mx-auto px-8 py-4 flex flex-col gap-10">
+        <!-- filters the open pool's prize cards; sits under the tabs so it
+             reads as belonging to the panel, not the tab strip -->
+        <div class="filter-bar my-0">
+            @include 'components/filter_input.html'
+        </div>
+
         @for p in pools
-        <section>
+        <section id="gacha-panel-@p.pool_id" role="tabpanel" aria-labelledby="gacha-tab-@p.pool_id" hidden>
             <h2 class="section-title">@{ctx.gacha_tier_label(p.tier)}
                 <span class="text-sm font-label font-normal text-foreground-muted">(@p.entries.len)</span></h2>
             <div class="card-grid">
@@ -35,6 +53,8 @@
         </section>
         @endfor
     </div>
+
+    <script src="/js/gacha_tabs.js" defer></script>
 </body>
 
 </html>

@@ -255,6 +255,14 @@ export default defineConfig({
 						from { opacity: 0; translate: 0 -6px; }
 						to { opacity: 1; translate: 0 0; }
 					}
+				/* /gacha pool tabs: the open card is styled from its ARIA state,
+				   not a JS-toggled class — UnoCSS only scans templates and
+				   app/*.v, so a class that lives solely in static/js never gets
+				   generated. */
+				[data-gacha-tab][aria-selected="true"] {
+					border-color: oklch(var(--primary, 0.62 0.22 260));
+					box-shadow: 0 0 0 2px oklch(var(--primary, 0.62 0.22 260) / 0.45);
+				}
 				div[popover] {
 					position-area: bottom center;
 					opacity: 0;
