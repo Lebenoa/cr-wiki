@@ -50,7 +50,9 @@ Config.toml
 __pycache__/
 *.py
 
-# Scraper/seed helper scripts stay local
+# Scraper/seed helper scripts stay local; the build scripts are project
+# tooling and stay tracked
 scripts/*
 !scripts/seed_data.json
+!scripts/build_*.cmd
 scripts/th/
