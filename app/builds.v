@@ -511,11 +511,14 @@ pub fn (wapp &App) build_verify(mut ctx Context, id int) veb.Result {
 // can_edit_build reports whether the current session may modify a build:
 // its author, or an admin (site moderation).
 fn can_edit_build(ctx &Context, b database.BuildCard) bool {
+	if ctx.is_admin() {
+		return true
+	}
 	u := ctx.user or { return false }
 	return if uid := u.user_id {
-		uid == b.user_id || u.is_admin
+		uid == b.user_id
 	} else {
-		u.is_admin
+		false
 	}
 }
 

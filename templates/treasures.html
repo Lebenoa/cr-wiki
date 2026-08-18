@@ -10,12 +10,10 @@
 
     <h1 class="page-title">%treasure_page_header</h1>
 
-    @if user := ctx.user
-    @if user.is_admin
+    @if ctx.is_admin()
     <div class="admin-actions">
-        <a href="/treasures/new" class="btn-primary">+ New Treasure</a>
+        <a href="/treasures/new" class="btn-primary">%new_treasure_button</a>
     </div>
-    @endif
     @endif
 
     <div class="filter-bar">

@@ -145,6 +145,10 @@ pub fn run_test_session() {
 			run:  test_admin_gated
 		},
 		TestCase{
+			name: 'localhost admin without session'
+			run:  test_localhost_admin
+		},
+		TestCase{
 			name: 'admin login'
 			run:  test_admin_login
 		},
@@ -1073,19 +1077,22 @@ fn test_build_edit_delete(mut tc TestContext) ! {
 	if !edit_get.body.contains('name="score" min="0" step="1" value="12345"') {
 		return error('owner edit form must prefill the submitted score')
 	}
-	// a stranger (another non-admin user) and a guest both get 404
+	// a stranger (another non-admin user) and a guest both get 404 — the
+	// forwarded header simulates a remote client, since the suite itself
+	// connects from 127.0.0.1 and would otherwise be granted local admin
 	for sid_name, sid in {'stranger': stranger_sid, 'guest': ''} {
 		mut ck := map[string]string{}
 		if sid != '' {
 			ck[session_cookie_key] = sid
 		}
-		r := http.fetch(method: .get, url: '${tc.base}/builds/${bid}/edit', cookies: ck) or {
+		remote := http.new_header(key: .x_forwarded_for, value: '198.51.100.7')
+		r := http.fetch(method: .get, url: '${tc.base}/builds/${bid}/edit', header: remote, cookies: ck) or {
 			return error('GET edit (${sid_name}): ${err}')
 		}
 		if r.status_code != 404 {
 			return error('GET edit (${sid_name}): expected 404, got ${r.status_code}')
 		}
-		d := http.fetch(method: .post, url: '${tc.base}/builds/${bid}/delete', cookies: ck) or {
+		d := http.fetch(method: .post, url: '${tc.base}/builds/${bid}/delete', header: remote, cookies: ck) or {
 			return error('POST delete (${sid_name}): ${err}')
 		}
 		if d.status_code != 404 {
@@ -1356,9 +1363,26 @@ fn test_not_found(mut tc TestContext) ! {
 }
 
 fn test_admin_gated(mut tc TestContext) ! {
-	resp := http.get('${tc.base}/cookies/new') or { return err }
+	// the suite connects from 127.0.0.1, which now grants local admin; send
+	// a forwarded-proxy header so is_local() fails closed and the session
+	// gate is what's exercised (a remote client behind a proxy, or one
+	// spoofing the header, gets 404 without a session)
+	resp := http.fetch(
+		method: .get
+		url:    '${tc.base}/cookies/new'
+		header: http.new_header(key: .x_forwarded_for, value: '198.51.100.7')
+	) or { return err }
 	if resp.status_code != 404 {
 		return error('/cookies/new without session: expected 404, got ${resp.status_code}')
+	}
+}
+
+fn test_localhost_admin(mut tc TestContext) ! {
+	// headerless request from a loopback peer is treated as admin, so the
+	// new-cookie form renders without logging in
+	resp := http.get('${tc.base}/cookies/new') or { return err }
+	if resp.status_code != 200 {
+		return error('/cookies/new from localhost without session: expected 200, got ${resp.status_code}')
 	}
 }
 

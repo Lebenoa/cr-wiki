@@ -55,8 +55,7 @@ fn pill_cls(active bool) string {
 
 @['/treasures/new'; get; post]
 pub fn (mut wapp App) new_treasure(mut ctx Context) veb.Result {
-	cur_user := ctx.user or { return ctx.not_found() }
-	if !cur_user.is_admin {
+	if !ctx.is_admin() {
 		return ctx.not_found()
 	}
 
@@ -132,8 +131,7 @@ pub fn (mut wapp App) treasure_info(mut ctx Context, id int) veb.Result {
 
 @['/treasures/:id/edit'; get; post]
 pub fn (mut wapp App) edit_treasure(mut ctx Context, id int) veb.Result {
-	cur_user := ctx.user or { return ctx.not_found() }
-	if !cur_user.is_admin {
+	if !ctx.is_admin() {
 		return ctx.not_found()
 	}
 

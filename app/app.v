@@ -206,8 +206,35 @@ pub fn (ctx &Context) grade_badge_cls(grade ?int) string {
 	return ''
 }
 
-// is_admin reports whether the current session belongs to an admin user.
+// is_local reports whether the request arrived from this machine: the TCP
+// peer is a loopback address AND none of the proxy-forwarded headers veb's
+// ctx.ip() consults (CF-Connecting-IP, X-Forwarded-For, X-Real-Ip) are
+// present. The header check is what makes this safe — a remote client can
+// send any of those headers, so granting on ctx.ip() alone would let anyone
+// claim a loopback address. Behind a real proxy (or against a spoofed
+// header) the check fails closed.
+pub fn (ctx &Context) is_local() bool {
+	if _ := ctx.req.header.get_custom('CF-Connecting-IP') {
+		return false
+	}
+	if _ := ctx.req.header.get(.x_forwarded_for) {
+		return false
+	}
+	if _ := ctx.req.header.get_custom('X-Real-Ip') {
+		return false
+	}
+	// header-free path: ctx.ip() is the raw TCP peer
+	ip := ctx.ip()
+	return ip.starts_with('127.') || ip == '::1' || ip == '0:0:0:0:0:0:0:1'
+}
+
+// is_admin reports whether the current request has admin permission: the
+// session belongs to an admin user, or the request is local (loopback peer,
+// no proxy headers) so local development gets admin without logging in.
 pub fn (ctx &Context) is_admin() bool {
+	if ctx.is_local() {
+		return true
+	}
 	if user := ctx.user {
 		return user.is_admin
 	}

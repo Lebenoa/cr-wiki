@@ -37,8 +37,7 @@ pub fn (mut wapp App) cookies(mut ctx Context) veb.Result {
 
 @['/cookies/new'; get; post]
 pub fn (mut wapp App) new_cookie(mut ctx Context) veb.Result {
-	cur_user := ctx.user or { return ctx.not_found() }
-	if !cur_user.is_admin {
+	if !ctx.is_admin() {
 		return ctx.not_found()
 	}
 
@@ -99,8 +98,7 @@ pub fn (mut wapp App) cookie_info(mut ctx Context, id int) veb.Result {
 
 @['/cookies/:id/edit'; get; post]
 pub fn (mut wapp App) edit_cookie(mut ctx Context, id int) veb.Result {
-	cur_user := ctx.user or { return ctx.not_found() }
-	if !cur_user.is_admin {
+	if !ctx.is_admin() {
 		return ctx.not_found()
 	}
 

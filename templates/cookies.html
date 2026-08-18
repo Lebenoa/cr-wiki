@@ -10,12 +10,10 @@
 
     <h1 class="page-title">%cookie_page_header</h1>
 
-    @if user := ctx.user
-    @if user.is_admin
+    @if ctx.is_admin()
     <div class="admin-actions">
-        <a href="/cookies/new" class="btn-primary">+ New Cookie</a>
+        <a href="/cookies/new" class="btn-primary">%new_cookie_button</a>
     </div>
-    @endif
     @endif
 
     <div class="filter-bar">

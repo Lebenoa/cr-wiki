@@ -37,8 +37,7 @@ pub fn (mut wapp App) pets(mut ctx Context) veb.Result {
 
 @['/pets/new'; get; post]
 pub fn (mut wapp App) new_pet(mut ctx Context) veb.Result {
-	cur_user := ctx.user or { return ctx.not_found() }
-	if !cur_user.is_admin {
+	if !ctx.is_admin() {
 		return ctx.not_found()
 	}
 
@@ -96,8 +95,7 @@ pub fn (mut wapp App) pet_info(mut ctx Context, id int) veb.Result {
 
 @['/pets/:id/edit'; get; post]
 pub fn (mut wapp App) edit_pet(mut ctx Context, id int) veb.Result {
-	cur_user := ctx.user or { return ctx.not_found() }
-	if !cur_user.is_admin {
+	if !ctx.is_admin() {
 		return ctx.not_found()
 	}
 

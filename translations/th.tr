@@ -187,17 +187,26 @@ close
 new_cookie_page_header
 คุกกี้ใหม่
 -----
+new_cookie_button
++ คุกกี้ใหม่
+-----
 new_cookie_subtitle
 เพิ่มคุกกี้ใหม่ลงในคลังข้อมูล
 -----
 new_pet_page_header
 สัตว์เลี้ยงใหม่
 -----
+new_pet_button
++ สัตว์เลี้ยงใหม่
+-----
 new_pet_subtitle
 เพิ่มสัตว์เลี้ยงลงในคลังข้อมูล
 -----
 new_treasure_page_header
 สมบัติใหม่
+-----
+new_treasure_button
++ สมบัติใหม่
 -----
 new_treasure_subtitle
 เพิ่มสมบัติใหม่ลงในคลังข้อมูล

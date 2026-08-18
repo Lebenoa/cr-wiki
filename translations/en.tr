@@ -187,17 +187,26 @@ Close
 new_cookie_page_header
 New Cookie
 -----
+new_cookie_button
++ New Cookie
+-----
 new_cookie_subtitle
 Add a new cookie to the archive.
 -----
 new_pet_page_header
 New Pet
 -----
+new_pet_button
++ New Pet
+-----
 new_pet_subtitle
 Add a new pet to the archive.
 -----
 new_treasure_page_header
 New Treasure
+-----
+new_treasure_button
++ New Treasure
 -----
 new_treasure_subtitle
 Add a new treasure to the archive.

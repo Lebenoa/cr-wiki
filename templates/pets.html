@@ -10,12 +10,10 @@
 
     <h1 class="page-title">%pet_page_header</h1>
 
-    @if user := ctx.user
-    @if user.is_admin
+    @if ctx.is_admin()
     <div class="admin-actions">
-        <a href="/pets/new" class="btn-primary">+ New Pet</a>
+        <a href="/pets/new" class="btn-primary">%new_pet_button</a>
     </div>
-    @endif
     @endif
 
     <div class="filter-bar">
