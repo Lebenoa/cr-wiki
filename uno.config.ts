@@ -337,11 +337,11 @@ export default defineConfig({
         // shell. Keeping those as shortcuts means a page cannot drift into its
         // own spacing or breakpoints by copy-paste.
         "page-title": "text-4xl font-bold my-4 text-center",
-        "page-shell": "max-w-6xl mx-auto px-8 py-8",
+        "page-shell": "max-w-screen-2xl mx-auto px-8 py-8",
         "section-title": "text-xl font-headline font-bold text-primary mb-4",
         "back-link":
             "text-sm text-foreground-muted hover:text-primary transition-colors",
-        "admin-actions": "flex justify-end px-8 max-w-6xl mx-auto",
+        "admin-actions": "flex justify-end px-8 max-w-screen-2xl mx-auto",
         "filter-bar": "flex flex-wrap items-center justify-center gap-3 my-6 px-8",
         "filter-input":
             "bg-surface border-2 border-secondary/50 focus:border-primary focus:ring-0 rounded-full py-2 pl-4 pr-6 w-72 transition-all outline-none text-sm text-foreground",
@@ -349,9 +349,9 @@ export default defineConfig({
         // Catalog grids: one ladder for icon cards, one for the wider episode
         // cards. Nothing else should define its own column counts.
         "catalog-grid":
-            "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 p-8 max-w-6xl mx-auto",
+            "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 p-8 max-w-screen-2xl mx-auto",
         "catalog-grid-wide":
-            "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 p-8 max-w-6xl mx-auto",
+            "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 p-8 max-w-screen-2xl mx-auto",
         "card-grid":
             "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4",
 
