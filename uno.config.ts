@@ -259,9 +259,42 @@ export default defineConfig({
 				   not a JS-toggled class — UnoCSS only scans templates and
 				   app/*.v, so a class that lives solely in static/js never gets
 				   generated. */
+				[data-gacha-tab] {
+					transition: box-shadow 0.2s ease, border-color 0.2s ease, translate 0.2s ease;
+				}
+				[data-gacha-tab]:hover {
+					translate: 0 -2px;
+				}
 				[data-gacha-tab][aria-selected="true"] {
 					border-color: oklch(var(--primary, 0.62 0.22 260));
 					box-shadow: 0 0 0 2px oklch(var(--primary, 0.62 0.22 260) / 0.45);
+				}
+				/* the panel is toggled by the hidden attribute, which cannot be
+				   transitioned — so the reveal is a keyframe that runs when the
+				   element starts rendering again. Closing stays instant. */
+				@keyframes gacha-panel-in {
+					from { opacity: 0; translate: 0 -8px; }
+					to { opacity: 1; translate: 0 0; }
+				}
+				[role="tabpanel"]:not([hidden]) {
+					animation: gacha-panel-in 0.22s ease-out both;
+				}
+				/* the prize cards trail in behind the panel, capped so a 138-card
+				   pool does not stagger for seconds */
+				[role="tabpanel"]:not([hidden])[data-revealing] [data-cr-card] {
+					animation: gacha-panel-in 0.24s ease-out both;
+					animation-delay: calc(min(var(--card-index, 0), 12) * 18ms);
+				}
+				@media (prefers-reduced-motion: reduce) {
+					[data-gacha-tab],
+					[role="tabpanel"]:not([hidden]),
+					[role="tabpanel"]:not([hidden])[data-revealing] [data-cr-card] {
+						animation: none;
+						transition: none;
+					}
+					[data-gacha-tab]:hover {
+						translate: none;
+					}
 				}
 				div[popover] {
 					position-area: bottom center;

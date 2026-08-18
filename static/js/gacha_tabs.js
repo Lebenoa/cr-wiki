@@ -24,6 +24,25 @@
         return document.getElementById(tab.getAttribute('aria-controls'));
     }
 
+    // --card-index feeds the CSS animation-delay that trails the prize cards
+    // in; the stylesheet caps the delay, so a 138-card pool still settles fast.
+    // data-revealing scopes that animation to the open: without it every
+    // keystroke in the filter box would restart the stagger, since re-showing
+    // a card restarts its animation.
+    function stagger(panel) {
+        if (!panel) {
+            return;
+        }
+        var cards = panel.querySelectorAll('[data-cr-card]');
+        for (var i = 0; i < cards.length; i++) {
+            cards[i].style.setProperty('--card-index', i);
+        }
+        panel.setAttribute('data-revealing', '');
+        setTimeout(function () {
+            panel.removeAttribute('data-revealing');
+        }, 600);
+    }
+
     // replaceState, not pushState: the tab is view state, and a click per
     // history entry would make Back walk the tab strip instead of leaving the
     // page. The rest of the query string is preserved.
@@ -58,6 +77,7 @@
         });
         if (tab) {
             setOpen(tab, true);
+            stagger(panelOf(tab));
             // the filter box hides cards inside the panel; re-apply it so a
             // freshly opened pool honours a query typed while it was closed
             if (window.crFilter) {
