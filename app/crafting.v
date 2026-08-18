@@ -46,3 +46,54 @@ pub fn (ctx &Context) episode_short(id ?int) string {
 	}
 	return '${veb.tr(ctx.lang, 'episode_abbrev')} ${eid}'
 }
+
+// episode_badge_cls returns the full badge class list for an episode id, so
+// each episode reads as its own colour on the ingredient cards. Story
+// episodes run cool-to-warm in play order, the special episodes take the
+// remaining cool hues and the event ones the reds — every id its own hue.
+//
+// Each arm is a whole literal (the shared base is repeated) because these
+// render once per ingredient card, 242 of them on /crafting: concatenating a
+// base string per card allocated for nothing. UnoCSS scans app/*.v, so the
+// colours here are generated into static/styles.css.
+pub fn (ctx &Context) episode_badge_cls(id ?int) string {
+	eid := id or { return '' }
+	return match eid {
+		1 { 'text-[10px] font-label uppercase rounded-full border px-2 py-0.5 border-emerald-400 text-emerald-400' }
+		2 { 'text-[10px] font-label uppercase rounded-full border px-2 py-0.5 border-lime-400 text-lime-400' }
+		3 { 'text-[10px] font-label uppercase rounded-full border px-2 py-0.5 border-orange-400 text-orange-400' }
+		4 { 'text-[10px] font-label uppercase rounded-full border px-2 py-0.5 border-sky-400 text-sky-400' }
+		5 { 'text-[10px] font-label uppercase rounded-full border px-2 py-0.5 border-pink-400 text-pink-400' }
+		6 { 'text-[10px] font-label uppercase rounded-full border px-2 py-0.5 border-fuchsia-400 text-fuchsia-400' }
+		7 { 'text-[10px] font-label uppercase rounded-full border px-2 py-0.5 border-amber-400 text-amber-400' }
+		501 { 'text-[10px] font-label uppercase rounded-full border px-2 py-0.5 border-yellow-400 text-yellow-400' }
+		502 { 'text-[10px] font-label uppercase rounded-full border px-2 py-0.5 border-cyan-400 text-cyan-400' }
+		503 { 'text-[10px] font-label uppercase rounded-full border px-2 py-0.5 border-violet-400 text-violet-400' }
+		601 { 'text-[10px] font-label uppercase rounded-full border px-2 py-0.5 border-teal-400 text-teal-400' }
+		602 { 'text-[10px] font-label uppercase rounded-full border px-2 py-0.5 border-indigo-400 text-indigo-400' }
+		701 { 'text-[10px] font-label uppercase rounded-full border px-2 py-0.5 border-red-400 text-red-400' }
+		else { 'text-[10px] font-label uppercase rounded-full border px-2 py-0.5 border-secondary/40 text-foreground-muted' }
+	}
+}
+
+// episode_text_cls is the same palette as episode_badge_cls without the pill,
+// for the drop-location tile where the number sits inline before the name.
+pub fn (ctx &Context) episode_text_cls(id ?int) string {
+	eid := id or { return '' }
+	return match eid {
+		1 { 'text-emerald-400' }
+		2 { 'text-lime-400' }
+		3 { 'text-orange-400' }
+		4 { 'text-sky-400' }
+		5 { 'text-pink-400' }
+		6 { 'text-fuchsia-400' }
+		7 { 'text-amber-400' }
+		501 { 'text-yellow-400' }
+		502 { 'text-cyan-400' }
+		503 { 'text-violet-400' }
+		601 { 'text-teal-400' }
+		602 { 'text-indigo-400' }
+		701 { 'text-red-400' }
+		else { 'text-accent' }
+	}
+}

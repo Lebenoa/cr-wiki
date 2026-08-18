@@ -36,7 +36,7 @@
                 @if eid := ingredient.drop_episode_id
                 <a href="/episodes/@eid" hx-boost="true"
                     class="font-bold text-on-surface hover:text-primary transition-colors">
-                    <span class="text-accent">@{ctx.episode_short(ingredient.drop_episode_id)}</span>
+                    <span class="@{ctx.episode_text_cls(ingredient.drop_episode_id)}">@{ctx.episode_short(ingredient.drop_episode_id)}</span>
                     @ingredient.drop_location</a>
                 @else
                 <span class="font-bold text-on-surface">@ingredient.drop_location</span>

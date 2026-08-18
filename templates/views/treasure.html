@@ -243,7 +243,7 @@
                         @end
                         <span class="text-center text-xs font-bold text-on-surface leading-tight">@ci.name</span>
                         @if ctx.episode_short(ci.drop_episode_id) != ''
-                        <span class="text-[10px] font-label uppercase text-foreground-muted border border-secondary/40 rounded-full px-2 py-0.5">@{ctx.episode_short(ci.drop_episode_id)}</span>
+                        <span class="@{ctx.episode_badge_cls(ci.drop_episode_id)}">@{ctx.episode_short(ci.drop_episode_id)}</span>
                         @end
                     </a>
                     @endfor
