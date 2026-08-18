@@ -898,6 +898,9 @@ EXP Party Power+
 site_name
 CookieRun: Classic/FanWiki
 -----
+site_title_suffix
+Classic/FanWiki
+-----
 site_description
 Wiki and build planner for CookieRun: Classic cookies, pets, and treasures — grades, combo bonuses, effects, and score builds.
 -----

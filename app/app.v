@@ -57,11 +57,20 @@ pub fn initialize(conn sqlite.DB) !&App {
 
 pub fn (mut ctx Context) set_translate_title(key string, name ?string) {
 	title := veb.tr(ctx.lang, key)
-	ctx.page_title = if n := name {
+	mut page := if n := name {
 		title.replace('{name}', n)
 	} else {
 		title
 	}
+	// every SERP entry ends in the site name. Older keys bake the suffix into
+	// their value and newer ones do not, so append it here when it is missing
+	// rather than leaving half the sections unbranded (and half the future
+	// ones too).
+	suffix := veb.tr(ctx.lang, 'site_title_suffix')
+	if suffix != '' && !page.contains(suffix) {
+		page += ' | ${suffix}'
+	}
+	ctx.page_title = page
 }
 
 // set_translate_desc fills the meta description from a .tr key, with an
