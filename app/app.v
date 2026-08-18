@@ -145,7 +145,13 @@ pub fn (ctx &Context) cookie_img_src(image ?string) string {
 }
 
 pub fn (ctx &Context) nav_link(href string, tr_key ?string) veb.RawHtml {
-	active := ctx.req.url == '/${href}' || ctx.req.url.starts_with('/' + href + '/')
+	// compare the path only: a page carrying view state in the query
+	// (/gacha?pool=3, /treasures?tab=evo, /builds?sort=score) still owns its
+	// nav item, which a raw ctx.req.url match would drop
+	url := ctx.req.url
+	qi := url.index_u8(`?`)
+	path := if qi >= 0 { url[..qi] } else { url }
+	active := path == '/${href}' || path.starts_with('/' + href + '/')
 
 	class := if active {
 		'font-semibold text-center text-primary border-b-2 border-primary pb-1 transition-all duration-1000'
