@@ -19,13 +19,17 @@
         <a href="/crafting/@i.ingredient_id" hx-boost="true" data-cr-card data-name="@i.name"
             class="entity-card">
             <img src="@{ctx.img_src('ingredients', i.image)}" alt="@i.name" class="h-20 w-full object-contain" />
-            @if ig := i.grade
-            <span class="@{ctx.grade_badge_cls(ig)}">@{ctx.grade_label_int(ig)}</span>
+            @if i.grade != none || ctx.episode_short(i.drop_episode_id) != ''
+            <div class="flex items-center gap-2">
+                @if ig := i.grade
+                <span class="@{ctx.grade_badge_cls(ig)}">@{ctx.grade_label_int(ig)}</span>
+                @end
+                @if ctx.episode_short(i.drop_episode_id) != ''
+                <span class="@{ctx.episode_badge_cls(i.drop_episode_id)}">@{ctx.episode_short(i.drop_episode_id)}</span>
+                @end
+            </div>
             @end
             <span class="card-title">@i.name</span>
-            @if ctx.episode_short(i.drop_episode_id) != ''
-            <span class="@{ctx.episode_badge_cls(i.drop_episode_id)}">@{ctx.episode_short(i.drop_episode_id)}</span>
-            @end
             @if i.recipe_count > 0
             <span class="card-meta">@i.recipe_count
                 %crafting_recipes_label</span>
