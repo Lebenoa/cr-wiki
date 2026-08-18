@@ -50,6 +50,8 @@ pub fn initialize(path string) !sqlite.DB {
 		create table models.TreasureLevel
 		create table models.GachaPool
 		create table models.GachaPoolEntry
+		create table models.EconomyTable
+		create table models.EconomyRow
 	}!
 
 	tune(conn)
@@ -79,6 +81,11 @@ pub fn initialize(path string) !sqlite.DB {
 //     transactions). This is the single biggest write-latency win.
 //   - busy_timeout: veb serves requests on several threads; without a timeout
 //     a concurrent writer returns SQLITE_BUSY immediately instead of waiting.
+//
+// foreign_keys stays OFF (SQLite's default): several ORM-declared references
+// omit the parent column (`references: 'effect'`), which SQLite rejects with
+// "foreign key mismatch" the moment enforcement is on — a fresh seed dies on
+// the first effect_translation insert.
 //   - cache_size=-16000 (16 MiB) + mmap_size: the whole roster DB fits in
 //     page cache, so list/detail pages stop re-reading pages from disk.
 //   - temp_store=MEMORY: the in-memory sorts FTS and ORDER BY spill to temp
@@ -91,7 +98,6 @@ fn tune(conn sqlite.DB) {
 		'PRAGMA journal_mode = WAL',
 		'PRAGMA synchronous = NORMAL',
 		'PRAGMA busy_timeout = 5000',
-		'PRAGMA foreign_keys = ON',
 		'PRAGMA cache_size = -16000',
 		'PRAGMA temp_store = MEMORY',
 		'PRAGMA mmap_size = 268435456',
@@ -128,6 +134,7 @@ pub struct SeedFixture {
 	quest                []models.Quest
 	ingredient           []models.Ingredient
 	ingredient_translation []models.IngredientTranslation
+	ingredient_recipe    []models.IngredientRecipe
 	jelly                []models.Jelly
 	jelly_translation    []models.JellyTranslation
 	jelly_maker          []models.JellyMaker
@@ -135,6 +142,8 @@ pub struct SeedFixture {
 	skin_translation     []models.SkinTranslation
 	gacha_pool           []models.GachaPool
 	gacha_pool_entry     []models.GachaPoolEntry
+	economy_table        []models.EconomyTable
+	economy_row          []models.EconomyRow
 	build                []models.Build
 }
 
@@ -278,6 +287,11 @@ fn insert_fixture(conn sqlite.DB, fixture SeedFixture) ! {
 			insert tr into models.IngredientTranslation
 		}!
 	}
+	for r in fixture.ingredient_recipe {
+		sql conn {
+			insert r into models.IngredientRecipe
+		}!
+	}
 	for j in fixture.jelly {
 		sql conn {
 			insert j into models.Jelly
@@ -311,6 +325,16 @@ fn insert_fixture(conn sqlite.DB, fixture SeedFixture) ! {
 	for e in fixture.gacha_pool_entry {
 		sql conn {
 			insert e into models.GachaPoolEntry
+		}!
+	}
+	for t in fixture.economy_table {
+		sql conn {
+			insert t into models.EconomyTable
+		}!
+	}
+	for r in fixture.economy_row {
+		sql conn {
+			insert r into models.EconomyRow
 		}!
 	}
 }
