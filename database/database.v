@@ -52,11 +52,11 @@ pub fn initialize(path string) !sqlite.DB {
 		create table models.GachaPoolEntry
 	}!
 
+	tune(conn)
 	migrate(conn)!
 	create_indexes(conn)!
 
 	$if sqlite_fts5 ? {
-		conn.exec("PRAGMA journal_mode = WAL; PRAGMA synchoronous = FULL;")!
 		create_fts(conn)
 	}
 
@@ -64,6 +64,43 @@ pub fn initialize(path string) !sqlite.DB {
 	// roster from the committed fixture so the site works out of the box.
 	seed_if_empty(conn)!
 	return conn
+}
+
+// tune applies the connection-level PRAGMAs the whole server runs on. It used
+// to live behind the `sqlite_fts5` comptime gate and carried a typo
+// ("synchoronous"), which SQLite silently ignores — so the process ran with
+// the default synchronous=FULL and no busy timeout, fsync-ing on every commit
+// and failing writes instantly under concurrency.
+//
+//   - WAL: readers never block the writer, which is the whole point for a
+//     read-heavy SSR wiki. Unconditional now, not fts5-gated.
+//   - synchronous=NORMAL: the documented safe pairing with WAL (a commit is
+//     durable across process crashes; only a power loss can lose the last
+//     transactions). This is the single biggest write-latency win.
+//   - busy_timeout: veb serves requests on several threads; without a timeout
+//     a concurrent writer returns SQLITE_BUSY immediately instead of waiting.
+//   - cache_size=-16000 (16 MiB) + mmap_size: the whole roster DB fits in
+//     page cache, so list/detail pages stop re-reading pages from disk.
+//   - temp_store=MEMORY: the in-memory sorts FTS and ORDER BY spill to temp
+//     files otherwise.
+//
+// Failures are logged, not fatal: a PRAGMA that this SQLite build rejects must
+// not stop the server from booting.
+fn tune(conn sqlite.DB) {
+	pragmas := [
+		'PRAGMA journal_mode = WAL',
+		'PRAGMA synchronous = NORMAL',
+		'PRAGMA busy_timeout = 5000',
+		'PRAGMA foreign_keys = ON',
+		'PRAGMA cache_size = -16000',
+		'PRAGMA temp_store = MEMORY',
+		'PRAGMA mmap_size = 268435456',
+	]
+	for p in pragmas {
+		// journal_mode returns a row, so it must go through exec (exec_none
+		// discards it); the rest are no-result statements but exec handles both.
+		conn.exec(p) or { log.warn('pragma failed: ${p} (${err})') }
+	}
 }
 
 // SeedFixture mirrors the committed scripts/seed_data.json dump: the roster
