@@ -146,15 +146,6 @@ fn episode_translation_map(conn sqlite.DB, lang string) map[int]map[string]strin
 	return out
 }
 
-// episode_kind_order ranks kinds for the browser: story, special, event.
-fn episode_kind_order(kind string) int {
-	return match kind {
-		'story' { 0 }
-		'special' { 1 }
-		else { 2 }
-	}
-}
-
 // select_relics loads every relic grouped by its owning episode (event relics
 // last, under an empty episode name), with localized names/descriptions and
 // the unlock-cookie name for event relics.
@@ -222,20 +213,15 @@ pub fn select_relics(conn sqlite.DB, lang string) []RelicGroupView {
 			event << rv
 		}
 	}
+	// episode ids encode the kind order the groups need — story 1-7, then
+	// special 501+, then event 601+ — so the id sort SQLite already does for
+	// free is the kind-then-id sort (same invariant episode_short() reads the
+	// badge from). No comparator, no second pass over the rows.
 	eps := sql conn {
-		select from models.Episode
+		select from models.Episode order by episode_id
 	} or { return [] }
-	mut ordered := eps.clone()
-	ordered.sort_with_compare(fn (a &models.Episode, b &models.Episode) int {
-		ka := episode_kind_order(a.kind)
-		kb := episode_kind_order(b.kind)
-		if ka != kb {
-			return ka - kb
-		}
-		return (a.episode_id or { 0 }) - (b.episode_id or { 0 })
-	})
 	mut groups := []RelicGroupView{}
-	for e in ordered {
+	for e in eps {
 		if relics := by_ep[e.episode_id or { 0 }] {
 			groups << RelicGroupView{
 				episode_id:   e.episode_id
@@ -255,8 +241,10 @@ pub fn select_relics(conn sqlite.DB, lang string) []RelicGroupView {
 // select_episodes loads every episode for the /episodes browser: the list
 // fields plus stage/quest/relic counts (the detail collections stay empty).
 pub fn select_episodes(conn sqlite.DB, lang string) []EpisodeView {
+	// ordered by id, which is the kind order the browser wants (see
+	// select_relics): story 1-7, special 501+, event 601+
 	eps := sql conn {
-		select from models.Episode
+		select from models.Episode order by episode_id
 	} or { return [] }
 	ep_names := episode_translation_map(conn, lang)
 	stages := sql conn {
@@ -301,14 +289,6 @@ pub fn select_episodes(conn sqlite.DB, lang string) []EpisodeView {
 			relic_count:   relic_count
 		}
 	}
-	out.sort_with_compare(fn (a &EpisodeView, b &EpisodeView) int {
-		ka := episode_kind_order(a.kind)
-		kb := episode_kind_order(b.kind)
-		if ka != kb {
-			return ka - kb
-		}
-		return a.episode_id - b.episode_id
-	})
 	return out
 }
 
@@ -568,12 +548,47 @@ fn drop_location_text(raw string, episode_id ?int, names map[int]string) string 
 	return raw
 }
 
+// ingredient_catalog_sql orders the /crafting grid: grade first, rarest down
+// to commonest (ungraded last — SQLite sorts NULL below every value, so DESC
+// puts them at the end), then drop episode in play order, since the id ranges
+// already ascend story (1-7) -> special (501+) -> event (601+). The nine
+// ingredients that drop everywhere carry no episode id and sort after the
+// ones that name an episode, which needs the explicit `IS NULL` key: SQLite
+// would otherwise put those NULLs first on an ASC sort. Id breaks ties so the
+// order is stable.
+//
+// Raw SQL because the ORM cannot express it: orm.SelectConfig carries one
+// `order` column plus one `order_type`, emitted as a quoted identifier — no
+// second key, no expression, no NULLS LAST.
+const ingredient_catalog_sql = 'SELECT ingredient_id, image, grade, drop_episode_id, ' +
+	'drop_location, coin_value, breaks_into_powder, craft_from_powder, obtained_from ' +
+	'FROM ingredient ' +
+	'ORDER BY grade DESC, drop_episode_id IS NULL, drop_episode_id, ingredient_id'
+
 // select_ingredients loads every ingredient with its localized name and the
 // number of treasures it crafts, for the /crafting index.
 pub fn select_ingredients(conn sqlite.DB, lang string) []IngredientCraftView {
-	ings := sql conn {
-		select from models.Ingredient order by ingredient_id
-	} or { return [] }
+	rows := conn.exec(ingredient_catalog_sql) or { return [] }
+	mut ings := []models.Ingredient{cap: rows.len}
+	for r in rows {
+		// values arrive as strings and SQL NULL reads back as '', which is
+		// the only way to tell a missing grade from grade 0 (a real grade)
+		// — get_int maps both to 0. Same pattern as images_by_ids.
+		img := r.get_string('image')
+		grade := r.get_string('grade')
+		episode := r.get_string('drop_episode_id')
+		ings << models.Ingredient{
+			ingredient_id:      r.get_int('ingredient_id')
+			image:              if img == '' { none } else { img }
+			grade:              if grade == '' { none } else { grade.int() }
+			drop_episode_id:    if episode == '' { none } else { episode.int() }
+			drop_location:      r.get_string('drop_location')
+			coin_value:         r.get_int('coin_value')
+			breaks_into_powder: r.get_int('breaks_into_powder')
+			craft_from_powder:  r.get_int('craft_from_powder')
+			obtained_from:      r.get_string('obtained_from')
+		}
+	}
 	itrs := sql conn {
 		select from models.IngredientTranslation where lang == lang || lang == 'en'
 	} or { return [] }
@@ -1077,8 +1092,11 @@ pub fn select_gacha(conn sqlite.DB, lang string) []GachaPoolView {
 	pools := sql conn {
 		select from models.GachaPool order by pool_id
 	} or { return [] }
+	// ordered by sort_order, not pool_id: the entries are grouped into a map
+	// keyed by pool below, and a V map keeps insertion order, so each pool's
+	// slice comes out in the catalog's own order without a per-pool sort.
 	entries := sql conn {
-		select from models.GachaPoolEntry order by pool_id
+		select from models.GachaPoolEntry order by sort_order
 	} or { return [] }
 	tr_info := treasure_info(conn, lang)
 	pt := pet_info(conn, lang)
@@ -1092,8 +1110,7 @@ pub fn select_gacha(conn sqlite.DB, lang string) []GachaPoolView {
 	mut out := []GachaPoolView{}
 	for p in pools {
 		pid := p.pool_id or { 0 }
-		mut es := by_pool[pid] or { [] }
-		es.sort(a.sort_order < b.sort_order)
+		es := by_pool[pid] or { [] }
 		mut views := []GachaEntryView{}
 		for e in es {
 			mut v := GachaEntryView{

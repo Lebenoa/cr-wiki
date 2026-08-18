@@ -1550,7 +1550,14 @@ pub fn treasure_options(conn sqlite.DB, lang string, equippable bool) ![]IdNameO
 		}
 	}
 	// match the /treasures list order: grade (highest first) then newest
-	// release date, so the picker modal presents the same sequence
+	// release date, so the picker modal presents the same sequence.
+	//
+	// The one ordering left in V on purpose. SQLite can express it — it is
+	// select_treasures' ORDER BY — but the name tie-break needs the two
+	// translation LEFT JOINs, and measured on this catalog that query costs
+	// ~1.6ms against ~0.7ms for the plain scan this function does, to replace
+	// a comparator that sorts 872 ints. Ordering by treasure_id instead would
+	// drop the joins but change the order of same-grade, same-date rows.
 	out.sort_with_compare(compare_treasure_options)
 	return out
 }
@@ -1572,8 +1579,11 @@ pub fn normal_treasure_options(conn sqlite.DB, lang string) ![]IdNameOption {
 // cookie_options lists every cookie's id and localized name for the treasure
 // admin form's "unlocked by cookie" selector.
 pub fn cookie_options(conn sqlite.DB, lang string) ![]IdNameOption {
+	// newest first, matching the /cookies list, so the picker modal presents
+	// the same sequence as the catalog page. Ordered by the primary key, so
+	// SQLite walks the table b-tree backwards instead of building a sort.
 	cookies := sql conn {
-		select from models.Cookie
+		select from models.Cookie order by cookie_id desc
 	}!
 	user_lang := lang
 	translations := sql conn {
@@ -1612,25 +1622,17 @@ pub fn cookie_options(conn sqlite.DB, lang string) ![]IdNameOption {
 			}
 		}
 	}
-	// match the /cookies list order (newest id first) so the picker modal
-	// presents the same sequence as the catalog page
-	out.sort_with_compare(fn (a &IdNameOption, b &IdNameOption) int {
-		if a.id > b.id {
-			return -1
-		}
-		if a.id < b.id {
-			return 1
-		}
-		return 0
-	})
 	return out
 }
 
 // pet_options lists every pet's id and localized name for the treasure admin
 // form's "unlocked by pet" selector.
 pub fn pet_options(conn sqlite.DB, lang string) ![]IdNameOption {
+	// newest first, matching the /pets list, so the picker modal presents
+	// the same sequence as the catalog page. Ordered by the primary key, so
+	// SQLite walks the table b-tree backwards instead of building a sort.
 	pets := sql conn {
-		select from models.Pet
+		select from models.Pet order by pet_id desc
 	}!
 	user_lang := lang
 	translations := sql conn {
@@ -1669,17 +1671,6 @@ pub fn pet_options(conn sqlite.DB, lang string) ![]IdNameOption {
 			}
 		}
 	}
-	// match the /pets list order (newest id first) so the picker modal
-	// presents the same sequence as the catalog page
-	out.sort_with_compare(fn (a &IdNameOption, b &IdNameOption) int {
-		if a.id > b.id {
-			return -1
-		}
-		if a.id < b.id {
-			return 1
-		}
-		return 0
-	})
 	return out
 }
 
