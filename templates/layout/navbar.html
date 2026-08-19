@@ -18,8 +18,8 @@
                 </svg>
             </button>
             <div class="hidden md:flex gap-8 items-center">                    @{ctx.nav_link('builds')}
-                    <button type="button" class="@{ctx.wiki_class()} flex items-center gap-1"
-                        popovertarget="wiki-dropdown" aria-haspopup="menu">
+                    <button type="button" id="wiki-trigger" class="@{ctx.wiki_class()} flex items-center gap-1"
+                        popovertarget="wiki-dropdown">
                         %wiki
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
                             fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
@@ -29,7 +29,7 @@
                     </button>
                     <div id="wiki-dropdown" popover
                         class="p-4 m-bs-1 inline-48 bg-background text-foreground rounded border border-accent transition-discrete transition-all duration-300 flex-col gap-2 hidden popover-open:flex">
-                        @for section in ctx.wiki_sections()
+                        @for section in ctx.wiki_section_names()
                         @{ctx.nav_link(section)}
                         @endfor
                     </div>
@@ -77,8 +77,8 @@
             </button>
             <div id="mobile-nav" popover
                 class="p-4 m-bs-1 inline-64 bg-background text-foreground rounded border border-accent transition-discrete transition-all duration-300 flex-col gap-2 hidden popover-open:flex">                    @{ctx.nav_link('builds')}
-                    <button type="button" class="@{ctx.wiki_class()} flex items-center gap-1"
-                        popovertarget="wiki-dropdown-mobile" aria-haspopup="menu">
+                    <button type="button" id="wiki-trigger-mobile" class="@{ctx.wiki_class()} flex items-center gap-1"
+                        popovertarget="wiki-dropdown-mobile">
                         %wiki
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
                             fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
@@ -88,7 +88,7 @@
                     </button>
                     <div id="wiki-dropdown-mobile" popover
                         class="p-4 m-bs-1 inline-48 bg-background text-foreground rounded border border-accent transition-discrete transition-all duration-300 flex-col gap-2 hidden popover-open:flex">
-                        @for section in ctx.wiki_sections()
+                        @for section in ctx.wiki_section_names()
                         @{ctx.nav_link(section)}
                         @endfor
                     </div>

@@ -309,6 +309,27 @@ export default defineConfig({
 						}
 					}
 				}
+				/* Without the Popover API the trigger button is inert, which
+				   would strand every wiki section behind a dead control — they
+				   have no other navbar entry. Fall back to rendering the
+				   dropdown inline, always open. */
+				@supports not selector(:popover-open) {
+					#wiki-dropdown,
+					#wiki-dropdown-mobile {
+						display: flex;
+						position: static;
+						opacity: 1;
+						translate: none;
+						margin-block-start: 0;
+						border: 0;
+						padding: 0;
+						background: transparent;
+					}
+					#wiki-trigger,
+					#wiki-trigger-mobile {
+						display: none;
+					}
+				}
 				#theme-trigger {
 					anchor-name: --theme-trigger;
 				}

@@ -565,11 +565,32 @@ fn unlock_entity_image(conn sqlite.DB, kind string, id int) ?string {
 }
 
 // entity_image_by_id returns the image filename for a cookie, pet, or
-// treasure, or none when the entity has no image (5 treasures have none). The
-// rich-text renderer uses it to put a thumbnail in front of a [[kind:id]]
-// link.
+// treasure, or none when the entity has no image (5 treasures have none).
 pub fn entity_image_by_id(conn sqlite.DB, kind string, id int) ?string {
 	return unlock_entity_image(conn, kind, id)
+}
+
+// entity_link_by_id returns the localized name and the image filename for a
+// rich-text [[kind:id]] link in one query. Name resolution matches
+// entity_name_by_id (user lang, falling back to en); the name is '' when the
+// id doesn't exist or no translation covers it, and the image is '' when the
+// entity has none. Combined because the renderer needs both for every link,
+// and two separate lookups meant two full-row queries per linked entity on
+// the detail pages.
+pub fn entity_link_by_id(conn sqlite.DB, kind string, id int, lang string) (string, string) {
+	etable, ttable, id_col, owner_col := match kind {
+		'pet' { 'pet', 'pet_translation', 'pet_id', 'pet_id' }
+		'treasure' { 'treasure', 'treasure_translation', 'treasure_id', 'treasure_id' }
+		else { 'cookie', 'cookie_translation', 'cookie_id', 'owner_id' }
+	}
+	l := sql_quote(lang)
+	rows := conn.exec('SELECT e.image AS image, t.name AS name FROM ${etable} e ' +
+		"LEFT JOIN ${ttable} t ON t.${owner_col} = e.${id_col} AND t.lang IN (${l}, 'en') " +
+		'WHERE e.${id_col} = ${id} ORDER BY (t.lang = ${l}) DESC LIMIT 1') or { return '', '' }
+	if rows.len == 0 {
+		return '', ''
+	}
+	return rows[0].get_string('name'), rows[0].get_string('image')
 }
 
 // entity_name_by_id returns the localized name of a cookie, pet, or treasure

@@ -21,6 +21,10 @@ pub mut:
 	og_image   string
 	noindex    bool
 	user       ?models.User
+	// request path with the query stripped, filled once in before_request:
+	// the navbar asks for it ~34 times per page (two navbars, each running
+	// wiki_active over 8 sections plus a nav_link per dropdown entry)
+	nav_path_cache string
 }
 
 pub struct App {
@@ -222,20 +226,37 @@ pub fn (ctx &Context) cookie_img_src(image ?string) string {
 	return ctx.img_src('cookies', image)
 }
 
-// nav_path strips the query off the request URL: a page carrying view state
-// there (/gacha?pool=3, /treasures?tab=evo, /builds?sort=score) still owns its
-// nav item, which a raw ctx.req.url match would drop.
-fn (ctx &Context) nav_path() string {
-	url := ctx.req.url
+// strip_query drops the query off a URL: a page carrying view state there
+// (/gacha?pool=3, /treasures?tab=evo, /builds?sort=score) still owns its nav
+// item, which a raw ctx.req.url match would drop.
+fn strip_query(url string) string {
 	qi := url.index_u8(`?`)
 	return if qi >= 0 { url[..qi] } else { url }
 }
 
+// nav_path is the cached request path. before_request fills the cache; the
+// fallback covers contexts that never ran the middleware (an early-out
+// response still renders a layout).
+fn (ctx &Context) nav_path() string {
+	if ctx.nav_path_cache != '' {
+		return ctx.nav_path_cache
+	}
+	return strip_query(ctx.req.url)
+}
+
 // nav_section_active reports whether the current page is `href` or lives under
-// it (/cookies/12 keeps the cookies item lit).
+// it (/cookies/12 keeps the cookies item lit). Compared byte-wise rather than
+// against built-up '/href' and '/href/' strings: the navbar calls this ~34
+// times per render, and every one of those was two throwaway allocations.
 fn (ctx &Context) nav_section_active(href string) bool {
 	path := ctx.nav_path()
-	return path == '/${href}' || path.starts_with('/' + href + '/')
+	if path.len < href.len + 1 || path[0] != `/` {
+		return false
+	}
+	if !starts_at(path, 1, href) {
+		return false
+	}
+	return path.len == href.len + 1 || path[href.len + 1] == `/`
 }
 
 // wiki_sections are the reference pages grouped behind the navbar's Wiki
@@ -244,8 +265,11 @@ fn (ctx &Context) nav_section_active(href string) bool {
 const wiki_sections = ['cookies', 'pets', 'treasures', 'episodes', 'ingredients', 'jellies',
 	'skins', 'gacha']
 
-// wiki_sections lists the dropdown's entries for the navbar template.
-pub fn (ctx &Context) wiki_sections() []string {
+// wiki_section_names lists the dropdown's entries for the navbar template.
+// Named apart from the const it returns, the way theme_options() exposes
+// `themes` — a bare `wiki_sections` inside a method of the same name reads
+// like recursion until you recall that V resolves it to module scope.
+pub fn (ctx &Context) wiki_section_names() []string {
 	return wiki_sections
 }
 
@@ -416,6 +440,7 @@ pub fn (mut wapp App) before_request(mut ctx Context) bool {
 		}
 	}
 	ctx.lang = lang
+	ctx.nav_path_cache = strip_query(ctx.req.url)
 
 	ctx.user = if user_cookie := ctx.req.cookie(session_cookie_key) {
 		mut has_session := false

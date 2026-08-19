@@ -617,7 +617,7 @@ fn test_rich_text(mut tc TestContext) ! {
 	cid := row.get_int('owner_id')
 	// [[cookie:id]] -> link to the cookie page with the localized display name
 	html1 := render_rich_text(tc.db, 'en', 'see [[cookie:${cid}]] here')
-	if !html1.contains('<a href="/cookies/${cid}"') || !html1.contains('>${html.escape(name)}</a>') {
+	if !html1.contains('<a href="/cookies/${cid}"') || !html1.contains('>${html.escape(name)}</span></a>') {
 		return error('rich text: [[cookie:id]] did not become a cookie link, got: ${html1}')
 	}
 	// bare [[id]] defaults to a cookie link (mirroring the old [[Name]] form)
@@ -630,7 +630,7 @@ fn test_rich_text(mut tc TestContext) ! {
 	pname := prow.get_string('name')
 	pid := prow.get_int('pet_id')
 	html1b := render_rich_text(tc.db, 'en', 'see [[pet:${pid}]] here')
-	if !html1b.contains('<a href="/pets/${pid}"') || !html1b.contains('>${html.escape(pname)}</a>') {
+	if !html1b.contains('<a href="/pets/${pid}"') || !html1b.contains('>${html.escape(pname)}</span></a>') {
 		return error('rich text: [[pet:id]] did not become a pet link, got: ${html1b}')
 	}
 	trow := tc.db.exec('SELECT name, treasure_id FROM treasure_translation WHERE lang = "en" LIMIT 1')![0]
@@ -638,7 +638,7 @@ fn test_rich_text(mut tc TestContext) ! {
 	tid := trow.get_int('treasure_id')
 	html1c := render_rich_text(tc.db, 'en', 'see [[treasure:${tid}]] here')
 	// the link text is HTML-escaped (apostrophes render as &#39;)
-	if !html1c.contains('<a href="/treasures/${tid}"') || !html1c.contains('>${html.escape(trname)}</a>') {
+	if !html1c.contains('<a href="/treasures/${tid}"') || !html1c.contains('>${html.escape(trname)}</span></a>') {
 		return error('rich text: [[treasure:id]] did not become a treasure link, got: ${html1c}')
 	}
 	// the same [[id]] markup localizes at render time — the point of ids over
@@ -651,23 +651,29 @@ fn test_rich_text(mut tc TestContext) ! {
 		}
 	}
 	html1f := render_rich_text(tc.db, 'th', 'see [[cookie:${cid}]] here')
-	if !html1f.contains('>${html.escape(thname)}</a>') {
+	if !html1f.contains('>${html.escape(thname)}</span></a>') {
 		return error('rich text: [[cookie:id]] must render the localized name, got: ${html1f}')
 	}
 	// a link carries the entity's thumbnail ahead of the name; entities with
 	// no image (5 treasures) degrade to a plain link rather than a broken img
-	cimg := tc.db.exec('SELECT image FROM cookie WHERE cookie_id = ${cid}')![0].get_string('image')
+	crows := tc.db.exec('SELECT image FROM cookie WHERE cookie_id = ${cid}')!
+	if crows.len == 0 {
+		return error('rich text: cookie ${cid} has a translation but no cookie row')
+	}
+	cimg := crows[0].get_string('image')
 	if cimg != '' && !html1.contains('<img src="/img/cookies/${cimg}"') {
 		return error('rich text: link must carry the entity thumbnail, got: ${html1}')
 	}
-	if noimg := tc.db.exec('SELECT treasure_id FROM treasure WHERE image IS NULL OR image = "" LIMIT 1') {
-		if noimg.len > 0 {
-			ntid := noimg[0].get_int('treasure_id')
-			htmln := render_rich_text(tc.db, 'en', '[[treasure:${ntid}]]')
-			if htmln.contains('<img') {
-				return error('rich text: an imageless entity must not emit an img tag, got: ${htmln}')
-			}
-		}
+	// single-quoted '' on purpose: "" is a string only under SQLite's
+	// double-quoted-string misfeature, and would raise on a SQLITE_DQS=0 build
+	noimg := tc.db.exec("SELECT treasure_id FROM treasure WHERE image IS NULL OR image = '' LIMIT 1")!
+	if noimg.len == 0 {
+		return error('rich text: no imageless treasure in the fixture to test against')
+	}
+	ntid := noimg[0].get_int('treasure_id')
+	htmln := render_rich_text(tc.db, 'en', '[[treasure:${ntid}]]')
+	if htmln.contains('<img') {
+		return error('rich text: an imageless entity must not emit an img tag, got: ${htmln}')
 	}
 	// unknown kind prefix stays literal
 	html1e := render_rich_text(tc.db, 'en', 'see [[gadget:${cid}]] here')

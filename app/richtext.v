@@ -44,8 +44,9 @@ pub fn render_rich_text(conn sqlite.DB, lang string, raw string) veb.RawHtml {
 			if ok {
 				cache_key := '${kind}:${eid}'
 				display := name_cache[cache_key] or {
-					n := database.entity_name_by_id(conn, kind, eid, lang)
+					n, im := database.entity_link_by_id(conn, kind, eid, lang)
 					name_cache[cache_key] = n
+					image_cache[cache_key] = im
 					n
 				}
 				if display != '' {
@@ -56,23 +57,26 @@ pub fn render_rich_text(conn sqlite.DB, lang string, raw string) veb.RawHtml {
 						'treasure' { 'treasures' }
 						else { 'cookies' }
 					}
-					out.write_string('<a href="/${dir}/${eid}" class="inline-flex items-center gap-1 font-bold underline decoration-primary decoration-2 underline-offset-4 hover:text-primary transition-colors">')
-					// a thumbnail in front of the name, when the entity has one
-					// (5 treasures do not). Cached alongside the name so a
-					// description linking the same entity twice stays at one
-					// pair of queries. alt is empty: the link text right after
-					// it already names the entity, so announcing it twice only
+					// the anchor stays a plain inline box: inline-flex would
+					// make it an atomic inline that cannot break across lines,
+					// so a long name in a narrow column would overflow instead
+					// of wrapping.
+					out.write_string('<a href="/${dir}/${eid}" class="font-bold hover:text-primary transition-colors">')
+					// a thumbnail ahead of the name, when the entity has one (5
+					// treasures do not). Filled by the same lookup as the name,
+					// so a description linking one entity twice stays at a
+					// single query. alt is empty: the link text right after it
+					// already names the entity, so announcing it twice only
 					// adds noise for screen readers.
-					img := image_cache[cache_key] or {
-						v := database.entity_image_by_id(conn, kind, eid) or { '' }
-						image_cache[cache_key] = v
-						v
-					}
+					img := image_cache[cache_key] or { '' }
 					if img != '' {
-						out.write_string('<img src="/img/${dir}/${html.escape(img)}" alt="" loading="lazy" class="inline-block size-5 shrink-0 object-contain" />')
+						out.write_string('<img src="/img/${dir}/${html.escape(img)}" alt="" loading="lazy" class="inline-block size-5 mr-1 object-contain align-text-bottom" />')
 					}
+					// the underline lives on the text, not the anchor: a
+					// decoration on the anchor is drawn across the thumbnail too
+					out.write_string('<span class="underline decoration-primary decoration-2 underline-offset-4">')
 					out.write_string(html.escape(display))
-					out.write_string('</a>')
+					out.write_string('</span></a>')
 					i = end + 2
 					continue
 				}
