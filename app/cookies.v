@@ -63,6 +63,8 @@ pub fn (mut wapp App) new_cookie(mut ctx Context) veb.Result {
 			ctx.res.set_status(.bad_request)
 			return cookie_submit_error(wapp, ctx, none, 'Failed to create cookie: ${err}')
 		}
+		// picker lists cache the catalog; a write has to show up next request
+		wapp.invalidate_options()
 
 		return submit_success(mut ctx, '/cookies/${cookie_id}')
 	}
@@ -126,6 +128,8 @@ pub fn (mut wapp App) edit_cookie(mut ctx Context, id int) veb.Result {
 			ctx.res.set_status(.bad_request)
 			return cookie_submit_error(wapp, ctx, cookie, 'Failed to update cookie: ${err}')
 		}
+		// picker lists cache the catalog; a write has to show up next request
+		wapp.invalidate_options()
 
 		return submit_success(mut ctx, '/cookies/${id}')
 	}

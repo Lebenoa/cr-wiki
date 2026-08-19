@@ -428,8 +428,8 @@ fn cookie_form_state(wapp &App, ctx &Context, edit ?database.CookieView) CookieF
 	mut state := CookieForm{
 		lang:         ctx.lang
 		grade:        'c'
-		treasures:    database.treasure_options(wapp.db, ctx.lang, false) or { [] }
-		partners:     database.pet_options(wapp.db, ctx.lang) or { [] }
+		treasures:    wapp.treasure_options(ctx.lang, false)
+		partners:     wapp.pet_options(ctx.lang)
 		partner_kind: 'pet'
 		effect_names: database.effect_names(wapp.db, ctx.lang) or { [] }
 	}
@@ -503,8 +503,8 @@ fn pet_form_state(wapp &App, ctx &Context, edit ?database.PetView) PetForm {
 	mut state := PetForm{
 		lang:         ctx.lang
 		grade:        'c'
-		treasures:    database.treasure_options(wapp.db, ctx.lang, false) or { [] }
-		partners:     database.cookie_options(wapp.db, ctx.lang) or { [] }
+		treasures:    wapp.treasure_options(ctx.lang, false)
+		partners:     wapp.cookie_options(ctx.lang)
 		partner_kind: 'cookie'
 		effect_names: database.effect_names(wapp.db, ctx.lang) or { [] }
 	}
@@ -570,9 +570,9 @@ fn treasure_form_state(wapp &App, ctx &Context, edit ?database.TreasureView) Tre
 	mut state := TreasureForm{
 		lang:         ctx.lang
 		effect_names: database.effect_names(wapp.db, ctx.lang) or { [] }
-		cookies:      database.cookie_options(wapp.db, ctx.lang) or { [] }
-		pets:         database.pet_options(wapp.db, ctx.lang) or { [] }
-		bases:        database.normal_treasure_options(wapp.db, ctx.lang) or { [] }
+		cookies:      wapp.cookie_options(ctx.lang)
+		pets:         wapp.pet_options(ctx.lang)
+		bases:        wapp.normal_treasure_options(ctx.lang)
 	}
 	if t := edit {
 		rd := t.release_date

@@ -81,6 +81,8 @@ pub fn (mut wapp App) new_treasure(mut ctx Context) veb.Result {
 			ctx.res.set_status(.bad_request)
 			return treasure_submit_error(wapp, ctx, none, 'Failed to create treasure: ${err}')
 		}
+		// picker lists cache the catalog; a write has to show up next request
+		wapp.invalidate_options()
 
 		return submit_success(mut ctx, '/treasures')
 	}
@@ -170,6 +172,8 @@ pub fn (mut wapp App) edit_treasure(mut ctx Context, id int) veb.Result {
 			ctx.res.set_status(.bad_request)
 			return treasure_submit_error(wapp, ctx, treasure, 'Failed to update treasure: ${err}')
 		}
+		// picker lists cache the catalog; a write has to show up next request
+		wapp.invalidate_options()
 
 		return submit_success(mut ctx, '/treasures/${id}')
 	}

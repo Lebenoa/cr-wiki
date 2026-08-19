@@ -206,9 +206,9 @@ pub fn (mut wapp App) builds(mut ctx Context) veb.Result {
 		return $veb.html('./templates/components/build_cards.html')
 	}
 
-	cookies := database.cookie_options(wapp.db, ctx.lang) or { [] }
-	pets := database.pet_options(wapp.db, ctx.lang) or { [] }
-	treasures := database.treasure_options(wapp.db, ctx.lang, true) or { [] }
+	cookies := wapp.cookie_options(ctx.lang)
+	pets := wapp.pet_options(ctx.lang)
+	treasures := wapp.treasure_options(ctx.lang, true)
 	sel_cookie := resolve_option(cookies, filter_cookie)
 	sel_pet := resolve_option(pets, filter_pet)
 	sel_treasure := resolve_option(treasures, filter_treasure)
@@ -227,9 +227,9 @@ pub fn (wapp &App) new_build(mut ctx Context) veb.Result {
 	ctx.set_translate_title('new_build_page_title')
 	ctx.noindex = true
 	sel := selection_from_query(ctx)
-	cookies := database.cookie_options(wapp.db, ctx.lang) or { [] }
-	pets := database.pet_options(wapp.db, ctx.lang) or { [] }
-	treasures := database.treasure_options(wapp.db, ctx.lang, true) or { [] }
+	cookies := wapp.cookie_options(ctx.lang)
+	pets := wapp.pet_options(ctx.lang)
+	treasures := wapp.treasure_options(ctx.lang, true)
 	preview := build_preview(wapp, ctx, sel, cookies, pets, treasures)
 	sel_cookie := resolve_option(cookies, sel.cookie)
 	sel_cookie2 := resolve_option(cookies, sel.cookie2)
@@ -254,9 +254,9 @@ pub fn (mut wapp App) preview_partial(mut ctx Context) veb.Result {
 		return rate_limited_response(mut ctx)
 	}
 	sel := selection_from_query(ctx)
-	cookies := database.cookie_options(wapp.db, ctx.lang) or { [] }
-	pets := database.pet_options(wapp.db, ctx.lang) or { [] }
-	treasures := database.treasure_options(wapp.db, ctx.lang, true) or { [] }
+	cookies := wapp.cookie_options(ctx.lang)
+	pets := wapp.pet_options(ctx.lang)
+	treasures := wapp.treasure_options(ctx.lang, true)
 	preview := build_preview(wapp, ctx, sel, cookies, pets, treasures)
 	return $veb.html('./templates/components/build_preview.html')
 }
@@ -376,9 +376,9 @@ fn build_form_fields(wapp &App, ctx &Context) !BuildForm {
 	}
 
 	// Reject unknown ids so the list never links to deleted entities.
-	cookies := database.cookie_options(wapp.db, ctx.lang) or { [] }
-	pets := database.pet_options(wapp.db, ctx.lang) or { [] }
-	treasures := database.treasure_options(wapp.db, ctx.lang, true) or { [] }
+	cookies := wapp.cookie_options(ctx.lang)
+	pets := wapp.pet_options(ctx.lang)
+	treasures := wapp.treasure_options(ctx.lang, true)
 	if resolve_option(cookies, sel.cookie) == none || resolve_option(pets, sel.pet) == none {
 		return error('Unknown cookie or pet')
 	}
@@ -536,9 +536,9 @@ pub fn (wapp &App) build_edit(mut ctx Context, id int) veb.Result {
 	}
 	ctx.set_translate_title('build_edit_page_title')
 	ctx.noindex = true
-	cookies := database.cookie_options(wapp.db, ctx.lang) or { [] }
-	pets := database.pet_options(wapp.db, ctx.lang) or { [] }
-	treasures := database.treasure_options(wapp.db, ctx.lang, true) or { [] }
+	cookies := wapp.cookie_options(ctx.lang)
+	pets := wapp.pet_options(ctx.lang)
+	treasures := wapp.treasure_options(ctx.lang, true)
 	ep_tiers := [1, 2, 3, 4, 5, 6, 7]
 	ep_specials := [1, 2, 3]
 	build_tags := ['score', 'coin', 'autofarm']
@@ -559,7 +559,7 @@ pub fn (wapp &App) build_edit(mut ctx Context, id int) veb.Result {
 	// picker excludes (the catalog was rebuilt since some builds were saved),
 	// and an empty slot would silently hide the stored pick. The dialog
 	// itself keeps the equippable list, matching the planner.
-	all_treasures := database.treasure_options(wapp.db, ctx.lang, false) or { [] }
+	all_treasures := wapp.treasure_options(ctx.lang, false)
 	sel_t1 := resolve_option(all_treasures, t1_id)
 	sel_t2 := resolve_option(all_treasures, t2_id)
 	sel_t3 := resolve_option(all_treasures, t3_id)

@@ -63,6 +63,8 @@ pub fn (mut wapp App) new_pet(mut ctx Context) veb.Result {
 			ctx.res.set_status(.bad_request)
 			return pet_submit_error(wapp, ctx, none, 'Failed to create pet: ${err}')
 		}
+		// picker lists cache the catalog; a write has to show up next request
+		wapp.invalidate_options()
 
 		return submit_success(mut ctx, '/pets')
 	}
@@ -124,6 +126,8 @@ pub fn (mut wapp App) edit_pet(mut ctx Context, id int) veb.Result {
 			ctx.res.set_status(.bad_request)
 			return pet_submit_error(wapp, ctx, pet, 'Failed to update pet: ${err}')
 		}
+		// picker lists cache the catalog; a write has to show up next request
+		wapp.invalidate_options()
 
 		return submit_success(mut ctx, '/pets/${id}')
 	}

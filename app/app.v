@@ -43,6 +43,8 @@ mut:
 	// embedded on purpose: its cache is built once at startup, while this one
 	// is extended by upload_image (see app/static.v).
 	static_files shared map[string]string
+	// per-language cookie/pet/treasure picker lists (see app/options_cache.v)
+	options shared OptionsCache
 }
 
 pub fn initialize(conn sqlite.DB) !&App {
