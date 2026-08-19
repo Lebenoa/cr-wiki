@@ -654,6 +654,21 @@ fn test_rich_text(mut tc TestContext) ! {
 	if !html1f.contains('>${html.escape(thname)}</a>') {
 		return error('rich text: [[cookie:id]] must render the localized name, got: ${html1f}')
 	}
+	// a link carries the entity's thumbnail ahead of the name; entities with
+	// no image (5 treasures) degrade to a plain link rather than a broken img
+	cimg := tc.db.exec('SELECT image FROM cookie WHERE cookie_id = ${cid}')![0].get_string('image')
+	if cimg != '' && !html1.contains('<img src="/img/cookies/${cimg}"') {
+		return error('rich text: link must carry the entity thumbnail, got: ${html1}')
+	}
+	if noimg := tc.db.exec('SELECT treasure_id FROM treasure WHERE image IS NULL OR image = "" LIMIT 1') {
+		if noimg.len > 0 {
+			ntid := noimg[0].get_int('treasure_id')
+			htmln := render_rich_text(tc.db, 'en', '[[treasure:${ntid}]]')
+			if htmln.contains('<img') {
+				return error('rich text: an imageless entity must not emit an img tag, got: ${htmln}')
+			}
+		}
+	}
 	// unknown kind prefix stays literal
 	html1e := render_rich_text(tc.db, 'en', 'see [[gadget:${cid}]] here')
 	if html1e.contains('<a href=') {

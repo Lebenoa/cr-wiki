@@ -564,6 +564,14 @@ fn unlock_entity_image(conn sqlite.DB, kind string, id int) ?string {
 	return img
 }
 
+// entity_image_by_id returns the image filename for a cookie, pet, or
+// treasure, or none when the entity has no image (5 treasures have none). The
+// rich-text renderer uses it to put a thumbnail in front of a [[kind:id]]
+// link.
+pub fn entity_image_by_id(conn sqlite.DB, kind string, id int) ?string {
+	return unlock_entity_image(conn, kind, id)
+}
+
 // entity_name_by_id returns the localized name of a cookie, pet, or treasure
 // (user lang with en fallback); '' when the id doesn't exist or no
 // translation covers it. The id-based rich-text [[kind:id]] renderer uses it

@@ -35,6 +35,7 @@ pub fn render_rich_text(conn sqlite.DB, lang string, raw string) veb.RawHtml {
 	// render — one map per call, so an admin edit is still picked up on the
 	// next request.
 	mut name_cache := map[string]string{}
+	mut image_cache := map[string]string{}
 	mut i := 0
 	for i < s.len {
 		// link: [[id]] or [[kind:id]] (kind: cookie|pet|treasure)
@@ -48,12 +49,28 @@ pub fn render_rich_text(conn sqlite.DB, lang string, raw string) veb.RawHtml {
 					n
 				}
 				if display != '' {
-					href := match kind {
-						'pet' { '/pets/${eid}' }
-						'treasure' { '/treasures/${eid}' }
-						else { '/cookies/${eid}' }
+					// the section dir doubles as the image dir: /cookies/12 and
+					// /img/cookies/x.png
+					dir := match kind {
+						'pet' { 'pets' }
+						'treasure' { 'treasures' }
+						else { 'cookies' }
 					}
-					out.write_string('<a href="${href}" class="font-bold underline decoration-primary decoration-2 underline-offset-4 hover:text-primary transition-colors">')
+					out.write_string('<a href="/${dir}/${eid}" class="inline-flex items-center gap-1 font-bold underline decoration-primary decoration-2 underline-offset-4 hover:text-primary transition-colors">')
+					// a thumbnail in front of the name, when the entity has one
+					// (5 treasures do not). Cached alongside the name so a
+					// description linking the same entity twice stays at one
+					// pair of queries. alt is empty: the link text right after
+					// it already names the entity, so announcing it twice only
+					// adds noise for screen readers.
+					img := image_cache[cache_key] or {
+						v := database.entity_image_by_id(conn, kind, eid) or { '' }
+						image_cache[cache_key] = v
+						v
+					}
+					if img != '' {
+						out.write_string('<img src="/img/${dir}/${html.escape(img)}" alt="" loading="lazy" class="inline-block size-5 shrink-0 object-contain" />')
+					}
 					out.write_string(html.escape(display))
 					out.write_string('</a>')
 					i = end + 2
