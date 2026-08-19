@@ -222,21 +222,62 @@ pub fn (ctx &Context) cookie_img_src(image ?string) string {
 	return ctx.img_src('cookies', image)
 }
 
-pub fn (ctx &Context) nav_link(href string, tr_key ?string) veb.RawHtml {
-	// compare the path only: a page carrying view state in the query
-	// (/gacha?pool=3, /treasures?tab=evo, /builds?sort=score) still owns its
-	// nav item, which a raw ctx.req.url match would drop
+// nav_path strips the query off the request URL: a page carrying view state
+// there (/gacha?pool=3, /treasures?tab=evo, /builds?sort=score) still owns its
+// nav item, which a raw ctx.req.url match would drop.
+fn (ctx &Context) nav_path() string {
 	url := ctx.req.url
 	qi := url.index_u8(`?`)
-	path := if qi >= 0 { url[..qi] } else { url }
-	active := path == '/${href}' || path.starts_with('/' + href + '/')
+	return if qi >= 0 { url[..qi] } else { url }
+}
 
-	class := if active {
+// nav_section_active reports whether the current page is `href` or lives under
+// it (/cookies/12 keeps the cookies item lit).
+fn (ctx &Context) nav_section_active(href string) bool {
+	path := ctx.nav_path()
+	return path == '/${href}' || path.starts_with('/' + href + '/')
+}
+
+// wiki_sections are the reference pages grouped behind the navbar's Wiki
+// dropdown. /builds stays top-level: it is the site's primary destination,
+// and the one page visitors come back to rather than look something up in.
+const wiki_sections = ['cookies', 'pets', 'treasures', 'episodes', 'ingredients', 'jellies',
+	'skins', 'gacha']
+
+// wiki_sections lists the dropdown's entries for the navbar template.
+pub fn (ctx &Context) wiki_sections() []string {
+	return wiki_sections
+}
+
+// wiki_active reports whether the current page sits inside the dropdown, so
+// the trigger can carry the same active styling nav_link gives a link.
+pub fn (ctx &Context) wiki_active() bool {
+	for section in wiki_sections {
+		if ctx.nav_section_active(section) {
+			return true
+		}
+	}
+	return false
+}
+
+// nav_class styles a navbar item. The Wiki dropdown's trigger is a <button>,
+// not a link, so the classes live here rather than inline in nav_link.
+fn nav_class(active bool) string {
+	return if active {
 		'font-semibold text-center text-primary border-b-2 border-primary pb-1 transition-all duration-1000'
 	} else {
 		'font-medium text-center text-foreground-muted hover:text-primary transition-all duration-1000'
 	}
+}
 
+// wiki_class styles the Wiki dropdown trigger, lit whenever the page inside it
+// is the current one.
+pub fn (ctx &Context) wiki_class() string {
+	return nav_class(ctx.wiki_active())
+}
+
+pub fn (ctx &Context) nav_link(href string, tr_key ?string) veb.RawHtml {
+	class := nav_class(ctx.nav_section_active(href))
 	abs_tr_key := tr_key or { href }
 
 	return '<a class="${class}" href="/${href}">${veb.tr(ctx.lang, abs_tr_key)}</a>'

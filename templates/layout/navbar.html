@@ -17,15 +17,22 @@
                     <line x1="4" x2="20" y1="18" y2="18" />
                 </svg>
             </button>
-            <div class="hidden md:flex gap-8 items-center">                    @{ctx.nav_link('cookies')}
-                    @{ctx.nav_link('pets')}
-                    @{ctx.nav_link('treasures')}
-                    @{ctx.nav_link('builds')}
-                    @{ctx.nav_link('episodes')}
-                    @{ctx.nav_link('ingredients')}
-                    @{ctx.nav_link('jellies')}
-                    @{ctx.nav_link('skins')}
-                    @{ctx.nav_link('gacha')}
+            <div class="hidden md:flex gap-8 items-center">                    @{ctx.nav_link('builds')}
+                    <button type="button" class="@{ctx.wiki_class()} flex items-center gap-1"
+                        popovertarget="wiki-dropdown" aria-haspopup="menu">
+                        %wiki
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                            fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                            stroke-linejoin="round" aria-hidden="true">
+                            <path d="M6 9 12 15 18 9" />
+                        </svg>
+                    </button>
+                    <div id="wiki-dropdown" popover
+                        class="p-4 m-bs-1 inline-48 bg-background text-foreground rounded border border-accent transition-discrete transition-all duration-300 flex-col gap-2 hidden popover-open:flex">
+                        @for section in ctx.wiki_sections()
+                        @{ctx.nav_link(section)}
+                        @endfor
+                    </div>
                 </div>
         </div>
         <div class="flex items-center gap-6 max-md:gap-3">
@@ -69,15 +76,22 @@
                 @include 'icons/user.html'
             </button>
             <div id="mobile-nav" popover
-                class="p-4 m-bs-1 inline-64 bg-background text-foreground rounded border border-accent transition-discrete transition-all duration-300 flex-col gap-2 hidden popover-open:flex">                    @{ctx.nav_link('cookies')}
-                    @{ctx.nav_link('pets')}
-                    @{ctx.nav_link('treasures')}
-                    @{ctx.nav_link('builds')}
-                    @{ctx.nav_link('episodes')}
-                    @{ctx.nav_link('ingredients')}
-                    @{ctx.nav_link('jellies')}
-                    @{ctx.nav_link('skins')}
-                    @{ctx.nav_link('gacha')}
+                class="p-4 m-bs-1 inline-64 bg-background text-foreground rounded border border-accent transition-discrete transition-all duration-300 flex-col gap-2 hidden popover-open:flex">                    @{ctx.nav_link('builds')}
+                    <button type="button" class="@{ctx.wiki_class()} flex items-center gap-1"
+                        popovertarget="wiki-dropdown-mobile" aria-haspopup="menu">
+                        %wiki
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                            fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                            stroke-linejoin="round" aria-hidden="true">
+                            <path d="M6 9 12 15 18 9" />
+                        </svg>
+                    </button>
+                    <div id="wiki-dropdown-mobile" popover
+                        class="p-4 m-bs-1 inline-48 bg-background text-foreground rounded border border-accent transition-discrete transition-all duration-300 flex-col gap-2 hidden popover-open:flex">
+                        @for section in ctx.wiki_sections()
+                        @{ctx.nav_link(section)}
+                        @endfor
+                    </div>
                 </div>
             <div id="account-dropdown"
                 class="p-4 m-bs-1 inline-64 bg-background text-foreground rounded border border-accent transition-discrete transition-all duration-300 flex-col gap-2 hidden popover-open:flex"
