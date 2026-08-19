@@ -72,25 +72,30 @@ fn warn_missing_id(kind string) {
 }
 
 pub fn select_cookies(conn sqlite.DB, lang string, limit int, offset int) ![]CookieView {
-	cookies := sql conn {
-		select from models.Cookie order by cookie_id desc limit limit offset offset
-	}!
-
-	if cookies.len == 0 {
+	// The page's ids come from raw SQL because release_date has ties (shared
+	// launch dates, plus the epoch sentinel for unknown dates) and V's ORM
+	// `sql` block takes a single order key: without the cookie_id tie-break,
+	// SQLite may order tied rows differently between the offset=0 and
+	// offset=30 fetches, so infinite scroll would repeat or skip cards.
+	// Same ids-then-hydrate shape as select_treasures.
+	rows := conn.exec('SELECT cookie_id FROM cookie ORDER BY release_date DESC, cookie_id DESC LIMIT ${limit} OFFSET ${offset}')!
+	mut ids := []int{cap: rows.len}
+	for row in rows {
+		ids << row.get_int('cookie_id')
+	}
+	// an empty list would generate `owner_id IN ()` (a SQLite syntax error)
+	if ids.len == 0 {
 		return []
 	}
 
-	mut ids := []int{}
-	for cookie in cookies {
-		cid := cookie.cookie_id or {
-			warn_missing_id('cookie')
-			continue
+	cookie_by_id := cookie_rows_by_ids(conn, ids)
+	mut cookies := []models.Cookie{cap: ids.len}
+	for id in ids {
+		if c := cookie_by_id[id] {
+			cookies << c
 		}
-		ids << cid
 	}
-	// an empty list would generate `owner_id IN ()` (a SQLite syntax error);
-	// corrupt rows are all skipped below, same as the old full-table path
-	if ids.len == 0 {
+	if cookies.len == 0 {
 		return []
 	}
 
@@ -161,27 +166,29 @@ pub:
 }
 
 pub fn select_pets(conn sqlite.DB, lang string, limit int, offset int) ![]PetView {
-	pets := sql conn {
-		select from models.Pet order by pet_id desc limit limit offset offset
-	}!
-
-	if pets.len == 0 {
+	// ordered ids first, then hydrate — see select_cookies for why the
+	// release_date sort needs the pet_id tie-break and raw SQL to express it
+	rows := conn.exec('SELECT pet_id FROM pet ORDER BY release_date DESC, pet_id DESC LIMIT ${limit} OFFSET ${offset}')!
+	mut ids := []int{cap: rows.len}
+	for row in rows {
+		ids << row.get_int('pet_id')
+	}
+	// an empty list would generate `pet_id IN ()` (a SQLite syntax error)
+	if ids.len == 0 {
 		return []
 	}
 
 	// narrow the translation fetch to the pets on this page instead of the
 	// whole table (see select_cookies for the map-building pattern)
 	user_lang := lang
-	mut ids := []int{}
-	for pet in pets {
-		pid := pet.pet_id or {
-			warn_missing_id('pet')
-			continue
+	pet_by_id := pet_rows_by_ids(conn, ids)
+	mut pets := []models.Pet{cap: ids.len}
+	for id in ids {
+		if pt := pet_by_id[id] {
+			pets << pt
 		}
-		ids << pid
 	}
-	// an empty list would generate `pet_id IN ()` (a SQLite syntax error)
-	if ids.len == 0 {
+	if pets.len == 0 {
 		return []
 	}
 	translations := sql conn {
