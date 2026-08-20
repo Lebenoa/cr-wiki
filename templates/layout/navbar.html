@@ -17,8 +17,7 @@
                     <line x1="4" x2="20" y1="18" y2="18" />
                 </svg>
             </button>
-            <div class="hidden md:flex gap-8 items-center">                    @{ctx.nav_link('builds')}
-                    <button type="button" id="wiki-trigger" class="@{ctx.wiki_class()} flex items-center gap-1"
+            <div class="hidden md:flex gap-8 items-center">                    <button type="button" id="wiki-trigger" class="@{ctx.wiki_class()} flex items-center gap-1"
                         popovertarget="wiki-dropdown">
                         %wiki
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
@@ -33,6 +32,8 @@
                         @{ctx.nav_link(section)}
                         @endfor
                     </div>
+                    @{ctx.nav_link('builds')}
+                    @{ctx.nav_link('changelog', 'changelog_link')}
                 </div>
         </div>
         <div class="flex items-center gap-6 max-md:gap-3">
@@ -76,8 +77,7 @@
                 @include 'icons/user.html'
             </button>
             <div id="mobile-nav" popover
-                class="p-4 m-bs-1 inline-64 bg-background text-foreground rounded border border-accent transition-discrete transition-all duration-300 flex-col gap-2 hidden popover-open:flex">                    @{ctx.nav_link('builds')}
-                    <button type="button" id="wiki-trigger-mobile" class="@{ctx.wiki_class()} flex items-center gap-1"
+                class="p-4 m-bs-1 inline-64 bg-background text-foreground rounded border border-accent transition-discrete transition-all duration-300 flex-col gap-2 hidden popover-open:flex">                    <button type="button" id="wiki-trigger-mobile" class="@{ctx.wiki_class()} flex items-center gap-1"
                         popovertarget="wiki-dropdown-mobile">
                         %wiki
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
@@ -92,6 +92,8 @@
                         @{ctx.nav_link(section)}
                         @endfor
                     </div>
+                    @{ctx.nav_link('builds')}
+                    @{ctx.nav_link('changelog', 'changelog_link')}
                 </div>
             <div id="account-dropdown"
                 class="p-4 m-bs-1 inline-64 bg-background text-foreground rounded border border-accent transition-discrete transition-all duration-300 flex-col gap-2 hidden popover-open:flex"
@@ -111,7 +113,6 @@
                     <a href="/register" class="btn-secondary">%register</a>
                 </div>
                 @endif
-                <a href="/changelog" class="btn hover:bg-secondary/20">%changelog_link</a>
                 <button class="btn hover:bg-secondary/20" command="show-modal" commandfor="language-dropdown">%language:
                     <span class="font-bold uppercase ml-2">@{ctx.lang_map(ctx.lang)}</span></button>
                 <button id="theme-trigger" type="button" class="btn hover:bg-secondary/20">%theme_label:
