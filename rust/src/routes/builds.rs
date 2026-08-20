@@ -1,0 +1,144 @@
+//! The community build list and one build's detail page.
+
+use askama::Template;
+use axum::extract::{Path, Query, State};
+use axum::http::StatusCode;
+use axum::response::{Html, IntoResponse, Response};
+
+use crate::builds::{self, BuildCard};
+use crate::ctx::Ctx;
+use crate::state::AppState;
+
+use super::CommonQuery;
+
+pub const PAGE_SIZE: i64 = 30;
+
+#[derive(Template)]
+#[template(path = "builds.html")]
+struct BuildsPage {
+    ctx: Ctx,
+    builds: Vec<BuildCard>,
+    next_page: i64,
+    sort: String,
+    filter_cookie: i64,
+    filter_pet: i64,
+    filter_treasure: i64,
+    ep: String,
+}
+
+#[derive(Template)]
+#[template(path = "build_cards.html")]
+struct BuildCards {
+    ctx: Ctx,
+    builds: Vec<BuildCard>,
+    next_page: i64,
+    sort: String,
+    filter_cookie: i64,
+    filter_pet: i64,
+    filter_treasure: i64,
+    ep: String,
+}
+
+#[derive(Template)]
+#[template(path = "build_detail.html")]
+struct BuildDetail {
+    ctx: Ctx,
+    build: BuildCard,
+}
+
+/// The EP combobox value: "1".."7" for a regular tier, "s1".."s3" for a
+/// special one. Returns (ep, ep_special).
+fn parse_ep(raw: &str) -> (i64, i64) {
+    if let Some(rest) = raw.strip_prefix('s') {
+        let n = rest.parse::<i64>().unwrap_or(0);
+        return (0, if (1..=3).contains(&n) { n } else { 0 });
+    }
+    let n = raw.parse::<i64>().unwrap_or(0);
+    ((1..=7).contains(&n).then_some(n).unwrap_or(0), 0)
+}
+
+pub async fn list(
+    State(state): State<AppState>,
+    ctx: Ctx,
+    q: Query<CommonQuery>,
+) -> Html<String> {
+    let lang = ctx.lang.clone();
+    let page = q.page.unwrap_or(1).max(1);
+    let offset = (page - 1).saturating_mul(PAGE_SIZE);
+    let sort = match q.sort.as_deref() {
+        Some(s @ ("score" | "coin" | "time")) => s.to_string(),
+        _ => "latest".to_string(),
+    };
+    let ep_raw = q.ep.clone().unwrap_or_default();
+    let (ep, ep_special) = parse_ep(&ep_raw);
+    let filter_cookie = q.cookie.unwrap_or(0);
+    let filter_pet = q.pet.unwrap_or(0);
+    let filter_treasure = q.treasure.unwrap_or(0);
+
+    let db = state.db.clone();
+    let sort_for_db = sort.clone();
+    let rows = tokio::task::spawn_blocking(move || {
+        builds::select_builds(
+            &db,
+            &lang,
+            (filter_cookie, filter_pet, filter_treasure, ep, ep_special),
+            &sort_for_db,
+            PAGE_SIZE,
+            offset,
+        )
+    })
+    .await
+    .unwrap_or_else(|_| Ok(Vec::new()))
+    .unwrap_or_default();
+
+    let next_page = if rows.len() as i64 == PAGE_SIZE { page + 1 } else { 0 };
+    let html = if ctx.is_fragment() {
+        BuildCards {
+            ctx,
+            builds: rows,
+            next_page,
+            sort,
+            filter_cookie,
+            filter_pet,
+            filter_treasure,
+            ep: ep_raw,
+        }
+        .render()
+    } else {
+        BuildsPage {
+            ctx,
+            builds: rows,
+            next_page,
+            sort,
+            filter_cookie,
+            filter_pet,
+            filter_treasure,
+            ep: ep_raw,
+        }
+        .render()
+    };
+    Html(html.unwrap_or_else(|e| format!("template error: {e}")))
+}
+
+pub async fn show(
+    State(state): State<AppState>,
+    ctx: Ctx,
+    Path(id): Path<i64>,
+) -> Response {
+    let lang = ctx.lang.clone();
+    let db = state.db.clone();
+    let found = tokio::task::spawn_blocking(move || builds::select_build(&db, &lang, id))
+        .await
+        .unwrap_or_else(|_| Ok(None))
+        .unwrap_or(None);
+
+    let Some(build) = found else {
+        return (StatusCode::NOT_FOUND, "not found").into_response();
+    };
+    Html(
+        BuildDetail { ctx, build }
+            .render()
+            .unwrap_or_else(|e| format!("template error: {e}")),
+    )
+    .into_response()
+}

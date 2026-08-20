@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}{{ ctx.l.t("builds_page_title") }}{% endblock %}
+{% block content %}
+<section class="page-shell max-w-5xl">
+    <div class="flex items-center justify-between gap-4 flex-wrap">
+        <h1 class="page-title">{{ ctx.l.t("builds_page_title") }}</h1>
+    </div>
+    <form hx-get="/builds" hx-trigger="change" hx-target="#build-list" hx-push-url="true"
+        class="mt-8 flex flex-wrap items-end gap-4">
+        <input type="hidden" name="cookie" value="{{ filter_cookie }}" />
+        <input type="hidden" name="pet" value="{{ filter_pet }}" />
+        <input type="hidden" name="treasure" value="{{ filter_treasure }}" />
+        <label class="flex flex-col gap-1 text-xs font-label uppercase text-foreground-muted">
+            {{ ctx.l.t("build_sort_label") }}
+            <select name="sort" class="filter-input">
+                <option value="latest" {% if sort == "latest" %}selected{% endif %}>{{ ctx.l.t("build_sort_latest") }}</option>
+                <option value="score" {% if sort == "score" %}selected{% endif %}>{{ ctx.l.t("build_sort_score") }}</option>
+                <option value="coin" {% if sort == "coin" %}selected{% endif %}>{{ ctx.l.t("build_sort_coin") }}</option>
+                <option value="time" {% if sort == "time" %}selected{% endif %}>{{ ctx.l.t("build_sort_time") }}</option>
+            </select>
+        </label>
+    </form>
+    <div id="build-list" class="mt-6 flex flex-col gap-3">
+        {% include "build_cards.html" %}
+    </div>
+</section>
+{% endblock %}

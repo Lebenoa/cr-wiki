@@ -1,4 +1,5 @@
 pub mod auth;
+pub mod builds;
 pub mod catalog;
 pub mod changelog;
 pub mod detail;
@@ -16,4 +17,9 @@ pub struct CommonQuery {
     pub page: Option<i64>,
     pub q: Option<String>,
     pub tab: Option<String>,
+    pub sort: Option<String>,
+    pub ep: Option<String>,
+    pub cookie: Option<i64>,
+    pub pet: Option<i64>,
+    pub treasure: Option<i64>,
 }

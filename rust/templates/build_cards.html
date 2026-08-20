@@ -1,0 +1,29 @@
+{% for b in builds %}
+<a href="/builds/{{ b.id }}" class="rounded-2xl border-2 border-primary/20 bg-surface/50 p-4 flex flex-wrap items-center gap-4 hover:border-primary transition-colors">
+    <span class="pill-accent">{{ b.ep_label() }}</span>
+    {% for slot in b.slots() %}
+    {% match slot.image %}{% when Some with (img) %}
+    <img src="/img/{{ slot.section }}/{{ img }}" alt="{{ slot.name }}" class="size-12 object-contain" />
+    {% when None %}{% endmatch %}
+    {% endfor %}
+    <span class="flex items-center gap-1">
+        {% for tag in b.tags %}<span class="pill-primary">#{{ tag }}</span>{% endfor %}
+    </span>
+    <span class="ml-auto flex items-center gap-4 text-xs text-foreground-muted">
+        {% if b.is_anon %}<span class="pill-accent">{{ b.expires_in_h }}h</span>{% endif %}
+        {% if b.score > 0 %}<span>{{ b.score }}</span>{% endif %}
+        {% if b.coin > 0 %}<span>{{ b.coin }}</span>{% endif %}
+        {% if b.time_ms > 0 %}<span>{{ b.time_label() }}</span>{% endif %}
+        <span>{{ b.author }}</span>
+    </span>
+</a>
+{% endfor %}
+{% if builds.is_empty() %}
+<p class="text-center text-foreground-muted py-12">{{ ctx.l.t("build_empty_list") }}</p>
+{% endif %}
+{% if next_page > 0 %}
+<div hx-get="/builds?sort={{ sort }}&cookie={{ filter_cookie }}&pet={{ filter_pet }}&treasure={{ filter_treasure }}&ep={{ ep }}&page={{ next_page }}"
+    hx-trigger="revealed" hx-swap="outerHTML"></div>
+{% else %}
+<div></div>
+{% endif %}

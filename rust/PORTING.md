@@ -44,15 +44,16 @@ Two deliberate differences from the V original:
 - the detail pages: cookie, pet, treasure, episode, ingredient, jelly, with effects and combo bonuses
 - `app/richtext.v` -> `src/richtext.rs` — `[[id]]` links with sprites, `{color:}` spans, everything else escaped
 - `/search`, `/sitemap.xml` with locale alternates, `/robots.txt`, the landing page
+- sessions, login, register, logout — argon2id in PHC form so hashes interop with V, and `is_admin` whole
+- the build list and one build's detail page: the filters, the four sorts with the id tie-break, the expiry rule, and the loadout slots
 
 ## Not ported yet
 
 Roughly in dependency order — the earlier ones unblock the rest.
 
-1. **Sessions**: the `CRSESSID` cookie, the in-memory session map, and the user half of `is_admin` (the loopback half is ported)
-2. **Builds**: the planner, the picker endpoints with search/tabs/pinning/combo ordering, preview, verify, edit, delete — the largest single area left, and the one `cards_by_ids` is waiting for
-3. **The catalog option cache** (`app/options_cache.v`)
-4. **The remaining `database/select.v`** (~2.6k lines): pets, treasures, effects, combi bonuses, builds, search (FTS5 + LIKE fallback), catalog queries
+1. **The build planner**: `/builds/new`, the picker endpoints with search, tabs, pinning and combo-partner ordering, `/builds/preview`, verify, edit, delete. The read side is ported; this is the write side and the picker
+2. **The catalog option cache** (`app/options_cache.v`), which the picker endpoints need
+3. **The remaining `database/select.v`**: treasure unlock chains, evolution bases, the effect-state diffing (~2.6k lines): pets, treasures, effects, combi bonuses, builds, search (FTS5 + LIKE fallback), catalog queries
 5. **Admin forms** (`app/forms.v`, ~650 lines) and image upload
 6. **Auth**: login, register, Turnstile
 7. **Gacha and relic detail pages**, which have shapes of their own

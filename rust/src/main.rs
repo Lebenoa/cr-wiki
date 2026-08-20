@@ -4,6 +4,7 @@
 //! and the /changelog and /cookies pages. Everything else still lives in the
 //! V app next door; see PORTING.md for the running list.
 
+mod builds;
 mod changelog;
 mod config;
 mod ctx;
@@ -63,6 +64,8 @@ async fn main() {
         .route("/sitemap.xml", get(routes::misc::sitemap))
         .route("/robots.txt", get(routes::misc::robots))
         .route("/changelog", get(routes::changelog::page))
+        .route("/builds", get(routes::builds::list))
+        .route("/builds/{id}", get(routes::builds::show))
         .route("/login", get(routes::auth::login_form).post(routes::auth::login))
         .route("/register", get(routes::auth::register_form).post(routes::auth::register))
         .route("/logout", get(routes::auth::logout))
@@ -417,6 +420,35 @@ mod tests {
         sessions.end(&key);
         assert!(sessions.get(&key).is_none());
         assert!(sessions.get("never-issued").is_none());
+    }
+
+    /// The build list runs, and its labels format the way the badges expect.
+    /// The table is empty on this checkout, so this covers the query path and
+    /// the formatting rather than row content.
+    #[test]
+    fn build_queries_and_labels() {
+        let pool = db::open("../sqlite.db").expect("open db");
+        for sort in ["latest", "score", "coin", "time", "nonsense"] {
+            let rows = builds::select_builds(&pool, "en", (0, 0, 0, 0, 0), sort, 30, 0)
+                .unwrap_or_else(|e| panic!("{sort}: {e}"));
+            assert!(rows.len() <= 30);
+        }
+        // filters compose without tripping the SQL
+        assert!(builds::select_builds(&pool, "en", (89, 50, 317, 5, 0), "score", 30, 0).is_ok());
+        assert!(builds::select_builds(&pool, "en", (0, 0, 0, 0, 2), "latest", 30, 0).is_ok());
+        assert!(builds::select_build(&pool, "en", 999_999).unwrap().is_none());
+
+        let mut b = builds::BuildCard { ep: 5, ..Default::default() };
+        assert_eq!(b.ep_label(), "EP 5");
+        b.ep_special = 2;
+        assert_eq!(b.ep_label(), "Special EP 2", "a special tier wins over the plain one");
+        b.time_ms = 95_400;
+        assert_eq!(b.time_label(), "1:35");
+        b.time_ms = 0;
+        assert_eq!(b.time_label(), "");
+        assert!(!b.has_stats());
+        b.score = 10;
+        assert!(b.has_stats());
     }
 
     /// The sitemap covers every detail id the six sections hold.

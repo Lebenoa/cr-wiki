@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}{{ ctx.l.t("build_detail_page_title") }}{% endblock %}
+{% block content %}
+<section class="page-shell max-w-4xl">
+    <a href="/builds" class="back-link">&larr; {{ ctx.l.t("back_to_builds") }}</a>
+    <h1 class="page-title">{{ build.ep_label() }}</h1>
+    <div class="mt-4 grid grid-cols-2 lg:grid-cols-3 gap-5">
+        {% for slot in build.slots() %}
+        <div class="entity-card">
+            {% match slot.image %}{% when Some with (img) %}
+            <img src="/img/{{ slot.section }}/{{ img }}" alt="{{ slot.name }}" class="size-20 object-contain" />
+            {% when None %}{% endmatch %}
+            <span class="card-title">{{ slot.name }}</span>
+            {% if slot.level >= 0 %}
+            <span class="card-meta">{{ ctx.l.t("level") }} {{ slot.level }}</span>
+            {% endif %}
+            {% if slot.blessed %}<span class="pill-accent">{{ ctx.l.t("state_blessed") }}</span>{% endif %}
+        </div>
+        {% endfor %}
+    </div>
+    {% if build.has_stats() %}
+    <ul class="mt-6 flex flex-wrap gap-6 text-sm">
+        {% if build.score > 0 %}<li>{{ ctx.l.t("build_score_label") }}: {{ build.score }}</li>{% endif %}
+        {% if build.coin > 0 %}<li>{{ ctx.l.t("build_coin_label") }}: {{ build.coin }}</li>{% endif %}
+        {% if build.time_ms > 0 %}<li>{{ ctx.l.t("build_time_label") }}: {{ build.time_label() }}</li>{% endif %}
+        {% if build.boxes > 0 %}<li>{{ ctx.l.t("build_boxes_label") }}: {{ build.boxes }}</li>{% endif %}
+    </ul>
+    {% endif %}
+    {% if !build.description.is_empty() %}
+    <p class="mt-6 text-foreground-muted">{{ build.description }}</p>
+    {% endif %}
+    {% if !build.boost.is_empty() || !build.boosts.is_empty() %}
+    <ul class="mt-4 flex flex-wrap gap-2">
+        {% for boost in build.boosts %}<li class="pill-primary">{{ boost }}</li>{% endfor %}
+        {% if !build.boost.is_empty() %}<li class="pill-accent">{{ build.boost }}</li>{% endif %}
+    </ul>
+    {% endif %}
+    {% if !build.youtube_url.is_empty() %}
+    <a href="{{ build.youtube_url }}" rel="nofollow noopener" class="btn-secondary mt-6 inline-flex">{{ ctx.l.t("build_youtube_label") }}</a>
+    {% endif %}
+    <p class="mt-6 text-xs text-foreground-muted">
+        {{ build.author }}{% if build.is_anon %} · {{ build.expires_in_h }}h{% endif %}
+    </p>
+</section>
+{% endblock %}
