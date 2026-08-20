@@ -124,7 +124,10 @@
   } else {
     onReady();
   }
-  document.addEventListener('htmx:afterSwap', onReady);
+  // htmx 4 names its events colon-separated: 'htmx:afterSwap' matched
+  // nothing, so after an hx-boost navigation swapped the navbar in, the
+  // theme swatch and the option check mark kept the old markup's state.
+  document.addEventListener('htmx:after:settle', onReady);
 
   window.CRTheme = {
     apply: apply,
