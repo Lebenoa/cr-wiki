@@ -670,11 +670,11 @@ pub fn (wapp &App) build_edit(mut ctx Context, id int) veb.Result {
 	}
 	ctx.set_translate_title('build_edit_page_title')
 	ctx.noindex = true
-	// no equippable treasure list here: the edit page's treasure dialog fetches
-	// its grid from /builds/options/treasure. The cookie/pet lists stay — they
-	// are inline <select>s on this form, not dialogs.
-	cookies := wapp.cookie_options(ctx.lang)
-	pets := wapp.pet_options(ctx.lang)
+	// no option lists here at all: every picker on this page is a dialog that
+	// fetches its own grid from /builds/options/:kind
+	sel_cookie := ?database.IdNameOption(b.cookie)
+	sel_cookie2 := b.cookie2
+	sel_pet := ?database.IdNameOption(b.pet)
 	ep_tiers := [1, 2, 3, 4, 5, 6, 7]
 	ep_specials := [1, 2, 3]
 	build_tags := ['score', 'coin', 'autofarm']

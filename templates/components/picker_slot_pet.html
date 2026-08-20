@@ -1,0 +1,17 @@
+<!-- The pet slot; see picker_slot_cookie.html. -->
+<div class="relative">
+    <button type="button" id="slot-pet" data-empty="%build_pet_label" onclick="openPicker('pet')"
+        class="w-full p-5 rounded-xl flex flex-col items-center gap-2 min-h-36 border-2 border-dotted border-primary/30 bg-surface/50 hover:bg-surface transition-colors">
+        @if p := sel_pet
+        <img src="@{ctx.img_src('pets', p.image)}" alt="@p.name" class="size-20 object-contain" />
+        <span class="text-center text-sm font-bold text-on-surface leading-tight">@p.name</span>
+        @else
+        <span class="my-auto text-xs font-label text-foreground-muted uppercase">%build_pet_label</span>
+        @endif
+    </button>
+    @if _ := sel_pet
+    <button type="button" title="%build_clear_slot" aria-label="%build_clear_slot"
+        onclick="clearSlot('pet')"
+        class="slot-clear absolute -top-2 -right-2 size-6 rounded-full bg-surface border border-primary/40 text-foreground-muted hover:text-accent hover:border-accent flex items-center justify-center text-sm leading-none shadow">✕</button>
+    @endif
+</div>
