@@ -1965,6 +1965,14 @@ pub fn select_treasures(conn sqlite.DB, lang string, limit int, offset int, tab 
 	return treasures_by_ids(conn, lang, ids)!
 }
 
+// select_treasures_by_ids hydrates an explicit id list into cards, in the
+// order given. The /treasures search filters the cached option list in the
+// app layer (it already carries every effect line) and then hands the page's
+// ids here, so the list page and the picker answer a query the same way.
+pub fn select_treasures_by_ids(conn sqlite.DB, lang string, ids []int) ![]TreasureView {
+	return treasures_by_ids(conn, lang, ids)!
+}
+
 pub struct SearchResults {
 pub mut:
 	cookies     []CookieView

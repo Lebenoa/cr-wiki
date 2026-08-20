@@ -22,9 +22,8 @@ pub fn (mut wapp App) search(mut ctx Context) veb.Result {
 		}
 	}
 	// flattened so the card partials (which expect `cookies`/`pets`) and the
-	// templates can iterate them; next_page keeps the partials' infinite-scroll
-	// sentinel quiet (search results are not paginated). tab satisfies the
-	// treasure_cards sentinel's URL, which search never renders.
+	// templates can iterate them; next_page and next_url keep the partials'
+	// infinite-scroll sentinels quiet (search results are not paginated).
 	cookies := results.cookies
 	pets := results.pets
 	treasures := results.treasures
@@ -40,7 +39,7 @@ pub fn (mut wapp App) search(mut ctx Context) veb.Result {
 	hits << ingredients
 	hits << quests
 	next_page := 0
-	tab := 'all'
+	next_url := ''
 	q_url := urllib.query_escape(q)
 	if is_fragment {
 		if q == '' {

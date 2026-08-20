@@ -11,8 +11,11 @@
     @endif
 </a>
 @endfor
-@if next_page > 0
-<div hx-get="/treasures?tab=@tab&page=@next_page" hx-trigger="revealed" hx-swap="outerHTML"></div>
+@if treasures.len == 0
+<p class="col-span-full text-center text-foreground-muted py-8">%search_no_results</p>
+@end
+@if next_url != ''
+<div hx-get="@next_url" hx-trigger="revealed" hx-swap="outerHTML"></div>
 @else
 <div></div>
 @endif

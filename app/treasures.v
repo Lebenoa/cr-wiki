@@ -5,6 +5,7 @@ import api
 import database
 import database.models
 import app.util
+import net.urllib
 
 pub fn (mut wapp App) treasures(mut ctx Context) veb.Result {
 	if !wapp.rate_limit_ok(mut ctx) {
@@ -22,15 +23,50 @@ pub fn (mut wapp App) treasures(mut ctx Context) veb.Result {
 	if page < 1 {
 		page = 1
 	}
-	treasures := database.select_treasures(wapp.db, ctx.lang, page_size, (page - 1) * page_size, tab) or {
-		println(err)
-		return ctx.html('Something went wrong')
-	}
-	next_page := if treasures.len == page_size {
-		page + 1
+	// q stays whole for the sentinel URL so the next page repeats the query;
+	// terms is the split form the matcher uses
+	q := (ctx.query['q'] or { '' }).trim_space().to_lower()
+	terms := q.fields()
+
+	mut treasures := []database.TreasureView{}
+	mut next_page := 0
+	if terms.len == 0 {
+		treasures = database.select_treasures(wapp.db, ctx.lang, page_size, (page - 1) * page_size,
+			tab) or {
+			println(err)
+			return ctx.html('Something went wrong')
+		}
+		if treasures.len == page_size {
+			next_page = page + 1
+		}
 	} else {
-		0
+		// searching goes through the cached option list rather than SQL: it
+		// already carries every effect line for every treasure, in this page's
+		// own order (grade, then newest, then name), so the list answers
+		// "magnet revive" exactly the way the build picker does — across the
+		// whole catalog, not just the pages scrolled to.
+		mut ids := []int{}
+		for opt in wapp.treasure_options(ctx.lang, false) {
+			if picker_tab_ok(opt, tab) && picker_matches(opt, terms) {
+				ids << opt.id
+			}
+		}
+		start := (page - 1) * page_size
+		if start < ids.len {
+			mut end := start + page_size
+			if end > ids.len {
+				end = ids.len
+			}
+			treasures = database.select_treasures_by_ids(wapp.db, ctx.lang, ids[start..end]) or {
+				println(err)
+				return ctx.html('Something went wrong')
+			}
+			if end < ids.len {
+				next_page = page + 1
+			}
+		}
 	}
+	next_url := treasure_page_url(tab, q, next_page)
 
 	all_cls := pill_cls(tab == 'all')
 	normal_cls := pill_cls(tab == 'normal')
@@ -41,6 +77,15 @@ pub fn (mut wapp App) treasures(mut ctx Context) veb.Result {
 	}
 
 	return $veb.html()
+}
+
+// treasure_page_url is the infinite-scroll sentinel's href: the same tab and
+// query one page further on. Empty when there is no next page.
+fn treasure_page_url(tab string, q string, next_page int) string {
+	if next_page == 0 {
+		return ''
+	}
+	return '/treasures?tab=${urllib.query_escape(tab)}&q=${urllib.query_escape(q)}&page=${next_page}'
 }
 
 // pill_cls returns the pill button classes for the treasure list tabs
