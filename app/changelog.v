@@ -2,6 +2,7 @@ module app
 
 import os
 import veb
+import encoding.html
 
 // The changelog is the git history, read once at startup rather than per
 // request: it only changes when the binary is rebuilt anyway. `git log`'s
@@ -103,14 +104,21 @@ fn build_entry(hash string, date string, lines []string) ChangeEntry {
 	if para.len > 0 {
 		body << para.join(' ')
 	}
+	// escaped here, not in the template: veb interpolates `@value` verbatim,
+	// and commit messages are prose about code — one body says `<select>` and
+	// the browser duly opened a select, swallowing every entry after it.
+	mut safe_body := []string{cap: body.len}
+	for text in body {
+		safe_body << html.escape(text)
+	}
 	return ChangeEntry{
 		hash:    hash
 		short:   if hash.len > 7 { hash[..7] } else { hash }
 		date:    date
 		kind:    kind
-		scope:   scope
-		subject: title
-		body:    body
+		scope:   html.escape(scope)
+		subject: html.escape(title)
+		body:    safe_body
 	}
 }
 

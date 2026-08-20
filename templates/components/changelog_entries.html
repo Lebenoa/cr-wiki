@@ -29,7 +29,9 @@
     @end
 </li>
 @endfor
-@if entries.len == 0
+@if entries.len == 0 && page == 1
+<!-- only on the first page: an empty later page means the URL was typed past
+     the end, not that the history could not be read -->
 <p class="text-center text-foreground-muted py-12">%changelog_unavailable</p>
 @end
 @if next_url != ''
