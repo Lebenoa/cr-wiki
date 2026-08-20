@@ -1,0 +1,40 @@
+<!-- The treasure picker modal; see picker_dialog_cookie.html. This one also
+     carries the all/normal/evolved tabs and the shared level slider. -->
+<dialog id="dialog-treasure" data-kind="treasure" closedby="any" class="picker-dialog">
+    <button type="button" onclick="this.closest('dialog').close()"
+        class="btn-secondary size-8 absolute top-3 right-3">✕</button>
+    <h2 class="font-headline text-accent text-2xl mb-4">%build_pick_treasure</h2>
+    @if picker_steps
+    <div id="dialog-step-treasure" class="flex items-center gap-3 mb-4"
+        data-label-t1="%build_treasure_one" data-label-t2="%build_treasure_two" data-label-t3="%build_treasure_three"
+        data-title-t1="%build_pick_treasure_one" data-title-t2="%build_pick_treasure_two" data-title-t3="%build_pick_treasure_three">
+        <span class="step-count shrink-0 text-xs font-label uppercase text-accent"></span>
+        <span class="step-name shrink-0 text-xs font-label uppercase text-foreground-muted"></span>
+        <div class="flex-1 h-1.5 rounded-full bg-primary/15 overflow-hidden">
+            <div class="step-fill h-full rounded-full bg-accent transition-all duration-500" style="width:0"></div>
+        </div>
+    </div>
+    @end
+    <div class="flex flex-wrap items-center gap-2 mb-4">
+        <button type="button" data-tab="all" onclick="setTreasureTab('all')" class="picker-tab-on">%treasure_tab_all</button>
+        <button type="button" data-tab="normal" onclick="setTreasureTab('normal')" class="picker-tab">%treasure_tab_normal</button>
+        <button type="button" data-tab="evo" onclick="setTreasureTab('evo')" class="picker-tab">%treasure_tab_evolved</button>
+    </div>
+    <input type="search" placeholder="%build_search_placeholder" oninput="filterOptions('treasure', this.value)"
+        class="picker-search" />
+    <div class="shrink-0 mb-4">
+        @include 'components/level_slider'
+    </div>
+    <!-- Placeholder for the treasure option grid, swapped for /builds/options/treasure on
+         the dialog's first open. Inline, the three grids ran to ~2.2MB of HTML
+         on pages most visitors never open a dialog on.
+
+         display:contents so the swapped-in form stays the dialog's flex child.
+         innerHTML, not outerHTML: an outerHTML swap fires its after-swap event
+         on the detached node, so picker.js would never see the event that
+         finishes the card setup. -->
+    <div data-picker-body class="contents" hx-get="/builds/options/treasure?lang=@ctx.lang"
+        hx-trigger="picker-load once" hx-swap="innerHTML">
+        <div class="grow flex items-center justify-center text-foreground-muted font-label uppercase">%build_picker_loading</div>
+    </div>
+</dialog>

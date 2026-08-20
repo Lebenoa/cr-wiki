@@ -1,0 +1,29 @@
+<!-- The pet picker modal; see picker_dialog_cookie.html. -->
+<dialog id="dialog-pet" data-kind="pet" closedby="any" class="picker-dialog">
+    <button type="button" onclick="this.closest('dialog').close()"
+        class="btn-secondary size-8 absolute top-3 right-3">✕</button>
+    <h2 class="font-headline text-accent text-2xl mb-4">%build_pick_pet</h2>
+    @if picker_steps
+    <div id="dialog-step-pet" class="flex items-center gap-3 mb-4" data-label-pet="%build_pet_label">
+        <span class="step-count shrink-0 text-xs font-label uppercase text-accent"></span>
+        <span class="step-name shrink-0 text-xs font-label uppercase text-foreground-muted"></span>
+        <div class="flex-1 h-1.5 rounded-full bg-primary/15 overflow-hidden">
+            <div class="step-fill h-full rounded-full bg-accent transition-all duration-500" style="width:0"></div>
+        </div>
+    </div>
+    @end
+    <input type="search" placeholder="%build_search_placeholder" oninput="filterOptions('pet', this.value)"
+        class="picker-search" />
+    <!-- Placeholder for the pet option grid, swapped for /builds/options/pet on
+         the dialog's first open. Inline, the three grids ran to ~2.2MB of HTML
+         on pages most visitors never open a dialog on.
+
+         display:contents so the swapped-in form stays the dialog's flex child.
+         innerHTML, not outerHTML: an outerHTML swap fires its after-swap event
+         on the detached node, so picker.js would never see the event that
+         finishes the card setup. -->
+    <div data-picker-body class="contents" hx-get="/builds/options/pet?lang=@ctx.lang"
+        hx-trigger="picker-load once" hx-swap="innerHTML">
+        <div class="grow flex items-center justify-center text-foreground-muted font-label uppercase">%build_picker_loading</div>
+    </div>
+</dialog>

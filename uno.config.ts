@@ -440,6 +440,18 @@ export default defineConfig({
         "btn-error": "btn bg-error text-on-error hover:bg-error/90",
         "index-card":
             "p-6 rounded-xl flex flex-col gap-4 cursor-pointer h-full bg-surface/25 backdrop-blur-md hover:-translate-y-1 hover:border-primary transition-all border border-accent/30",
+
+        // The build planner's picker modals (templates/components/
+        // picker_dialog_*.html). One shell for all three so a dialog cannot
+        // drift into its own size or transition.
+        "picker-dialog":
+            "relative m-auto p-6 w-[min(80rem,95vw)] max-h-[85vh] hidden open:flex flex-col bg-surface text-foreground rounded-xl border border-accent/30 shadow-2xl transition-discrete transition-all duration-300 opacity-0 open:starting:opacity-0 open:opacity-100 backdrop:transition-all backdrop:transition-discrete backdrop:opacity-0 backdrop:bg-black backdrop:open:opacity-40 backdrop:open:backdrop-blur-sm backdrop:open:blur-sm backdrop:open:starting:opacity-0",
+        "picker-search":
+            "w-full shrink-0 bg-surface border-2 border-primary/30 rounded-xl py-2 px-3 text-foreground mb-4",
+        "picker-tab":
+            "state-tab rounded-full px-4 py-2 font-bold transition-colors border-2 border-secondary/50 text-secondary",
+        "picker-tab-on":
+            "state-tab active rounded-full px-4 py-2 font-bold transition-colors bg-primary text-foreground",
     },
     theme: {
         colors: {

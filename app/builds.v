@@ -209,6 +209,10 @@ pub fn (mut wapp App) builds(mut ctx Context) veb.Result {
 	cookies := wapp.cookie_options(ctx.lang)
 	pets := wapp.pet_options(ctx.lang)
 	treasures := wapp.treasure_options(ctx.lang, true)
+	// the shared picker dialogs (templates/components/picker_dialog_*.html)
+	// carry the planner's n/6 step header; here a pick is just a filter
+	// change, so there is no flow to number.
+	picker_steps := false
 	sel_cookie := resolve_option(cookies, filter_cookie)
 	sel_pet := resolve_option(pets, filter_pet)
 	sel_treasure := resolve_option(treasures, filter_treasure)
@@ -243,6 +247,9 @@ pub fn (wapp &App) new_build(mut ctx Context) veb.Result {
 	build_boosts := ['energy', 'item_time', 'fast_start']
 	purchase_boosts := util.run_boost_keys()
 	power_effect_keys := util.power_effect_keys()
+	// the planner walks the six slots in order, so its dialogs show the step
+	// header (see templates/components/picker_dialog_*.html)
+	picker_steps := true
 	return $veb.html()
 }
 
@@ -577,6 +584,8 @@ pub fn (wapp &App) build_edit(mut ctx Context, id int) veb.Result {
 	build_boosts := ['energy', 'item_time', 'fast_start']
 	purchase_boosts := util.run_boost_keys()
 	power_effect_keys := util.power_effect_keys()
+	// t1..t3 is still a flow, so the treasure dialog keeps its step header
+	picker_steps := true
 	t1_id := if b.treasures.len > 0 { b.treasures[0].id } else { 0 }
 	t2_id := if b.treasures.len > 1 { b.treasures[1].id } else { 0 }
 	t3_id := if b.treasures.len > 2 { b.treasures[2].id } else { 0 }

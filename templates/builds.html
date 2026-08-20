@@ -136,79 +136,11 @@
         </div>
     </section>
 
-    <dialog id="dialog-cookie" data-kind="cookie" closedby="any"
-        class="relative m-auto p-6 w-[min(80rem,95vw)] max-h-[85vh] hidden open:flex flex-col bg-surface text-foreground rounded-xl border border-accent/30 shadow-2xl transition-discrete transition-all duration-300 opacity-0 open:starting:opacity-0 open:opacity-100 backdrop:transition-all backdrop:transition-discrete backdrop:opacity-0 backdrop:bg-black backdrop:open:opacity-40 backdrop:open:backdrop-blur-sm backdrop:open:blur-sm backdrop:open:starting:opacity-0">
-        <button type="button" onclick="this.closest('dialog').close()"
-            class="btn-secondary size-8 absolute top-3 right-3">✕</button>
-        <h2 class="font-headline text-accent text-2xl mb-4">%build_pick_cookie</h2>
-        <input type="search" placeholder="%build_search_placeholder" oninput="filterOptions('cookie', this.value)"
-            class="w-full shrink-0 bg-surface border-2 border-primary/30 rounded-xl py-2 px-3 text-foreground mb-4" />
-        <!-- the option grid is fetched on this dialog's first open (picker.js
-             fires `picker-load`); see /builds/options/cookie. Inline, the three
-             grids were ~2.2MB of HTML on a page most visitors never open a
-             dialog on. -->
-        <!-- display:contents so the swapped-in form stays the dialog's flex
-             child. innerHTML, not outerHTML: an outerHTML swap fires its
-             after-swap event on the detached node, so picker.js would never
-             see the event that finishes the card setup. -->
-        <div data-picker-body class="contents" hx-get="/builds/options/cookie?lang=@ctx.lang"
-            hx-trigger="picker-load once" hx-swap="innerHTML">
-            <div class="grow flex items-center justify-center text-foreground-muted font-label uppercase">%build_picker_loading</div>
-        </div>
-    </dialog>
+    @include 'components/picker_dialog_cookie.html'
 
-    <dialog id="dialog-pet" data-kind="pet" closedby="any"
-        class="relative m-auto p-6 w-[min(80rem,95vw)] max-h-[85vh] hidden open:flex flex-col bg-surface text-foreground rounded-xl border border-accent/30 shadow-2xl transition-discrete transition-all duration-300 opacity-0 open:starting:opacity-0 open:opacity-100 backdrop:transition-all backdrop:transition-discrete backdrop:opacity-0 backdrop:bg-black backdrop:open:opacity-40 backdrop:open:backdrop-blur-sm backdrop:open:blur-sm backdrop:open:starting:opacity-0">
-        <button type="button" onclick="this.closest('dialog').close()"
-            class="btn-secondary size-8 absolute top-3 right-3">✕</button>
-        <h2 class="font-headline text-accent text-2xl mb-4">%build_pick_pet</h2>
-        <input type="search" placeholder="%build_search_placeholder" oninput="filterOptions('pet', this.value)"
-            class="w-full shrink-0 bg-surface border-2 border-primary/30 rounded-xl py-2 px-3 text-foreground mb-4" />
-        <!-- the option grid is fetched on this dialog's first open (picker.js
-             fires `picker-load`); see /builds/options/pet. Inline, the three
-             grids were ~2.2MB of HTML on a page most visitors never open a
-             dialog on. -->
-        <!-- display:contents so the swapped-in form stays the dialog's flex
-             child. innerHTML, not outerHTML: an outerHTML swap fires its
-             after-swap event on the detached node, so picker.js would never
-             see the event that finishes the card setup. -->
-        <div data-picker-body class="contents" hx-get="/builds/options/pet?lang=@ctx.lang"
-            hx-trigger="picker-load once" hx-swap="innerHTML">
-            <div class="grow flex items-center justify-center text-foreground-muted font-label uppercase">%build_picker_loading</div>
-        </div>
-    </dialog>
+    @include 'components/picker_dialog_pet.html'
 
-    <dialog id="dialog-treasure" data-kind="treasure" closedby="any"
-        class="relative m-auto p-6 w-[min(80rem,95vw)] max-h-[85vh] hidden open:flex flex-col bg-surface text-foreground rounded-xl border border-accent/30 shadow-2xl transition-discrete transition-all duration-300 opacity-0 open:starting:opacity-0 open:opacity-100 backdrop:transition-all backdrop:transition-discrete backdrop:opacity-0 backdrop:bg-black backdrop:open:opacity-40 backdrop:open:backdrop-blur-sm backdrop:open:blur-sm backdrop:open:starting:opacity-0">
-        <button type="button" onclick="this.closest('dialog').close()"
-            class="btn-secondary size-8 absolute top-3 right-3">✕</button>
-        <h2 class="font-headline text-accent text-2xl mb-4">%build_pick_treasure</h2>
-        <div class="flex flex-wrap items-center gap-2 mb-4">
-            <button type="button" data-tab="all" onclick="setTreasureTab('all')"
-                class="state-tab active rounded-full px-4 py-2 font-bold transition-colors bg-primary text-foreground">%treasure_tab_all</button>
-            <button type="button" data-tab="normal" onclick="setTreasureTab('normal')"
-                class="state-tab rounded-full px-4 py-2 font-bold transition-colors border-2 border-secondary/50 text-secondary">%treasure_tab_normal</button>
-            <button type="button" data-tab="evo" onclick="setTreasureTab('evo')"
-                class="state-tab rounded-full px-4 py-2 font-bold transition-colors border-2 border-secondary/50 text-secondary">%treasure_tab_evolved</button>
-        </div>
-        <input type="search" placeholder="%build_search_placeholder" oninput="filterOptions('treasure', this.value)"
-            class="w-full shrink-0 bg-surface border-2 border-primary/30 rounded-xl py-2 px-3 text-foreground mb-4" />
-        <div class="shrink-0 mb-4">
-            @include 'components/level_slider'
-        </div>
-        <!-- the option grid is fetched on this dialog's first open (picker.js
-             fires `picker-load`); see /builds/options/treasure. Inline, the three
-             grids were ~2.2MB of HTML on a page most visitors never open a
-             dialog on. -->
-        <!-- display:contents so the swapped-in form stays the dialog's flex
-             child. innerHTML, not outerHTML: an outerHTML swap fires its
-             after-swap event on the detached node, so picker.js would never
-             see the event that finishes the card setup. -->
-        <div data-picker-body class="contents" hx-get="/builds/options/treasure?lang=@ctx.lang"
-            hx-trigger="picker-load once" hx-swap="innerHTML">
-            <div class="grow flex items-center justify-center text-foreground-muted font-label uppercase">%build_picker_loading</div>
-        </div>
-    </dialog>
+    @include 'components/picker_dialog_treasure.html'
 
     <script src="/js/level_slider.js"></script>
     <script src="/js/picker.js"></script>

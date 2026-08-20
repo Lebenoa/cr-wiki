@@ -1,0 +1,35 @@
+<!-- The cookie picker modal, shared by /builds (filter) and the planner. The
+     option grid is not inline: it is fetched on the dialog's first open, when
+     picker.js fires `picker-load` (see /builds/options/:kind). Set
+     `picker_steps` in the handler: true adds the planner's n/6 step header,
+     false leaves it out for the /builds filter dialogs, which are not a flow. -->
+<dialog id="dialog-cookie" data-kind="cookie" closedby="any" class="picker-dialog">
+    <button type="button" onclick="this.closest('dialog').close()"
+        class="btn-secondary size-8 absolute top-3 right-3">✕</button>
+    <h2 class="font-headline text-accent text-2xl mb-4">%build_pick_cookie</h2>
+    @if picker_steps
+    <div id="dialog-step-cookie" class="flex items-center gap-3 mb-4"
+        data-label-cookie="%build_cookie_label" data-label-cookie2="%build_relay_label"
+        data-title-cookie="%build_pick_cookie" data-title-cookie2="%build_pick_relay">
+        <span class="step-count shrink-0 text-xs font-label uppercase text-accent"></span>
+        <span class="step-name shrink-0 text-xs font-label uppercase text-foreground-muted"></span>
+        <div class="flex-1 h-1.5 rounded-full bg-primary/15 overflow-hidden">
+            <div class="step-fill h-full rounded-full bg-accent transition-all duration-500" style="width:0"></div>
+        </div>
+    </div>
+    @end
+    <input type="search" placeholder="%build_search_placeholder" oninput="filterOptions('cookie', this.value)"
+        class="picker-search" />
+    <!-- Placeholder for the cookie option grid, swapped for /builds/options/cookie on
+         the dialog's first open. Inline, the three grids ran to ~2.2MB of HTML
+         on pages most visitors never open a dialog on.
+
+         display:contents so the swapped-in form stays the dialog's flex child.
+         innerHTML, not outerHTML: an outerHTML swap fires its after-swap event
+         on the detached node, so picker.js would never see the event that
+         finishes the card setup. -->
+    <div data-picker-body class="contents" hx-get="/builds/options/cookie?lang=@ctx.lang"
+        hx-trigger="picker-load once" hx-swap="innerHTML">
+        <div class="grow flex items-center justify-center text-foreground-muted font-label uppercase">%build_picker_loading</div>
+    </div>
+</dialog>
