@@ -132,7 +132,62 @@
                         </button>
                         @endfor
                     </div>
+                    <!-- the one editable theme: it inherits a preset and layers
+                         the user's overrides on top, so the presets above stay
+                         exactly as shipped -->
+                    <button type="button"
+                        class="theme-option flex items-center gap-2 rounded-xl border border-secondary/50 px-2 py-1.5 text-sm text-foreground hover:border-primary transition-colors"
+                        data-theme="custom">
+                        <span class="theme-swatch size-5 shrink-0 rounded-full border border-white/20"
+                            data-theme="custom"></span>
+                        <span class="truncate">%theme_custom</span>
+                        <span class="theme-check hidden ml-auto text-primary font-bold">✓</span>
+                    </button>
+                    <button type="button" data-theme-edit
+                        class="btn-secondary w-full text-sm">%theme_customize</button>
                 </div>
+                <!-- Custom theme editor. Rows are read and written through
+                     window.CRTheme (theme.js owns storage and application,
+                     theme_editor.js the colour picking); a row with no override
+                     shows the colour it inherits from the base preset. -->
+                <dialog id="theme-editor"
+                    class="hidden open:flex flex-col gap-4 m-auto p-6 w-[min(92vw,34rem)] max-h-[85vh] overflow-y-auto rounded-xl border border-accent/30 bg-surface text-foreground shadow-2xl backdrop:bg-black backdrop:opacity-40">
+                    <div class="flex items-center justify-between gap-4">
+                        <h2 class="font-headline text-accent text-xl">%theme_customize</h2>
+                        <button type="button" onclick="this.closest('dialog').close()"
+                            class="btn-secondary size-8">✕</button>
+                    </div>
+                    <label class="flex items-center justify-between gap-3 text-sm">
+                        <span class="font-label uppercase text-foreground-muted">%theme_base</span>
+                        <select data-theme-base
+                            class="bg-surface border-2 border-primary/30 rounded-xl py-2 px-3 text-foreground">
+                            @for t in ctx.theme_options()
+                            <option value="@t">@{ctx.theme_label(t)}</option>
+                            @endfor
+                        </select>
+                    </label>
+                    <p class="text-xs text-foreground-muted">%theme_customize_hint</p>
+                    <div class="flex flex-col gap-2">
+                        @for tok in ctx.theme_tokens()
+                        <div data-token-row="@tok"
+                            class="flex items-center gap-3 rounded-xl border border-secondary/40 px-3 py-2">
+                            <input type="color" aria-label="@{ctx.theme_token_label(tok)}"
+                                class="size-8 shrink-0 cursor-pointer rounded border-0 bg-transparent p-0" />
+                            <span class="text-sm truncate">@{ctx.theme_token_label(tok)}</span>
+                            <button type="button" data-token-reset title="%theme_token_reset"
+                                aria-label="%theme_token_reset"
+                                class="invisible ml-auto text-xs font-label uppercase text-foreground-muted hover:text-accent">%theme_token_reset</button>
+                        </div>
+                        @endfor
+                    </div>
+                    <div class="flex items-center justify-between gap-3">
+                        <button type="button" data-theme-reset-all
+                            class="btn-secondary text-sm">%theme_reset_all</button>
+                        <button type="button" onclick="this.closest('dialog').close()"
+                            class="btn-primary text-sm">%theme_done</button>
+                    </div>
+                </dialog>
+
                 <!-- <button class="btn-warning" popovertarget="account-dropdown" popovertargetaction="close">Close</button> -->
             </div>
             <dialog

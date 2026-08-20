@@ -236,6 +236,12 @@ export default defineConfig({
 					.theme-swatch[data-theme="rose_pine"] {
 						background: conic-gradient(from 0deg, oklch(0.7760 0.0945 304.99), oklch(0.8219 0.0543 209.56), oklch(0.2134 0.0255 291.13), oklch(0.7760 0.0945 304.99));
 					}
+					/* the custom theme has no fixed palette — the swatch tracks
+					   whatever the live variables resolve to, which is the base
+					   preset plus the user's overrides */
+					.theme-swatch[data-theme="custom"] {
+						background: conic-gradient(from 0deg, oklch(var(--primary)), oklch(var(--accent)), oklch(var(--background)), oklch(var(--primary)));
+					}
 				body {
 					width: 100%;
 					display: table-cell;

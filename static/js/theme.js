@@ -11,7 +11,23 @@
   'use strict';
 
   var KEY = 'cr-theme';
-  var NAMES = ['default', 'light', 'tokyo_night', 'cappuccino', 'dracula', 'nord', 'gruvbox', 'rose_pine'];
+  var CUSTOM_KEY = 'cr-theme-custom';
+  var PRESETS = ['default', 'light', 'tokyo_night', 'cappuccino', 'dracula', 'nord', 'gruvbox', 'rose_pine'];
+  // the one editable theme. It is not a palette of its own: it names a preset
+  // to inherit from and a set of per-token overrides on top, so the presets
+  // themselves stay exactly as shipped.
+  var CUSTOM = 'custom';
+  var NAMES = PRESETS.concat([CUSTOM]);
+  // the tokens the editor may override, in the order it lists them. The
+  // remaining variables (the --on-* contrast pair of each) are derived, never
+  // edited by hand: a readable foreground is not something to get wrong.
+  var TOKENS = ['background', 'surface', 'border', 'primary', 'secondary', 'accent',
+    'muted', 'foreground', 'foreground-muted', 'success', 'warning', 'error'];
+  // tokens that carry an --on-<token> partner
+  var ON_PAIRS = ['primary', 'secondary', 'accent', 'success', 'warning', 'error', 'surface', 'muted'];
+  // the two contrast values every preset already uses
+  var ON_LIGHT = '0.9612 0.0000 89.88';
+  var ON_DARK = '0.2090 0.0000 89.88';
 
   function stored() {
     try {
@@ -22,13 +38,91 @@
   }
   var active = NAMES.indexOf(stored()) >= 0 ? stored() : 'default';
 
-  // 'default' is the base `html {}` block in the preflight — no attribute
+  // custom = { base: <preset name>, vars: { <token>: "L C H" } }
+  function readCustom() {
+    var raw = null;
+    try {
+      raw = localStorage.getItem(CUSTOM_KEY);
+    } catch (e) { /* private mode */ }
+    var out = { base: 'default', vars: {} };
+    if (!raw) {
+      return out;
+    }
+    try {
+      var parsed = JSON.parse(raw);
+      if (parsed && PRESETS.indexOf(parsed.base) >= 0) {
+        out.base = parsed.base;
+      }
+      if (parsed && parsed.vars && typeof parsed.vars === 'object') {
+        TOKENS.forEach(function (t) {
+          if (typeof parsed.vars[t] === 'string') {
+            out.vars[t] = parsed.vars[t];
+          }
+        });
+      }
+    } catch (e) { /* corrupt entry: fall back to the empty custom */ }
+    return out;
+  }
+
+  var custom = readCustom();
+
+  function writeCustom() {
+    try {
+      localStorage.setItem(CUSTOM_KEY, JSON.stringify(custom));
+    } catch (e) { /* private mode: this session only */ }
+  }
+
+  // clearOverrides drops every inline variable the custom theme wrote, so
+  // switching back to a preset leaves the preflight block alone again.
+  function clearOverrides() {
+    var st = document.documentElement.style;
+    TOKENS.forEach(function (t) {
+      st.removeProperty('--' + t);
+    });
+    ON_PAIRS.forEach(function (t) {
+      st.removeProperty('--on-' + t);
+    });
+  }
+
+  // lightness of an "L C H" triple, 0..1
+  function lightnessOf(v) {
+    var l = parseFloat(String(v).trim().split(/\s+/)[0]);
+    return isNaN(l) ? 0 : l;
+  }
+
+  function writeOverrides() {
+    var st = document.documentElement.style;
+    TOKENS.forEach(function (t) {
+      var v = custom.vars[t];
+      if (!v) {
+        return;
+      }
+      st.setProperty('--' + t, v);
+      if (ON_PAIRS.indexOf(t) >= 0) {
+        // a light surface wants dark text on it and the other way round
+        st.setProperty('--on-' + t, lightnessOf(v) > 0.62 ? ON_DARK : ON_LIGHT);
+      }
+    });
+  }
+
+  // 'default' is the base `html {}` block in the preflight — no attribute.
+  // 'custom' wears its base preset's attribute and layers the overrides on as
+  // inline variables, which beat the preflight block; that is the whole of the
+  // inheritance, so changing the base keeps every override.
   function apply(name) {
     var root = document.documentElement;
-    if (name === 'default') {
+    clearOverrides();
+    var attr = name === CUSTOM ? custom.base : name;
+    if (attr === 'default') {
       delete root.dataset.theme;
     } else {
-      root.dataset.theme = name;
+      root.dataset.theme = attr;
+    }
+    if (name === CUSTOM) {
+      root.dataset.custom = '1';
+      writeOverrides();
+    } else {
+      delete root.dataset.custom;
     }
   }
 
@@ -129,9 +223,47 @@
   // theme swatch and the option check mark kept the old markup's state.
   document.addEventListener('htmx:after:settle', onReady);
 
+  // the editor (theme_editor.js) drives the custom theme through these: it
+  // owns the colour picking and the oklch conversion, this file owns storage
+  // and application.
   window.CRTheme = {
     apply: apply,
     save: save,
     active: function () { return active; },
+    presets: function () { return PRESETS.slice(); },
+    tokens: function () { return TOKENS.slice(); },
+    custom: function () { return { base: custom.base, vars: Object.assign({}, custom.vars) }; },
+    setBase: function (base) {
+      if (PRESETS.indexOf(base) < 0) {
+        return;
+      }
+      custom.base = base;
+      writeCustom();
+      if (active === CUSTOM) {
+        apply(CUSTOM);
+      }
+    },
+    // value null/'' clears the override, so the token falls back to the base
+    setToken: function (token, value) {
+      if (TOKENS.indexOf(token) < 0) {
+        return;
+      }
+      if (value) {
+        custom.vars[token] = value;
+      } else {
+        delete custom.vars[token];
+      }
+      writeCustom();
+      if (active === CUSTOM) {
+        apply(CUSTOM);
+      }
+    },
+    resetCustom: function () {
+      custom.vars = {};
+      writeCustom();
+      if (active === CUSTOM) {
+        apply(CUSTOM);
+      }
+    },
   };
 })();

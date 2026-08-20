@@ -127,6 +127,63 @@ Gruvbox
 theme_rose_pine
 Rosé Pine
 -----
+theme_custom
+Custom
+-----
+theme_customize
+Customize theme
+-----
+theme_customize_hint
+Pick a base theme, then change only the colours you want. Untouched colours follow the base.
+-----
+theme_base
+Inherit from
+-----
+theme_token_reset
+Reset
+-----
+theme_reset_all
+Reset all
+-----
+theme_done
+Done
+-----
+theme_token_background
+Background
+-----
+theme_token_surface
+Surface
+-----
+theme_token_border
+Border
+-----
+theme_token_primary
+Primary
+-----
+theme_token_secondary
+Secondary
+-----
+theme_token_accent
+Accent
+-----
+theme_token_muted
+Muted
+-----
+theme_token_foreground
+Text
+-----
+theme_token_foreground_muted
+Muted text
+-----
+theme_token_success
+Success
+-----
+theme_token_warning
+Warning
+-----
+theme_token_error
+Error
+-----
 missing_description
 No description available.
 -----

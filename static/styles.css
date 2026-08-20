@@ -289,6 +289,12 @@
 					.theme-swatch[data-theme="rose_pine"] {
 						background: conic-gradient(from 0deg, oklch(0.7760 0.0945 304.99), oklch(0.8219 0.0543 209.56), oklch(0.2134 0.0255 291.13), oklch(0.7760 0.0945 304.99));
 					}
+					/* the custom theme has no fixed palette — the swatch tracks
+					   whatever the live variables resolve to, which is the base
+					   preset plus the user's overrides */
+					.theme-swatch[data-theme="custom"] {
+						background: conic-gradient(from 0deg, oklch(var(--primary)), oklch(var(--accent)), oklch(var(--background)), oklch(var(--primary)));
+					}
 				body {
 					width: 100%;
 					display: table-cell;
@@ -641,6 +647,7 @@
 .mt-8{margin-top:calc(var(--spacing) * 8);}
 .mt-auto{margin-top:auto;}
 .m-bs-1{margin-block-start:calc(var(--spacing) * 1);}
+.p-0{padding:calc(var(--spacing) * 0);}
 .p-10{padding:calc(var(--spacing) * 10);}
 .p-2{padding:calc(var(--spacing) * 2);}
 .p-3{padding:calc(var(--spacing) * 3);}
@@ -693,6 +700,7 @@
 .border,
 [b=""],
 [border=""]{border-width:1px;}
+.border-0{border-width:0px;}
 .border-2,
 [border-2=""]{border-width:2px;}
 .border-b{border-bottom-width:1px;}
@@ -807,6 +815,7 @@
 .hover\:bg-secondary\/20:hover{background-color:color-mix(in srgb, oklch(var(--secondary, 0.72 0.12 220)) 20%, transparent);}
 .hover\:bg-surface:hover{background-color:color-mix(in srgb, oklch(var(--surface, 0.97 0 0)) var(--un-bg-opacity), transparent);}
 .backdrop\:opacity-0::backdrop{opacity:0%;}
+.backdrop\:opacity-40::backdrop{opacity:40%;}
 .backdrop\:open\:opacity-40[open]::backdrop{opacity:40%;}
 .not-\[\.hidden\]\:opacity-100:not(.hidden){opacity:100%;}
 .opacity-0{opacity:0%;}
@@ -882,6 +891,7 @@
 .h-5{height:calc(var(--spacing) * 5);}
 .h-auto{height:auto;}
 .h-full{height:100%;}
+.max-h-\[85vh\]{max-height:85vh;}
 .max-h-\[90vh\]{max-height:90vh;}
 .max-h-60{max-height:calc(var(--spacing) * 60);}
 .max-h-96{max-height:calc(var(--spacing) * 96);}
@@ -900,6 +910,7 @@
 .min-w-16{min-width:calc(var(--spacing) * 16);}
 .min-w-40{min-width:calc(var(--spacing) * 40);}
 .w-\[min\(90vw\,40rem\)\]{width:min(90vw,40rem);}
+.w-\[min\(92vw\,34rem\)\]{width:min(92vw,34rem);}
 .w-0\.5{width:calc(var(--spacing) * 0.5);}
 .w-1{width:calc(var(--spacing) * 1);}
 .w-12{width:calc(var(--spacing) * 12);}
@@ -923,7 +934,8 @@
 .hidden,
 [hidden=""]{display:none;}
 .visible{visibility:visible;}
-.htmx-request .\[\.htmx-request_\&\]\:invisible{visibility:hidden;}
+.htmx-request .\[\.htmx-request_\&\]\:invisible,
+.invisible{visibility:hidden;}
 .cursor-pointer{cursor:pointer;}
 .resize-y{resize:vertical;}
 .select-none{-webkit-user-select:none;user-select:none;}

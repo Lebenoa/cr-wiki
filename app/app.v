@@ -321,6 +321,25 @@ pub fn (ctx &Context) theme_options() []string {
 const themes = ['default', 'light', 'tokyo_night', 'cappuccino', 'dracula', 'nord', 'gruvbox',
 	'rose_pine']
 
+// theme_tokens lists the palette variables the custom-theme editor may
+// override, in the order it renders them. The presets themselves are not
+// editable: the custom theme names one of them as its base and layers these
+// on top (see static/js/theme.js). The --on-* contrast partners are derived
+// from the chosen colour rather than exposed, so a build cannot end up with
+// unreadable text on a button.
+pub fn (ctx &Context) theme_tokens() []string {
+	return theme_tokens_list
+}
+
+const theme_tokens_list = ['background', 'surface', 'border', 'primary', 'secondary', 'accent',
+	'muted', 'foreground', 'foreground-muted', 'success', 'warning', 'error']
+
+// theme_token_label localizes one editable token (theme_token_* keys; the
+// hyphen in a token name is not valid in a key, so it becomes an underscore).
+pub fn (ctx &Context) theme_token_label(token string) string {
+	return veb.tr(ctx.lang, 'theme_token_${token.replace('-', '_')}')
+}
+
 // theme_label localizes a theme name (theme_* keys in the .tr files).
 pub fn (ctx &Context) theme_label(name string) string {
 	return veb.tr(ctx.lang, 'theme_${name}')
