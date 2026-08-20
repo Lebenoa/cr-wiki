@@ -48,6 +48,7 @@ The repository implements a web platform written in V (V Language) using a speci
   Keep new pure helpers there, not in `database/`; the import direction is
   `database` → `app.util` (never the reverse).
 - Follow structured results for error handling (return controlled HTTP responses).
+- **Never comment in `.html` files** — no `<!-- ... -->` in `templates/` or anywhere else. Put the reasoning in the V handler, in the partial's filename, or in the commit message. Editor reflows strip and mangle HTML comments anyway, so they do not survive.
 - Avoid unnecessary abstractions; prefer straightforward functions and modules.
 - Error handling: return status codes via the result type, not generic exceptions.
 - User-facing text always goes through translation keys (`translations/{en,th}.tr` + `ctx.tr()`) — no hardcoded labels. Adding a label touches the template and both .tr files together.
