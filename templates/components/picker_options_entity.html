@@ -6,8 +6,16 @@
 <p class="col-span-full text-center text-foreground-muted py-8">%search_no_results</p>
 @end
 @for o in options
+@if o.id == sel
+<!-- the option already in the slot: pinned first by picker_options and ringed
+     here, so reopening a filled slot opens on what is in it -->
+<button type="submit" value="@o.id" data-name="@o.name" data-name-en="@o.en_name" data-selected="1"
+    aria-current="true" onclick="setPicked(this)"
+    class="pick-option relative border-2 border-primary ring-2 ring-primary px-4 py-2 rounded flex flex-col items-center justify-start transition-colors group gap-2">
+@else
 <button type="submit" value="@o.id" data-name="@o.name" data-name-en="@o.en_name" onclick="setPicked(this)"
     class="pick-option relative border border-secondary px-4 py-2 rounded flex flex-col items-center justify-start hover:border-primary transition-colors group gap-2">
+@end
     <img src="@{ctx.img_src(img_dir, o.image)}" alt="@o.name" loading="lazy"
         class="h-36 w-full object-contain" />
     <span class="text-2xl group-hover:text-primary text-secondary text-center leading-tight">@o.name</span>

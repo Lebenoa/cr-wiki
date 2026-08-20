@@ -5,9 +5,17 @@
 <p class="col-span-full text-center text-foreground-muted py-8">%search_no_results</p>
 @end
 @for t in treasures
+@if t.id == sel
+<!-- the treasure already in the slot: pinned first by picker_options and
+     ringed here, so reopening a filled slot opens on what is in it -->
+<button type="submit" value="@t.id" data-name="@t.name" data-name-en="@t.en_name" data-evolved="@t.is_evolved"
+    data-selected="1" aria-current="true" onclick="setPicked(this)"
+    class="pick-option relative border-2 border-primary ring-2 ring-primary px-4 py-2 rounded flex flex-col items-center justify-start transition-colors group gap-2">
+@else
 <button type="submit" value="@t.id" data-name="@t.name" data-name-en="@t.en_name" data-evolved="@t.is_evolved"
     onclick="setPicked(this)"
     class="pick-option relative border border-secondary px-4 py-2 rounded flex flex-col items-center justify-start hover:border-primary transition-colors group gap-2">
+@end
     <img src="@{ctx.img_src('treasures', t.image)}" alt="@t.name" loading="lazy"
         class="h-36 w-full object-contain" />
     <span class="text-2xl group-hover:text-primary text-secondary text-center leading-tight">@t.name</span>

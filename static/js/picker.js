@@ -93,6 +93,19 @@
         }
     }
 
+    // setTabStyles marks the active tab. It swaps the whole class, not
+    // individual utilities: the look comes from the picker-tab/picker-tab-on
+    // shortcuts, and toggling a utility the shortcut also sets would leave the
+    // two fighting over the same rule.
+    function setTabStyles(dlg, tab) {
+        if (!dlg) {
+            return;
+        }
+        dlg.querySelectorAll('.state-tab').forEach(function (btn) {
+            btn.className = btn.dataset.tab === tab ? 'state-tab active picker-tab-on' : 'state-tab picker-tab';
+        });
+    }
+
     // setTreasureTab flips the treasure picker between its all/normal/evolved
     // tabs. The tab is a hidden field on the controls form, so the re-query
     // picks it up; the server does the filtering.
@@ -102,12 +115,7 @@
         if (!dlg) {
             return;
         }
-        // swap the whole class, not individual utilities: the look comes from
-        // the picker-tab/picker-tab-on shortcuts, and toggling a utility the
-        // shortcut also sets would leave the two fighting over the same rule
-        dlg.querySelectorAll('.state-tab').forEach(function (btn) {
-            btn.className = btn.dataset.tab === tab ? 'state-tab active picker-tab-on' : 'state-tab picker-tab';
-        });
+        setTabStyles(dlg, tab);
         var hidden = dlg.querySelector('.picker-controls input[name="tab"]');
         if (hidden) {
             hidden.value = tab;
@@ -196,6 +204,25 @@
         });
     }
 
+    // targetSlot is the slot this dialog is picking for: t1..t3 for treasures,
+    // cookie/cookie2 for the two cookie slots, pet for the pet.
+    function targetSlot(kind) {
+        if (kind === 'treasure') {
+            return treasureSlot;
+        }
+        return kind === 'cookie' ? cookieSlot : kind;
+    }
+
+    // currentPick is the id already in the target slot ('' when empty). The
+    // server pins it to the front of the grid, which is the only way a filled
+    // slot can show its pick: the grid is paginated, so the card may sit
+    // hundreds of entries down a page nobody has scrolled to.
+    function currentPick(kind) {
+        var input = document.getElementById('sel-' + targetSlot(kind));
+        var v = input ? input.value : '';
+        return v && v !== '0' ? v : '';
+    }
+
     function openPicker(kind) {
         var dlg = document.getElementById('dialog-' + kind);
         // a close via ✕/Esc must not re-fire the previous pick: returnValue
@@ -205,26 +232,33 @@
         lastPick = null;
         // the option grid is not in the page HTML — the three grids together
         // ran to ~2.2MB on pages most visitors never open a dialog on, and the
-        // treasure one alone was 1.9MB. Page 1 is fetched here on the first
-        // open (hx-trigger="picker-load once"), the rest arrives as the user
-        // scrolls, and the grid observer below sets up whatever lands.
+        // treasure one alone was 1.9MB. It loads through the controls form
+        // below, page 1 first and the rest as the user scrolls; the grid
+        // observer sets up whatever lands.
         var grid = dlg.querySelector('[data-picker-grid]');
-        if (grid && window.htmx) {
-            htmx.trigger(grid, 'picker-load');
-        }
-        // a search term or tab left over from the previous open would show a
-        // filtered grid with an empty search box, so clear them and re-query.
-        // Nothing to re-query when both are already at their defaults, which
-        // is the common case.
         var q = dlg.querySelector('.picker-controls input[type="search"]');
         var tabInput = dlg.querySelector('.picker-controls input[name="tab"]');
-        var stale = (q && q.value !== '') || (tabInput && tabInput.value !== 'all');
+        var selInput = dlg.querySelector('.picker-controls input[name="sel"]');
+        var pick = currentPick(kind);
+        // reload when the grid has never been filled, when a search term or
+        // tab is left over from the last open (it would show a filtered grid
+        // under an empty search box), or when the slot's pick changed and the
+        // grid is pinned to the wrong card.
+        var stale = (q && q.value !== '') || (tabInput && tabInput.value !== 'all') ||
+            (selInput && selInput.value !== (pick || '0')) ||
+            !(grid && grid.querySelector('.pick-option'));
         if (q) {
             q.value = '';
         }
-        if (tabInput && tabInput.value !== 'all') {
-            setTreasureTab('all'); // restyles the tabs and re-queries
-        } else if (stale) {
+        if (selInput) {
+            selInput.value = pick || '0';
+        }
+        if (tabInput) {
+            tabInput.value = 'all';
+        }
+        setTabStyles(dlg, 'all');
+        treasureTab = 'all';
+        if (stale) {
             refreshGrid(dlg);
         }
         prepareCards(kind);
@@ -232,8 +266,7 @@
         if (q) {
             q.focus();
         }
-        var stepSlot = kind === 'treasure' ? treasureSlot : (kind === 'cookie' ? cookieSlot : kind);
-        updateDialogStep(stepSlot);
+        updateDialogStep(targetSlot(kind));
         dlg.showModal();
     }
 

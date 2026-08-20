@@ -27,11 +27,16 @@
     <form class="picker-controls contents" onsubmit="return false"
         hx-get="/builds/options/cookie?lang=@ctx.lang" hx-trigger="input delay:250ms, picker-refresh"
         hx-target="#picker-grid-cookie" hx-swap="innerHTML">
+        <!-- the slot's current pick, filled by picker.js on open: the server
+             pins it to the front of the grid so a reopened slot shows it -->
+        <input type="hidden" name="sel" value="0" />
         <input type="search" name="q" placeholder="%build_search_placeholder" autocomplete="off"
             class="picker-search" />
     </form>
-    <form method="dialog" id="picker-grid-cookie" data-picker-grid class="card-grid overflow-y-auto"
-        hx-get="/builds/options/cookie?lang=@ctx.lang" hx-trigger="picker-load once" hx-swap="innerHTML">
+    <!-- the grid does not fetch on its own: picker.js triggers the controls
+         form above, so the search term, the tab and the pinned selection
+         always travel together -->
+    <form method="dialog" id="picker-grid-cookie" data-picker-grid class="card-grid overflow-y-auto">
         <p class="col-span-full text-center text-foreground-muted font-label uppercase py-8">%build_picker_loading</p>
     </form>
 </dialog>

@@ -313,13 +313,14 @@ fn picker_tab_ok(opt database.IdNameOption, tab string) bool {
 }
 
 // picker_next_url is the infinite-scroll sentinel's href: the same query one
-// page further on, so search and tab survive the scroll.
-fn picker_next_url(kind string, lang string, q string, tab string, next_page int) string {
+// page further on, so search, tab and the pinned selection survive the scroll
+// — sel especially, since it reorders the list the pages are cut from.
+fn picker_next_url(kind string, lang string, q string, tab string, sel int, next_page int) string {
 	if next_page == 0 {
 		return ''
 	}
 	return '/builds/options/${kind}?lang=${urllib.query_escape(lang)}&q=${urllib.query_escape(q)}' +
-		'&tab=${urllib.query_escape(tab)}&page=${next_page}'
+		'&tab=${urllib.query_escape(tab)}&sel=${sel}&page=${next_page}'
 }
 
 // picker_options serves one page of a picker dialog's option grid: the cards
@@ -342,6 +343,10 @@ pub fn (mut wapp App) picker_options(mut ctx Context, kind string) veb.Result {
 	if page < 1 {
 		page = 1
 	}
+	// the option already in the slot this dialog is picking for: pinned to the
+	// front and marked, so reopening a filled slot shows what is in it instead
+	// of burying it hundreds of cards down a paginated grid.
+	sel := (ctx.query['sel'] or { '' }).int()
 	all := match kind {
 		'cookie' { wapp.cookie_options(ctx.lang) }
 		'pet' { wapp.pet_options(ctx.lang) }
@@ -352,6 +357,20 @@ pub fn (mut wapp App) picker_options(mut ctx Context, kind string) veb.Result {
 	for opt in all {
 		if picker_tab_ok(opt, tab) && picker_matches(opt, q) {
 			matched << opt
+		}
+	}
+	// pin before slicing, and on every page, so the pages stay a clean cut of
+	// one stable ordering rather than repeating or skipping the pinned card
+	if sel > 0 {
+		for i, opt in matched {
+			if opt.id == sel {
+				if i > 0 {
+					pinned := matched[i]
+					matched.delete(i)
+					matched.insert(0, pinned)
+				}
+				break
+			}
 		}
 	}
 	start := (page - 1) * picker_page_size
@@ -365,7 +384,7 @@ pub fn (mut wapp App) picker_options(mut ctx Context, kind string) veb.Result {
 	}
 	paged := if start < matched.len { matched[start..end] } else { []database.IdNameOption{} }
 	next_page := if end < matched.len { page + 1 } else { 0 }
-	next_url := picker_next_url(kind, ctx.lang, q, tab, next_page)
+	next_url := picker_next_url(kind, ctx.lang, q, tab, sel, next_page)
 	if kind == 'treasure' {
 		treasures := paged
 		return $veb.html('./templates/components/picker_options_treasure.html')

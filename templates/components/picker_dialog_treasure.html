@@ -27,14 +27,19 @@
             <button type="button" data-tab="evo" onclick="setTreasureTab('evo')" class="state-tab picker-tab">%treasure_tab_evolved</button>
         </div>
         <input type="hidden" name="tab" value="all" />
+        <!-- the slot's current pick, filled by picker.js on open: the server
+             pins it to the front of the grid so a reopened slot shows it -->
+        <input type="hidden" name="sel" value="0" />
         <input type="search" name="q" placeholder="%build_search_placeholder" autocomplete="off"
             class="picker-search" />
     </form>
     <div class="shrink-0 mb-4">
         @include 'components/level_slider'
     </div>
-    <form method="dialog" id="picker-grid-treasure" data-picker-grid class="card-grid overflow-y-auto"
-        hx-get="/builds/options/treasure?lang=@ctx.lang" hx-trigger="picker-load once" hx-swap="innerHTML">
+    <!-- the grid does not fetch on its own: picker.js triggers the controls
+         form above, so the search term, the tab and the pinned selection
+         always travel together -->
+    <form method="dialog" id="picker-grid-treasure" data-picker-grid class="card-grid overflow-y-auto">
         <p class="col-span-full text-center text-foreground-muted font-label uppercase py-8">%build_picker_loading</p>
     </form>
 </dialog>
