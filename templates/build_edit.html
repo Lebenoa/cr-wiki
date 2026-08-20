@@ -23,9 +23,6 @@
             <input type="hidden" name="c2" id="sel-cookie2" value="0" />
             @end
             <input type="hidden" name="pet" id="sel-pet" value="@b.pet.id" />
-            <!-- the same picker slots the planner uses, so an edit picks a
-                 cookie or pet through the dialog (which opens on the one the
-                 build already holds) instead of a bare name dropdown -->
             <div class="grid grid-cols-2 lg:grid-cols-3 gap-4">
                 @include 'components/picker_slot_cookie.html'
                 @include 'components/picker_slot_cookie2.html'
@@ -46,8 +43,6 @@
                             @for e in t.effects
                             <span class="text-center text-xs text-foreground-muted leading-snug">
                                 @if e.values.len > t1_level
-                                <!-- data-values is the 0-9 ladder this slot's own
-                                     level slider repaints from -->
                                 <span class="text-accent" data-values="@{e.values.join('|')}">@{e.values[t1_level]}</span>
                                 @end
                                 @e.text
@@ -86,8 +81,6 @@
                             @for e in t.effects
                             <span class="text-center text-xs text-foreground-muted leading-snug">
                                 @if e.values.len > t2_level
-                                <!-- data-values is the 0-9 ladder this slot's own
-                                     level slider repaints from -->
                                 <span class="text-accent" data-values="@{e.values.join('|')}">@{e.values[t2_level]}</span>
                                 @end
                                 @e.text
@@ -126,8 +119,6 @@
                             @for e in t.effects
                             <span class="text-center text-xs text-foreground-muted leading-snug">
                                 @if e.values.len > t3_level
-                                <!-- data-values is the 0-9 ladder this slot's own
-                                     level slider repaints from -->
                                 <span class="text-accent" data-values="@{e.values.join('|')}">@{e.values[t3_level]}</span>
                                 @end
                                 @e.text

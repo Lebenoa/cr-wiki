@@ -1,6 +1,4 @@
 <h2 class="font-bold text-center text-xl">%choose_language</h2>
-<!-- plain links, not a POST: a locale has to be reachable by URL for a
-     crawler to index it, and the href matches the page's own hreflang -->
 <div class="flex items-center gap-2 w-full justify-center flex-row flex-wrap">
     @for lang in languages
     @if lang == ctx.lang

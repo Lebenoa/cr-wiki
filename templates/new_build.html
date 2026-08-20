@@ -56,9 +56,6 @@
                             @for e in t.effects
                             <span class="text-center text-xs text-foreground-muted leading-snug">
                                 @if e.value != ''
-                                <!-- data-values is the 0-9 ladder this slot's own
-                                     level slider repaints from; without it the slot
-                                     kept showing one level while the slider moved -->
                                 <span class="text-accent" data-values="@{e.values.join('|')}">@e.value</span>
                                 @end
                                 @e.text
@@ -92,9 +89,6 @@
                             @for e in t.effects
                             <span class="text-center text-xs text-foreground-muted leading-snug">
                                 @if e.value != ''
-                                <!-- data-values is the 0-9 ladder this slot's own
-                                     level slider repaints from; without it the slot
-                                     kept showing one level while the slider moved -->
                                 <span class="text-accent" data-values="@{e.values.join('|')}">@e.value</span>
                                 @end
                                 @e.text
@@ -128,9 +122,6 @@
                             @for e in t.effects
                             <span class="text-center text-xs text-foreground-muted leading-snug">
                                 @if e.value != ''
-                                <!-- data-values is the 0-9 ladder this slot's own
-                                     level slider repaints from; without it the slot
-                                     kept showing one level while the slider moved -->
                                 <span class="text-accent" data-values="@{e.values.join('|')}">@e.value</span>
                                 @end
                                 @e.text

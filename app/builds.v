@@ -330,6 +330,11 @@ fn picker_tab_ok(opt database.IdNameOption, tab string) bool {
 // picker_next_url is the infinite-scroll sentinel's href: the same query one
 // page further on, so search, tab and the pinned selection survive the scroll
 // — sel especially, since it reorders the list the pages are cut from.
+//
+// The sentinel the partials render takes a full grid row of real height on
+// purpose: at zero height it sits exactly on the scroll container's bottom
+// clip edge, where it never intersects and the next page never loads. It
+// doubles as the loading row so the height is not dead space.
 fn picker_next_url(kind string, lang string, q string, tab string, sel int, partner int, next_page int) string {
 	if next_page == 0 {
 		return ''

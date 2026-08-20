@@ -43,7 +43,6 @@
                         @endif
                     </p>
                 </div>
-                <!-- Combo bonuses: one card per partner, beside the name/description -->
                 @if combi_bonus.len > 0
                 <aside class="flex flex-col gap-2 w-full">
                     <span class="text-xs font-label text-foreground-muted uppercase">%combo_bonus_title</span>
@@ -68,7 +67,6 @@
                 </aside>
                 @endif
             </div>
-            <!-- Quick Info Panel -->
             <div class="mt-8 grid grid-cols-2 sm:grid-cols-3 gap-4 w-full">
                 <div class="col-span-full p-4 rounded-xl flex flex-col gap-1 border-l-4 border-primary">
                     <span class="text-xs font-label text-foreground-muted uppercase">%abilities</span>
@@ -94,7 +92,6 @@
             </div>
         </div>
     </section>
-
 
     <script>
         document.getElementById('releaseDate').textContent = new Intl.DateTimeFormat('@ctx.lang', {

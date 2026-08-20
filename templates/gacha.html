@@ -11,7 +11,6 @@
     <h1 class="page-title">%gacha_page_header</h1>
 
     <div class="max-w-screen-2xl mx-auto px-8 py-4 flex flex-col gap-8">
-        <!-- one tab card per pool; the prize grids below start closed -->
         <div class="card-grid" role="tablist" aria-label="%gacha_page_header">
             @for p in pools
             <button type="button" role="tab" data-gacha-tab="@p.pool_id" id="gacha-tab-@p.pool_id"
@@ -27,8 +26,6 @@
             @endfor
         </div>
 
-        <!-- filters the open pool's prize cards; sits under the tabs so it
-             reads as belonging to the panel, not the tab strip -->
         <div class="filter-bar my-0">
             @include 'components/filter_input.html'
         </div>
@@ -40,8 +37,6 @@
             <div class="card-grid">
                 @for e in p.entries
                 @if e.kind == 'treasure'
-                <!-- same card as /treasures (grade badge, evolved pill), plus
-                     this page's odds line -->
                 <a href="/treasures/@e.id" hx-boost="true" data-cr-card data-name="@e.name"
                     data-name-en="@e.en_name" data-grade="@{ctx.grade_img_int(e.grade)}" class="entity-card">
                     <span class="flex w-full items-start justify-between gap-2">
@@ -61,7 +56,6 @@
                     @end
                 </a>
                 @else
-                <!-- same card as /pets, plus this page's odds line -->
                 <a href="/pets/@e.id" hx-boost="true" data-cr-card data-name="@e.name"
                     data-name-en="@e.en_name" data-grade="@{ctx.grade_img_int(e.grade)}" class="entity-card">
                     <span class="flex w-full items-start justify-between gap-2">

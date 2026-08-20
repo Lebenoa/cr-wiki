@@ -11,7 +11,6 @@
     <section class="max-w-5xl mx-auto my-16 px-4">
         <a href="/builds" class="text-sm font-bold text-accent hover:underline">← %build_back_list</a>
 
-        <!-- hub-style header: EP + tags, author · date -->
         <header class="mt-6 flex flex-wrap items-end justify-between gap-6">
             <div>
                 <div class="flex flex-wrap items-center gap-3">
@@ -38,7 +37,6 @@
             </div>
         </header>
 
-        <!-- lineup: main cookie, relay, pet -->
         <div class="mt-8 grid grid-cols-2 md:grid-cols-3 gap-4">
             <a href="/cookies/@b.cookie.id" title="@b.cookie.name"
                 class="group rounded-2xl border-2 border-primary/30 bg-surface/50 p-5 flex flex-col items-center gap-3 transition-colors hover:border-primary">
@@ -68,7 +66,6 @@
             </a>
         </div>
 
-        <!-- treasures (blessed slots carry the hub-style badge) -->
         <div class="mt-4 grid grid-cols-3 gap-4">
             @for i, t in b.treasures
             <a href="/treasures/@t.id" title="@t.name"
@@ -222,7 +219,6 @@
         </a>
         @end
 
-        <!-- verification: authenticated users vouch for or flag the build -->
         <div class="mt-6 rounded-2xl border border-primary/20 bg-surface/50 p-5">
             <div class="text-xs font-label uppercase text-foreground-muted">%build_verify_label</div>
             @if verify_count > 0 || issue_count > 0

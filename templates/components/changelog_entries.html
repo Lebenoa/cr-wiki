@@ -1,6 +1,3 @@
-<!-- One page of commits plus the infinite-scroll sentinel. The full history
-     is 200 entries with their bodies, which is a third of a megabyte in one
-     response; the page loads it 30 at a time like every other list here. -->
 @for e in entries
 <li class="rounded-2xl border-2 border-primary/20 bg-surface/50 p-4">
     <div class="flex flex-wrap items-baseline gap-2">
@@ -30,8 +27,6 @@
 </li>
 @endfor
 @if entries.len == 0 && page == 1
-<!-- only on the first page: an empty later page means the URL was typed past
-     the end, not that the history could not be read -->
 <p class="text-center text-foreground-muted py-12">%changelog_unavailable</p>
 @end
 @if next_url != ''

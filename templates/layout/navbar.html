@@ -134,9 +134,6 @@
                         </button>
                         @endfor
                     </div>
-                    <!-- the one editable theme: it inherits a preset and layers
-                         the user's overrides on top, so the presets above stay
-                         exactly as shipped -->
                     <button type="button"
                         class="theme-option flex items-center gap-2 rounded-xl border border-secondary/50 px-2 py-1.5 text-sm text-foreground hover:border-primary transition-colors"
                         data-theme="custom">
@@ -148,10 +145,6 @@
                     <button type="button" data-theme-edit
                         class="btn-secondary w-full text-sm">%theme_customize</button>
                 </div>
-                <!-- Custom theme editor. Rows are read and written through
-                     window.CRTheme (theme.js owns storage and application,
-                     theme_editor.js the colour picking); a row with no override
-                     shows the colour it inherits from the base preset. -->
                 <dialog id="theme-editor"
                     class="hidden open:flex flex-col gap-4 m-auto p-6 w-[min(92vw,34rem)] max-h-[85vh] overflow-y-auto rounded-xl border border-accent/30 bg-surface text-foreground shadow-2xl backdrop:bg-black backdrop:opacity-40">
                     <div class="flex items-center justify-between gap-4">
@@ -190,7 +183,6 @@
                     </div>
                 </dialog>
 
-                <!-- <button class="btn-warning" popovertarget="account-dropdown" popovertargetaction="close">Close</button> -->
             </div>
             <dialog
                 class="hidden open:flex flex-col items-center gap-4 border-secondary/70 border rounded p-8 w-[min(90vw,40rem)] max-h-[90vh] overflow-auto shadow-2xl bg-black text-foreground m-auto transition-discrete transition-all opacity-0 open:starting:opacity-0 open:opacity-100 duration-300"

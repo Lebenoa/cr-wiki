@@ -21,11 +21,6 @@
         <a href="/treasures?tab=normal&q=@q" class="@normal_cls">%treasure_tab_normal</a>
         <a href="/treasures?tab=evo&q=@q" class="@evo_cls">%treasure_tab_evolved</a>
     </div>
-    <!-- this page's filter is served, not client-side: the grid is paginated,
-         so hiding loaded cards would only ever search the pages scrolled to,
-         and the cards carry no effect text to match against anyway. A form so
-         htmx serializes the query and the tab exactly once; onsubmit is
-         stubbed out because Enter in a search box would otherwise navigate. -->
     <form class="filter-bar" onsubmit="return false" hx-get="/treasures"
         hx-trigger="input delay:250ms" hx-target="#treasure-grid" hx-swap="innerHTML"
         hx-push-url="true">
@@ -36,7 +31,6 @@
     <div id="treasure-grid" class="catalog-grid">
         @include 'components/treasure_cards.html'
     </div>
-
 
 </body>
 

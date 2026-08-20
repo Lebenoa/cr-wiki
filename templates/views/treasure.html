@@ -235,7 +235,6 @@
                 </div>
             </div>
             @endif
-            <!-- Quick Info Panel -->
             <div class="mt-8 grid grid-cols-2 sm:grid-cols-3 gap-4 w-full">
                 @include 'components/treasure_variant'
                 @if unlock := unlock_entity
@@ -264,7 +263,6 @@
                 @else
                 <h2 class="text-sm font-label text-foreground-muted uppercase mb-3">%craft_ingredients_label</h2>
                 @endif
-                <!-- same card as /ingredients, so an ingredient reads the same everywhere -->
                 <div class="card-grid">
                     @for ci in craft_ingredients
                     <a href="/ingredients/@ci.ingredient_id" hx-boost="true" data-cr-card data-name="@ci.name"
