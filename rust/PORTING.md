@@ -36,22 +36,24 @@ Two deliberate differences from the V original:
 - `select_cookies` -> `src/db.rs` — including the `release_date DESC, cookie_id DESC` tie-break
 - `/cookies` list -> `src/routes/cookies.rs`
 - static file serving, the shared paging window
+- `before_request` -> `src/ctx.rs` + `src/middleware.rs` — `?lang=` over the `wikilang` cookie over English, the cookie refresh, the stripped path, `site_url`/`canonical_url`/`lang_url`, htmx vs hx-boosted, loopback detection
+- `app/ratelimit.v` -> `src/ratelimit.rs` — per-IP token bucket, wall-clock refill, idle sweep, `Retry-After`, and the empty body for a denied fragment; bypassed in debug builds the way `$if !prod` bypasses it
+- the changelog fragment path, so infinite scroll returns rows rather than a whole document
 
 ## Not ported yet
 
 Roughly in dependency order — the earlier ones unblock the rest.
 
-1. **Request context**: the `wikilang` cookie fallback, `before_request`, canonical/hreflang helpers, `nav_path` caching
-2. **Rate limiting** (`app/ratelimit.v`) — per-IP token bucket, and the `$if !prod` bypass
-3. **The rest of `database/select.v`** (~2.6k lines): pets, treasures, effects, combi bonuses, builds, search (FTS5 + LIKE fallback), catalog queries
-4. **Rich text** (`app/richtext.v`) — `[[id]]` links with thumbnails, `{color:}` spans
-5. **Detail pages**: cookie, pet, treasure, episode, ingredient, jelly
-6. **Build planner**: `/builds`, `/builds/new`, `/builds/:id`, edit/verify/delete, `/builds/preview`, `/builds/options/:kind` with search, tabs, pinning and combo-partner ordering
-7. **Admin forms** (`app/forms.v`, ~650 lines) and image upload
-8. **Auth**: login, register, sessions, Turnstile
-9. **SEO**: sitemap with hreflang alternates, robots.txt
-10. **The remaining 57 templates**, translated from veb syntax to askama
-11. **The catalog option cache** (`app/options_cache.v`) — per-language, invalidated on catalog writes
+1. **Sessions**: the `CRSESSID` cookie, the in-memory session map, and the user half of `is_admin` (the loopback half is ported)
+2. **The rest of `database/select.v`** (~2.6k lines): pets, treasures, effects, combi bonuses, builds, search (FTS5 + LIKE fallback), catalog queries
+3. **Rich text** (`app/richtext.v`) — `[[id]]` links with thumbnails, `{color:}` spans
+4. **Detail pages**: cookie, pet, treasure, episode, ingredient, jelly
+5. **Build planner**: `/builds`, `/builds/new`, `/builds/:id`, edit/verify/delete, `/builds/preview`, `/builds/options/:kind` with search, tabs, pinning and combo-partner ordering
+6. **Admin forms** (`app/forms.v`, ~650 lines) and image upload
+7. **Auth**: login, register, Turnstile
+8. **SEO**: sitemap with hreflang alternates, robots.txt
+9. **The remaining 56 templates**, translated from veb syntax to askama
+10. **The catalog option cache** (`app/options_cache.v`) — per-language, invalidated on catalog writes
 
 The JS in `static/js/` is unaffected: it is served as-is and already talks to
 these routes.

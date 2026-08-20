@@ -3,25 +3,32 @@ use axum::extract::Query;
 use axum::response::Html;
 
 use crate::changelog::{self, ChangeEntry};
-use crate::i18n::Loc;
+use crate::ctx::Ctx;
 use crate::pagination::slice_page;
 
-use super::{lang_of, CommonQuery};
+use super::CommonQuery;
 
 pub const PAGE_SIZE: i64 = 30;
 
 #[derive(Template)]
-#[template(path = "changelog.html")]
-struct ChangelogPage {
-    l: Loc,
-    lang: String,
+#[template(path = "changelog_entries.html")]
+struct ChangelogEntries {
+    ctx: Ctx,
     entries: Vec<ChangeEntry>,
     next_url: String,
     page: i64,
 }
 
-pub async fn page(q: Query<CommonQuery>) -> Html<String> {
-    let lang = lang_of(&q);
+#[derive(Template)]
+#[template(path = "changelog.html")]
+struct ChangelogPage {
+    ctx: Ctx,
+    entries: Vec<ChangeEntry>,
+    next_url: String,
+    page: i64,
+}
+
+pub async fn page(ctx: Ctx, q: Query<CommonQuery>) -> Html<String> {
     let page = q.page.unwrap_or(1).max(1);
     let all = changelog::entries();
 
@@ -37,6 +44,12 @@ pub async fn page(q: Query<CommonQuery>) -> Html<String> {
         None => (Vec::new(), String::new()),
     };
 
-    let tpl = ChangelogPage { l: Loc::new(&lang), lang, entries, next_url, page };
-    Html(tpl.render().unwrap_or_else(|e| format!("template error: {e}")))
+    // an infinite-scroll swap wants the rows alone; an hx-boosted navigation
+    // is still a page load and wants the whole document
+    let html = if ctx.is_fragment() {
+        ChangelogEntries { ctx, entries, next_url, page }.render()
+    } else {
+        ChangelogPage { ctx, entries, next_url, page }.render()
+    };
+    Html(html.unwrap_or_else(|e| format!("template error: {e}")))
 }
