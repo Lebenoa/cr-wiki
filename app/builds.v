@@ -5,6 +5,7 @@ import veb
 import app.util
 import database
 import time
+import net.urllib
 
 // anon_build_ttl is how long anonymous build submissions live before they
 // are dropped from the /builds list. Logged-in submissions are permanent.
@@ -268,34 +269,111 @@ pub fn (mut wapp App) preview_partial(mut ctx Context) veb.Result {
 	return $veb.html('./templates/components/build_preview.html')
 }
 
-// picker_options serves one picker dialog's option grid. The three grids are
-// ~2.2MB of HTML together, which every /builds, /builds/new and build-edit
-// response used to carry inline even though most visitors never open a
-// dialog; picker.js now htmx-fetches the grid on the dialog's first open.
-// Cached in memory per language (app/options_cache.v), so this is template
-// rendering only.
+// picker_page_size is how many option cards one picker fetch returns. The
+// grids used to ship whole: 815 treasure cards, each carrying its normal and
+// blessed effect lines, came to 1.9MB. Matches the 30/page the catalog lists
+// use.
+const picker_page_size = 30
+
+// picker_matches reports whether one option answers the picker's search box.
+// It compares the localized name, the English name (so a th page still finds
+// "Wizard" -> คุกกี้พ่อมด) and the effect lines the card prints — the same
+// fields the filter used to compare in the browser, moved here because the
+// grid is paginated now and the page only holds what has been scrolled to.
+// Effect *values* are not matched: they change with the level slider, so what
+// the card shows is not a stable thing to search.
+fn picker_matches(opt database.IdNameOption, q string) bool {
+	if q == '' {
+		return true
+	}
+	if opt.name.to_lower().contains(q) || opt.en_name.to_lower().contains(q) {
+		return true
+	}
+	for e in opt.effects {
+		if e.text.to_lower().contains(q) {
+			return true
+		}
+	}
+	for e in opt.effects_blessed {
+		if e.text.to_lower().contains(q) {
+			return true
+		}
+	}
+	return false
+}
+
+// picker_tab_ok applies the treasure picker's all/normal/evolved tabs. The
+// cookie and pet pickers have no tabs and always pass 'all'.
+fn picker_tab_ok(opt database.IdNameOption, tab string) bool {
+	return match tab {
+		'normal' { !opt.is_evolved }
+		'evo' { opt.is_evolved }
+		else { true }
+	}
+}
+
+// picker_next_url is the infinite-scroll sentinel's href: the same query one
+// page further on, so search and tab survive the scroll.
+fn picker_next_url(kind string, lang string, q string, tab string, next_page int) string {
+	if next_page == 0 {
+		return ''
+	}
+	return '/builds/options/${kind}?lang=${urllib.query_escape(lang)}&q=${urllib.query_escape(q)}' +
+		'&tab=${urllib.query_escape(tab)}&page=${next_page}'
+}
+
+// picker_options serves one page of a picker dialog's option grid: the cards
+// plus the `revealed` sentinel that pulls the next page. Search (q) and the
+// treasure tabs are applied here rather than by hiding DOM nodes, because the
+// browser only ever holds the pages it has scrolled through. The option lists
+// themselves are cached in memory per language (app/options_cache.v), so a
+// keystroke costs a filter over a slice and a template render, no queries.
 @['/builds/options/:kind']
 pub fn (mut wapp App) picker_options(mut ctx Context, kind string) veb.Result {
 	if !wapp.rate_limit_ok(mut ctx) {
 		return rate_limited_response(mut ctx)
 	}
-	match kind {
-		'cookie' {
-			cookies := wapp.cookie_options(ctx.lang)
-			return $veb.html('./templates/components/picker_options_cookie.html')
-		}
-		'pet' {
-			pets := wapp.pet_options(ctx.lang)
-			return $veb.html('./templates/components/picker_options_pet.html')
-		}
-		'treasure' {
-			treasures := wapp.treasure_options(ctx.lang, true)
-			return $veb.html('./templates/components/picker_options_treasure.html')
-		}
-		else {
-			return ctx.not_found()
+	q := (ctx.query['q'] or { '' }).trim_space().to_lower()
+	mut tab := ctx.query['tab'] or { 'all' }
+	if tab !in ['all', 'normal', 'evo'] {
+		tab = 'all'
+	}
+	mut page := (ctx.query['page'] or { '1' }).int()
+	if page < 1 {
+		page = 1
+	}
+	all := match kind {
+		'cookie' { wapp.cookie_options(ctx.lang) }
+		'pet' { wapp.pet_options(ctx.lang) }
+		'treasure' { wapp.treasure_options(ctx.lang, true) }
+		else { return ctx.not_found() }
+	}
+	mut matched := []database.IdNameOption{}
+	for opt in all {
+		if picker_tab_ok(opt, tab) && picker_matches(opt, q) {
+			matched << opt
 		}
 	}
+	start := (page - 1) * picker_page_size
+	if start >= matched.len && page > 1 {
+		// scrolled past the end (a stale sentinel): nothing more to append
+		return ctx.html('')
+	}
+	mut end := start + picker_page_size
+	if end > matched.len {
+		end = matched.len
+	}
+	paged := if start < matched.len { matched[start..end] } else { []database.IdNameOption{} }
+	next_page := if end < matched.len { page + 1 } else { 0 }
+	next_url := picker_next_url(kind, ctx.lang, q, tab, next_page)
+	if kind == 'treasure' {
+		treasures := paged
+		return $veb.html('./templates/components/picker_options_treasure.html')
+	}
+	// cookie and pet cards are the same markup with a different image dir
+	options := paged
+	img_dir := if kind == 'cookie' { 'cookies' } else { 'pets' }
+	return $veb.html('./templates/components/picker_options_entity.html')
 }
 
 // parse_ep_tier decodes the EP combobox value: '1'-'7' for regular tiers and

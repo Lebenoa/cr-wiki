@@ -1,0 +1,23 @@
+<!-- One page of cookie or pet picker cards (the two grids are the same markup
+     with a different image dir), plus the infinite-scroll sentinel. Rendered
+     by /builds/options/:kind and swapped into the dialog's grid form; see
+     templates/components/picker_dialog_cookie.html. -->
+@if options.len == 0
+<p class="col-span-full text-center text-foreground-muted py-8">%search_no_results</p>
+@end
+@for o in options
+<button type="submit" value="@o.id" data-name="@o.name" data-name-en="@o.en_name" onclick="setPicked(this)"
+    class="pick-option relative border border-secondary px-4 py-2 rounded flex flex-col items-center justify-start hover:border-primary transition-colors group gap-2">
+    <img src="@{ctx.img_src(img_dir, o.image)}" alt="@o.name" loading="lazy"
+        class="h-36 w-full object-contain" />
+    <span class="text-2xl group-hover:text-primary text-secondary text-center leading-tight">@o.name</span>
+</button>
+@endfor
+@if next_url != ''
+<!-- infinite-scroll sentinel. It takes a full row of real height on purpose:
+     an empty div would sit exactly on the scroll container's bottom clip
+     edge, where it never intersects and the next page never loads. Doubling
+     as the loading row means the height is not dead space either. -->
+<div class="col-span-full flex items-center justify-center py-6 text-foreground-muted font-label uppercase"
+    hx-get="@next_url" hx-trigger="revealed" hx-swap="outerHTML">%build_picker_loading</div>
+@end

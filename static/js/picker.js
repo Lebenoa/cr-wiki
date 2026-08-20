@@ -67,108 +67,133 @@
         });
     }
 
-    function filterOptions(kind, term) {
-        var dlg = document.getElementById('dialog-' + kind);
-        var t = term.trim().toLowerCase();
-        // when picking the relay cookie, hide the already-picked main cookie
-        // (its id sits in the sel-cookie hidden input; option ids are the
-        // submit buttons' values) so the same cookie can't be chosen twice
-        var excludeId = '';
-        if (kind === 'cookie' && cookieSlot === 'cookie2') {
-            var lead = document.getElementById('sel-cookie');
-            excludeId = lead ? lead.value : '';
+    // applyExclusion hides the already-picked lead cookie while the relay
+    // slot is being picked (its id sits in the sel-cookie hidden input; option
+    // ids are the submit buttons' values), so the same cookie cannot be chosen
+    // twice. It is the only filtering left in the browser — name search and
+    // the treasure tabs are query params now, because the grid is paginated
+    // and the page holds only the pages it has scrolled through.
+    function applyExclusion(dlg) {
+        if (!dlg || dlg.dataset.kind !== 'cookie') {
+            return;
         }
+        var lead = cookieSlot === 'cookie2' ? document.getElementById('sel-cookie') : null;
+        var excludeId = lead ? lead.value : '';
         dlg.querySelectorAll('.pick-option').forEach(function (btn) {
-            // the treasure filter's all/normal/evolved tabs hide options by
-            // evolved state before the search term applies
-            if (kind === 'treasure' && treasureTab !== 'all') {
-                var isEvo = btn.dataset.evolved === 'true' || btn.dataset.evolved === '1';
-                if ((treasureTab === 'normal' && isEvo) || (treasureTab === 'evo' && !isEvo)) {
-                    btn.hidden = true;
-                    return;
-                }
-            }
-            var excluded = excludeId !== '' && btn.value === excludeId;
-            if (t === '') { btn.hidden = excluded; return; }
-            // match the localized name or the English name, so e.g. a th page
-            // still finds "Wizard" -> คุกกี้พ่อมด in the picker; treasure
-            // options also match their effect pill lines (.fx-effect)
-            var hay = (btn.dataset.name || '') + ' ' + (btn.dataset.nameEn || '');
-            btn.querySelectorAll('.fx-effect').forEach(function (fx) { hay += ' ' + fx.textContent; });
-            btn.hidden = excluded || hay.toLowerCase().indexOf(t) === -1;
+            btn.hidden = excludeId !== '' && btn.value === excludeId;
         });
     }
 
-    // setTreasureTab flips the treasure filter dialog between its
-    // all/normal/evolved tabs, re-applying the search filter afterwards.
+    // refreshGrid re-runs the picker query from page 1: the controls form
+    // carries the search term and the tab, so triggering it is all it takes.
+    function refreshGrid(dlg) {
+        var controls = dlg ? dlg.querySelector('.picker-controls') : null;
+        if (controls && window.htmx) {
+            htmx.trigger(controls, 'picker-refresh');
+        }
+    }
+
+    // setTreasureTab flips the treasure picker between its all/normal/evolved
+    // tabs. The tab is a hidden field on the controls form, so the re-query
+    // picks it up; the server does the filtering.
     function setTreasureTab(tab) {
         treasureTab = tab;
         var dlg = document.getElementById('dialog-treasure');
         if (!dlg) {
             return;
         }
+        // swap the whole class, not individual utilities: the look comes from
+        // the picker-tab/picker-tab-on shortcuts, and toggling a utility the
+        // shortcut also sets would leave the two fighting over the same rule
         dlg.querySelectorAll('.state-tab').forEach(function (btn) {
-            var on = btn.dataset.tab === tab;
-            btn.classList.toggle('bg-primary', on);
-            btn.classList.toggle('text-foreground', on);
-            btn.classList.toggle('border-2', !on);
-            btn.classList.toggle('border-secondary/50', !on);
-            btn.classList.toggle('text-secondary', !on);
+            btn.className = btn.dataset.tab === tab ? 'state-tab active picker-tab-on' : 'state-tab picker-tab';
         });
-        var q = dlg.querySelector('input[type="search"]');
-        filterOptions('treasure', q ? q.value : '');
+        var hidden = dlg.querySelector('.picker-controls input[name="tab"]');
+        if (hidden) {
+            hidden.value = tab;
+        }
+        refreshGrid(dlg);
     }
 
-    // prepareCards resets the freshly-opened dialog's option cards. Split out
-    // of openPicker because the grid is fetched lazily: on the first open the
-    // dialog holds only the placeholder, so this runs again from
-    // htmx:after:settle once the cards land.
+    // pickerLevel is the level the treasure grid should show: whatever the
+    // user last set on the picker's top slider, else the target slot's stored
+    // level so re-picking shows the values the build will store (9 when there
+    // is no slot, e.g. the /builds filter dialog).
+    function pickerLevel() {
+        var slotScope = document.getElementById('slot-' + treasureSlot);
+        slotScope = slotScope ? slotScope.closest('[data-level-scope]') : null;
+        var slotLevel = window.getScopeLevel ? getScopeLevel(slotScope) : 9;
+        return lastPickerLevel !== null ? lastPickerLevel : slotLevel;
+    }
+
+    // gridLevel is the level the treasure grid is currently painted at: the
+    // picker's own slider, which paintGridLevel and the per-card steppers work
+    // against. Used when a scrolled-in page has to match the cards above it.
+    function gridLevel() {
+        var dlg = document.getElementById('dialog-treasure');
+        var slider = dlg ? dlg.querySelector('.level-slider') : null;
+        var l = slider ? parseInt(slider.value, 10) : 9;
+        return isNaN(l) || l < 0 || l > 9 ? 9 : l;
+    }
+
+    // resetCard puts one treasure card back to its normal (non-blessed) effect
+    // line and paints it at `level`.
+    function resetCard(card, level) {
+        var line = card.querySelector('.fx-line');
+        if (line) {
+            line.querySelectorAll('.fx-effects').forEach(function (g) {
+                g.classList.toggle('hidden', g.dataset.state !== 'normal');
+            });
+            line.querySelectorAll('.fx-pill').forEach(function (p) {
+                var on = p.dataset.state === 'normal';
+                p.classList.toggle('active', on);
+                p.classList.toggle('text-accent', on);
+                p.classList.toggle('border-accent', on);
+                p.classList.toggle('text-foreground-muted', !on);
+                p.classList.toggle('border-secondary/40', !on);
+            });
+        }
+        setCardLevel(card, level);
+    }
+
+    // initCards prepares the cards a swap just added: builds each one's 0-9
+    // stepper and paints it at `level`. Marked per card, not per dialog, so a
+    // scrolled-in page is set up without disturbing the cards above it — a
+    // blessed toggle or a level override on an earlier page must survive the
+    // next page landing.
+    function initCards(dlg, level) {
+        dlg.querySelectorAll('.pick-option:not([data-card-init])').forEach(function (card) {
+            card.dataset.cardInit = '1';
+            buildStepper(card);
+            resetCard(card, level);
+        });
+    }
+
+    // prepareCards resets every card in a dialog that is about to open: each
+    // open starts from a fresh, deterministic state (the server default), so
+    // a blessed toggle or a per-card level override does not leak across
+    // picks. On the very first open the grid is still loading and there is
+    // nothing to reset — the grid observer below picks it up.
     function prepareCards(kind) {
         var dlg = document.getElementById('dialog-' + kind);
-        if (!dlg) {
+        if (!dlg || kind !== 'treasure') {
             return;
         }
-        // treasure options keep their normal/blessed toggle state on the DOM
-        // between opens — reset every line back to normal so each pick starts
-        // from a fresh, deterministic state (matches the server default).
-        if (kind === 'treasure') {
-            dlg.querySelectorAll('.fx-line').forEach(function (line) {
-                line.querySelectorAll('.fx-effects').forEach(function (g) {
-                    g.classList.toggle('hidden', g.dataset.state !== 'normal');
-                });
-                line.querySelectorAll('.fx-pill').forEach(function (p) {
-                    var on = p.dataset.state === 'normal';
-                    p.classList.toggle('active', on);
-                    p.classList.toggle('text-accent', on);
-                    p.classList.toggle('border-accent', on);
-                    p.classList.toggle('text-foreground-muted', !on);
-                    p.classList.toggle('border-secondary/40', !on);
-                });
-            });
-            // the picker's level: the last level the user set on the top
-            // slider (remembered across dialog opens), or — before any
-            // manual choice — the target slot's stored level so re-picking
-            // shows the values the build will store (9 when no slot exists,
-            // e.g. the /builds filter dialog). The slider wiring itself
-            // lives in level_slider.js (shared with the treasure detail
-            // page); only the per-open level choice is picker logic.
-            var slotScope = document.getElementById('slot-' + treasureSlot);
-            slotScope = slotScope ? slotScope.closest('[data-level-scope]') : null;
-            var slotLevel = window.getScopeLevel ? getScopeLevel(slotScope) : 9;
-            var level = lastPickerLevel !== null ? lastPickerLevel : slotLevel;
-            if (window.setPickerLevel) {
-                setPickerLevel(level);
-            } else if (window.resetLevelSlider) {
-                resetLevelSlider();
-            }
-            // build the per-card steppers (lazily, once) and set every card
-            // to the level above; individual cards can then be bumped via
-            // their own stepper for side-by-side comparison (those overrides
-            // reset when the dialog reopens).
-            ensureSteppers();
-            cancelGridLevel();
-            paintGridLevel(level);
+        var level = pickerLevel();
+        // the slider wiring lives in level_slider.js (shared with the treasure
+        // detail page); only the per-open level choice is picker logic
+        if (window.setPickerLevel) {
+            setPickerLevel(level);
+        } else if (window.resetLevelSlider) {
+            resetLevelSlider();
         }
+        ensureDialogKeys(dlg);
+        cancelGridLevel();
+        dlg.querySelectorAll('.pick-option').forEach(function (card) {
+            card.dataset.cardInit = '1';
+            buildStepper(card);
+            resetCard(card, level);
+        });
     }
 
     function openPicker(kind) {
@@ -179,18 +204,32 @@
         dlg.returnValue = '';
         lastPick = null;
         // the option grid is not in the page HTML — the three grids together
-        // ran to ~2.2MB, on pages most visitors never open a dialog on. It is
-        // fetched here on the first open (hx-trigger="picker-load once"); the
-        // htmx:after:settle handler below finishes the setup when it arrives.
-        var body = dlg.querySelector('[data-picker-body]');
-        if (body && window.htmx) {
-            htmx.trigger(body, 'picker-load');
+        // ran to ~2.2MB on pages most visitors never open a dialog on, and the
+        // treasure one alone was 1.9MB. Page 1 is fetched here on the first
+        // open (hx-trigger="picker-load once"), the rest arrives as the user
+        // scrolls, and the grid observer below sets up whatever lands.
+        var grid = dlg.querySelector('[data-picker-grid]');
+        if (grid && window.htmx) {
+            htmx.trigger(grid, 'picker-load');
         }
-        prepareCards(kind);
-        var q = dlg.querySelector('input[type="search"]');
+        // a search term or tab left over from the previous open would show a
+        // filtered grid with an empty search box, so clear them and re-query.
+        // Nothing to re-query when both are already at their defaults, which
+        // is the common case.
+        var q = dlg.querySelector('.picker-controls input[type="search"]');
+        var tabInput = dlg.querySelector('.picker-controls input[name="tab"]');
+        var stale = (q && q.value !== '') || (tabInput && tabInput.value !== 'all');
         if (q) {
             q.value = '';
-            filterOptions(kind, '');
+        }
+        if (tabInput && tabInput.value !== 'all') {
+            setTreasureTab('all'); // restyles the tabs and re-queries
+        } else if (stale) {
+            refreshGrid(dlg);
+        }
+        prepareCards(kind);
+        applyExclusion(dlg);
+        if (q) {
             q.focus();
         }
         var stepSlot = kind === 'treasure' ? treasureSlot : (kind === 'cookie' ? cookieSlot : kind);
@@ -198,22 +237,36 @@
         dlg.showModal();
     }
 
-    // The lazily-fetched grid lands after the dialog is already open, so redo
-    // the open-time setup once it is in the DOM. The swap is innerHTML into
-    // the [data-picker-body] wrapper, which stays in the document, so the
-    // event bubbles up here. htmx 4 names its events colon-separated
-    // (`htmx:after:settle`, not `htmx:afterSettle`) — same spelling as
-    // catalog_filter.js.
-    document.addEventListener('htmx:after:settle', function (ev) {
-        var el = ev.target;
-        var dlg = el && el.closest ? el.closest('dialog[data-kind]') : null;
-        if (!dlg || !dlg.querySelector('.pick-option')) {
+    // Cards arrive after the dialog is already open — page 1 on the first
+    // open, later pages as the sentinel scrolls into view, a fresh page 1 on
+    // every search — and each batch needs its steppers built and its level
+    // painted. A MutationObserver rather than an htmx event: the sentinel
+    // swaps itself with outerHTML, and htmx fires the after-swap/after-settle
+    // events on the detached node, so a document-level listener never sees an
+    // appended page. Watching the grid catches every path, htmx or not.
+    function onGridChanged(dlg, grid) {
+        var first = grid.querySelector('.pick-option');
+        // a fresh page 1 (first open or a search) replaces the grid, so its
+        // leading card is uninitialized; an appended page leaves it alone.
+        // Only the replacement should jump the scroll back to the top.
+        if (first && !first.dataset.cardInit) {
+            grid.scrollTop = 0;
+        }
+        if (dlg.dataset.kind === 'treasure') {
+            ensureDialogKeys(dlg);
+            initCards(dlg, gridLevel());
+        }
+        applyExclusion(dlg);
+    }
+
+    document.querySelectorAll('dialog[data-kind]').forEach(function (dlg) {
+        var grid = dlg.querySelector('[data-picker-grid]');
+        if (!grid) {
             return;
         }
-        var kind = dlg.dataset.kind;
-        prepareCards(kind);
-        var q = dlg.querySelector('input[type="search"]');
-        filterOptions(kind, q ? q.value : '');
+        new MutationObserver(function () {
+            onGridChanged(dlg, grid);
+        }).observe(grid, { childList: true });
     });
 
     function openCookie(slot) {
@@ -399,49 +452,46 @@
         host.textContent = lvl;
     }
 
-    // ensureSteppers builds each card's tiny 0-9 level stepper lazily on the
-    // first treasure-dialog open, so the initial page stays as light as it
-    // can be (the dialog already server-renders every treasure). The step
-    // buttons are JS-built; the container lives in the template. A click on
-    // a step overrides just that card; stopPropagation (here and inline on
-    // the container) keeps the event from activating the card's submit
-    // button, mirroring the fx-pill pattern.
-    function ensureSteppers() {
-        var dlg = document.getElementById('dialog-treasure');
-        if (!dlg || dlg.dataset.steppersBuilt === '1') {
+    // buildStepper builds one card's tiny 0-9 level stepper. The step buttons
+    // are JS-built (the container lives in the template) so a page of cards
+    // stays as light on the wire as it can be. A click on a step overrides
+    // just that card; stopPropagation (here and inline on the container)
+    // keeps the event from activating the card's submit button, mirroring the
+    // fx-pill pattern.
+    function buildStepper(card) {
+        var host = card.querySelector('.fx-stepper');
+        if (!host || host.childElementCount > 0) {
             return;
         }
-        // the first open runs before the lazily-fetched grid arrives; leave
-        // the flag clear so the htmx:after:settle pass actually builds them
-        if (!dlg.querySelector('.pick-option')) {
-            return;
+        for (var l = 0; l <= 9; l++) {
+            var s = document.createElement('span');
+            s.className = 'fx-step rounded px-1 cursor-pointer select-none text-foreground-muted hover:text-accent transition-colors';
+            s.setAttribute('data-l', l);
+            s.textContent = l;
+            host.appendChild(s);
         }
-        dlg.dataset.steppersBuilt = '1';
-        dlg.querySelectorAll('.pick-option').forEach(function (card) {
-            var host = card.querySelector('.fx-stepper');
-            if (!host) {
+        host.addEventListener('click', function (ev) {
+            var step = ev.target.closest('.fx-step');
+            if (!step) {
                 return;
             }
-            for (var l = 0; l <= 9; l++) {
-                var s = document.createElement('span');
-                s.className = 'fx-step rounded px-1 cursor-pointer select-none text-foreground-muted hover:text-accent transition-colors';
-                s.setAttribute('data-l', l);
-                s.textContent = l;
-                host.appendChild(s);
-            }
-            host.addEventListener('click', function (ev) {
-                var step = ev.target.closest('.fx-step');
-                if (!step) {
-                    return;
-                }
-                ev.preventDefault();
-                ev.stopPropagation();
-                // settle the grid first: a queued paint would wipe this
-                // override when it lands
-                flushGridLevel();
-                setCardLevel(card, parseInt(step.getAttribute('data-l'), 10));
-            });
+            ev.preventDefault();
+            ev.stopPropagation();
+            // settle the grid first: a queued paint would wipe this override
+            // when it lands
+            flushGridLevel();
+            setCardLevel(card, parseInt(step.getAttribute('data-l'), 10));
         });
+    }
+
+    // ensureDialogKeys wires the treasure dialog's arrow-key level cycling and
+    // its screen-reader live region. Both are per dialog, not per card, so
+    // they are installed once and keep working for pages scrolled in later.
+    function ensureDialogKeys(dlg) {
+        if (!dlg || dlg.dataset.keysBound === '1') {
+            return;
+        }
+        dlg.dataset.keysBound = '1';
         // arrow-key cycling: the card is a single tab stop, so arrows set the
         // level without precise clicks on the tiny digits. Delegated on the
         // dialog (one listener, covers every card); the search box and any
@@ -842,7 +892,6 @@
     window.openPicker = openPicker;
     window.openCookie = openCookie;
     window.openTreasure = openTreasure;
-    window.filterOptions = filterOptions;
     window.setPicked = setPicked;
     window.toggleFx = toggleFx;
     window.clearSlot = clearSlot;

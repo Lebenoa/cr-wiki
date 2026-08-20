@@ -448,10 +448,13 @@ export default defineConfig({
             "relative m-auto p-6 w-[min(80rem,95vw)] max-h-[85vh] hidden open:flex flex-col bg-surface text-foreground rounded-xl border border-accent/30 shadow-2xl transition-discrete transition-all duration-300 opacity-0 open:starting:opacity-0 open:opacity-100 backdrop:transition-all backdrop:transition-discrete backdrop:opacity-0 backdrop:bg-black backdrop:open:opacity-40 backdrop:open:backdrop-blur-sm backdrop:open:blur-sm backdrop:open:starting:opacity-0",
         "picker-search":
             "w-full shrink-0 bg-surface border-2 border-primary/30 rounded-xl py-2 px-3 text-foreground mb-4",
+        // `state-tab`/`active` are DOM markers picker.js selects on, so they
+        // stay in the markup: a shortcut expands in the stylesheet, not in the
+        // class attribute, so a marker folded in here would not be queryable.
         "picker-tab":
-            "state-tab rounded-full px-4 py-2 font-bold transition-colors border-2 border-secondary/50 text-secondary",
+            "rounded-full px-4 py-2 font-bold transition-colors border-2 border-secondary/50 text-secondary",
         "picker-tab-on":
-            "state-tab active rounded-full px-4 py-2 font-bold transition-colors bg-primary text-foreground",
+            "rounded-full px-4 py-2 font-bold transition-colors bg-primary text-foreground",
     },
     theme: {
         colors: {
