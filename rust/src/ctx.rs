@@ -7,6 +7,7 @@ use axum::http::HeaderMap;
 use std::convert::Infallible;
 
 use crate::i18n::{self, Loc, DEFAULT_LANG};
+use crate::session::SessionUser;
 
 pub const LANG_COOKIE: &str = "wikilang";
 
@@ -29,9 +30,8 @@ pub struct Ctx {
     pub site_url: String,
     pub htmx: bool,
     pub boosted: bool,
-    /// used by is_admin, which the admin routes gate on (see PORTING.md)
-    #[allow(dead_code)]
     pub is_local: bool,
+    pub user: Option<SessionUser>,
 }
 
 impl<S: Send + Sync> FromRequestParts<S> for Ctx {
@@ -43,8 +43,10 @@ impl<S: Send + Sync> FromRequestParts<S> for Ctx {
             .get::<LangChoice>()
             .map(|c| c.lang.clone())
             .unwrap_or_else(|| DEFAULT_LANG.to_string());
+        let user = parts.extensions.get::<SessionUser>().cloned();
         let h = &parts.headers;
         Ok(Ctx {
+            user,
             l: Loc::new(&lang),
             lang,
             path: parts.uri.path().to_string(),
@@ -102,12 +104,18 @@ impl Ctx {
         self.htmx && !self.boosted
     }
 
-    /// Admin permission. The session half is still to port; the loopback half
-    /// matches is_local() in app.v, which is what makes local development
-    /// admin without a login.
-    #[allow(dead_code)]
+    /// Admin permission: an admin session, or a loopback request — which is
+    /// what makes local development admin without a login, as in app.v.
     pub fn is_admin(&self) -> bool {
-        self.is_local
+        self.user.as_ref().is_some_and(|u| u.is_admin) || self.is_local
+    }
+
+    pub fn username(&self) -> String {
+        self.user.as_ref().map(|u| u.username.clone()).unwrap_or_default()
+    }
+
+    pub fn signed_in(&self) -> bool {
+        self.user.is_some()
     }
 }
 

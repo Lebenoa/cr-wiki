@@ -498,3 +498,30 @@ pub fn cards_by_ids(db: &Db, lang: &str, kind: &str, ids: &[i64]) -> rusqlite::R
     }
     Ok(ordered)
 }
+
+/// Creates a user with an already-hashed password. `None` when the username
+/// is taken, which the unique index enforces rather than a prior SELECT.
+#[allow(dead_code)]
+pub fn create_user(db: &Db, username: &str, password_hash: &str) -> rusqlite::Result<Option<User>> {
+    let c = conn(db)?;
+    let now = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_secs() as i64)
+        .unwrap_or(0);
+    let res = c.execute(
+        "INSERT INTO user (username, password, is_admin, created_at) VALUES (?1, ?2, 0, ?3)",
+        params![username, password_hash, now],
+    );
+    match res {
+        Ok(_) => Ok(Some(User {
+            id: c.last_insert_rowid(),
+            username: username.to_string(),
+            password: password_hash.to_string(),
+            is_admin: false,
+        })),
+        // a duplicate username is a constraint violation, not an error worth
+        // surfacing: the form says the name is taken
+        Err(rusqlite::Error::SqliteFailure(e, _)) if e.code == rusqlite::ErrorCode::ConstraintViolation => Ok(None),
+        Err(e) => Err(e),
+    }
+}

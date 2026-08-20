@@ -2,6 +2,11 @@
 {% block title %}{{ ctx.l.t(title_key.as_str()) }}{% endblock %}
 {% block content %}
 <h1 class="page-title">{{ ctx.l.t(title_key.as_str()) }}</h1>
+{% if ctx.is_admin() %}
+<div class="admin-actions">
+    <a href="/{{ section }}/new" class="btn-primary">{{ ctx.l.t("new_treasure_button") }}</a>
+</div>
+{% endif %}
 {% if tabbed %}
 <div class="filter-bar">
     <a href="/{{ section }}" class="rounded-full px-4 py-2 font-bold transition-colors {% if tab == "all" %}bg-primary text-foreground{% else %}border-2 border-secondary/50 text-secondary{% endif %}">{{ ctx.l.t("treasure_tab_all") }}</a>

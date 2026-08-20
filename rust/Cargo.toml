@@ -16,3 +16,5 @@ serde = { version = "1", features = ["derive"] }
 toml = "0.8"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+argon2 = "0.5.3"
+uuid = { version = "1.24.1", features = ["v4"] }

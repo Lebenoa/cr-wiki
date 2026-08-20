@@ -10,11 +10,18 @@ use std::net::SocketAddr;
 
 use crate::ctx::{self, LANG_COOKIE};
 use crate::ratelimit::Decision;
+use crate::session::SESSION_COOKIE;
 use crate::state::AppState;
 
-/// Resolves the locale once per request and refreshes the `wikilang` cookie
-/// when the URL carried a new one — the response half of before_request.
-pub async fn lang(mut req: Request, next: Next) -> Response {
+/// Resolves the locale and the signed-in user once per request, and
+/// refreshes the `wikilang` cookie when the URL carried a new one — the whole
+/// of before_request.
+pub async fn context(State(state): State<AppState>, mut req: Request, next: Next) -> Response {
+    if let Some(key) = ctx::cookie(req.headers(), SESSION_COOKIE) {
+        if let Some(user) = state.sessions.get(&key) {
+            req.extensions_mut().insert(user);
+        }
+    }
     let choice = ctx::resolve_lang(req.uri().query(), req.headers());
     let write = choice.write_cookie;
     let lang = choice.lang.clone();

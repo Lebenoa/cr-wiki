@@ -21,6 +21,13 @@
         <div class="flex items-center gap-8">
             <a href="/cookies" class="{{ ctx.nav_class("cookies") }}">{{ ctx.l.t("cookies") }}</a>
             <a href="/changelog" class="{{ ctx.nav_class("changelog") }}">{{ ctx.l.t("changelog_link") }}</a>
+            {% if ctx.signed_in() %}
+            <span class="text-sm text-foreground-muted">{{ ctx.username() }}</span>
+            <a href="/logout" class="btn-secondary">{{ ctx.l.t("logout") }}</a>
+            {% else %}
+            <a href="/login" class="btn-primary">{{ ctx.l.t("login") }}</a>
+            <a href="/register" class="btn-secondary">{{ ctx.l.t("register") }}</a>
+            {% endif %}
         </div>
     </nav>
     {% block content %}{% endblock %}

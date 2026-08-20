@@ -15,6 +15,7 @@ mod pagination;
 mod ratelimit;
 mod richtext;
 mod routes;
+mod session;
 mod state;
 
 use std::net::SocketAddr;
@@ -52,6 +53,7 @@ async fn main() {
     let state = AppState {
         db: pool,
         limiter: Arc::new(ratelimit::Limiter::new(cfg.ratelimit.clone())),
+        sessions: Arc::new(session::Sessions::new()),
         cfg: Arc::new(cfg.clone()),
     };
 
@@ -61,11 +63,17 @@ async fn main() {
         .route("/sitemap.xml", get(routes::misc::sitemap))
         .route("/robots.txt", get(routes::misc::robots))
         .route("/changelog", get(routes::changelog::page))
+        .route("/login", get(routes::auth::login_form).post(routes::auth::login))
+        .route("/register", get(routes::auth::register_form).post(routes::auth::register))
+        .route("/logout", get(routes::auth::logout))
         // one handler per shape rather than per section: the section is a
         // path capture, so eight lists share a function
         .route("/{section}", get(routes::catalog::list))
         .route("/{section}/{id}", get(routes::detail::show))
-        .layer(axum::middleware::from_fn(middleware::lang))
+        .layer(axum::middleware::from_fn_with_state(
+            state.clone(),
+            middleware::context,
+        ))
         .layer(axum::middleware::from_fn_with_state(
             state.clone(),
             middleware::rate_limit,
@@ -200,6 +208,7 @@ mod tests {
             htmx: false,
             boosted: false,
             is_local: true,
+            user: None,
         }
     }
 
@@ -378,6 +387,36 @@ mod tests {
         assert!(!pct.is_empty());
         assert!(pct.iter().all(|(_, c)| c.name.contains('%')), "% matched as a wildcard");
         assert!(db::search(&pool, "en", "   ", 20).unwrap().is_empty());
+    }
+
+    /// Argon2 in PHC form: a hash verifies, a wrong password does not, and
+    /// two hashes of the same password differ because the salt is fresh.
+    #[test]
+    fn password_hashing() {
+        let hash = session::hash_password("correct horse").expect("hash");
+        assert!(hash.starts_with("$argon2"), "PHC format, so V can read it: {hash}");
+        assert!(session::verify_password("correct horse", &hash));
+        assert!(!session::verify_password("wrong horse", &hash));
+        let again = session::hash_password("correct horse").expect("hash");
+        assert_ne!(hash, again, "salt must be fresh per hash");
+        assert!(!session::verify_password("correct horse", "not-a-hash"));
+    }
+
+    /// A session round trip: start, read back, end.
+    #[test]
+    fn sessions_round_trip() {
+        let sessions = session::Sessions::new();
+        let key = sessions.start(session::SessionUser {
+            id: 7,
+            username: "tester".into(),
+            is_admin: true,
+        });
+        let found = sessions.get(&key).expect("session");
+        assert_eq!(found.username, "tester");
+        assert!(found.is_admin);
+        sessions.end(&key);
+        assert!(sessions.get(&key).is_none());
+        assert!(sessions.get("never-issued").is_none());
     }
 
     /// The sitemap covers every detail id the six sections hold.

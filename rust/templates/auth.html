@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}{{ ctx.l.t(mode.as_str()) }}{% endblock %}
+{% block content %}
+<section class="page-shell max-w-md">
+    <h1 class="page-title">{{ ctx.l.t(mode.as_str()) }}</h1>
+    {% if !error.is_empty() %}
+    <p class="text-error text-center">{{ ctx.l.t(error.as_str()) }}</p>
+    {% endif %}
+    <form method="post" action="/{{ mode }}" class="flex flex-col gap-4 mt-6">
+        <input type="text" name="username" autocomplete="username" class="filter-input w-full"
+            placeholder="{{ ctx.l.t("username_label") }}" required />
+        <input type="password" name="password" autocomplete="current-password" class="filter-input w-full"
+            placeholder="{{ ctx.l.t("password_label") }}" required />
+        {% if mode == "register" %}
+        <input type="password" name="confirm_password" autocomplete="new-password" class="filter-input w-full"
+            placeholder="{{ ctx.l.t("confirm_password_label") }}" required />
+        {% endif %}
+        <button type="submit" class="btn-primary">{{ ctx.l.t(mode.as_str()) }}</button>
+    </form>
+</section>
+{% endblock %}

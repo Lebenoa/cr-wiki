@@ -1,3 +1,4 @@
+pub mod auth;
 pub mod catalog;
 pub mod changelog;
 pub mod detail;
