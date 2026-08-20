@@ -6,6 +6,7 @@ import app.util
 import database
 import time
 import net.urllib
+import strings
 
 // anon_build_ttl is how long anonymous build submissions live before they
 // are dropped from the /builds list. Logged-in submissions are permanent.
@@ -275,31 +276,45 @@ pub fn (mut wapp App) preview_partial(mut ctx Context) veb.Result {
 // use.
 const picker_page_size = 30
 
-// picker_matches reports whether one option answers the picker's search box.
-// It compares the localized name, the English name (so a th page still finds
-// "Wizard" -> คุกกี้พ่อมด) and the effect lines the card prints — the same
-// fields the filter used to compare in the browser, moved here because the
-// grid is paginated now and the page only holds what has been scrolled to.
-// Effect *values* are not matched: they change with the level slider, so what
-// the card shows is not a stable thing to search.
-fn picker_matches(opt database.IdNameOption, q string) bool {
-	if q == '' {
-		return true
-	}
-	if opt.name.to_lower().contains(q) || opt.en_name.to_lower().contains(q) {
-		return true
-	}
+// picker_haystack is everything one option is searchable by, lowercased and
+// joined: the localized name, the English name (so a th page still finds
+// "Wizard" -> คุกกี้พ่อมด) and every effect line the card prints, blessed
+// included. Effect *values* are left out on purpose — they move with the
+// level slider, so what the card shows is not a stable thing to search.
+fn picker_haystack(opt database.IdNameOption) string {
+	mut b := strings.new_builder(64)
+	b.write_string(opt.name)
+	b.write_u8(` `)
+	b.write_string(opt.en_name)
 	for e in opt.effects {
-		if e.text.to_lower().contains(q) {
-			return true
-		}
+		b.write_u8(` `)
+		b.write_string(e.text)
 	}
 	for e in opt.effects_blessed {
-		if e.text.to_lower().contains(q) {
-			return true
+		b.write_u8(` `)
+		b.write_string(e.text)
+	}
+	return b.str().to_lower()
+}
+
+// picker_matches reports whether one option answers the picker's search box.
+// The query is split on whitespace and every term has to appear somewhere in
+// the option, but they need not appear in the same place: "magnet revive"
+// finds the treasures carrying a magnet effect *and* a revive effect, which a
+// single substring test could never match because no one field holds both.
+// A multi-word name still works — "cloud boots" is two terms and the name
+// holds them both.
+fn picker_matches(opt database.IdNameOption, terms []string) bool {
+	if terms.len == 0 {
+		return true
+	}
+	hay := picker_haystack(opt)
+	for term in terms {
+		if !hay.contains(term) {
+			return false
 		}
 	}
-	return false
+	return true
 }
 
 // picker_tab_ok applies the treasure picker's all/normal/evolved tabs. The
@@ -334,7 +349,11 @@ pub fn (mut wapp App) picker_options(mut ctx Context, kind string) veb.Result {
 	if !wapp.rate_limit_ok(mut ctx) {
 		return rate_limited_response(mut ctx)
 	}
+	// q stays whole for the sentinel URL, so the next page repeats the same
+	// query; terms is the split form the matcher uses, split once per request
+	// rather than once per option
 	q := (ctx.query['q'] or { '' }).trim_space().to_lower()
+	terms := q.fields()
 	mut tab := ctx.query['tab'] or { 'all' }
 	if tab !in ['all', 'normal', 'evo'] {
 		tab = 'all'
@@ -360,7 +379,7 @@ pub fn (mut wapp App) picker_options(mut ctx Context, kind string) veb.Result {
 	}
 	mut matched := []database.IdNameOption{}
 	for opt in all {
-		if picker_tab_ok(opt, tab) && picker_matches(opt, q) {
+		if picker_tab_ok(opt, tab) && picker_matches(opt, terms) {
 			matched << opt
 		}
 	}
