@@ -359,16 +359,18 @@
         </div>
         <input type="search" placeholder="%build_search_placeholder" oninput="filterOptions('cookie', this.value)"
             class="w-full shrink-0 bg-surface border-2 border-primary/30 rounded-xl py-2 px-3 text-foreground mb-4" />
-        <form method="dialog" class="card-grid overflow-y-auto">
-            @for c in cookies
-            <button type="submit" value="@c.id" data-name="@c.name" data-name-en="@c.en_name" onclick="setPicked(this)"
-                class="pick-option relative border border-secondary px-4 py-2 rounded flex flex-col items-center justify-start hover:border-primary transition-colors group gap-2">
-                <img src="@{ctx.img_src('cookies', c.image)}" alt="@c.name"
-                    class="h-36 w-full object-contain" />
-                <span class="text-2xl group-hover:text-primary text-secondary text-center leading-tight">@c.name</span>
-            </button>
-            @endfor
-        </form>
+        <!-- the option grid is fetched on this dialog's first open (picker.js
+             fires `picker-load`); see /builds/options/cookie. Inline, the three
+             grids were ~2.2MB of HTML on a page most visitors never open a
+             dialog on. -->
+        <!-- display:contents so the swapped-in form stays the dialog's flex
+             child. innerHTML, not outerHTML: an outerHTML swap fires its
+             after-swap event on the detached node, so picker.js would never
+             see the event that finishes the card setup. -->
+        <div data-picker-body class="contents" hx-get="/builds/options/cookie?lang=@ctx.lang"
+            hx-trigger="picker-load once" hx-swap="innerHTML">
+            <div class="grow flex items-center justify-center text-foreground-muted font-label uppercase">%build_picker_loading</div>
+        </div>
     </dialog>
 
     <dialog id="dialog-pet" data-kind="pet" closedby="any"
@@ -385,16 +387,18 @@
         </div>
         <input type="search" placeholder="%build_search_placeholder" oninput="filterOptions('pet', this.value)"
             class="w-full shrink-0 bg-surface border-2 border-primary/30 rounded-xl py-2 px-3 text-foreground mb-4" />
-        <form method="dialog" class="card-grid overflow-y-auto">
-            @for p in pets
-            <button type="submit" value="@p.id" data-name="@p.name" data-name-en="@p.en_name" onclick="setPicked(this)"
-                class="pick-option relative border border-secondary px-4 py-2 rounded flex flex-col items-center justify-start hover:border-primary transition-colors group gap-2">
-                <img src="@{ctx.img_src('pets', p.image)}" alt="@p.name"
-                    class="h-36 w-full object-contain" />
-                <span class="text-2xl group-hover:text-primary text-secondary text-center leading-tight">@p.name</span>
-            </button>
-            @endfor
-        </form>
+        <!-- the option grid is fetched on this dialog's first open (picker.js
+             fires `picker-load`); see /builds/options/pet. Inline, the three
+             grids were ~2.2MB of HTML on a page most visitors never open a
+             dialog on. -->
+        <!-- display:contents so the swapped-in form stays the dialog's flex
+             child. innerHTML, not outerHTML: an outerHTML swap fires its
+             after-swap event on the detached node, so picker.js would never
+             see the event that finishes the card setup. -->
+        <div data-picker-body class="contents" hx-get="/builds/options/pet?lang=@ctx.lang"
+            hx-trigger="picker-load once" hx-swap="innerHTML">
+            <div class="grow flex items-center justify-center text-foreground-muted font-label uppercase">%build_picker_loading</div>
+        </div>
     </dialog>
 
     <dialog id="dialog-treasure" data-kind="treasure" closedby="any"
@@ -424,64 +428,18 @@
         <div class="shrink-0 mb-4">
             @include 'components/level_slider'
         </div>
-        <form method="dialog" class="card-grid overflow-y-auto">
-            @for t in treasures
-            <button type="submit" value="@t.id" data-name="@t.name" data-name-en="@t.en_name" data-evolved="@t.is_evolved" onclick="setPicked(this)"
-                class="pick-option relative border border-secondary px-4 py-2 rounded flex flex-col items-center justify-start hover:border-primary transition-colors group gap-2">
-                <img src="@{ctx.img_src('treasures', t.image)}" alt="@t.name"
-                    class="h-36 w-full object-contain" />
-                <span class="text-2xl group-hover:text-primary text-secondary text-center leading-tight">@t.name</span>
-                @if t.effects.len > 0 || t.effects_blessed.len > 0
-                <span class="fx-line flex flex-col items-center gap-1">
-                    <span class="fx-effects flex flex-col items-center gap-0.5" data-state="normal">
-                        @for e in t.effects
-                        <span class="fx-effect text-xs text-foreground-muted text-center leading-snug">
-                            @if e.values.len > 0
-                            <span class="fx-val text-accent" data-values="@{e.values.join('|')}">
-                                @if e.values.len > 9
-                                @{e.values.last()}
-                                @end
-                            </span>
-                            @end
-                            <span class="fx-name">@e.text</span>
-                        </span>
-                        @endfor
-                    </span>
-                    @if t.has_blessed_toggle
-                    <span class="fx-effects hidden flex flex-col items-center gap-0.5" data-state="blessed">
-                        @for e in t.effects_blessed
-                        <span class="fx-effect text-xs text-foreground-muted text-center leading-snug">
-                            @if e.values.len > 0
-                            <span class="fx-val text-accent" data-values="@{e.values.join('|')}">
-                                @if e.values.len > 9
-                                @{e.values.last()}
-                                @end
-                            </span>
-                            @end
-                            <span class="fx-name">@e.text</span>
-                        </span>
-                        @endfor
-                    </span>
-                    <span class="fx-toggle flex items-center gap-1 text-xs font-label uppercase cursor-pointer select-none"
-                        onclick="event.stopPropagation()">
-                        <span class="fx-pill active rounded-full px-2 py-0.5 border border-accent text-accent"
-                            data-state="normal" onclick="toggleFx(event, this)">%state_normal</span>
-                        <span class="fx-pill rounded-full px-2 py-0.5 border border-secondary/40 text-foreground-muted"
-                            data-state="blessed" onclick="toggleFx(event, this)">%state_blessed</span>
-                    </span>
-                    @end
-                    <!-- per-card 0-9 level stepper: lets planners compare two
-                         treasures at different levels side by side. The step
-                         buttons are built lazily by picker.js on dialog open;
-                         this container's stopPropagation keeps clicks in the
-                         row from activating the card's submit button. -->
-                    <span class="fx-stepper flex items-center justify-center gap-0.5 mt-1 text-[10px] font-bold leading-tight"
-                        onclick="event.stopPropagation()"></span>
-                </span>
-                @end
-            </button>
-            @endfor
-        </form>
+        <!-- the option grid is fetched on this dialog's first open (picker.js
+             fires `picker-load`); see /builds/options/treasure. Inline, the three
+             grids were ~2.2MB of HTML on a page most visitors never open a
+             dialog on. -->
+        <!-- display:contents so the swapped-in form stays the dialog's flex
+             child. innerHTML, not outerHTML: an outerHTML swap fires its
+             after-swap event on the detached node, so picker.js would never
+             see the event that finishes the card setup. -->
+        <div data-picker-body class="contents" hx-get="/builds/options/treasure?lang=@ctx.lang"
+            hx-trigger="picker-load once" hx-swap="innerHTML">
+            <div class="grow flex items-center justify-center text-foreground-muted font-label uppercase">%build_picker_loading</div>
+        </div>
     </dialog>
 
     <script src="/js/level_slider.js"></script>

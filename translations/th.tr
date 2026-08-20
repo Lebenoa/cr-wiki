@@ -793,6 +793,9 @@ build_pick_treasure_three
 build_search_placeholder
 ค้นหา...
 -----
+build_picker_loading
+กำลังโหลด...
+-----
 build_clear_slot
 ล้าง
 -----

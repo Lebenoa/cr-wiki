@@ -119,13 +119,15 @@
         filterOptions('treasure', q ? q.value : '');
     }
 
-    function openPicker(kind) {
+    // prepareCards resets the freshly-opened dialog's option cards. Split out
+    // of openPicker because the grid is fetched lazily: on the first open the
+    // dialog holds only the placeholder, so this runs again from
+    // htmx:after:settle once the cards land.
+    function prepareCards(kind) {
         var dlg = document.getElementById('dialog-' + kind);
-        // a close via ✕/Esc must not re-fire the previous pick: returnValue
-        // persists on the dialog element, so reset it (and the pick cache)
-        // each time the dialog opens.
-        dlg.returnValue = '';
-        lastPick = null;
+        if (!dlg) {
+            return;
+        }
         // treasure options keep their normal/blessed toggle state on the DOM
         // between opens — reset every line back to normal so each pick starts
         // from a fresh, deterministic state (matches the server default).
@@ -167,6 +169,24 @@
             cancelGridLevel();
             paintGridLevel(level);
         }
+    }
+
+    function openPicker(kind) {
+        var dlg = document.getElementById('dialog-' + kind);
+        // a close via ✕/Esc must not re-fire the previous pick: returnValue
+        // persists on the dialog element, so reset it (and the pick cache)
+        // each time the dialog opens.
+        dlg.returnValue = '';
+        lastPick = null;
+        // the option grid is not in the page HTML — the three grids together
+        // ran to ~2.2MB, on pages most visitors never open a dialog on. It is
+        // fetched here on the first open (hx-trigger="picker-load once"); the
+        // htmx:after:settle handler below finishes the setup when it arrives.
+        var body = dlg.querySelector('[data-picker-body]');
+        if (body && window.htmx) {
+            htmx.trigger(body, 'picker-load');
+        }
+        prepareCards(kind);
         var q = dlg.querySelector('input[type="search"]');
         if (q) {
             q.value = '';
@@ -177,6 +197,24 @@
         updateDialogStep(stepSlot);
         dlg.showModal();
     }
+
+    // The lazily-fetched grid lands after the dialog is already open, so redo
+    // the open-time setup once it is in the DOM. The swap is innerHTML into
+    // the [data-picker-body] wrapper, which stays in the document, so the
+    // event bubbles up here. htmx 4 names its events colon-separated
+    // (`htmx:after:settle`, not `htmx:afterSettle`) — same spelling as
+    // catalog_filter.js.
+    document.addEventListener('htmx:after:settle', function (ev) {
+        var el = ev.target;
+        var dlg = el && el.closest ? el.closest('dialog[data-kind]') : null;
+        if (!dlg || !dlg.querySelector('.pick-option')) {
+            return;
+        }
+        var kind = dlg.dataset.kind;
+        prepareCards(kind);
+        var q = dlg.querySelector('input[type="search"]');
+        filterOptions(kind, q ? q.value : '');
+    });
 
     function openCookie(slot) {
         cookieSlot = slot || 'cookie';
@@ -371,6 +409,11 @@
     function ensureSteppers() {
         var dlg = document.getElementById('dialog-treasure');
         if (!dlg || dlg.dataset.steppersBuilt === '1') {
+            return;
+        }
+        // the first open runs before the lazily-fetched grid arrives; leave
+        // the flag clear so the htmx:after:settle pass actually builds them
+        if (!dlg.querySelector('.pick-option')) {
             return;
         }
         dlg.dataset.steppersBuilt = '1';

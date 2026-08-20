@@ -261,6 +261,36 @@ pub fn (mut wapp App) preview_partial(mut ctx Context) veb.Result {
 	return $veb.html('./templates/components/build_preview.html')
 }
 
+// picker_options serves one picker dialog's option grid. The three grids are
+// ~2.2MB of HTML together, which every /builds, /builds/new and build-edit
+// response used to carry inline even though most visitors never open a
+// dialog; picker.js now htmx-fetches the grid on the dialog's first open.
+// Cached in memory per language (app/options_cache.v), so this is template
+// rendering only.
+@['/builds/options/:kind']
+pub fn (mut wapp App) picker_options(mut ctx Context, kind string) veb.Result {
+	if !wapp.rate_limit_ok(mut ctx) {
+		return rate_limited_response(mut ctx)
+	}
+	match kind {
+		'cookie' {
+			cookies := wapp.cookie_options(ctx.lang)
+			return $veb.html('./templates/components/picker_options_cookie.html')
+		}
+		'pet' {
+			pets := wapp.pet_options(ctx.lang)
+			return $veb.html('./templates/components/picker_options_pet.html')
+		}
+		'treasure' {
+			treasures := wapp.treasure_options(ctx.lang, true)
+			return $veb.html('./templates/components/picker_options_treasure.html')
+		}
+		else {
+			return ctx.not_found()
+		}
+	}
+}
+
 // parse_ep_tier decodes the EP combobox value: '1'-'7' for regular tiers and
 // 's1'-'s3' for special ones (returns ep, ep_special).
 fn parse_ep_tier(raw string) (int, int) {
@@ -536,9 +566,11 @@ pub fn (wapp &App) build_edit(mut ctx Context, id int) veb.Result {
 	}
 	ctx.set_translate_title('build_edit_page_title')
 	ctx.noindex = true
+	// no equippable treasure list here: the edit page's treasure dialog fetches
+	// its grid from /builds/options/treasure. The cookie/pet lists stay — they
+	// are inline <select>s on this form, not dialogs.
 	cookies := wapp.cookie_options(ctx.lang)
 	pets := wapp.pet_options(ctx.lang)
-	treasures := wapp.treasure_options(ctx.lang, true)
 	ep_tiers := [1, 2, 3, 4, 5, 6, 7]
 	ep_specials := [1, 2, 3]
 	build_tags := ['score', 'coin', 'autofarm']

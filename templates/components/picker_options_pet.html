@@ -1,0 +1,11 @@
+<!-- The pet picker grid; see picker_options_cookie.html. -->
+<form method="dialog" class="card-grid overflow-y-auto">
+    @for p in pets
+    <button type="submit" value="@p.id" data-name="@p.name" data-name-en="@p.en_name" onclick="setPicked(this)"
+        class="pick-option relative border border-secondary px-4 py-2 rounded flex flex-col items-center justify-start hover:border-primary transition-colors group gap-2">
+        <img src="@{ctx.img_src('pets', p.image)}" alt="@p.name" loading="lazy"
+            class="h-36 w-full object-contain" />
+        <span class="text-2xl group-hover:text-primary text-secondary text-center leading-tight">@p.name</span>
+    </button>
+    @endfor
+</form>

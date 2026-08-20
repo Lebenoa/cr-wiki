@@ -793,6 +793,9 @@ Select Third Treasure
 build_search_placeholder
 Search...
 -----
+build_picker_loading
+Loading...
+-----
 build_clear_slot
 Clear
 -----
