@@ -59,3 +59,6 @@ scripts/*
 !scripts/build_*.cmd
 scripts/th/
 static/google*
+
+# rust port build output
+rust/target/

@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}{{ l.t("changelog_page_title") }}{% endblock %}
+{% block content %}
+<section class="page-shell max-w-4xl">
+    <h1 class="page-title">{{ l.t("changelog_page_header") }}</h1>
+    <p class="text-center text-sm text-foreground-muted">{{ l.t("changelog_page_hint") }}</p>
+    <ol id="changelog-list" class="mt-8 flex flex-col gap-3">
+        {% for e in entries %}
+        <li class="rounded-2xl border-2 border-primary/20 bg-surface/50 p-4">
+            <div class="flex flex-wrap items-baseline gap-2">
+                {% if !e.kind.is_empty() %}
+                <span class="{{ crate::changelog::kind_class(e.kind.as_str()) }}">{{ e.kind }}</span>
+                {% endif %}
+                {% if !e.scope.is_empty() %}
+                <span class="text-xs font-label uppercase text-foreground-muted">{{ e.scope }}</span>
+                {% endif %}
+                <span class="font-bold text-on-surface">{{ e.subject }}</span>
+                <span class="ml-auto flex items-center gap-3 text-xs text-foreground-muted">
+                    <time>{{ e.date }}</time>
+                    <code class="font-mono">{{ e.short }}</code>
+                </span>
+            </div>
+            {% if !e.body.is_empty() %}
+            <details class="mt-2">
+                <summary class="cursor-pointer text-xs font-label uppercase text-foreground-muted hover:text-primary">{{ l.t("changelog_details") }}</summary>
+                <div class="mt-2 flex flex-col gap-2 text-sm text-foreground-muted">
+                    {% for para in e.body %}
+                    <p>{{ para }}</p>
+                    {% endfor %}
+                </div>
+            </details>
+            {% endif %}
+        </li>
+        {% endfor %}
+        {% if entries.is_empty() && page == 1 %}
+        <li class="text-center text-foreground-muted py-12">{{ l.t("changelog_unavailable") }}</li>
+        {% endif %}
+        {% if !next_url.is_empty() %}
+        <li class="flex items-center justify-center py-6 text-foreground-muted font-label uppercase"
+            hx-get="{{ next_url }}" hx-trigger="revealed" hx-swap="outerHTML">{{ l.t("changelog_loading") }}</li>
+        {% endif %}
+    </ol>
+</section>
+{% endblock %}
