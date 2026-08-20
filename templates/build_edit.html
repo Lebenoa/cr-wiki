@@ -79,7 +79,9 @@
                             @for e in t.effects
                             <span class="text-center text-xs text-foreground-muted leading-snug">
                                 @if e.values.len > t1_level
-                                <span class="text-accent">@{e.values[t1_level]}</span>
+                                <!-- data-values is the 0-9 ladder this slot's own
+                                     level slider repaints from -->
+                                <span class="text-accent" data-values="@{e.values.join('|')}">@{e.values[t1_level]}</span>
                                 @end
                                 @e.text
                             </span>
@@ -117,7 +119,9 @@
                             @for e in t.effects
                             <span class="text-center text-xs text-foreground-muted leading-snug">
                                 @if e.values.len > t2_level
-                                <span class="text-accent">@{e.values[t2_level]}</span>
+                                <!-- data-values is the 0-9 ladder this slot's own
+                                     level slider repaints from -->
+                                <span class="text-accent" data-values="@{e.values.join('|')}">@{e.values[t2_level]}</span>
                                 @end
                                 @e.text
                             </span>
@@ -155,7 +159,9 @@
                             @for e in t.effects
                             <span class="text-center text-xs text-foreground-muted leading-snug">
                                 @if e.values.len > t3_level
-                                <span class="text-accent">@{e.values[t3_level]}</span>
+                                <!-- data-values is the 0-9 ladder this slot's own
+                                     level slider repaints from -->
+                                <span class="text-accent" data-values="@{e.values.join('|')}">@{e.values[t3_level]}</span>
                                 @end
                                 @e.text
                             </span>

@@ -557,6 +557,10 @@
                 var val = fx.querySelector('.fx-val');
                 effects.push({
                     value: val ? val.textContent : '',
+                    // the whole 0-9 ladder, not just the level shown: the slot
+                    // gets its own level slider, and level_slider.js repaints a
+                    // cell from data-values
+                    values: val ? (val.getAttribute('data-values') || '') : '',
                     text: fx.querySelector('.fx-name').textContent,
                 });
             });
@@ -597,8 +601,18 @@
                 if (e.value) {
                     var val = document.createElement('span');
                     val.className = 'text-accent';
-                    val.textContent = e.value + ' ';
+                    // data-values makes the cell one the slot's own level
+                    // slider can repaint; without it the slot kept showing the
+                    // level it was picked at while the slider moved under it
+                    if (e.values) {
+                        val.setAttribute('data-values', e.values);
+                    }
+                    val.textContent = e.value;
                     fxText.append(val);
+                    // the gap is its own text node, not part of the value: a
+                    // repaint rewrites the cell's textContent and would eat a
+                    // trailing space baked into it
+                    fxText.append(document.createTextNode(' '));
                 }
                 fxText.append(document.createTextNode(e.text));
                 fxLine.append(fxText);

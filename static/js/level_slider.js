@@ -63,12 +63,27 @@
         var cellCount = scope.querySelectorAll('[data-values]').length +
             scope.querySelectorAll('[data-diffs]').length;
 
+        // an unscoped control's scope is the document, so it would repaint
+        // cells that belong to a scoped control too — on the planner that is
+        // the picker's slider rewriting the build slots' values, which follow
+        // their own sliders and their own stored levels. Cells inside a scope
+        // are that scope's business.
+        function ownsCell(el) {
+            return scoped || !el.closest('[data-level-scope]');
+        }
+
         function paintCells(l) {
             scope.querySelectorAll('[data-values]').forEach(function (el) {
+                if (!ownsCell(el)) {
+                    return;
+                }
                 var vals = (el.getAttribute('data-values') || '').split('|');
                 el.textContent = vals[l] || '';
             });
             scope.querySelectorAll('[data-diffs]').forEach(function (el) {
+                if (!ownsCell(el)) {
+                    return;
+                }
                 var diffs = (el.getAttribute('data-diffs') || '').split('|');
                 el.textContent = diffs[l] || '';
             });
