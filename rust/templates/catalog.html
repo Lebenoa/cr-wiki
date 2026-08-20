@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}{{ ctx.l.t(title_key.as_str()) }}{% endblock %}
+{% block content %}
+<h1 class="page-title">{{ ctx.l.t(title_key.as_str()) }}</h1>
+{% if tabbed %}
+<div class="filter-bar">
+    <a href="/{{ section }}" class="rounded-full px-4 py-2 font-bold transition-colors {% if tab == "all" %}bg-primary text-foreground{% else %}border-2 border-secondary/50 text-secondary{% endif %}">{{ ctx.l.t("treasure_tab_all") }}</a>
+    <a href="/{{ section }}?tab=normal" class="rounded-full px-4 py-2 font-bold transition-colors {% if tab == "normal" %}bg-primary text-foreground{% else %}border-2 border-secondary/50 text-secondary{% endif %}">{{ ctx.l.t("treasure_tab_normal") }}</a>
+    <a href="/{{ section }}?tab=evo" class="rounded-full px-4 py-2 font-bold transition-colors {% if tab == "evo" %}bg-primary text-foreground{% else %}border-2 border-secondary/50 text-secondary{% endif %}">{{ ctx.l.t("treasure_tab_evolved") }}</a>
+</div>
+{% endif %}
+<div class="filter-bar">
+    <input id="filter-name" type="text" placeholder="{{ ctx.l.t("navbar_search_placeholder") }}" class="filter-input" />
+</div>
+<div class="catalog-grid">
+    {% include "catalog_cards.html" %}
+</div>
+{% endblock %}

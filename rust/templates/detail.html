@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block title %}{{ item.name }}{% endblock %}
+{% block content %}
+<section class="page-shell max-w-4xl">
+    <a href="/{{ section }}" class="back-link">&larr; {{ ctx.l.t("back_to_list") }}</a>
+    <div class="mt-4 flex items-start gap-6 flex-wrap">
+        {% match item.image %}{% when Some with (img) %}
+        <img src="/img/{{ section }}/{{ img }}" alt="{{ item.name }}" class="size-32 object-contain" />
+        {% when None %}{% endmatch %}
+        <div class="flex flex-col gap-2">
+            <h1 class="text-3xl font-headline text-accent">{{ item.name }}</h1>
+            {% if item.has_grade() %}
+            <img src="/img/grades/{{ item.grade_slug() }}.png" alt="{{ item.grade_label() }}" title="{{ item.grade_label() }}" class="size-10" />
+            {% endif %}
+        </div>
+    </div>
+
+    {% if !abilities_html.is_empty() %}
+    <h2 class="section-title mt-8">{{ ctx.l.t("abilities_label") }}</h2>
+    <p class="text-foreground-muted">{{ abilities_html|safe }}</p>
+    {% endif %}
+
+    {% if !description_html.is_empty() %}
+    <h2 class="section-title mt-8">{{ ctx.l.t("description_label") }}</h2>
+    <p class="text-foreground-muted">{{ description_html|safe }}</p>
+    {% endif %}
+
+    {% if !power_plus_html.is_empty() %}
+    <h2 class="section-title mt-8">{{ ctx.l.t("power_plus_label") }}</h2>
+    <p class="text-foreground-muted">{{ power_plus_html|safe }}</p>
+    {% if !power_plus_requirement_html.is_empty() %}
+    <p class="text-foreground-muted mt-2">{{ power_plus_requirement_html|safe }}</p>
+    {% endif %}
+    {% endif %}
+
+    {% if !unlock_goal_html.is_empty() %}
+    <h2 class="section-title mt-8">{{ ctx.l.t("unlock_goal_label") }}</h2>
+    <p class="text-foreground-muted">{{ unlock_goal_html|safe }}</p>
+    {% endif %}
+
+    {% if !effects.is_empty() %}
+    <h2 class="section-title mt-8">{{ ctx.l.t("effects_label") }}</h2>
+    <ul class="flex flex-col gap-2">
+        {% for e in effects %}
+        <li class="flex items-center gap-2 text-sm">
+            {% if e.has_values() %}
+            <span class="text-accent" data-values="{{ e.values_attr() }}">{{ e.top() }}</span>
+            {% endif %}
+            <span>{{ e.text }}</span>
+            {% if e.blessed %}<span class="pill-accent">{{ ctx.l.t("state_blessed") }}</span>{% endif %}
+        </li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+
+    {% if !combi.is_empty() %}
+    <h2 class="section-title mt-8">{{ ctx.l.t("combo_bonus_title") }}</h2>
+    <ul class="flex flex-col gap-2">
+        {% for c in combi %}
+        <li class="flex items-center gap-3 text-sm">
+            <a href="/{{ ctx.combi_partner_section(section.as_str()) }}/{{ c.partner_id }}" class="flex items-center gap-2 font-bold hover:text-primary">
+                {% match c.partner_image %}{% when Some with (img) %}
+                <img src="/img/{{ ctx.combi_partner_section(section.as_str()) }}/{{ img }}" alt="" class="size-8 object-contain" />
+                {% when None %}{% endmatch %}
+                {{ c.partner_name }}
+            </a>
+            <span class="text-foreground-muted">{{ c.effect }}</span>
+            {% if c.is_hidden %}<span class="pill-primary">{{ ctx.l.t("combi_hidden_badge") }}</span>{% endif %}
+        </li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+</section>
+{% endblock %}

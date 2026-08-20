@@ -91,6 +91,11 @@ impl Ctx {
         }
     }
 
+    /// A combo pairs a cookie with a pet, so the partner of one is the other.
+    pub fn combi_partner_section(&self, section: &str) -> &'static str {
+        if section == "cookies" { "pets" } else { "cookies" }
+    }
+
     /// A fragment swap, as opposed to an hx-boosted navigation which still
     /// wants the whole page.
     pub fn is_fragment(&self) -> bool {

@@ -8,10 +8,12 @@ mod changelog;
 mod config;
 mod ctx;
 mod db;
+mod grade;
 mod i18n;
 mod middleware;
 mod pagination;
 mod ratelimit;
+mod richtext;
 mod routes;
 mod state;
 
@@ -54,8 +56,15 @@ async fn main() {
     };
 
     let app = Router::new()
+        .route("/", get(routes::misc::index))
+        .route("/search", get(routes::misc::search))
+        .route("/sitemap.xml", get(routes::misc::sitemap))
+        .route("/robots.txt", get(routes::misc::robots))
         .route("/changelog", get(routes::changelog::page))
-        .route("/cookies", get(routes::cookies::list))
+        // one handler per shape rather than per section: the section is a
+        // path capture, so eight lists share a function
+        .route("/{section}", get(routes::catalog::list))
+        .route("/{section}/{id}", get(routes::detail::show))
         .layer(axum::middleware::from_fn(middleware::lang))
         .layer(axum::middleware::from_fn_with_state(
             state.clone(),
@@ -265,5 +274,120 @@ mod tests {
         }
         // a different IP has its own bucket
         assert!(matches!(limiter.check("2.2.2.2"), ratelimit::Decision::Allow));
+    }
+
+    /// Every catalog list answers, in both locales, with the English name
+    /// kept alongside for the cross-language filter.
+    #[test]
+    fn catalog_queries() {
+        i18n::load("../translations");
+        let pool = db::open("../sqlite.db").expect("open db");
+
+        let cookies = db::select_cookies(&pool, "en", 30, 0).unwrap();
+        assert_eq!(cookies.len(), 30);
+        let pets = db::select_pets(&pool, "th", 30, 0).unwrap();
+        assert_eq!(pets.len(), 30);
+        assert!(pets.iter().all(|p| !p.en_name.is_empty()));
+
+        // the tabs partition the treasures rather than overlapping
+        let all = db::select_treasures(&pool, "en", "all", 30, 0).unwrap();
+        let normal = db::select_treasures(&pool, "en", "normal", 30, 0).unwrap();
+        let evo = db::select_treasures(&pool, "en", "evo", 30, 0).unwrap();
+        assert_eq!(all.len(), 30);
+        assert!(normal.iter().all(|t| !t.is_evolved));
+        assert!(evo.iter().all(|t| t.is_evolved));
+
+        for kind in ["episodes", "ingredients", "jellies", "skins", "relics"] {
+            assert!(!db::select_simple(&pool, "en", kind).unwrap().is_empty(), "{kind} empty");
+        }
+    }
+
+    /// Grade ordering follows grade_values, where E outranks L.
+    #[test]
+    fn grade_ordering() {
+        assert_eq!(grade::slug(5), "s_plus");
+        assert_eq!(grade::label(5), "S+");
+        assert_eq!(grade::label(3), "A");
+        assert!(grade::rank(0) > grade::rank(6), "E outranks L");
+        assert!(grade::rank(6) > grade::rank(5), "L outranks S+");
+        assert!(grade::rank(1) < grade::rank(2), "C is the lowest");
+    }
+
+    /// Detail rows carry the prose their kind has and nothing else.
+    #[test]
+    fn detail_rows() {
+        let pool = db::open("../sqlite.db").expect("open db");
+        let cookie = db::select_detail(&pool, "en", "cookies", 89).unwrap().expect("cookie 89");
+        assert!(!cookie.name.is_empty());
+        assert!(!cookie.abilities.is_empty());
+
+        // a treasure has no abilities column, and effects come with ladders
+        let treasure = db::select_detail(&pool, "en", "treasures", 317).unwrap().expect("treasure");
+        assert!(treasure.abilities.is_empty());
+        let effects = db::treasure_effects(&pool, "en", 317).unwrap();
+        assert!(!effects.is_empty());
+        assert!(effects.iter().all(|e| e.values.len() == 10), "ten levels per effect");
+
+        assert!(db::select_detail(&pool, "en", "cookies", 99999).unwrap().is_none());
+    }
+
+    /// Rich text: links resolve with their sprite, colours are constrained,
+    /// and everything else is escaped.
+    #[test]
+    fn richtext_renders() {
+        let pool = db::open("../sqlite.db").expect("open db");
+        let out = richtext::render(&pool, "en", "see [[89]] here");
+        assert!(out.contains("href=\"/cookies/89\""));
+        assert!(out.contains("<img src=\"/img/cookies/"));
+
+        // an unresolvable ref stays literal
+        let miss = richtext::render(&pool, "en", "[[cookie:99999999]]");
+        assert!(miss.contains("[[cookie:99999999]]"));
+
+        let colored = richtext::render(&pool, "en", "a {color:red}red{/color} word");
+        assert!(colored.contains("<span style=\"color:red\">red</span>"));
+
+        // an injection attempt is not a valid colour, so the whole thing
+        // renders as text: no span is opened and the quotes come out escaped
+        let bad = richtext::render(&pool, "en", "{color:red\" onclick=\"x}y{/color}");
+        assert!(!bad.contains("<span style="), "{bad}");
+        assert!(!bad.contains("onclick=\""), "{bad}");
+        assert!(bad.contains("&quot;"), "{bad}");
+
+        // pasted markup is escaped
+        let script = richtext::render(&pool, "en", "<script>alert(1)</script>");
+        assert!(!script.contains("<script>"));
+        assert!(script.contains("&lt;script&gt;"));
+    }
+
+    /// Search matches the localized and the English name, and a wildcard in
+    /// the query is a literal.
+    #[test]
+    fn search_matches_both_languages() {
+        let pool = db::open("../sqlite.db").expect("open db");
+        let en = db::search(&pool, "en", "kaymak", 20).unwrap();
+        assert!(en.iter().any(|(section, c)| section == "cookies" && c.name.contains("Kaymak")));
+
+        // a th page still finds an entity by its English name
+        let th = db::search(&pool, "th", "wizard", 20).unwrap();
+        assert!(!th.is_empty());
+
+        // the escape makes % a literal: it finds the treasures actually named
+        // with one, rather than matching the whole catalog
+        let pct = db::search(&pool, "en", "%", 20).unwrap();
+        assert!(!pct.is_empty());
+        assert!(pct.iter().all(|(_, c)| c.name.contains('%')), "% matched as a wildcard");
+        assert!(db::search(&pool, "en", "   ", 20).unwrap().is_empty());
+    }
+
+    /// The sitemap covers every detail id the six sections hold.
+    #[test]
+    fn sitemap_covers_the_catalog() {
+        let pool = db::open("../sqlite.db").expect("open db");
+        let entries = db::sitemap_entries(&pool).unwrap();
+        for section in ["cookies", "pets", "treasures", "episodes", "ingredients", "jellies"] {
+            assert!(entries.iter().any(|(s, _)| s == section), "{section} missing");
+        }
+        assert!(entries.len() > 1000);
     }
 }

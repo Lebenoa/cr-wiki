@@ -1,5 +1,7 @@
+pub mod catalog;
 pub mod changelog;
-pub mod cookies;
+pub mod detail;
+pub mod misc;
 
 use serde::Deserialize;
 
@@ -11,9 +13,6 @@ pub struct CommonQuery {
     #[allow(dead_code)]
     pub lang: Option<String>,
     pub page: Option<i64>,
-    /// used once the search-bearing pages land (see PORTING.md)
-    #[allow(dead_code)]
     pub q: Option<String>,
-    #[allow(dead_code)]
     pub tab: Option<String>,
 }

@@ -1,0 +1,107 @@
+//! The catalog list pages. Cookies, pets and treasures paginate 30 at a time
+//! behind the htmx sentinel; the smaller catalogs render whole, as they do in
+//! the V app.
+
+use askama::Template;
+use axum::extract::{Path, Query, State};
+use axum::response::Html;
+
+use crate::ctx::Ctx;
+use crate::db::{self, Card};
+use crate::state::AppState;
+
+use super::CommonQuery;
+
+pub const PAGE_SIZE: i64 = 30;
+
+#[derive(Template)]
+#[template(path = "catalog.html")]
+struct CatalogPage {
+    ctx: Ctx,
+    section: String,
+    title_key: String,
+    cards: Vec<Card>,
+    next_page: i64,
+    tab: String,
+    tabbed: bool,
+}
+
+#[derive(Template)]
+#[template(path = "catalog_cards.html")]
+struct CatalogCards {
+    ctx: Ctx,
+    section: String,
+    cards: Vec<Card>,
+    next_page: i64,
+    tab: String,
+}
+
+/// One handler for every list: the section comes off the path, which keeps
+/// the eight pages from being eight near-identical functions.
+pub async fn list(
+    State(state): State<AppState>,
+    ctx: Ctx,
+    Path(section): Path<String>,
+    q: Query<CommonQuery>,
+) -> Html<String> {
+    render(state, ctx, section, q).await
+}
+
+async fn render(
+    state: AppState,
+    ctx: Ctx,
+    section: String,
+    q: Query<CommonQuery>,
+) -> Html<String> {
+    let lang = ctx.lang.clone();
+    let page = q.page.unwrap_or(1).max(1);
+    let offset = (page - 1).saturating_mul(PAGE_SIZE);
+    let tab = match q.tab.as_deref() {
+        Some(t @ ("normal" | "evo")) => t.to_string(),
+        _ => "all".to_string(),
+    };
+
+    let paginated = matches!(section.as_str(), "cookies" | "pets" | "treasures");
+    let cards = {
+        let db = state.db.clone();
+        let section = section.clone();
+        let tab = tab.clone();
+        tokio::task::spawn_blocking(move || match section.as_str() {
+            "cookies" => db::select_cookies(&db, &lang, PAGE_SIZE, offset),
+            "pets" => db::select_pets(&db, &lang, PAGE_SIZE, offset),
+            "treasures" => db::select_treasures(&db, &lang, &tab, PAGE_SIZE, offset),
+            other => db::select_simple(&db, &lang, other),
+        })
+        .await
+        .unwrap_or_else(|_| Ok(Vec::new()))
+        .unwrap_or_default()
+    };
+
+    let next_page = if paginated && cards.len() as i64 == PAGE_SIZE { page + 1 } else { 0 };
+
+    let html = if ctx.is_fragment() {
+        CatalogCards { ctx, section, cards, next_page, tab }.render()
+    } else {
+        let title_key = format!("{}_page_title", singular(&section));
+        CatalogPage {
+            ctx,
+            tabbed: section == "treasures",
+            section,
+            title_key,
+            cards,
+            next_page,
+            tab,
+        }
+        .render()
+    };
+    Html(html.unwrap_or_else(|e| format!("template error: {e}")))
+}
+
+/// `cookies` -> `cookie`, so the section maps onto the .tr key names the V
+/// templates use.
+fn singular(section: &str) -> String {
+    match section {
+        "jellies" => "jelly".to_string(),
+        s => s.trim_end_matches('s').to_string(),
+    }
+}
