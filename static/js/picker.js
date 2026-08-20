@@ -223,6 +223,20 @@
         return v && v !== '0' ? v : '';
     }
 
+    // partnerPick is the other half of the combo pair: the picked pet when the
+    // cookie picker opens, the picked (lead) cookie when the pet picker does.
+    // The server floats that entity's combo partners to the top of the grid.
+    // Treasures pair with nothing, so they never send one.
+    function partnerPick(kind) {
+        var id = kind === 'pet' ? 'sel-cookie' : (kind === 'cookie' ? 'sel-pet' : '');
+        if (id === '') {
+            return '';
+        }
+        var input = document.getElementById(id);
+        var v = input ? input.value : '';
+        return v && v !== '0' ? v : '';
+    }
+
     function openPicker(kind) {
         var dlg = document.getElementById('dialog-' + kind);
         // a close via ✕/Esc must not re-fire the previous pick: returnValue
@@ -239,19 +253,25 @@
         var q = dlg.querySelector('.picker-controls input[type="search"]');
         var tabInput = dlg.querySelector('.picker-controls input[name="tab"]');
         var selInput = dlg.querySelector('.picker-controls input[name="sel"]');
+        var partnerInput = dlg.querySelector('.picker-controls input[name="partner"]');
         var pick = currentPick(kind);
+        var partner = partnerPick(kind);
         // reload when the grid has never been filled, when a search term or
         // tab is left over from the last open (it would show a filtered grid
         // under an empty search box), or when the slot's pick changed and the
         // grid is pinned to the wrong card.
         var stale = (q && q.value !== '') || (tabInput && tabInput.value !== 'all') ||
             (selInput && selInput.value !== (pick || '0')) ||
+            (partnerInput && partnerInput.value !== (partner || '0')) ||
             !(grid && grid.querySelector('.pick-option'));
         if (q) {
             q.value = '';
         }
         if (selInput) {
             selInput.value = pick || '0';
+        }
+        if (partnerInput) {
+            partnerInput.value = partner || '0';
         }
         if (tabInput) {
             tabInput.value = 'all';

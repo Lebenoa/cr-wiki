@@ -315,12 +315,12 @@ fn picker_tab_ok(opt database.IdNameOption, tab string) bool {
 // picker_next_url is the infinite-scroll sentinel's href: the same query one
 // page further on, so search, tab and the pinned selection survive the scroll
 // — sel especially, since it reorders the list the pages are cut from.
-fn picker_next_url(kind string, lang string, q string, tab string, sel int, next_page int) string {
+fn picker_next_url(kind string, lang string, q string, tab string, sel int, partner int, next_page int) string {
 	if next_page == 0 {
 		return ''
 	}
 	return '/builds/options/${kind}?lang=${urllib.query_escape(lang)}&q=${urllib.query_escape(q)}' +
-		'&tab=${urllib.query_escape(tab)}&sel=${sel}&page=${next_page}'
+		'&tab=${urllib.query_escape(tab)}&sel=${sel}&partner=${partner}&page=${next_page}'
 }
 
 // picker_options serves one page of a picker dialog's option grid: the cards
@@ -347,6 +347,11 @@ pub fn (mut wapp App) picker_options(mut ctx Context, kind string) veb.Result {
 	// front and marked, so reopening a filled slot shows what is in it instead
 	// of burying it hundreds of cards down a paginated grid.
 	sel := (ctx.query['sel'] or { '' }).int()
+	// the entity in the *other* half of the pair — the picked cookie when this
+	// is the pet picker and the other way round. Its combo partners float to
+	// the top, because a combo is the main reason a planner picks one pet over
+	// another and the grid is too long to hunt through.
+	partner := (ctx.query['partner'] or { '' }).int()
 	all := match kind {
 		'cookie' { wapp.cookie_options(ctx.lang) }
 		'pet' { wapp.pet_options(ctx.lang) }
@@ -358,6 +363,29 @@ pub fn (mut wapp App) picker_options(mut ctx Context, kind string) veb.Result {
 		if picker_tab_ok(opt, tab) && picker_matches(opt, q) {
 			matched << opt
 		}
+	}
+	// combo partners of the other slot's pick, floated above the rest. The
+	// treasure picker has no pairing, so it never asks.
+	mut is_combi := map[int]bool{}
+	if partner > 0 && kind in ['cookie', 'pet'] {
+		// the partner is the opposite kind: a pet picker is passed a cookie
+		partner_kind := if kind == 'pet' { 'cookie' } else { 'pet' }
+		for pid in database.combi_partner_ids(wapp.db, partner_kind, partner) {
+			is_combi[pid] = true
+		}
+	}
+	if is_combi.len > 0 {
+		mut combi := []database.IdNameOption{cap: is_combi.len}
+		mut rest := []database.IdNameOption{cap: matched.len}
+		for opt in matched {
+			if opt.id in is_combi {
+				combi << opt
+			} else {
+				rest << opt
+			}
+		}
+		combi << rest
+		matched = combi.clone()
 	}
 	// pin before slicing, and on every page, so the pages stay a clean cut of
 	// one stable ordering rather than repeating or skipping the pinned card
@@ -384,7 +412,7 @@ pub fn (mut wapp App) picker_options(mut ctx Context, kind string) veb.Result {
 	}
 	paged := if start < matched.len { matched[start..end] } else { []database.IdNameOption{} }
 	next_page := if end < matched.len { page + 1 } else { 0 }
-	next_url := picker_next_url(kind, ctx.lang, q, tab, sel, next_page)
+	next_url := picker_next_url(kind, ctx.lang, q, tab, sel, partner, next_page)
 	if kind == 'treasure' {
 		treasures := paged
 		return $veb.html('./templates/components/picker_options_treasure.html')

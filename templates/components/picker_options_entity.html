@@ -19,6 +19,11 @@
     <img src="@{ctx.img_src(img_dir, o.image)}" alt="@o.name" loading="lazy"
         class="h-36 w-full object-contain" />
     <span class="text-2xl group-hover:text-primary text-secondary text-center leading-tight">@o.name</span>
+    @if o.id in is_combi
+    <!-- pairs with the entity in the other slot; picker_options floats these
+         to the top, so say why they are up here -->
+    <span class="pill-accent">%combo_bonus_title</span>
+    @end
 </button>
 @endfor
 @if next_url != ''

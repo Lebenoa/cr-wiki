@@ -701,6 +701,38 @@ pub:
 	is_hidden     bool
 }
 
+// combi_partner_ids returns just the ids of the entities that pair with
+// `kind` (cookie or pet) id `id` for a combo bonus — the build planner's
+// picker floats them to the top of the other slot's grid, and for that it
+// needs neither the names, the sprites nor the effect text get_combi_bonus
+// resolves. Empty when the entity has no combos or the kind is unknown.
+pub fn combi_partner_ids(conn sqlite.DB, kind string, id int) []int {
+	if id <= 0 {
+		return []
+	}
+	rows := if kind == 'cookie' {
+		sql conn {
+			select from models.CombiBonus where cookie_id == id
+		} or { return [] }
+	} else if kind == 'pet' {
+		sql conn {
+			select from models.CombiBonus where pet_id == id
+		} or { return [] }
+	} else {
+		return []
+	}
+	mut out := []int{cap: rows.len}
+	mut seen := map[int]bool{}
+	for row in rows {
+		pid := if kind == 'cookie' { row.pet_id } else { row.cookie_id }
+		if pid !in seen {
+			seen[pid] = true
+			out << pid
+		}
+	}
+	return out
+}
+
 // get_combi_bonus returns the combo bonuses involving `kind` (cookie or pet)
 // with id `id`, resolving each partner's name and the effect text in the
 // user's language (en fallback). Hidden rows are listed too — this is a wiki,

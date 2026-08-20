@@ -18,6 +18,9 @@
         <!-- the slot's current pick, filled by picker.js on open: the server
              pins it to the front of the grid so a reopened slot shows it -->
         <input type="hidden" name="sel" value="0" />
+        <!-- the other half of the pair (the picked pet here, the picked cookie
+             in the pet dialog): its combo partners are listed first -->
+        <input type="hidden" name="partner" value="0" />
         <input type="search" name="q" placeholder="%build_search_placeholder" autocomplete="off"
             class="picker-search" />
     </form>
