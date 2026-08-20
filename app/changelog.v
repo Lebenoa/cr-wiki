@@ -145,7 +145,7 @@ fn split_subject(subject string) (string, string, string) {
 	return head, scope, rest
 }
 
-// is_lower_word reports whether s is a bare lowercase word, which is what a
+// is_lower_word reports whether s is a bare lower-case word, which is what a
 // conventional-commit type looks like. Anything else (a sentence, a path, a
 // capitalised word) means the subject was not conventional after all.
 fn is_lower_word(s string) bool {
@@ -183,13 +183,9 @@ pub fn (mut wapp App) changelog_page(mut ctx Context) veb.Result {
 		page = 1
 	}
 	all := changelog_entries
-	start := (page - 1) * changelog_page_size
-	mut end := start + changelog_page_size
-	if end > all.len {
-		end = all.len
-	}
-	entries := if start < all.len { all[start..end] } else { []ChangeEntry{} }
-	next_url := if end < all.len { '/changelog?page=${page + 1}' } else { '' }
+	start, end, ok := slice_page(page, changelog_page_size, all.len)
+	entries := if ok { all[start..end] } else { []ChangeEntry{} }
+	next_url := if ok && end < all.len { '/changelog?page=${page + 1}' } else { '' }
 	if ctx.is_htmx_request() && !ctx.is_boosted_request() {
 		return $veb.html('./templates/components/changelog_entries.html')
 	}

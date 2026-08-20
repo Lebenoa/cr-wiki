@@ -27,7 +27,7 @@
 </li>
 @endfor
 @if entries.len == 0 && page == 1
-<p class="text-center text-foreground-muted py-12">%changelog_unavailable</p>
+<li class="text-center text-foreground-muted py-12">%changelog_unavailable</li>
 @end
 @if next_url != ''
 <li class="flex items-center justify-center py-6 text-foreground-muted font-label uppercase" hx-get="@next_url"

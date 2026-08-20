@@ -321,6 +321,29 @@ pub fn (ctx &Context) theme_options() []string {
 const themes = ['default', 'light', 'tokyo_night', 'cappuccino', 'dracula', 'nord', 'gruvbox',
 	'rose_pine']
 
+// slice_page returns the [start, end) window for a 1-based `page` of `size`
+// items over `total`, and ok=false when the page lies past the end.
+//
+// The multiply is deliberately done in i64. `page` comes straight off a query
+// string, and `(page - 1) * size` in 32-bit int wraps negative for a large
+// enough page — ?page=100000000 at 30 a page gives -1294967326. A negative
+// start still passes a `start < total` guard and then panics the slice, so an
+// unauthenticated GET would take the process down.
+fn slice_page(page int, size int, total int) (int, int, bool) {
+	if page < 1 || size < 1 || total <= 0 {
+		return 0, 0, false
+	}
+	start := i64(page - 1) * i64(size)
+	if start >= i64(total) {
+		return 0, 0, false
+	}
+	mut end := start + i64(size)
+	if end > i64(total) {
+		end = i64(total)
+	}
+	return int(start), int(end), true
+}
+
 // theme_tokens lists the palette variables the custom-theme editor may
 // override, in the order it renders them. The presets themselves are not
 // editable: the custom theme names one of them as its base and layers these

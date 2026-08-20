@@ -57,12 +57,8 @@ pub fn (mut wapp App) treasures(mut ctx Context) veb.Result {
 				ids << opt.id
 			}
 		}
-		start := (page - 1) * page_size
-		if start < ids.len {
-			mut end := start + page_size
-			if end > ids.len {
-				end = ids.len
-			}
+		start, end, ok := slice_page(page, page_size, ids.len)
+		if ok {
 			treasures = database.select_treasures_by_ids(wapp.db, ctx.lang, ids[start..end]) or {
 				println(err)
 				return ctx.html('Something went wrong')

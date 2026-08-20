@@ -276,7 +276,8 @@ pub fn (mut wapp App) preview_partial(mut ctx Context) veb.Result {
 // use.
 const picker_page_size = 30
 
-// picker_haystack is everything one option is searchable by, lowercased and
+// picker_haystack is everything one option is searchable by, folded to lower
+// case and
 // joined: the localized name, the English name (so a th page still finds
 // "Wizard" -> คุกกี้พ่อมด) and every effect line the card prints, blessed
 // included. Effect *values* are left out on purpose — they move with the
@@ -425,17 +426,13 @@ pub fn (mut wapp App) picker_options(mut ctx Context, kind string) veb.Result {
 			}
 		}
 	}
-	start := (page - 1) * picker_page_size
-	if start >= matched.len && page > 1 {
+	start, end, ok := slice_page(page, picker_page_size, matched.len)
+	if !ok && page > 1 {
 		// scrolled past the end (a stale sentinel): nothing more to append
 		return ctx.html('')
 	}
-	mut end := start + picker_page_size
-	if end > matched.len {
-		end = matched.len
-	}
-	paged := if start < matched.len { matched[start..end] } else { []database.IdNameOption{} }
-	next_page := if end < matched.len { page + 1 } else { 0 }
+	paged := if ok { matched[start..end] } else { []database.IdNameOption{} }
+	next_page := if ok && end < matched.len { page + 1 } else { 0 }
 	next_url := picker_next_url(kind, ctx.lang, q, tab, sel, partner, next_page)
 	if kind == 'treasure' {
 		treasures := paged

@@ -14,7 +14,7 @@ pub fn (wapp &App) sitemap(mut ctx Context) veb.Result {
 	mut xml := '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">\n'
 	// every list page the navbar exposes; a section missing here is one
 	// crawlers only reach by luck
-	mut paths := ['/', '/cookies', '/pets', '/treasures', '/builds', '/episodes',
+	mut paths := ['/', '/cookies', '/pets', '/treasures', '/builds', '/changelog', '/episodes',
 		'/ingredients', '/jellies', '/skins', '/relics', '/gacha']
 	entries := database.sitemap_entries(wapp.db) or { [] }
 	for e in entries {
