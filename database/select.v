@@ -976,7 +976,7 @@ pub:
 	effects_blessed    []EffectOption
 	has_blessed_toggle bool
 	is_evolved         bool // treasures only: evolved rows have an evo base
-	grade              ?models.Grade // treasures only: sort rank for the picker
+	grade              ?models.Grade // treasure sort rank; also the grade badge on cookie/pet picker cards
 	release_date       time.Time // treasures only: sort rank for the picker
 }
 
@@ -1687,6 +1687,7 @@ pub fn cookie_options(conn sqlite.DB, lang string) ![]IdNameOption {
 				name:    tr.name
 				en_name: en_name_map[cid]
 				image:   c.image
+				grade:   c.grade
 			}
 		}
 	}
@@ -1735,7 +1736,8 @@ pub fn pet_options(conn sqlite.DB, lang string) ![]IdNameOption {
 				id:      pid
 				name:    tr.name
 				en_name: en_name_map[pid]
-				image: p.image
+				image:   p.image
+				grade:   p.grade
 			}
 		}
 	}

@@ -16,6 +16,12 @@
 <button type="submit" value="@o.id" data-name="@o.name" data-name-en="@o.en_name" onclick="setPicked(this)"
     class="pick-option relative border border-secondary px-4 py-2 rounded flex flex-col items-center justify-start hover:border-primary transition-colors group gap-2">
 @end
+    @if g := o.grade
+    <!-- the grade badge the catalog cards carry. It is what tells apart the
+         entities that legitimately share a name and sprite — three pets are
+         called Sotdae Flock, at grades S, A and A -->
+    <img src="/img/grades/@{g}.png" alt="@g" class="size-8 absolute top-1 left-1" />
+    @end
     <img src="@{ctx.img_src(img_dir, o.image)}" alt="@o.name" loading="lazy"
         class="h-36 w-full object-contain" />
     <span class="text-2xl group-hover:text-primary text-secondary text-center leading-tight">@o.name</span>
