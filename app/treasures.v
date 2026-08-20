@@ -26,8 +26,8 @@ pub fn (mut wapp App) treasures(mut ctx Context) veb.Result {
 	// The page's filter is served, not client-side: the grid is paginated, so
 	// hiding loaded cards would only ever search the pages scrolled to, and
 	// the cards carry no effect text to match against anyway. The template
-	// posts it from a form so htmx serializes the query and the tab exactly
-	// once, with submit suppressed so Enter does not navigate.
+	// fires an hx-get from a form so htmx serializes the query and the tab
+	// exactly once, with submit suppressed so Enter does not navigate.
 	//
 	// q stays whole for the sentinel URL so the next page repeats the query;
 	// terms is the split form the matcher uses
