@@ -1027,3 +1027,27 @@ build_issue_reason_too_long
 build_login_to_verify
 เข้าสู่ระบบเพื่อยืนยันบิลด์นี้
 -----
+changelog_page_title
+บันทึกการเปลี่ยนแปลง
+-----
+changelog_page_header
+บันทึกการเปลี่ยนแปลง
+-----
+changelog_page_description
+สิ่งที่เปลี่ยนแปลงในวิกิ จากประวัติการคอมมิตโดยตรง
+-----
+changelog_page_hint
+ทุกการเปลี่ยนแปลงของเว็บไซต์ ใหม่สุดก่อน
+-----
+changelog_details
+รายละเอียด
+-----
+changelog_unavailable
+ไม่มีประวัติสำหรับบิลด์นี้
+-----
+changelog_link
+บันทึกการเปลี่ยนแปลง
+-----
+changelog_loading
+กำลังโหลด...
+-----

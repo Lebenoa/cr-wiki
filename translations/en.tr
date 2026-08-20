@@ -1027,3 +1027,27 @@ Issue description is too long (max 500 characters)
 build_login_to_verify
 Log in to verify this build
 -----
+changelog_page_title
+Changelog
+-----
+changelog_page_header
+Changelog
+-----
+changelog_page_description
+What changed in the wiki, straight from the commit history.
+-----
+changelog_page_hint
+Every change to the site, newest first.
+-----
+changelog_details
+Details
+-----
+changelog_unavailable
+No history available for this build.
+-----
+changelog_link
+Changelog
+-----
+changelog_loading
+Loading...
+-----

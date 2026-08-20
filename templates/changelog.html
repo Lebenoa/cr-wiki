@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="@ctx.lang">
+
+<head>
+    @include 'layout/head.html'
+</head>
+
+<body>
+    @include 'layout/navbar.html'
+
+    <section class="page-shell max-w-4xl">
+        <h1 class="page-title">%changelog_page_header</h1>
+        <p class="text-center text-sm text-foreground-muted">%changelog_page_hint</p>
+
+        <ol id="changelog-list" class="mt-8 flex flex-col gap-3">
+            @include 'components/changelog_entries.html'
+        </ol>
+    </section>
+
+</body>
+
+</html>

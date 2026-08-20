@@ -1,0 +1,38 @@
+<!-- One page of commits plus the infinite-scroll sentinel. The full history
+     is 200 entries with their bodies, which is a third of a megabyte in one
+     response; the page loads it 30 at a time like every other list here. -->
+@for e in entries
+<li class="rounded-2xl border-2 border-primary/20 bg-surface/50 p-4">
+    <div class="flex flex-wrap items-baseline gap-2">
+        @if e.kind != ''
+        <span class="@{ctx.changelog_kind_cls(e.kind)}">@e.kind</span>
+        @end
+        @if e.scope != ''
+        <span class="text-xs font-label uppercase text-foreground-muted">@e.scope</span>
+        @end
+        <span class="font-bold text-on-surface">@e.subject</span>
+        <span class="ml-auto flex items-center gap-3 text-xs text-foreground-muted">
+            <time>@e.date</time>
+            <code class="font-mono">@e.short</code>
+        </span>
+    </div>
+    @if e.body.len > 0
+    <details class="mt-2">
+        <summary class="cursor-pointer text-xs font-label uppercase text-foreground-muted hover:text-primary">
+            %changelog_details</summary>
+        <div class="mt-2 flex flex-col gap-2 text-sm text-foreground-muted">
+            @for para in e.body
+            <p>@para</p>
+            @endfor
+        </div>
+    </details>
+    @end
+</li>
+@endfor
+@if entries.len == 0
+<p class="text-center text-foreground-muted py-12">%changelog_unavailable</p>
+@end
+@if next_url != ''
+<li class="flex items-center justify-center py-6 text-foreground-muted font-label uppercase"
+    hx-get="@next_url" hx-trigger="revealed" hx-swap="outerHTML">%changelog_loading</li>
+@end
