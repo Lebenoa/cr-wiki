@@ -59,6 +59,22 @@ impl<S: Send + Sync> FromRequestParts<S> for Ctx {
 }
 
 impl Ctx {
+    /// A context with no request behind it, for the panic handler: by the
+    /// time it runs the extractors are gone, and the 500 page still has a
+    /// navbar to render.
+    pub fn minimal() -> Self {
+        Ctx {
+            lang: crate::i18n::DEFAULT_LANG.to_string(),
+            l: crate::i18n::Loc::new(crate::i18n::DEFAULT_LANG),
+            path: "/".to_string(),
+            site_url: String::new(),
+            htmx: false,
+            boosted: false,
+            is_local: false,
+            user: None,
+        }
+    }
+
     /// The clean (query-free) absolute URL of this page.
     pub fn canonical_url(&self) -> String {
         self.lang_url(&self.lang)

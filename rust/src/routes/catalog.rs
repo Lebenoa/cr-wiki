@@ -4,7 +4,7 @@
 
 use askama::Template;
 use axum::extract::{Path, Query, State};
-use axum::response::Html;
+use axum::response::{Html, IntoResponse, Response};
 
 use crate::ctx::Ctx;
 use crate::db::{self, Card};
@@ -45,8 +45,19 @@ pub async fn list(
     ctx: Ctx,
     Path(section): Path<String>,
     q: Query<CommonQuery>,
-) -> Html<String> {
+) -> Response {
     render(state, ctx, section, q).await
+}
+
+/// The sections that have a list page. Anything else is a 404 rather than an
+/// empty grid: the path segment is user input, and every unknown word would
+/// otherwise render a page titled after itself.
+fn known(section: &str) -> bool {
+    matches!(
+        section,
+        "cookies" | "pets" | "treasures" | "episodes" | "ingredients" | "jellies" | "relics"
+            | "skins"
+    )
 }
 
 async fn render(
@@ -54,7 +65,10 @@ async fn render(
     ctx: Ctx,
     section: String,
     q: Query<CommonQuery>,
-) -> Html<String> {
+) -> Response {
+    if !known(&section) {
+        return super::errors::not_found(ctx);
+    }
     let lang = ctx.lang.clone();
     let page = q.page.unwrap_or(1).max(1);
     let offset = (page - 1).saturating_mul(PAGE_SIZE);
@@ -98,6 +112,6 @@ async fn render(
         }
         .render()
     };
-    Html(html.unwrap_or_else(|e| format!("template error: {e}")))
+    Html(html.unwrap_or_else(|e| format!("template error: {e}"))).into_response()
 }
 

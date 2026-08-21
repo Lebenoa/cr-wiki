@@ -28,6 +28,7 @@ use std::sync::Arc;
 
 use axum::routing::{get, post};
 use axum::Router;
+use tower_http::catch_panic::CatchPanicLayer;
 use tower_http::services::{ServeDir, ServeFile};
 
 use state::AppState;
@@ -120,6 +121,11 @@ async fn main() {
         // the favicon link is root-relative, as browsers request it
         .route_service("/favicon.avif", ServeFile::new("../static/favicon.avif"))
         .route_service("/favicon.webp", ServeFile::new("../static/favicon.webp"))
+        // a path no route claims gets the site's own 404, not a bare line
+        .fallback(routes::errors::fallback)
+        // a panic in a handler would otherwise drop the connection with no
+        // response at all; the client sees the 500 page instead
+        .layer(CatchPanicLayer::custom(routes::errors::panic_response))
         .with_state(state);
 
     let addr = format!("{}:{}", cfg.host, cfg.port);
@@ -145,6 +151,18 @@ mod tests {
 
     /// The .tr catalogs parse and both locales resolve, including a key added
     /// late in the V app's life.
+    /// The error pages render without a request behind them: the panic
+    /// handler has no Ctx to borrow, so a template that reached for one
+    /// would take the 500 down with it.
+    #[test]
+    fn error_pages_render() {
+        i18n::load("../translations");
+        let body = routes::errors::not_found(test_ctx("en"));
+        assert_eq!(body.status(), axum::http::StatusCode::NOT_FOUND);
+        let boom = routes::errors::panic_response(Box::new("boom"));
+        assert_eq!(boom.status(), axum::http::StatusCode::INTERNAL_SERVER_ERROR);
+    }
+
     #[test]
     fn translations_load() {
         i18n::load("../translations");

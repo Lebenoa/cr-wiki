@@ -5,6 +5,7 @@ pub mod builds;
 pub mod catalog;
 pub mod changelog;
 pub mod detail;
+pub mod errors;
 pub mod misc;
 pub mod picker;
 pub mod planner;

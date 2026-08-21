@@ -2,7 +2,6 @@
 
 use askama::Template;
 use axum::extract::{Path, Query, State};
-use axum::http::StatusCode;
 use axum::response::{Html, IntoResponse, Response};
 
 use crate::builds::{self, BuildCard};
@@ -135,7 +134,7 @@ pub async fn show(
         .unwrap_or(None);
 
     let Some(build) = found else {
-        return (StatusCode::NOT_FOUND, "not found").into_response();
+        return super::errors::not_found(ctx);
     };
     let db = state.db.clone();
     let (verified, issues) = tokio::task::spawn_blocking(move || builds::review_counts(&db, id))

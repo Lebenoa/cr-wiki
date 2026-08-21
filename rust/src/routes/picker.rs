@@ -162,7 +162,7 @@ pub async fn options_grid(
     q: Query<CommonQuery>,
 ) -> Response {
     if !matches!(kind.as_str(), "cookie" | "pet" | "treasure") {
-        return (StatusCode::NOT_FOUND, "not found").into_response();
+        return super::errors::not_found(ctx);
     }
     let lang = ctx.lang.clone();
     let raw_q = q.q.clone().unwrap_or_default().trim().to_lowercase();

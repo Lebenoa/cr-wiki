@@ -4,7 +4,6 @@
 
 use askama::Template;
 use axum::extract::{Path, State};
-use axum::http::StatusCode;
 use axum::response::{Html, IntoResponse, Response};
 
 use crate::ctx::Ctx;
@@ -51,7 +50,7 @@ pub async fn show(
         "cookies" | "pets" | "treasures" | "episodes" | "ingredients" | "jellies" | "relics"
             | "skins"
     ) {
-        return (StatusCode::NOT_FOUND, "not found").into_response();
+        return super::errors::not_found(ctx);
     }
     let lang = ctx.lang.clone();
     let db = state.db.clone();
@@ -91,7 +90,7 @@ pub async fn show(
 
     let Ok(Ok(Some((item, effects, combi, links, unlocks, abilities_html, description_html, power_plus_html, power_plus_requirement_html, unlock_goal_html)))) = loaded
     else {
-        return (StatusCode::NOT_FOUND, "not found").into_response();
+        return super::errors::not_found(ctx);
     };
 
     let blessed_differs = db::blessed_differs(&effects);

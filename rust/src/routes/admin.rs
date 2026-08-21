@@ -104,7 +104,7 @@ fn page_with(
 
 pub async fn new_form(ctx: Ctx, Path(section): Path<String>) -> Response {
     if !ctx.is_admin() || !known(&section) {
-        return (StatusCode::NOT_FOUND, "not found").into_response();
+        return super::errors::not_found(ctx);
     }
     page(ctx, &section, None, "")
 }
@@ -115,7 +115,7 @@ pub async fn edit_form(
     Path((section, id)): Path<(String, i64)>,
 ) -> Response {
     if !ctx.is_admin() || !known(&section) {
-        return (StatusCode::NOT_FOUND, "not found").into_response();
+        return super::errors::not_found(ctx);
     }
     let lang = ctx.lang.clone();
     let db = state.db.clone();
@@ -128,7 +128,7 @@ pub async fn edit_form(
     .unwrap_or(None);
 
     let Some(item) = found else {
-        return (StatusCode::NOT_FOUND, "not found").into_response();
+        return super::errors::not_found(ctx);
     };
     let lang = ctx.lang.clone();
     let db = state.db.clone();
@@ -149,7 +149,7 @@ pub async fn create(
     Form(form): Form<EntityForm>,
 ) -> Response {
     if !ctx.is_admin() || !known(&section) {
-        return (StatusCode::NOT_FOUND, "not found").into_response();
+        return super::errors::not_found(ctx);
     }
     if form.name.trim().is_empty() {
         return (StatusCode::BAD_REQUEST, page(ctx, &section, None, "admin_error_name"))
@@ -184,7 +184,7 @@ pub async fn update(
     Form(form): Form<EntityForm>,
 ) -> Response {
     if !ctx.is_admin() || !known(&section) {
-        return (StatusCode::NOT_FOUND, "not found").into_response();
+        return super::errors::not_found(ctx);
     }
     if form.name.trim().is_empty() {
         return (StatusCode::BAD_REQUEST, page(ctx, &section, None, "admin_error_name"))
@@ -219,7 +219,7 @@ pub async fn delete_combi(
     Path(row_id): Path<i64>,
 ) -> Response {
     if !ctx.is_admin() {
-        return (StatusCode::NOT_FOUND, "not found").into_response();
+        return super::errors::not_found(ctx);
     }
     let db = state.db.clone();
     let _ = tokio::task::spawn_blocking(move || db::delete_combi(&db, row_id)).await;

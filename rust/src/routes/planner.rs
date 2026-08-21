@@ -133,7 +133,7 @@ pub async fn edit_form(
     Path(id): Path<i64>,
 ) -> Response {
     let Some(build) = load_owned(&state, &ctx, id).await else {
-        return (StatusCode::NOT_FOUND, "not found").into_response();
+        return super::errors::not_found(ctx);
     };
     page(ctx, Some(build), "")
 }
@@ -145,7 +145,7 @@ pub async fn update(
     Form(form): Form<BuildForm>,
 ) -> Response {
     let Some(existing) = load_owned(&state, &ctx, id).await else {
-        return (StatusCode::NOT_FOUND, "not found").into_response();
+        return super::errors::not_found(ctx);
     };
     let (ep, ep_special) = parse_ep(form.ep.as_deref().unwrap_or(""));
     let tags = tags_of(&form);
@@ -228,12 +228,12 @@ pub async fn delete(
         .unwrap_or(None);
 
     let Some(build) = found else {
-        return (StatusCode::NOT_FOUND, "not found").into_response();
+        return super::errors::not_found(ctx);
     };
     // 404 rather than 403 for someone else's build, matching the V routes:
     // whether a build exists is not worth revealing to a stranger
     if !can_edit(&ctx, &build) {
-        return (StatusCode::NOT_FOUND, "not found").into_response();
+        return super::errors::not_found(ctx);
     }
     let db = state.db.clone();
     let _ = tokio::task::spawn_blocking(move || builds::delete_build(&db, id)).await;
@@ -314,7 +314,7 @@ pub async fn verify(
         .unwrap_or_else(|_| Ok(None))
         .unwrap_or(None);
     if exists.is_none() {
-        return (StatusCode::NOT_FOUND, "not found").into_response();
+        return super::errors::not_found(ctx);
     }
 
     let ok = form.verified.as_deref() == Some("1");

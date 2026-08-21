@@ -7,7 +7,7 @@ edition = "2021"
 axum = { version = "0.8", features = ["macros", "multipart"] }
 tokio = { version = "1", features = ["rt-multi-thread", "macros", "net", "signal"] }
 tower = "0.5"
-tower-http = { version = "0.6", features = ["fs", "trace"] }
+tower-http = { version = "0.6", features = ["fs", "trace", "catch-panic"] }
 askama = "0.12"
 rusqlite = { version = "0.32", features = ["bundled"] }
 r2d2 = "0.8"
