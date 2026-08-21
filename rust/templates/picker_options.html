@@ -1,0 +1,59 @@
+{% if options.is_empty() && page == 1 %}
+<p class="col-span-full text-center text-foreground-muted py-8">{{ ctx.l.t("search_no_results") }}</p>
+{% endif %}
+{% for o in options %}
+<button type="submit" value="{{ o.id }}" data-name="{{ o.name }}" data-name-en="{{ o.en_name }}"
+    data-evolved="{{ o.is_evolved }}" onclick="setPicked(this)"
+    {% if o.id == sel %}data-selected="1" aria-current="true"{% endif %}
+    class="pick-option relative px-4 py-2 rounded flex flex-col items-center justify-start transition-colors group gap-2 {% if o.id == sel %}border-2 border-primary ring-2 ring-primary{% else %}border border-secondary hover:border-primary{% endif %}">
+    {% if o.has_grade() %}
+    <img src="/img/grades/{{ o.grade_slug() }}.png" alt="{{ o.grade_label() }}" class="size-8 absolute top-1 left-1" />
+    {% endif %}
+    {% match o.image %}{% when Some with (img) %}
+    <img src="/img/{{ dir }}/{{ img }}" alt="{{ o.name }}" loading="lazy" class="h-36 w-full object-contain" />
+    {% when None %}{% endmatch %}
+    <span class="text-2xl group-hover:text-primary text-secondary text-center leading-tight">{{ o.name }}</span>
+    {% if self.is_combi(o.id) %}
+    <span class="pill-accent">{{ ctx.l.t("combo_bonus_title") }}</span>
+    {% endif %}
+    {% if !o.effects.is_empty() || !o.effects_blessed.is_empty() %}
+    <span class="fx-line flex flex-col items-center gap-1">
+        <span class="fx-effects flex flex-col items-center gap-0.5" data-state="normal">
+            {% for e in o.effects %}
+            <span class="fx-effect text-xs text-foreground-muted text-center leading-snug">
+                {% if e.has_values() %}
+                <span class="fx-val text-accent" data-values="{{ e.values_attr() }}">{{ e.top() }}</span>
+                {% endif %}
+                <span class="fx-name">{{ e.text }}</span>
+            </span>
+            {% endfor %}
+        </span>
+        {% if o.has_blessed_toggle() %}
+        <span class="fx-effects hidden flex flex-col items-center gap-0.5" data-state="blessed">
+            {% for e in o.effects_blessed %}
+            <span class="fx-effect text-xs text-foreground-muted text-center leading-snug">
+                {% if e.has_values() %}
+                <span class="fx-val text-accent" data-values="{{ e.values_attr() }}">{{ e.top() }}</span>
+                {% endif %}
+                <span class="fx-name">{{ e.text }}</span>
+            </span>
+            {% endfor %}
+        </span>
+        <span class="fx-toggle flex items-center gap-1 text-xs font-label uppercase cursor-pointer select-none"
+            onclick="event.stopPropagation()">
+            <span class="fx-pill active rounded-full px-2 py-0.5 border border-accent text-accent"
+                data-state="normal" onclick="toggleFx(event, this)">{{ ctx.l.t("state_normal") }}</span>
+            <span class="fx-pill rounded-full px-2 py-0.5 border border-secondary/40 text-foreground-muted"
+                data-state="blessed" onclick="toggleFx(event, this)">{{ ctx.l.t("state_blessed") }}</span>
+        </span>
+        {% endif %}
+        <span class="fx-stepper flex items-center justify-center gap-0.5 mt-1 text-[10px] font-bold leading-tight"
+            onclick="event.stopPropagation()"></span>
+    </span>
+    {% endif %}
+</button>
+{% endfor %}
+{% if !next_url.is_empty() %}
+<div class="col-span-full flex items-center justify-center py-6 text-foreground-muted font-label uppercase"
+    hx-get="{{ next_url }}" hx-trigger="revealed" hx-swap="outerHTML">{{ ctx.l.t("build_picker_loading") }}</div>
+{% endif %}

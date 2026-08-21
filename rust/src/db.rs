@@ -525,3 +525,22 @@ pub fn create_user(db: &Db, username: &str, password_hash: &str) -> rusqlite::Re
         Err(e) => Err(e),
     }
 }
+
+/// The ids that pair with `kind` id `id` for a combo bonus. Just the ids: the
+/// picker floats them to the top of the other slot's grid and needs neither
+/// the names, the sprites nor the effect text.
+pub fn combi_partner_ids(db: &Db, kind: &str, id: i64) -> rusqlite::Result<Vec<i64>> {
+    if id <= 0 {
+        return Ok(Vec::new());
+    }
+    let (own_col, partner_col) = match kind {
+        "cookies" => ("cookie_id", "pet_id"),
+        "pets" => ("pet_id", "cookie_id"),
+        _ => return Ok(Vec::new()),
+    };
+    let c = conn(db)?;
+    let sql = format!("SELECT DISTINCT {partner_col} FROM combi_bonus WHERE {own_col} = ?1");
+    let mut stmt = c.prepare(&sql)?;
+    let rows = stmt.query_map(params![id], |r| r.get::<_, i64>(0))?;
+    rows.collect()
+}

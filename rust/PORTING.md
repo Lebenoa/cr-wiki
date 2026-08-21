@@ -46,14 +46,16 @@ Two deliberate differences from the V original:
 - `/search`, `/sitemap.xml` with locale alternates, `/robots.txt`, the landing page
 - sessions, login, register, logout — argon2id in PHC form so hashes interop with V, and `is_admin` whole
 - the build list and one build's detail page: the filters, the four sorts with the id tie-break, the expiry rule, and the loadout slots
+- `app/options_cache.v` -> `src/options.rs` — the picker lists per language, built in three queries rather than one per treasure, dropped on a catalog write
+- `/builds/options/:kind` -> `src/routes/picker.rs` — paginated grid, whitespace-split search where every term must match somewhere, the treasure tabs, the slot's own pick pinned first and the combo partners floated above the rest
+- the planner write side: `/builds/new`, `/builds/:id/edit` and `/builds/:id/delete`, with the author/owner/expiry left alone on an edit and a 404 rather than a 403 for someone else's build
 
 ## Not ported yet
 
 Roughly in dependency order — the earlier ones unblock the rest.
 
-1. **The build planner**: `/builds/new`, the picker endpoints with search, tabs, pinning and combo-partner ordering, `/builds/preview`, verify, edit, delete. The read side is ported; this is the write side and the picker
-2. **The catalog option cache** (`app/options_cache.v`), which the picker endpoints need
-3. **The remaining `database/select.v`**: treasure unlock chains, evolution bases, the effect-state diffing (~2.6k lines): pets, treasures, effects, combi bonuses, builds, search (FTS5 + LIKE fallback), catalog queries
+1. **`/builds/preview`** and `/builds/:id/verify` — the live loadout preview and the community verify/issue flow
+2. **The remaining `database/select.v`**: treasure unlock chains, evolution bases, effect-state diffing, the combi editor rows (~2.6k lines): pets, treasures, effects, combi bonuses, builds, search (FTS5 + LIKE fallback), catalog queries
 5. **Admin forms** (`app/forms.v`, ~650 lines) and image upload
 6. **Auth**: login, register, Turnstile
 7. **Gacha and relic detail pages**, which have shapes of their own

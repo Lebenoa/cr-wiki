@@ -12,6 +12,7 @@ mod db;
 mod grade;
 mod i18n;
 mod middleware;
+mod options;
 mod pagination;
 mod ratelimit;
 mod richtext;
@@ -22,7 +23,7 @@ mod state;
 use std::net::SocketAddr;
 use std::sync::Arc;
 
-use axum::routing::get;
+use axum::routing::{get, post};
 use axum::Router;
 use tower_http::services::ServeDir;
 
@@ -65,6 +66,13 @@ async fn main() {
         .route("/robots.txt", get(routes::misc::robots))
         .route("/changelog", get(routes::changelog::page))
         .route("/builds", get(routes::builds::list))
+        .route("/builds/options/{kind}", get(routes::picker::options_grid))
+        .route("/builds/new", get(routes::planner::new_form).post(routes::planner::create))
+        .route("/builds/{id}/delete", post(routes::planner::delete))
+        .route(
+            "/builds/{id}/edit",
+            get(routes::planner::edit_form).post(routes::planner::update),
+        )
         .route("/builds/{id}", get(routes::builds::show))
         .route("/login", get(routes::auth::login_form).post(routes::auth::login))
         .route("/register", get(routes::auth::register_form).post(routes::auth::register))
@@ -449,6 +457,41 @@ mod tests {
         assert!(!b.has_stats());
         b.score = 10;
         assert!(b.has_stats());
+    }
+
+    /// The picker lists build, cache and carry their effect ladders.
+    #[test]
+    fn picker_options_build() {
+        i18n::load("../translations");
+        let pool = db::open("../sqlite.db").expect("open db");
+
+        let cookies = options::options(&pool, "en", "cookie");
+        assert_eq!(cookies.len(), 93);
+        let pets = options::options(&pool, "en", "pet");
+        assert_eq!(pets.len(), 100, "the two phantom Sotdae pets are gone");
+
+        let treasures = options::options(&pool, "en", "treasure");
+        assert!(treasures.len() > 700);
+        // Power+ treasures are friendly-run bonuses and cannot be equipped
+        assert!(treasures.iter().any(|t| !t.effects.is_empty()));
+        let with_ladder = treasures
+            .iter()
+            .find(|t| t.effects.iter().any(|e| !e.values.is_empty()))
+            .expect("a treasure with a ladder");
+        assert_eq!(
+            with_ladder.effects.iter().find(|e| !e.values.is_empty()).unwrap().values.len(),
+            10
+        );
+
+        // the grade order puts the highest first, and E outranks L
+        let ranks: Vec<i64> = treasures.iter().filter_map(|t| t.grade).map(grade::rank).collect();
+        assert!(ranks.windows(2).all(|w| w[0] >= w[1]), "grade order is not monotonic");
+
+        // second call comes from the cache
+        let again = options::options(&pool, "en", "cookie");
+        assert_eq!(again.len(), cookies.len());
+        options::invalidate();
+        assert_eq!(options::options(&pool, "en", "cookie").len(), cookies.len());
     }
 
     /// The sitemap covers every detail id the six sections hold.

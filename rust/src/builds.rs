@@ -276,3 +276,127 @@ pub fn select_build(db: &Db, lang: &str, id: i64) -> rusqlite::Result<Option<Bui
     let found = select_where(db, lang, &format!("build_id = {id}"), "latest", 1, 0)?;
     Ok(found.into_iter().next())
 }
+
+/// A build about to be written. Separate from BuildCard because that one
+/// carries resolved entities for rendering, while this carries the ids the
+/// row actually stores.
+#[derive(Debug, Clone)]
+pub struct NewBuild {
+    pub cookie: i64,
+    pub cookie2: Option<i64>,
+    pub pet: i64,
+    pub treasures: [i64; 3],
+    pub blessed: [bool; 3],
+    pub levels: [i64; 3],
+    pub ep: i64,
+    pub ep_special: i64,
+    pub tags: String,
+    pub score: i64,
+    pub coin: i64,
+    pub time_ms: i64,
+    pub boxes: i64,
+    pub description: String,
+    pub youtube_url: String,
+    pub author: String,
+    pub user_id: i64,
+    /// unix seconds for an anonymous build, None for a permanent one
+    pub expires_at: Option<i64>,
+}
+
+/// Inserts a build and returns its id, or 0 when the write failed.
+pub fn insert_build(db: &Db, b: &NewBuild) -> rusqlite::Result<i64> {
+    let c = db
+        .get()
+        .map_err(|e| rusqlite::Error::InvalidParameterName(format!("pool: {e}")))?;
+    c.execute(
+        "INSERT INTO build (cookie_id, cookie2_id, pet_id, combi_bonus_id,
+                            treasure1_id, treasure2_id, treasure3_id,
+                            treasure1_blessed, treasure2_blessed, treasure3_blessed,
+                            treasure1_level, treasure2_level, treasure3_level,
+                            ep, ep_special, tag, boosts, boost, power_effects,
+                            score, coin, time, boxes, description, youtube_url,
+                            author, user_id, created_at, expires_at)
+         VALUES (?1, ?2, ?3, 0, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12,
+                 ?13, ?14, ?15, '', '', '', ?16, ?17, ?18, ?19, ?20, ?21,
+                 ?22, ?23, ?24, ?25)",
+        params![
+            b.cookie,
+            b.cookie2,
+            b.pet,
+            b.treasures[0],
+            b.treasures[1],
+            b.treasures[2],
+            b.blessed[0] as i64,
+            b.blessed[1] as i64,
+            b.blessed[2] as i64,
+            b.levels[0],
+            b.levels[1],
+            b.levels[2],
+            b.ep,
+            b.ep_special,
+            b.tags,
+            b.score,
+            b.coin,
+            b.time_ms,
+            b.boxes,
+            b.description,
+            b.youtube_url,
+            b.author,
+            b.user_id,
+            now_unix(),
+            b.expires_at,
+        ],
+    )?;
+    Ok(c.last_insert_rowid())
+}
+
+pub fn delete_build(db: &Db, id: i64) -> rusqlite::Result<()> {
+    let c = db
+        .get()
+        .map_err(|e| rusqlite::Error::InvalidParameterName(format!("pool: {e}")))?;
+    c.execute("DELETE FROM build_review WHERE build_id = ?1", params![id])?;
+    c.execute("DELETE FROM build WHERE build_id = ?1", params![id])?;
+    Ok(())
+}
+
+/// Updates a build in place. Author, owner and expiry are untouched: an edit
+/// must not turn an anonymous build permanent or change who owns it.
+pub fn update_build(db: &Db, id: i64, b: &NewBuild) -> rusqlite::Result<()> {
+    let c = db
+        .get()
+        .map_err(|e| rusqlite::Error::InvalidParameterName(format!("pool: {e}")))?;
+    c.execute(
+        "UPDATE build SET cookie_id = ?1, cookie2_id = ?2, pet_id = ?3,
+                treasure1_id = ?4, treasure2_id = ?5, treasure3_id = ?6,
+                treasure1_blessed = ?7, treasure2_blessed = ?8, treasure3_blessed = ?9,
+                treasure1_level = ?10, treasure2_level = ?11, treasure3_level = ?12,
+                ep = ?13, ep_special = ?14, tag = ?15, score = ?16, coin = ?17,
+                time = ?18, boxes = ?19, description = ?20, youtube_url = ?21
+          WHERE build_id = ?22",
+        params![
+            b.cookie,
+            b.cookie2,
+            b.pet,
+            b.treasures[0],
+            b.treasures[1],
+            b.treasures[2],
+            b.blessed[0] as i64,
+            b.blessed[1] as i64,
+            b.blessed[2] as i64,
+            b.levels[0],
+            b.levels[1],
+            b.levels[2],
+            b.ep,
+            b.ep_special,
+            b.tags,
+            b.score,
+            b.coin,
+            b.time_ms,
+            b.boxes,
+            b.description,
+            b.youtube_url,
+            id,
+        ],
+    )?;
+    Ok(())
+}

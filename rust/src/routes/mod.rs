@@ -4,6 +4,8 @@ pub mod catalog;
 pub mod changelog;
 pub mod detail;
 pub mod misc;
+pub mod picker;
+pub mod planner;
 
 use serde::Deserialize;
 
@@ -22,4 +24,8 @@ pub struct CommonQuery {
     pub cookie: Option<i64>,
     pub pet: Option<i64>,
     pub treasure: Option<i64>,
+    /// the option already in the slot the picker is opening for
+    pub sel: Option<i64>,
+    /// the other half of the combo pair, whose partners float to the top
+    pub partner: Option<i64>,
 }
