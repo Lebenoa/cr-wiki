@@ -1,6 +1,6 @@
 {% for b in builds %}
 <a href="/builds/{{ b.id }}" class="rounded-2xl border-2 border-primary/20 bg-surface/50 p-4 flex flex-wrap items-center gap-4 hover:border-primary transition-colors">
-    <span class="pill-accent">{{ b.ep_label() }}</span>
+    <span class="pill-accent">{{ b.ep_label(ctx) }}</span>
     {% for slot in b.slots() %}
     {% match slot.image %}{% when Some with (img) %}
     <img src="/img/{{ slot.section }}/{{ img }}" alt="{{ slot.name }}" class="size-12 object-contain" />

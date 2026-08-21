@@ -28,7 +28,7 @@ use std::sync::Arc;
 
 use axum::routing::{get, post};
 use axum::Router;
-use tower_http::services::ServeDir;
+use tower_http::services::{ServeDir, ServeFile};
 
 use state::AppState;
 
@@ -117,6 +117,9 @@ async fn main() {
         .nest_service("/js", ServeDir::new("../static/js"))
         .nest_service("/img", ServeDir::new("../static/img"))
         .nest_service("/thirdparty", ServeDir::new("../static/thirdparty"))
+        // the favicon link is root-relative, as browsers request it
+        .route_service("/favicon.avif", ServeFile::new("../static/favicon.avif"))
+        .route_service("/favicon.webp", ServeFile::new("../static/favicon.webp"))
         .with_state(state);
 
     let addr = format!("{}:{}", cfg.host, cfg.port);
@@ -471,10 +474,12 @@ mod tests {
         assert!(builds::select_builds(&pool, "en", (0, 0, 0, 0, 2), "latest", 30, 0).is_ok());
         assert!(builds::select_build(&pool, "en", 999_999).unwrap().is_none());
 
+        i18n::load("../translations");
+        let c = test_ctx("en");
         let mut b = builds::BuildCard { ep: 5, ..Default::default() };
-        assert_eq!(b.ep_label(), "EP 5");
+        assert_eq!(b.ep_label(&c), "EP 5");
         b.ep_special = 2;
-        assert_eq!(b.ep_label(), "Special EP 2", "a special tier wins over the plain one");
+        assert_eq!(b.ep_label(&c), "Special EP 2", "a special tier wins over the plain one");
         b.time_ms = 95_400;
         assert_eq!(b.time_label(), "1:35");
         b.time_ms = 0;

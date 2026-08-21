@@ -47,6 +47,32 @@ pub struct EntityForm {
     pub grade: Option<i64>,
 }
 
+impl AdminForm {
+    /// The .tr keys are per-section ("save_cookie_button"), so the template
+    /// builds none of them itself.
+    fn singular(&self) -> &'static str {
+        match self.section.as_str() {
+            "pets" => "pet",
+            "treasures" => "treasure",
+            _ => "cookie",
+        }
+    }
+
+    fn title_key(&self) -> String {
+        let verb = if self.item.is_some() { "edit" } else { "new" };
+        format!("{verb}_{}_page_header", self.singular())
+    }
+
+    fn save_key(&self) -> String {
+        let verb = if self.item.is_some() { "save" } else { "create" };
+        format!("{verb}_{}_button", self.singular())
+    }
+
+    fn name_key(&self) -> String {
+        format!("{}_name", self.singular())
+    }
+}
+
 fn known(section: &str) -> bool {
     matches!(section, "cookies" | "pets" | "treasures")
 }

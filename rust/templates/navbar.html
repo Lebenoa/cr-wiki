@@ -26,10 +26,42 @@
     </div>
 
     <div class="flex items-center gap-6 max-md:gap-3">
-        <form action="/search" method="get" class="relative hidden md:block">
-            <input type="search" name="q" class="filter-input w-72"
-                placeholder="{{ ctx.l.t("navbar_search_placeholder") }}" />
-        </form>
+        <button id="search-toggle" type="button" class="btn-secondary size-12 md:hidden"
+            aria-label="{{ ctx.l.t("navbar_search_toggle") }}" aria-expanded="false">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="m21 21-4.34-4.34" />
+                <circle cx="11" cy="11" r="8" />
+            </svg>
+        </button>
+        <div id="search-box"
+            class="md:block md:flex-none md:w-56 lg:w-72 hidden transition-all transition-discrete duration-300 max-md:absolute max-md:inset-y-0 max-md:left-12 max-md:right-0 max-md:z-20 max-md:bg-background max-md:px-2 max-md:items-center max-md:not-[.hidden]:flex max-md:opacity-0 max-md:-translate-y-2 max-md:not-[.hidden]:opacity-100 max-md:not-[.hidden]:translate-y-0 max-md:not-[.hidden]:starting:opacity-0 max-md:not-[.hidden]:starting:-translate-y-2">
+            <form class="relative max-md:flex-1" action="/search" method="get" hx-boost="true">
+                <span class="absolute left-4 top-1/2 -translate-y-1/2 text-foreground-muted">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="m21 21-4.34-4.34" />
+                        <circle cx="11" cy="11" r="8" />
+                    </svg>
+                </span>
+                <input name="q" hx-get="/search" hx-trigger="input changed delay:300ms" hx-target="#search-results"
+                    hx-swap="innerHTML"
+                    class="bg-surface border-2 border-secondary/50 focus:border-primary focus:ring-0 rounded-full py-2 pl-12 pr-6 w-full transition-all outline-none text-sm text-foreground"
+                    placeholder="{{ ctx.l.t("navbar_search_placeholder") }}" type="text" />
+            </form>
+            <div id="search-results"
+                class="absolute top-full left-0 mt-2 w-full max-h-96 overflow-y-auto rounded-xl border border-secondary/70 bg-background shadow-2xl z-50 hidden flex-col p-2 gap-1">
+            </div>
+            <div id="search-loading"
+                class="hidden absolute top-full left-0 mt-2 w-full rounded-xl border border-secondary/70 bg-background shadow-2xl p-2 flex items-center gap-2 text-sm text-foreground-muted transition-all transition-discrete duration-200 opacity-0 not-[.hidden]:opacity-100 not-[.hidden]:starting:opacity-0">
+                <svg class="size-4 animate-spin" xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                    viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                    stroke-linejoin="round">
+                    <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+                </svg>
+                <span>{{ ctx.l.t("navbar_search_loading") }}</span>
+            </div>
+        </div>
 
         <button type="button" class="btn-primary size-12 md:hidden" popovertarget="mobile-nav"
             aria-label="{{ ctx.l.t("wiki") }}">&#9776;</button>
@@ -143,4 +175,77 @@
             </div>
         </dialog>
     </div>
+    <script>
+        (function () {
+            const btn = document.getElementById('search-toggle');
+            const box = document.getElementById('search-box');
+            const input = box?.querySelector('input[name=q]');
+            const results = document.getElementById('search-results');
+            const indicator = document.getElementById('search-loading');
+            if (!btn || !box || !input || !results || !indicator) return;
+            // the collapsible state only exists below md: on desktop the box is
+            // always visible (md:block) even though the hidden class stays in
+            // the markup, so isOpen() must not gate desktop behavior
+            function isMobile() {
+                return window.matchMedia('(max-width: 767px)').matches;
+            }
+            function isOpen() {
+                return !box.classList.contains('hidden');
+            }
+            function hideResults() {
+                results.classList.add('hidden');
+                results.classList.remove('flex');
+            }
+            function setOpen(open) {
+                // 'hidden' is the single source of truth; the max-md:not-[.hidden]
+                // variants show the box while it lacks the class
+                box.classList.toggle('hidden', !open);
+                btn.classList.toggle('hidden', open);
+                btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+                if (open) {
+                    input.focus();
+                } else {
+                    input.blur();
+                    input.value = '';
+                    results.innerHTML = '';
+                    hideResults();
+                    indicator.classList.add('hidden');
+                }
+            }
+            btn.addEventListener('click', function () {
+                setOpen(!isOpen());
+            });
+            // reveal the spinner during the debounce window, before htmx fires
+            input.addEventListener('input', function () {
+                indicator.classList.toggle('hidden', input.value.trim() === '');
+            });
+            document.addEventListener('click', function (e) {
+                // close only on mobile and outside the search control; the toggle's
+                // own click bubbles here and must not close the box it just opened
+                if (isMobile() && isOpen() && !e.target.closest('#search-toggle, #search-box')) {
+                    setOpen(false);
+                }
+            });
+            box.addEventListener('keydown', function (e) {
+                if (e.key === 'Escape') setOpen(false);
+            });
+            // show the dropdown only once it has content, so a focused-but-empty
+            // input never displays an empty box; hide the spinner once settled
+            results.addEventListener('htmx:after:settle', function () {
+                indicator.classList.add('hidden');
+                if (isMobile() && !isOpen()) {
+                    // a response landed after the mobile box was closed; keep it hidden
+                    hideResults();
+                    return;
+                }
+                const hasContent = results.innerHTML.trim() !== '';
+                results.classList.toggle('hidden', !hasContent);
+                results.classList.toggle('flex', hasContent);
+            });
+            // a failed request never settles, so hide the spinner on error too
+            input.addEventListener('htmx:error', function () {
+                indicator.classList.add('hidden');
+            });
+        })();
+    </script>
 </nav>

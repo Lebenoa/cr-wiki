@@ -22,6 +22,10 @@ struct SiteVerify {
 /// Verifies one submission. `expected_action` is the data-action the widget
 /// was rendered with, so a token minted for the login form cannot be replayed
 /// against the build form.
+/// The public Cloudflare Turnstile site key. It ships in the frontend by
+/// design; only the secret stays server-side.
+pub const SITEKEY: &str = "0x4AAAAAAERZ9YLl2pq5_2hu";
+
 pub async fn verify(cfg: &Config, token: Option<&str>, expected_action: &str) -> bool {
     // Non-release builds skip the check, matching the V `$if !prod` gate: the
     // HTTP suite and local development have no widget to solve.

@@ -30,6 +30,15 @@ struct DetailPage {
     blessed_differs: bool,
     combi: Vec<CombiRow>,
     links: TreasureLinks,
+    /// the treasure this cookie or pet unlocks: id, name, image
+    unlocks: Option<(i64, String, Option<String>)>,
+}
+
+impl DetailPage {
+    /// The section's own edit route, shown to an admin only.
+    fn can_edit(&self) -> bool {
+        self.ctx.is_admin()
+    }
 }
 
 pub async fn show(
@@ -64,17 +73,23 @@ pub async fn show(
         } else {
             TreasureLinks::default()
         };
+        // the reverse link: what this cookie or pet unlocks
+        let unlocks = match section_for_db.as_str() {
+            "cookies" => db::unlocked_treasure(&db, &lang, "cookie", id)?,
+            "pets" => db::unlocked_treasure(&db, &lang, "pet", id)?,
+            _ => None,
+        };
         // rich text needs the pool too, so it is rendered on this thread
         let abilities = richtext::render(&db, &lang, &item.abilities);
         let description = richtext::render(&db, &lang, &item.description);
         let power_plus = richtext::render(&db, &lang, &item.power_plus);
         let ppr = richtext::render(&db, &lang, &item.power_plus_requirement);
         let goal = richtext::render(&db, &lang, &item.unlock_goal);
-        Ok(Some((item, effects, combi, links, abilities, description, power_plus, ppr, goal)))
+        Ok(Some((item, effects, combi, links, unlocks, abilities, description, power_plus, ppr, goal)))
     })
     .await;
 
-    let Ok(Ok(Some((item, effects, combi, links, abilities_html, description_html, power_plus_html, power_plus_requirement_html, unlock_goal_html)))) = loaded
+    let Ok(Ok(Some((item, effects, combi, links, unlocks, abilities_html, description_html, power_plus_html, power_plus_requirement_html, unlock_goal_html)))) = loaded
     else {
         return (StatusCode::NOT_FOUND, "not found").into_response();
     };
@@ -93,6 +108,7 @@ pub async fn show(
         effects,
         combi,
         links,
+        unlocks,
     };
     Html(page.render().unwrap_or_else(|e| format!("template error: {e}"))).into_response()
 }

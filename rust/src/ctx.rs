@@ -187,6 +187,78 @@ impl Ctx {
         self.user.as_ref().map(|u| u.username.clone()).unwrap_or_default()
     }
 
+    /// "EP 5" / "Special EP 2", localized. A special tier wins over the
+    /// plain one, matching the badge.
+    pub fn build_ep_label(&self, ep: i64, ep_special: i64) -> String {
+        if ep_special > 0 {
+            return self.l.t("build_ep_special").replace("{n}", &ep_special.to_string());
+        }
+        self.l.t("build_ep_tier").replace("{n}", &ep.to_string())
+    }
+
+    /// The combobox option labels. Askama hands loop variables out by
+    /// reference, so these take one rather than making every call site deref.
+    pub fn ep_tier_label(&self, n: &i64) -> String {
+        self.build_ep_label(*n, 0)
+    }
+
+    pub fn ep_special_label(&self, n: &i64) -> String {
+        self.build_ep_label(0, *n)
+    }
+
+    /// The regular EP tiers and the special ones, for the filter combobox.
+    pub fn ep_tiers(&self) -> Vec<i64> {
+        (1..=7).collect()
+    }
+
+    pub fn ep_specials(&self) -> Vec<i64> {
+        (1..=3).collect()
+    }
+
+    /// The site-wide description, used when a page names no key of its own.
+    pub fn meta_description(&self) -> String {
+        self.l.t("site_description")
+    }
+
+    /// The wide banner, absolute, for Open Graph and Twitter cards.
+    pub fn social_image(&self) -> String {
+        format!("{}/img/landscape.jpg", self.site_url.trim_end_matches('/'))
+    }
+
+    pub fn social_card_type(&self) -> &'static str {
+        "summary_large_image"
+    }
+
+    /// The wikilang cookie as an Open Graph locale tag.
+    pub fn og_locale(&self) -> &'static str {
+        if self.lang == "th" { "th_TH" } else { "en_US" }
+    }
+
+    pub fn default_lang_url(&self) -> String {
+        self.lang_url(crate::i18n::DEFAULT_LANG)
+    }
+
+    /// The per-language Google Fonts stylesheet. Thai needs its own face,
+    /// and shipping both to every visitor is two families nobody reads.
+    pub fn font_css_url(&self) -> &'static str {
+        if self.lang == "th" {
+            "https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@100..900&display=swap"
+        } else {
+            "https://fonts.googleapis.com/css2?family=Hanken+Grotesk:ital,wght@0,100..900;1,100..900&family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&family=Sora:wght@100..800&display=swap"
+        }
+    }
+
+    /// The draw pool's display name. The `name` column holds a .tr key
+    /// rather than prose, so the tier is what actually reads.
+    pub fn gacha_tier_label(&self, tier: &str) -> String {
+        self.l.t(&format!("gacha_tier_{tier}"))
+    }
+
+    /// The public Turnstile site key, for the widget divs.
+    pub fn turnstile_sitekey(&self) -> &'static str {
+        crate::turnstile::SITEKEY
+    }
+
     pub fn signed_in(&self) -> bool {
         self.user.is_some()
     }

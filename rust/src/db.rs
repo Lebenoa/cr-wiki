@@ -57,6 +57,10 @@ pub struct Detail {
     pub power_plus: String,
     pub power_plus_requirement: String,
     pub unlock_goal: String,
+    /// unix seconds; the page formats it client-side in the viewer's locale.
+    /// Zero for a kind whose table has no such column, and for a row that
+    /// never got a date.
+    pub release_date: i64,
 }
 
 impl Detail {
@@ -86,9 +90,6 @@ impl EffectLine {
     }
     pub fn top(&self) -> String {
         self.values.last().cloned().unwrap_or_default()
-    }
-    pub fn has_values(&self) -> bool {
-        !self.values.is_empty()
     }
 }
 
@@ -248,9 +249,12 @@ pub fn select_detail(db: &Db, lang: &str, kind: &str, id: i64) -> rusqlite::Resu
         _ => return Ok(None),
     };
     let graded = !extra.is_empty();
+    // only these three tables carry the column
+    let has_date = matches!(kind, "cookies" | "pets" | "treasures");
+    let dated = if has_date { ", COALESCE(e.release_date, 0) AS release_date" } else { "" };
     let c = conn(db)?;
     let sql = format!(
-        "SELECT e.{id_col} AS id, e.image AS image{extra},
+        "SELECT e.{id_col} AS id, e.image AS image{extra}{dated},
                 COALESCE(tr.name, '') AS name, COALESCE(te.name, '') AS en_name{prose}
            FROM {table} e
            LEFT JOIN {tr_table} tr ON tr.{owner_col} = e.{id_col} AND tr.lang IN (?1, 'en')
@@ -275,7 +279,39 @@ pub fn select_detail(db: &Db, lang: &str, kind: &str, id: i64) -> rusqlite::Resu
         power_plus: row.get::<_, Option<String>>("power_plus")?.unwrap_or_default(),
         power_plus_requirement: row.get::<_, Option<String>>("ppr")?.unwrap_or_default(),
         unlock_goal: row.get::<_, Option<String>>("unlock_goal")?.unwrap_or_default(),
+        release_date: if has_date { row.get("release_date")? } else { 0 },
     }))
+}
+
+/// The treasure a cookie or pet unlocks, if any — the reverse of the link
+/// the treasure page shows. `kind` is "cookie" or "pet".
+pub fn unlocked_treasure(
+    db: &Db,
+    lang: &str,
+    kind: &str,
+    id: i64,
+) -> rusqlite::Result<Option<(i64, String, Option<String>)>> {
+    let col = match kind {
+        "cookie" => "unlock_cookie_id",
+        "pet" => "unlock_pet_id",
+        _ => return Ok(None),
+    };
+    let c = conn(db)?;
+    let sql = format!(
+        "SELECT t.treasure_id AS id, t.image AS image,
+                COALESCE(tl.name, te.name, '') AS name
+           FROM treasure t
+           LEFT JOIN treasure_translation tl ON tl.treasure_id = t.treasure_id AND tl.lang = ?1
+           LEFT JOIN treasure_translation te ON te.treasure_id = t.treasure_id AND te.lang = 'en'
+          WHERE t.{col} = ?2
+          LIMIT 1"
+    );
+    let mut stmt = c.prepare(&sql)?;
+    let mut rows = stmt.query(params![lang, id])?;
+    match rows.next()? {
+        Some(row) => Ok(Some((row.get("id")?, row.get("name")?, row.get("image")?))),
+        None => Ok(None),
+    }
 }
 
 /// A treasure's effect lines with their 0-9 ladders, normal and blessed,
@@ -569,7 +605,8 @@ pub fn combi_partner_ids(db: &Db, kind: &str, id: i64) -> rusqlite::Result<Vec<i
 #[derive(Debug, Clone)]
 pub struct GachaPool {
     pub id: i64,
-    pub name: String,
+    /// the tier slug, which the .tr key is built from; the table's own
+    /// `name` column holds a key rather than prose, so nothing reads it
     pub tier: String,
     pub entries: Vec<GachaEntry>,
 }
@@ -579,9 +616,12 @@ pub struct GachaEntry {
     pub section: &'static str,
     pub id: i64,
     pub name: String,
+    /// the English name, so the client-side filter matches either language
+    pub en_name: String,
     pub image: Option<String>,
     pub grade: Option<i64>,
     pub odds: f64,
+    pub is_evolved: bool,
 }
 
 impl GachaEntry {
@@ -591,9 +631,17 @@ impl GachaEntry {
     pub fn has_grade(&self) -> bool {
         self.grade.is_some()
     }
-    /// The odds as the page prints them, two decimals like the source table.
+    pub fn grade_label(&self) -> String {
+        self.grade.map(grade::label).unwrap_or_default()
+    }
+    /// The odds as the page prints them: the stored value with no padding,
+    /// so 4.4 reads "4.4%" rather than "4.40%".
     pub fn odds_label(&self) -> String {
-        format!("{:.2}%", self.odds)
+        let mut s = format!("{}", self.odds);
+        if s.contains('.') {
+            s = s.trim_end_matches('0').trim_end_matches('.').to_string();
+        }
+        format!("{s}%")
     }
 }
 
@@ -602,11 +650,10 @@ impl GachaEntry {
 pub fn select_gacha(db: &Db, lang: &str) -> rusqlite::Result<Vec<GachaPool>> {
     let c = conn(db)?;
     let mut pools: Vec<GachaPool> = {
-        let mut stmt = c.prepare("SELECT pool_id, name, tier FROM gacha_pool ORDER BY pool_id")?;
+        let mut stmt = c.prepare("SELECT pool_id, tier FROM gacha_pool ORDER BY pool_id")?;
         let rows = stmt.query_map([], |r| {
             Ok(GachaPool {
                 id: r.get("pool_id")?,
-                name: r.get::<_, Option<String>>("name")?.unwrap_or_default(),
                 tier: r.get::<_, Option<String>>("tier")?.unwrap_or_default(),
                 entries: Vec::new(),
             })
@@ -618,6 +665,8 @@ pub fn select_gacha(db: &Db, lang: &str) -> rusqlite::Result<Vec<GachaPool>> {
         "SELECT g.pool_id AS pool_id, g.odds AS odds, g.grade AS grade,
                 g.treasure_id AS treasure_id, g.pet_id AS pet_id,
                 COALESCE(tt.name, te.name, pt.name, pe.name, '') AS name,
+                COALESCE(te.name, pe.name, '') AS en_name,
+                COALESCE(t.is_evolved, 0) AS is_evolved,
                 COALESCE(t.image, p.image) AS image
            FROM gacha_pool_entry g
            LEFT JOIN treasure t ON t.treasure_id = g.treasure_id
@@ -642,9 +691,11 @@ pub fn select_gacha(db: &Db, lang: &str) -> rusqlite::Result<Vec<GachaPool>> {
                 section,
                 id,
                 name: r.get("name")?,
+                en_name: r.get("en_name")?,
                 image: r.get("image")?,
                 grade: r.get("grade")?,
                 odds: r.get("odds")?,
+                is_evolved: r.get::<_, i64>("is_evolved")? != 0,
             },
         ))
     })?;

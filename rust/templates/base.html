@@ -4,17 +4,36 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>{% block title %}{% endblock %}</title>
-    <link rel="canonical" href="{{ ctx.canonical_url() }}" />
-    {% for alt in ctx.langs() %}
-    <link rel="alternate" hreflang="{{ alt }}" href="{{ ctx.lang_url(alt) }}" />
-    {% endfor %}
-    <link rel="alternate" hreflang="x-default" href="{{ ctx.lang_url("en") }}" />
     <link rel="stylesheet" href="/static/styles.css" />
+    <link rel="shortcut icon" href="/favicon.avif" type="image/x-icon" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="{{ ctx.font_css_url() }}" rel="stylesheet" />
     <script src="/thirdparty/htmx.js"></script>
     <script src="/js/theme.js"></script>
     <script src="/js/theme_editor.js" defer></script>
     <script src="/js/catalog_filter.js" defer></script>
+    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+    <title>{% block title %}{% endblock %}</title>
+    <meta name="description" content="{{ ctx.meta_description() }}" />
+    <link rel="canonical" href="{{ ctx.canonical_url() }}" />
+    {% for alt in ctx.langs() %}
+    <link rel="alternate" hreflang="{{ alt }}" href="{{ ctx.lang_url(alt) }}" />
+    {% endfor %}
+    <link rel="alternate" hreflang="x-default" href="{{ ctx.default_lang_url() }}" />
+    {% block robots %}<meta name="robots" content="index, follow" />{% endblock %}
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="{{ ctx.l.t("site_name") }}" />
+    <meta property="og:description" content="{{ ctx.meta_description() }}" />
+    <meta property="og:url" content="{{ ctx.canonical_url() }}" />
+    <meta property="og:locale" content="{{ ctx.og_locale() }}" />
+    <meta property="og:image" content="{{ ctx.social_image() }}" />
+    <meta name="twitter:card" content="{{ ctx.social_card_type() }}" />
+    <meta name="twitter:description" content="{{ ctx.meta_description() }}" />
+    <meta name="twitter:image" content="{{ ctx.social_image() }}" />
+    <script>
+        htmx.config.globalViewTransitions = true;
+    </script>
 </head>
 
 <body>

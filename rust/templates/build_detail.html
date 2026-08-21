@@ -2,8 +2,8 @@
 {% block title %}{{ ctx.l.t("build_detail_page_title") }}{% endblock %}
 {% block content %}
 <section class="page-shell max-w-4xl">
-    <a href="/builds" class="back-link">&larr; {{ ctx.l.t("back_to_builds") }}</a>
-    <h1 class="page-title">{{ build.ep_label() }}</h1>
+    <a href="/builds" class="back-link">&larr; {{ ctx.l.t("build_back_list") }}</a>
+    <h1 class="page-title">{{ build.ep_label(ctx) }}</h1>
     <div class="mt-4 grid grid-cols-2 lg:grid-cols-3 gap-5">
         {% for slot in build.slots() %}
         <div class="entity-card">
@@ -39,8 +39,8 @@
     <a href="{{ build.youtube_url }}" rel="nofollow noopener" class="btn-secondary mt-6 inline-flex">{{ ctx.l.t("build_youtube_label") }}</a>
     {% endif %}
     <div class="mt-8 flex items-center gap-4">
-        <span class="pill-accent">{{ ctx.l.t("build_verified_label") }} {{ verified }}</span>
-        <span class="pill-primary">{{ ctx.l.t("build_issue_label") }} {{ issues }}</span>
+        <span class="pill-accent">{{ ctx.l.t("build_verified_count") }} {{ verified }}</span>
+        <span class="pill-primary">{{ ctx.l.t("build_issue_count") }} {{ issues }}</span>
     </div>
     {% if ctx.signed_in() %}
     <form method="post" action="/builds/{{ build.id }}/verify" class="mt-4 flex flex-wrap items-end gap-3">
@@ -48,10 +48,10 @@
             <input type="radio" name="verified" value="1" checked /> {{ ctx.l.t("build_verify_works") }}
         </label>
         <label class="flex items-center gap-2 text-sm">
-            <input type="radio" name="verified" value="0" /> {{ ctx.l.t("build_verify_issue") }}
+            <input type="radio" name="verified" value="0" /> {{ ctx.l.t("build_report_issue") }}
         </label>
-        <input type="text" name="reason" class="filter-input" placeholder="{{ ctx.l.t("build_issue_reason") }}" />
-        <button type="submit" class="btn-secondary">{{ ctx.l.t("build_verify_submit") }}</button>
+        <input type="text" name="reason" class="filter-input" placeholder="{{ ctx.l.t("build_issue_reason_placeholder") }}" />
+        <button type="submit" class="btn-secondary">{{ ctx.l.t("build_verify_works") }}</button>
     </form>
     {% else %}
     <p class="mt-4 text-xs text-foreground-muted">{{ ctx.l.t("build_login_to_verify") }}</p>

@@ -4,6 +4,7 @@
 <section class="page-shell max-w-5xl">
     <div class="flex items-center justify-between gap-4 flex-wrap">
         <h1 class="page-title">{{ ctx.l.t("builds_page_title") }}</h1>
+        <a href="/builds/new" class="btn-primary">+ {{ ctx.l.t("new_build_button") }}</a>
     </div>
     <form hx-get="/builds" hx-trigger="change" hx-target="#build-list" hx-push-url="true"
         class="mt-8 flex flex-wrap items-end gap-4">
@@ -22,6 +23,18 @@
             class="p-4 rounded-xl flex flex-col items-center gap-1 min-h-20 border-2 border-dotted border-primary/30 bg-surface/50 hover:bg-surface transition-colors">
             <span class="my-auto text-xs font-label text-foreground-muted uppercase">{{ ctx.l.t("build_treasure_label") }}</span>
         </button>
+        <label class="flex flex-col gap-1 text-xs font-label uppercase text-foreground-muted">
+            {{ ctx.l.t("build_ep_label") }}
+            <select name="ep" class="filter-input">
+                <option value="">{{ ctx.l.t("none_option") }}</option>
+                {% for n in ctx.ep_tiers() %}
+                <option value="{{ n }}" {% if ep == n.to_string() %}selected{% endif %}>{{ ctx.ep_tier_label(n) }}</option>
+                {% endfor %}
+                {% for n in ctx.ep_specials() %}
+                <option value="s{{ n }}" {% if ep == format!("s{}", n) %}selected{% endif %}>{{ ctx.ep_special_label(n) }}</option>
+                {% endfor %}
+            </select>
+        </label>
         <label class="flex flex-col gap-1 text-xs font-label uppercase text-foreground-muted">
             {{ ctx.l.t("build_sort_label") }}
             <select name="sort" class="filter-input">

@@ -1,21 +1,129 @@
 {% extends "base.html" %}
-{% block title %}{{ ctx.l.t(mode.as_str()) }}{% endblock %}
+{% block title %}{{ ctx.l.t(self.title_key()) }}{% endblock %}
+{% block robots %}<meta name="robots" content="noindex, nofollow" />{% endblock %}
 {% block content %}
-<section class="page-shell max-w-md">
-    <h1 class="page-title">{{ ctx.l.t(mode.as_str()) }}</h1>
-    {% if !error.is_empty() %}
-    <p class="text-error text-center">{{ ctx.l.t(error.as_str()) }}</p>
-    {% endif %}
-    <form method="post" action="/{{ mode }}" class="flex flex-col gap-4 mt-6">
-        <input type="text" name="username" autocomplete="username" class="filter-input w-full"
-            placeholder="{{ ctx.l.t("username_label") }}" required />
-        <input type="password" name="password" autocomplete="current-password" class="filter-input w-full"
-            placeholder="{{ ctx.l.t("password_label") }}" required />
+<div class="w-full flex flex-col justify-center items-center py-12 relative">
+    <div class="text-center lg:text-left mb-10">
+        <h1 class="font-headline font-bold text-2xl text-accent mb-2">{{ ctx.l.t("share_build_message") }}</h1>
+        <p class="font-body text-lg text-secondary">{{ ctx.l.t("lets_register_message") }}</p>
+    </div>
+    <form class="space-y-5" method="post" action="/{{ mode }}" hx-post="/{{ mode }}" hx-swap="none"
+        hx-disable="find button[type=submit]">
+        <div id="form-error">
+            {% if !error.is_empty() %}
+            <p class="text-error text-center">{{ ctx.l.t(error.as_str()) }}</p>
+            {% endif %}
+        </div>
+        <div class="space-y-2">
+            <label class="font-label text-secondary uppercase">{{ ctx.l.t("username") }}</label>
+            <div class="relative group input-glow">
+                <span
+                    class="absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant/50 group-focus-within:text-primary transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+                        <circle cx="12" cy="7" r="4" />
+                    </svg>
+                </span>
+                <input
+                    class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 pl-12 pr-4 text-foreground placeholder:text-foreground/30 focus:border-primary focus:ring-0 transition-all outline-none"
+                    placeholder="GingerBrave" type="text" name="username" autocomplete="username" required />
+            </div>
+        </div>
         {% if mode == "register" %}
-        <input type="password" name="confirm_password" autocomplete="new-password" class="filter-input w-full"
-            placeholder="{{ ctx.l.t("confirm_password_label") }}" required />
+        <div class="space-y-2">
+            <label class="font-label text-secondary uppercase">{{ ctx.l.t("email") }}</label>
+            <div class="relative group input-glow">
+                <span
+                    class="absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant/50 group-focus-within:text-primary transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="m22 7-8.991 5.727a2 2 0 0 1-2.009 0L2 7" />
+                        <rect x="2" y="4" width="20" height="16" rx="2" />
+                    </svg>
+                </span>
+                <input
+                    class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 pl-12 pr-4 text-foreground placeholder:text-foreground/30 focus:border-primary focus:ring-0 transition-all outline-none"
+                    placeholder="gingerbrave@cookie.run" type="email" name="email" />
+            </div>
+        </div>
         {% endif %}
-        <button type="submit" class="btn-primary">{{ ctx.l.t(mode.as_str()) }}</button>
+        <div class="space-y-2">
+            <label class="font-label text-secondary uppercase">{{ ctx.l.t("password") }}</label>
+            <div class="relative group input-glow">
+                <span
+                    class="absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant/50 group-focus-within:text-primary transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="16" r="1" />
+                        <rect width="18" height="12" x="3" y="10" rx="2" />
+                        <path d="M7 10V7a5 5 0 0 1 9.33-2.5" />
+                    </svg>
+                </span>
+                <input
+                    class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 pl-12 pr-4 text-foreground placeholder:text-foreground/30 focus:border-primary focus:ring-0 transition-all outline-none"
+                    placeholder="&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;" type="password" name="password"
+                    autocomplete="{% if mode == "register" %}new-password{% else %}current-password{% endif %}"
+                    required />
+            </div>
+        </div>
+        {% if mode == "register" %}
+        <div class="space-y-2">
+            <label class="font-label text-secondary uppercase">{{ ctx.l.t("confirm_password") }}</label>
+            <div class="relative group input-glow">
+                <span
+                    class="absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant/50 group-focus-within:text-primary transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="16" r="1" />
+                        <rect width="18" height="12" x="3" y="10" rx="2" />
+                        <path d="M7 10V7a5 5 0 0 1 9.33-2.5" />
+                    </svg>
+                </span>
+                <input
+                    class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 pl-12 pr-4 text-foreground placeholder:text-foreground/30 focus:border-primary focus:ring-0 transition-all outline-none"
+                    placeholder="&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;" type="password"
+                    name="confirm_password" autocomplete="new-password" required />
+            </div>
+        </div>
+        {% endif %}
+        {% if mode == "register" %}
+        <div class="flex items-center gap-3 py-2">
+            <input class="w-5 h-5 accent-primary" id="terms" type="checkbox" />
+            <label class="font-body-md text-on-surface-variant text-sm cursor-pointer" for="terms">I accept
+                the <a class="text-primary hover:underline" href="#">Protocols of Service</a></label>
+        </div>
+        {% endif %}
+        <div class="cf-turnstile" data-sitekey="{{ ctx.turnstile_sitekey() }}" data-action="{{ mode }}"></div>
+        <button type="submit"
+            class="w-full relative bg-primary hover:bg-primary/90 text-foreground font-headline py-4 rounded-xl shadow-lg transition-all active:scale-[0.98] neon-glow flex items-center justify-center gap-2 group">
+            <span class="htmx-indicator absolute inset-0 flex items-center justify-center gap-2" role="status">
+                <svg class="size-5 animate-spin" xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                    viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                    stroke-linejoin="round">
+                    <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+                </svg>
+                {{ ctx.l.t(self.loading_key()) }}
+            </span>
+            <span class="[.htmx-request_&]:invisible flex items-center justify-center gap-2">
+                <span class="group-hover:-translate-x-1 transition-transform">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="m15.5 7.5 2.3 2.3a1 1 0 0 0 1.4 0l2.1-2.1a1 1 0 0 0 0-1.4L19 4" />
+                        <path d="m21 2-9.6 9.6" />
+                        <circle cx="7.5" cy="15.5" r="5.5" />
+                    </svg>
+                </span>
+                {{ ctx.l.t(self.submit_key()) }}
+            </span>
+        </button>
     </form>
-</section>
+    <div class="mt-8 pt-8 border-t border-secondary/30 flex flex-row gap-2 items-center justify-center">
+        <p class="font-body text-accent">{{ ctx.l.t(self.switch_prompt_key()) }}</p>
+        <a class="inline-block font-headline text-secondary hover:text-accent hover:underline transition-colors underline flex items-center justify-center gap-1 group"
+            href="/{{ self.other_mode() }}">
+            {{ ctx.l.t(self.other_mode()) }}!
+        </a>
+    </div>
+</div>
 {% endblock %}

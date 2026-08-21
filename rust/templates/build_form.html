@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% block title %}{{ ctx.l.t("new_build_page_title") }}{% endblock %}
+{% block robots %}<meta name="robots" content="noindex, nofollow" />{% endblock %}
 {% block content %}
 <section class="page-shell max-w-4xl">
     <h1 class="page-title">{{ ctx.l.t("new_build_page_title") }}</h1>

@@ -36,15 +36,13 @@ pub struct BuildCard {
 }
 
 impl BuildCard {
-    /// "EP 5" or "Special EP 2", as the badge reads.
-    pub fn ep_label(&self) -> String {
-        if self.ep_special > 0 {
-            format!("Special EP {}", self.ep_special)
-        } else if self.ep > 0 {
-            format!("EP {}", self.ep)
-        } else {
-            String::new()
+    /// "EP 5" or "Special EP 2", as the badge reads. Localized, so it takes
+    /// the request context rather than baking English in.
+    pub fn ep_label(&self, ctx: &crate::ctx::Ctx) -> String {
+        if self.ep_special <= 0 && self.ep <= 0 {
+            return String::new();
         }
+        ctx.build_ep_label(self.ep, self.ep_special)
     }
 
     /// The run duration as m:ss, from the stored milliseconds.

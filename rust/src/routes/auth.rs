@@ -21,6 +21,35 @@ struct AuthPage {
     error: String,
 }
 
+impl AuthPage {
+    fn is_register(&self) -> bool {
+        self.mode == "register"
+    }
+
+    /// The .tr keys differ per mode rather than sharing one form string, so
+    /// the template asks for the pair it needs.
+    fn title_key(&self) -> &'static str {
+        if self.is_register() { "register" } else { "login" }
+    }
+
+    fn submit_key(&self) -> &'static str {
+        if self.is_register() { "register_button_text" } else { "login_button_text" }
+    }
+
+    fn loading_key(&self) -> &'static str {
+        if self.is_register() { "register_loading" } else { "login_loading" }
+    }
+
+    /// "Don't have an account?" / "Already have an account?"
+    fn switch_prompt_key(&self) -> &'static str {
+        if self.is_register() { "already_have_account" } else { "dont_have_account" }
+    }
+
+    fn other_mode(&self) -> &'static str {
+        if self.is_register() { "login" } else { "register" }
+    }
+}
+
 #[derive(Debug, Deserialize)]
 pub struct LoginForm {
     pub username: String,
