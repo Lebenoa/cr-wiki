@@ -101,6 +101,60 @@ fn urlencode(s: &str) -> String {
     out
 }
 
+#[derive(Template)]
+#[template(path = "build_preview.html")]
+struct PreviewFragment {
+    ctx: Ctx,
+    picks: Vec<PickedSlot>,
+}
+
+/// One resolved slot in the live preview.
+pub struct PickedSlot {
+    pub section: &'static str,
+    pub name: String,
+    pub image: Option<String>,
+}
+
+/// `/builds/preview` — the planner re-renders the loadout after each pick by
+/// fetching this with the current selection in the query string.
+pub async fn preview(
+    State(state): State<AppState>,
+    ctx: Ctx,
+    q: Query<CommonQuery>,
+) -> Html<String> {
+    let lang = ctx.lang.clone();
+    let wanted: Vec<(&'static str, &'static str, i64)> = vec![
+        ("cookie", "cookies", q.cookie.unwrap_or(0)),
+        ("cookie", "cookies", q.c2.unwrap_or(0)),
+        ("pet", "pets", q.pet.unwrap_or(0)),
+        ("treasure", "treasures", q.t1.unwrap_or(0)),
+        ("treasure", "treasures", q.t2.unwrap_or(0)),
+        ("treasure", "treasures", q.t3.unwrap_or(0)),
+    ];
+    let db = state.db.clone();
+    let picks = tokio::task::spawn_blocking(move || {
+        wanted
+            .into_iter()
+            .filter(|(_, _, id)| *id > 0)
+            .filter_map(|(kind, section, id)| {
+                db::entity_link(&db, &lang, kind, id).map(|(name, image)| PickedSlot {
+                    section,
+                    name,
+                    image,
+                })
+            })
+            .collect::<Vec<_>>()
+    })
+    .await
+    .unwrap_or_default();
+
+    Html(
+        PreviewFragment { ctx, picks }
+            .render()
+            .unwrap_or_else(|e| format!("template error: {e}")),
+    )
+}
+
 pub async fn options_grid(
     State(state): State<AppState>,
     ctx: Ctx,

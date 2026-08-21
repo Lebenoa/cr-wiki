@@ -277,6 +277,44 @@ fn record_from(
     }
 }
 
+#[derive(Debug, Deserialize)]
+pub struct VerifyForm {
+    /// "1" confirms the build works, anything else reports an issue
+    pub verified: Option<String>,
+    pub reason: Option<String>,
+}
+
+/// A signed-in visitor's verdict on someone's build. Anonymous visitors
+/// cannot vote, so there is nothing to rate-limit per identity.
+pub async fn verify(
+    State(state): State<AppState>,
+    ctx: Ctx,
+    Path(id): Path<i64>,
+    Form(form): Form<VerifyForm>,
+) -> Response {
+    let Some(user) = ctx.user.as_ref().map(|u| u.id) else {
+        return (StatusCode::FORBIDDEN, "sign in to verify").into_response();
+    };
+    let lang = ctx.lang.clone();
+    let db = state.db.clone();
+    let exists = tokio::task::spawn_blocking(move || builds::select_build(&db, &lang, id))
+        .await
+        .unwrap_or_else(|_| Ok(None))
+        .unwrap_or(None);
+    if exists.is_none() {
+        return (StatusCode::NOT_FOUND, "not found").into_response();
+    }
+
+    let ok = form.verified.as_deref() == Some("1");
+    let reason = form.reason.clone().unwrap_or_default();
+    let db = state.db.clone();
+    let _ = tokio::task::spawn_blocking(move || {
+        builds::upsert_review(&db, id, user, ok, &reason)
+    })
+    .await;
+    Redirect::to(&format!("/builds/{id}")).into_response()
+}
+
 fn now_unix() -> i64 {
     std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)

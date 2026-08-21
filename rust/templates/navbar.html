@@ -1,0 +1,146 @@
+<nav class="sticky top-0 z-50 flex items-center justify-between gap-6 px-8 py-4 bg-background max-md:px-4">
+    <div class="flex items-center gap-8">
+        <a href="/" class="flex items-center gap-2 font-headline text-2xl text-primary">
+            <img src="/img/logo.png" alt="" class="size-8 rounded" onerror="this.remove()" />
+            COOKIE//ARCHIVE
+        </a>
+        <div class="hidden md:flex gap-8 items-center">
+            <button type="button" id="wiki-trigger" class="{{ ctx.wiki_class() }} flex items-center gap-1"
+                popovertarget="wiki-dropdown">
+                {{ ctx.l.t("wiki") }}
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                    aria-hidden="true">
+                    <path d="M6 9 12 15 18 9" />
+                </svg>
+            </button>
+            <div id="wiki-dropdown" popover
+                class="p-4 m-bs-1 inline-48 bg-background text-foreground rounded border border-accent transition-discrete transition-all duration-300 flex-col gap-2 hidden popover-open:flex">
+                {% for section in ctx.wiki_sections() %}
+                <a href="/{{ section }}" class="{{ ctx.nav_class(section) }}">{{ ctx.l.t(section) }}</a>
+                {% endfor %}
+            </div>
+            <a href="/builds" class="{{ ctx.nav_class("builds") }}">{{ ctx.l.t("builds") }}</a>
+            <a href="/changelog" class="{{ ctx.nav_class("changelog") }}">{{ ctx.l.t("changelog_link") }}</a>
+        </div>
+    </div>
+
+    <div class="flex items-center gap-6 max-md:gap-3">
+        <form action="/search" method="get" class="relative hidden md:block">
+            <input type="search" name="q" class="filter-input w-72"
+                placeholder="{{ ctx.l.t("navbar_search_placeholder") }}" />
+        </form>
+
+        <button type="button" class="btn-primary size-12 md:hidden" popovertarget="mobile-nav"
+            aria-label="{{ ctx.l.t("wiki") }}">&#9776;</button>
+        <div id="mobile-nav" popover
+            class="p-4 m-bs-1 inline-64 bg-background text-foreground rounded border border-accent transition-discrete transition-all duration-300 flex-col gap-2 hidden popover-open:flex">
+            {% for section in ctx.wiki_sections() %}
+            <a href="/{{ section }}" class="{{ ctx.nav_class(section) }}">{{ ctx.l.t(section) }}</a>
+            {% endfor %}
+            <a href="/builds" class="{{ ctx.nav_class("builds") }}">{{ ctx.l.t("builds") }}</a>
+            <a href="/changelog" class="{{ ctx.nav_class("changelog") }}">{{ ctx.l.t("changelog_link") }}</a>
+        </div>
+
+        <button class="btn-primary size-12" popovertarget="account-dropdown"
+            aria-label="{{ ctx.l.t("login") }}">&#128100;</button>
+        <div id="account-dropdown" popover
+            class="p-4 m-bs-1 inline-64 bg-background text-foreground rounded border border-accent transition-discrete transition-all duration-300 flex-col gap-2 hidden popover-open:flex">
+            {% if ctx.signed_in() %}
+            <p class="btn">{{ ctx.username() }}</p>
+            <a href="/logout" class="btn-secondary">{{ ctx.l.t("logout") }}</a>
+            {% else %}
+            <div class="flex flex-col gap-2">
+                <a href="/login" class="btn-primary">{{ ctx.l.t("login") }}</a>
+                <a href="/register" class="btn-secondary">{{ ctx.l.t("register") }}</a>
+            </div>
+            {% endif %}
+
+            <button class="btn hover:bg-secondary/20" popovertarget="language-dropdown">
+                {{ ctx.l.t("language") }}:
+                <span class="font-bold uppercase ml-2">{{ ctx.lang }}</span>
+            </button>
+
+            <button id="theme-trigger" type="button" class="btn hover:bg-secondary/20">
+                {{ ctx.l.t("theme_label") }}:
+                <span class="theme-swatch size-5 shrink-0 rounded-full border border-white/20 ml-2"
+                    data-theme="default"></span>
+            </button>
+            <div id="theme-popover" popover
+                class="p-4 m-0 w-56 bg-background text-foreground rounded border border-accent transition-discrete transition-all duration-300 flex-col gap-2 hidden popover-open:flex">
+                <div class="text-xs font-label uppercase text-foreground-muted px-1">{{ ctx.l.t("theme_label") }}</div>
+                <div class="grid grid-cols-2 gap-2">
+                    {% for theme in ctx.themes() %}
+                    <button type="button" data-theme="{{ theme }}"
+                        class="theme-option flex items-center gap-2 rounded-xl border border-secondary/50 px-2 py-1.5 text-sm text-foreground hover:border-primary transition-colors">
+                        <span class="theme-swatch size-5 shrink-0 rounded-full border border-white/20"
+                            data-theme="{{ theme }}"></span>
+                        <span class="truncate">{{ ctx.l.t(ctx.theme_key(theme).as_str()) }}</span>
+                        <span class="theme-check hidden ml-auto text-primary font-bold">&#10003;</span>
+                    </button>
+                    {% endfor %}
+                </div>
+                <button type="button" data-theme="custom"
+                    class="theme-option flex items-center gap-2 rounded-xl border border-secondary/50 px-2 py-1.5 text-sm text-foreground hover:border-primary transition-colors">
+                    <span class="theme-swatch size-5 shrink-0 rounded-full border border-white/20"
+                        data-theme="custom"></span>
+                    <span class="truncate">{{ ctx.l.t("theme_custom") }}</span>
+                    <span class="theme-check hidden ml-auto text-primary font-bold">&#10003;</span>
+                </button>
+                <button type="button" data-theme-edit class="btn-secondary w-full text-sm">
+                    {{ ctx.l.t("theme_customize") }}
+                </button>
+            </div>
+        </div>
+
+        <dialog id="language-dropdown"
+            class="hidden open:flex flex-col gap-3 m-auto p-6 rounded-xl border border-accent/30 bg-surface text-foreground shadow-2xl backdrop:bg-black backdrop:opacity-40">
+            <h2 class="font-headline text-accent text-xl">{{ ctx.l.t("language") }}</h2>
+            {% for alt in ctx.langs() %}
+            <a href="{{ ctx.lang_url(alt) }}" class="btn-secondary uppercase">{{ alt }}</a>
+            {% endfor %}
+            <button type="button" onclick="this.closest('dialog').close()" class="btn-primary">
+                {{ ctx.l.t("theme_done") }}
+            </button>
+        </dialog>
+
+        <dialog id="theme-editor"
+            class="hidden open:flex flex-col gap-4 m-auto p-6 w-[min(92vw,34rem)] max-h-[85vh] overflow-y-auto rounded-xl border border-accent/30 bg-surface text-foreground shadow-2xl backdrop:bg-black backdrop:opacity-40">
+            <div class="flex items-center justify-between gap-4">
+                <h2 class="font-headline text-accent text-xl">{{ ctx.l.t("theme_customize") }}</h2>
+                <button type="button" onclick="this.closest('dialog').close()" class="btn-secondary size-8">&#10005;</button>
+            </div>
+            <label class="flex items-center justify-between gap-3 text-sm">
+                <span class="font-label uppercase text-foreground-muted">{{ ctx.l.t("theme_base") }}</span>
+                <select data-theme-base class="bg-surface border-2 border-primary/30 rounded-xl py-2 px-3 text-foreground">
+                    {% for theme in ctx.themes() %}
+                    <option value="{{ theme }}">{{ ctx.l.t(ctx.theme_key(theme).as_str()) }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+            <p class="text-xs text-foreground-muted">{{ ctx.l.t("theme_customize_hint") }}</p>
+            <div class="flex flex-col gap-2">
+                {% for token in ctx.theme_tokens() %}
+                <div data-token-row="{{ token }}"
+                    class="flex items-center gap-3 rounded-xl border border-secondary/40 px-3 py-2">
+                    <input type="color" aria-label="{{ ctx.l.t(ctx.theme_token_key(token).as_str()) }}"
+                        class="size-8 shrink-0 cursor-pointer rounded border-0 bg-transparent p-0" />
+                    <span class="text-sm truncate">{{ ctx.l.t(ctx.theme_token_key(token).as_str()) }}</span>
+                    <button type="button" data-token-reset title="{{ ctx.l.t("theme_token_reset") }}"
+                        class="invisible ml-auto text-xs font-label uppercase text-foreground-muted hover:text-accent">
+                        {{ ctx.l.t("theme_token_reset") }}
+                    </button>
+                </div>
+                {% endfor %}
+            </div>
+            <div class="flex items-center justify-between gap-3">
+                <button type="button" data-theme-reset-all class="btn-secondary text-sm">
+                    {{ ctx.l.t("theme_reset_all") }}
+                </button>
+                <button type="button" onclick="this.closest('dialog').close()" class="btn-primary text-sm">
+                    {{ ctx.l.t("theme_done") }}
+                </button>
+            </div>
+        </dialog>
+    </div>
+</nav>

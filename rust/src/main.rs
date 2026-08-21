@@ -62,13 +62,16 @@ async fn main() {
     let app = Router::new()
         .route("/", get(routes::misc::index))
         .route("/search", get(routes::misc::search))
+        .route("/gacha", get(routes::misc::gacha))
         .route("/sitemap.xml", get(routes::misc::sitemap))
         .route("/robots.txt", get(routes::misc::robots))
         .route("/changelog", get(routes::changelog::page))
         .route("/builds", get(routes::builds::list))
         .route("/builds/options/{kind}", get(routes::picker::options_grid))
+        .route("/builds/preview", get(routes::picker::preview))
         .route("/builds/new", get(routes::planner::new_form).post(routes::planner::create))
         .route("/builds/{id}/delete", post(routes::planner::delete))
+        .route("/builds/{id}/verify", post(routes::planner::verify))
         .route(
             "/builds/{id}/edit",
             get(routes::planner::edit_form).post(routes::planner::update),

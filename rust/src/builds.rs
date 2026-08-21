@@ -400,3 +400,51 @@ pub fn update_build(db: &Db, id: i64, b: &NewBuild) -> rusqlite::Result<()> {
     )?;
     Ok(())
 }
+
+/// The verify tallies on a build: how many people confirmed it works and how
+/// many reported an issue.
+pub fn review_counts(db: &Db, build_id: i64) -> rusqlite::Result<(i64, i64)> {
+    let c = db
+        .get()
+        .map_err(|e| rusqlite::Error::InvalidParameterName(format!("pool: {e}")))?;
+    let mut stmt = c.prepare(
+        "SELECT SUM(verified = 1) AS ok, SUM(verified = 0) AS bad
+           FROM build_review WHERE build_id = ?1",
+    )?;
+    let mut rows = stmt.query(params![build_id])?;
+    let Some(row) = rows.next()? else {
+        return Ok((0, 0));
+    };
+    Ok((
+        row.get::<_, Option<i64>>("ok")?.unwrap_or(0),
+        row.get::<_, Option<i64>>("bad")?.unwrap_or(0),
+    ))
+}
+
+/// One person's verdict, replacing any earlier one from the same user — the
+/// unique key makes this an upsert rather than a second vote.
+pub fn upsert_review(
+    db: &Db,
+    build_id: i64,
+    user_id: i64,
+    verified: bool,
+    reason: &str,
+) -> rusqlite::Result<()> {
+    let c = db
+        .get()
+        .map_err(|e| rusqlite::Error::InvalidParameterName(format!("pool: {e}")))?;
+    let now = now_unix();
+    let changed = c.execute(
+        "UPDATE build_review SET verified = ?1, reason = ?2, updated_at = ?3
+          WHERE build_id = ?4 AND user_id = ?5",
+        params![verified as i64, reason, now, build_id, user_id],
+    )?;
+    if changed == 0 {
+        c.execute(
+            "INSERT INTO build_review (build_id, user_id, verified, reason, created_at, updated_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?5)",
+            params![build_id, user_id, verified as i64, reason, now],
+        )?;
+    }
+    Ok(())
+}

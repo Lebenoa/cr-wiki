@@ -544,3 +544,95 @@ pub fn combi_partner_ids(db: &Db, kind: &str, id: i64) -> rusqlite::Result<Vec<i
     let rows = stmt.query_map(params![id], |r| r.get::<_, i64>(0))?;
     rows.collect()
 }
+
+/// One draw pool with its disclosed odds, as the gacha page lists them.
+#[derive(Debug, Clone)]
+pub struct GachaPool {
+    pub id: i64,
+    pub name: String,
+    pub tier: String,
+    pub entries: Vec<GachaEntry>,
+}
+
+#[derive(Debug, Clone)]
+pub struct GachaEntry {
+    pub section: &'static str,
+    pub id: i64,
+    pub name: String,
+    pub image: Option<String>,
+    pub grade: Option<i64>,
+    pub odds: f64,
+}
+
+impl GachaEntry {
+    pub fn grade_slug(&self) -> String {
+        self.grade.map(grade::slug).unwrap_or("").to_string()
+    }
+    pub fn has_grade(&self) -> bool {
+        self.grade.is_some()
+    }
+    /// The odds as the page prints them, two decimals like the source table.
+    pub fn odds_label(&self) -> String {
+        format!("{:.2}%", self.odds)
+    }
+}
+
+/// Every pool with its entries in the catalog's own order. The prize name is
+/// resolved through the same locale fallback as everywhere else.
+pub fn select_gacha(db: &Db, lang: &str) -> rusqlite::Result<Vec<GachaPool>> {
+    let c = conn(db)?;
+    let mut pools: Vec<GachaPool> = {
+        let mut stmt = c.prepare("SELECT pool_id, name, tier FROM gacha_pool ORDER BY pool_id")?;
+        let rows = stmt.query_map([], |r| {
+            Ok(GachaPool {
+                id: r.get("pool_id")?,
+                name: r.get::<_, Option<String>>("name")?.unwrap_or_default(),
+                tier: r.get::<_, Option<String>>("tier")?.unwrap_or_default(),
+                entries: Vec::new(),
+            })
+        })?;
+        rows.collect::<rusqlite::Result<_>>()?
+    };
+
+    let mut stmt = c.prepare(
+        "SELECT g.pool_id AS pool_id, g.odds AS odds, g.grade AS grade,
+                g.treasure_id AS treasure_id, g.pet_id AS pet_id,
+                COALESCE(tt.name, te.name, pt.name, pe.name, '') AS name,
+                COALESCE(t.image, p.image) AS image
+           FROM gacha_pool_entry g
+           LEFT JOIN treasure t ON t.treasure_id = g.treasure_id
+           LEFT JOIN treasure_translation tt ON tt.treasure_id = g.treasure_id AND tt.lang = ?1
+           LEFT JOIN treasure_translation te ON te.treasure_id = g.treasure_id AND te.lang = 'en'
+           LEFT JOIN pet p ON p.pet_id = g.pet_id
+           LEFT JOIN pet_translation pt ON pt.pet_id = g.pet_id AND pt.lang = ?1
+           LEFT JOIN pet_translation pe ON pe.pet_id = g.pet_id AND pe.lang = 'en'
+          ORDER BY g.sort_order",
+    )?;
+    let rows = stmt.query_map(params![lang], |r| {
+        let treasure_id: Option<i64> = r.get("treasure_id")?;
+        let pet_id: Option<i64> = r.get("pet_id")?;
+        let (section, id) = match (treasure_id, pet_id) {
+            (Some(t), _) => ("treasures", t),
+            (_, Some(p)) => ("pets", p),
+            _ => ("treasures", 0),
+        };
+        Ok((
+            r.get::<_, i64>("pool_id")?,
+            GachaEntry {
+                section,
+                id,
+                name: r.get("name")?,
+                image: r.get("image")?,
+                grade: r.get("grade")?,
+                odds: r.get("odds")?,
+            },
+        ))
+    })?;
+    for row in rows {
+        let (pool_id, entry) = row?;
+        if let Some(pool) = pools.iter_mut().find(|p| p.id == pool_id) {
+            pool.entries.push(entry);
+        }
+    }
+    Ok(pools)
+}

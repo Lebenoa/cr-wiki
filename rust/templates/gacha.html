@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}{{ ctx.l.t("gacha_page_title") }}{% endblock %}
+{% block content %}
+<section class="page-shell">
+    <h1 class="page-title">{{ ctx.l.t("gacha_page_header") }}</h1>
+    <div class="filter-bar">
+        <input id="filter-name" type="text" placeholder="{{ ctx.l.t("navbar_search_placeholder") }}"
+            class="filter-input" />
+    </div>
+    {% for pool in pools %}
+    <section class="mt-8">
+        <h2 class="section-title">{{ pool.name }} <span class="card-meta">{{ pool.tier }}</span></h2>
+        <div class="catalog-grid">
+            {% for e in pool.entries %}
+            <a href="/{{ e.section }}/{{ e.id }}" data-cr-card data-name="{{ e.name }}" class="entity-card">
+                {% if e.has_grade() %}
+                <img src="/img/grades/{{ e.grade_slug() }}.png" alt="" class="size-8 self-start" />
+                {% endif %}
+                {% match e.image %}{% when Some with (img) %}
+                <img src="/img/{{ e.section }}/{{ img }}" alt="{{ e.name }}" class="h-20 w-full object-contain" />
+                {% when None %}{% endmatch %}
+                <span class="card-title">{{ e.name }}</span>
+                <span class="pill-accent">{{ e.odds_label() }}</span>
+            </a>
+            {% endfor %}
+        </div>
+    </section>
+    {% endfor %}
+</section>
+{% endblock %}

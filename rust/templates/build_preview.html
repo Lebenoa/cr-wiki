@@ -1,0 +1,14 @@
+{% if picks.is_empty() %}
+<p class="text-center text-foreground-muted py-6">{{ ctx.l.t("build_empty_hint") }}</p>
+{% else %}
+<div class="flex flex-wrap items-center justify-center gap-4">
+    {% for p in picks %}
+    <span class="flex flex-col items-center gap-1">
+        {% match p.image %}{% when Some with (img) %}
+        <img src="/img/{{ p.section }}/{{ img }}" alt="{{ p.name }}" class="size-16 object-contain" />
+        {% when None %}{% endmatch %}
+        <span class="card-title-sm">{{ p.name }}</span>
+    </span>
+    {% endfor %}
+</div>
+{% endif %}

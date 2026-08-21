@@ -93,6 +93,79 @@ impl Ctx {
         }
     }
 
+    /// The sections behind the Wiki dropdown, in navbar order.
+    pub fn wiki_sections(&self) -> Vec<&'static str> {
+        vec![
+            "cookies",
+            "pets",
+            "treasures",
+            "episodes",
+            "ingredients",
+            "jellies",
+            "skins",
+            "gacha",
+        ]
+    }
+
+    /// True when the current page sits under any wiki section, so the
+    /// dropdown trigger can carry the active styling its entries would.
+    pub fn wiki_active(&self) -> bool {
+        self.wiki_sections().iter().any(|s| self.nav_section_active(s))
+    }
+
+    pub fn wiki_class(&self) -> &'static str {
+        if self.wiki_active() {
+            "font-semibold text-center text-primary border-b-2 border-primary pb-1 transition-all duration-1000"
+        } else {
+            "font-medium text-center text-foreground-muted hover:text-primary transition-all duration-1000"
+        }
+    }
+
+    /// The theme names the picker offers. The palettes live in the UnoCSS
+    /// preflight; the dropdown only toggles the data-theme attribute.
+    pub fn themes(&self) -> Vec<&'static str> {
+        vec![
+            "default",
+            "light",
+            "tokyo_night",
+            "cappuccino",
+            "dracula",
+            "nord",
+            "gruvbox",
+            "rose_pine",
+        ]
+    }
+
+    /// The palette tokens the custom-theme editor may override. The --on-*
+    /// contrast partners are derived from the chosen colour rather than
+    /// exposed, so a theme cannot end up with unreadable text on a button.
+    pub fn theme_tokens(&self) -> Vec<&'static str> {
+        vec![
+            "background",
+            "surface",
+            "border",
+            "primary",
+            "secondary",
+            "accent",
+            "muted",
+            "foreground",
+            "foreground-muted",
+            "success",
+            "warning",
+            "error",
+        ]
+    }
+
+    /// theme_token_* keys use an underscore, since a hyphen is not valid in
+    /// a translation key.
+    pub fn theme_token_key(&self, token: &str) -> String {
+        format!("theme_token_{}", token.replace('-', "_"))
+    }
+
+    pub fn theme_key(&self, name: &str) -> String {
+        format!("theme_{name}")
+    }
+
     /// A combo pairs a cookie with a pet, so the partner of one is the other.
     pub fn combi_partner_section(&self, section: &str) -> &'static str {
         if section == "cookies" { "pets" } else { "cookies" }

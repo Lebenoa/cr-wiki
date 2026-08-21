@@ -48,18 +48,19 @@ Two deliberate differences from the V original:
 - the build list and one build's detail page: the filters, the four sorts with the id tie-break, the expiry rule, and the loadout slots
 - `app/options_cache.v` -> `src/options.rs` — the picker lists per language, built in three queries rather than one per treasure, dropped on a catalog write
 - `/builds/options/:kind` -> `src/routes/picker.rs` — paginated grid, whitespace-split search where every term must match somewhere, the treasure tabs, the slot's own pick pinned first and the combo partners floated above the rest
+- the navbar in full: the wiki dropdown, the theme popover and its custom-theme editor, the language dialog, the mobile sheet and the account menu — the same markup theme.js and theme_editor.js already drive
+- `/gacha` with the disclosed pool odds, and `/builds/preview` and `/builds/:id/verify`
 - the planner write side: `/builds/new`, `/builds/:id/edit` and `/builds/:id/delete`, with the author/owner/expiry left alone on an edit and a 404 rather than a 403 for someone else's build
 
 ## Not ported yet
 
 Roughly in dependency order — the earlier ones unblock the rest.
 
-1. **`/builds/preview`** and `/builds/:id/verify` — the live loadout preview and the community verify/issue flow
-2. **The remaining `database/select.v`**: treasure unlock chains, evolution bases, effect-state diffing, the combi editor rows (~2.6k lines): pets, treasures, effects, combi bonuses, builds, search (FTS5 + LIKE fallback), catalog queries
-5. **Admin forms** (`app/forms.v`, ~650 lines) and image upload
-6. **Auth**: login, register, Turnstile
-7. **Gacha and relic detail pages**, which have shapes of their own
-8. **The navbar** in full: the wiki dropdown, the theme popover and its editor, the language dialog, mobile — the port has a plain two-link bar
+1. **The remaining `database/select.v`**: treasure unlock chains, evolution bases, effect-state diffing, the combi editor rows (~2.6k lines): pets, treasures, effects, combi bonuses, builds, search (FTS5 + LIKE fallback), catalog queries
+2. **Admin forms** (`app/forms.v`, ~650 lines) and image upload
+3. **Turnstile** on the login, register and build-submit forms
+4. **The relic detail page**, which has a shape of its own
+5. **The remaining API endpoints**: `/api/available-langs`, `/api/richtext-names`, `/api/set-lang`
 
 The JS in `static/js/` is unaffected: it is served as-is and already talks to
 these routes.

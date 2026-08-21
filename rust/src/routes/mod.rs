@@ -28,4 +28,9 @@ pub struct CommonQuery {
     pub sel: Option<i64>,
     /// the other half of the combo pair, whose partners float to the top
     pub partner: Option<i64>,
+    /// the planner's live preview posts the whole selection
+    pub c2: Option<i64>,
+    pub t1: Option<i64>,
+    pub t2: Option<i64>,
+    pub t3: Option<i64>,
 }

@@ -44,6 +44,8 @@ struct BuildCards {
 struct BuildDetail {
     ctx: Ctx,
     build: BuildCard,
+    verified: i64,
+    issues: i64,
 }
 
 /// The EP combobox value: "1".."7" for a regular tier, "s1".."s3" for a
@@ -135,8 +137,13 @@ pub async fn show(
     let Some(build) = found else {
         return (StatusCode::NOT_FOUND, "not found").into_response();
     };
+    let db = state.db.clone();
+    let (verified, issues) = tokio::task::spawn_blocking(move || builds::review_counts(&db, id))
+        .await
+        .unwrap_or_else(|_| Ok((0, 0)))
+        .unwrap_or((0, 0));
     Html(
-        BuildDetail { ctx, build }
+        BuildDetail { ctx, build, verified, issues }
             .render()
             .unwrap_or_else(|e| format!("template error: {e}")),
     )

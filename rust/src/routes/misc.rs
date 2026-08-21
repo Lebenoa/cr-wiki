@@ -5,7 +5,7 @@ use axum::extract::{Query, State};
 use axum::response::Html;
 
 use crate::ctx::Ctx;
-use crate::db::{self, Card};
+use crate::db::{self, Card, GachaPool};
 use crate::i18n;
 use crate::state::AppState;
 
@@ -44,6 +44,28 @@ pub async fn search(
         .unwrap_or_default();
     Html(
         SearchPage { ctx, q: query, hits }
+            .render()
+            .unwrap_or_else(|e| format!("template error: {e}")),
+    )
+}
+
+#[derive(Template)]
+#[template(path = "gacha.html")]
+struct GachaPage {
+    ctx: Ctx,
+    pools: Vec<GachaPool>,
+}
+
+/// The disclosed draw pools with their odds.
+pub async fn gacha(State(state): State<AppState>, ctx: Ctx) -> Html<String> {
+    let lang = ctx.lang.clone();
+    let db = state.db.clone();
+    let pools = tokio::task::spawn_blocking(move || db::select_gacha(&db, &lang))
+        .await
+        .unwrap_or_else(|_| Ok(Vec::new()))
+        .unwrap_or_default();
+    Html(
+        GachaPage { ctx, pools }
             .render()
             .unwrap_or_else(|e| format!("template error: {e}")),
     )
