@@ -10,8 +10,11 @@
     {% match item %}{% when Some with (it) %}
     <form method="post" action="/{{ section }}/{{ it.id }}/edit" class="flex flex-col gap-4 mt-6">
         <input type="text" name="name" value="{{ it.name }}" class="filter-input w-full" required />
-        <input type="text" name="image" value="{{ it.image.as_deref().unwrap_or("") }}" class="filter-input w-full"
-            placeholder="image.png" />
+        <div class="flex items-center gap-3">
+            <input type="text" name="image" value="{{ it.image.as_deref().unwrap_or("") }}"
+                class="filter-input w-full" placeholder="image.png" />
+            <input type="file" accept="image/*" data-upload="/{{ section }}/upload" class="text-xs" />
+        </div>
         <textarea name="abilities" rows="2" class="filter-input w-full">{{ it.abilities }}</textarea>
         <textarea name="description" rows="4" class="filter-input w-full">{{ it.description }}</textarea>
         {% if section == "cookies" %}
@@ -25,7 +28,10 @@
     <form method="post" action="/{{ section }}/new" class="flex flex-col gap-4 mt-6">
         <input type="text" name="name" class="filter-input w-full" placeholder="{{ ctx.l.t("admin_name_label") }}"
             required />
-        <input type="text" name="image" class="filter-input w-full" placeholder="image.png" />
+        <div class="flex items-center gap-3">
+            <input type="text" name="image" class="filter-input w-full" placeholder="image.png" />
+            <input type="file" accept="image/*" data-upload="/{{ section }}/upload" class="text-xs" />
+        </div>
         <textarea name="abilities" rows="2" class="filter-input w-full"></textarea>
         <textarea name="description" rows="4" class="filter-input w-full"></textarea>
         {% if section == "cookies" %}
@@ -37,4 +43,5 @@
     </form>
     {% endmatch %}
 </section>
+<script src="/js/admin_upload.js" defer></script>
 {% endblock %}

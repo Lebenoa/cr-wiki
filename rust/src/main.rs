@@ -20,6 +20,7 @@ mod routes;
 mod session;
 mod state;
 mod turnstile;
+mod upload;
 
 use std::net::SocketAddr;
 use std::sync::Arc;
@@ -91,6 +92,7 @@ async fn main() {
             "/{section}/new",
             get(routes::admin::new_form).post(routes::admin::create),
         )
+        .route("/{section}/upload", post(routes::uploads::image))
         .route(
             "/{section}/{id}/edit",
             get(routes::admin::edit_form).post(routes::admin::update),
@@ -537,6 +539,54 @@ mod tests {
         assert!(first.entries.iter().all(|e| e.odds > 0.0));
         assert!(first.entries.iter().all(|e| !e.name.is_empty()));
         assert!(first.entries[0].odds_label().ends_with('%'));
+    }
+
+    /// Upload names are sanitised: no separator, traversal segment or
+    /// control character survives, and the extension comes from the declared
+    /// content type rather than the submitted filename.
+    #[test]
+    fn upload_names_are_safe() {
+        assert_eq!(upload::safe_stem("Cloud Boots.png"), "cloud_boots");
+        assert_eq!(upload::safe_stem("../../etc/passwd"), "passwd");
+        assert_eq!(upload::safe_stem("a/b/c.png"), "c");
+        assert_eq!(upload::safe_stem("....."), "image");
+        assert_eq!(upload::safe_stem(""), "image");
+        assert!(!upload::safe_stem("sprite.png.html").contains('.'));
+        assert!(upload::safe_stem("x".repeat(200).as_str()).len() <= 60);
+
+        assert_eq!(upload::extension_for("image/png"), Some("png"));
+        assert_eq!(upload::extension_for("image/jpeg"), Some("jpg"));
+        // markup and scripts are not images, whatever the filename says
+        assert_eq!(upload::extension_for("text/html"), None);
+        assert_eq!(upload::extension_for("application/octet-stream"), None);
+
+        assert!(upload::section_dir("cookies").is_some());
+        assert!(upload::section_dir("../secrets").is_none());
+        assert!(upload::section_dir("builds").is_none());
+    }
+
+    /// A treasure's unlock chain resolves to the entity that grants it.
+    #[test]
+    fn treasure_links_resolve() {
+        let pool = db::open("../sqlite.db").expect("open db");
+        // treasure 255 is unlocked by the surviving Sotdae Flock pet
+        let links = db::treasure_links(&pool, "en", 255).expect("links");
+        assert!(links.has_unlock());
+        assert_eq!(links.unlock_section, "pets");
+        assert_eq!(links.unlock_id, 102);
+        assert!(!links.unlock_name.is_empty());
+
+        // relics and skins have detail rows now. Their ids are not 1-based —
+        // relics start at 500001 and skins at 1800001 — so the test takes an
+        // id from the list rather than assuming one.
+        for section in ["relics", "skins"] {
+            let list = db::select_simple(&pool, "en", section).unwrap();
+            let first = list.first().expect("a row");
+            let detail = db::select_detail(&pool, "en", section, first.id)
+                .unwrap()
+                .unwrap_or_else(|| panic!("{section} {} has no detail", first.id));
+            assert!(!detail.name.is_empty());
+        }
     }
 
     /// The sitemap covers every detail id the six sections hold.

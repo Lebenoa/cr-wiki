@@ -101,6 +101,15 @@
     </form>
 </section>
 
+{% let kind = "cookie" %}{% let title_key = "build_pick_cookie" %}{% let steps = true %}
+{% include "picker_dialog.html" %}
+{% let kind = "pet" %}{% let title_key = "build_pick_pet" %}
+{% include "picker_dialog.html" %}
+{% let kind = "treasure" %}{% let title_key = "build_pick_treasure" %}
+{% include "picker_dialog.html" %}
+
+<div id="build-preview" class="mt-6"></div>
+
 <script src="/js/level_slider.js"></script>
 <script src="/js/picker.js"></script>
 {% endblock %}

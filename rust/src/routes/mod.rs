@@ -8,6 +8,7 @@ pub mod detail;
 pub mod misc;
 pub mod picker;
 pub mod planner;
+pub mod uploads;
 
 use serde::Deserialize;
 

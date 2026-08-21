@@ -53,6 +53,33 @@
     </ul>
     {% endif %}
 
+    {% if links.has_unlock() || links.has_base() %}
+    <h2 class="section-title mt-8">{{ ctx.l.t("unlock_label") }}</h2>
+    <ul class="flex flex-col gap-2">
+        {% if links.has_unlock() %}
+        <li>
+            <a href="/{{ links.unlock_section }}/{{ links.unlock_id }}"
+                class="flex items-center gap-2 font-bold hover:text-primary">
+                {% match links.unlock_image %}{% when Some with (img) %}
+                <img src="/img/{{ links.unlock_section }}/{{ img }}" alt="" class="size-8 object-contain" />
+                {% when None %}{% endmatch %}
+                {{ links.unlock_name }}
+            </a>
+        </li>
+        {% endif %}
+        {% if links.has_base() %}
+        <li>
+            <a href="/treasures/{{ links.base_id }}" class="flex items-center gap-2 font-bold hover:text-primary">
+                {% match links.base_image %}{% when Some with (img) %}
+                <img src="/img/treasures/{{ img }}" alt="" class="size-8 object-contain" />
+                {% when None %}{% endmatch %}
+                {{ links.base_name }}
+            </a>
+        </li>
+        {% endif %}
+    </ul>
+    {% endif %}
+
     {% if !combi.is_empty() %}
     <h2 class="section-title mt-8">{{ ctx.l.t("combo_bonus_title") }}</h2>
     <ul class="flex flex-col gap-2">

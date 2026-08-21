@@ -243,6 +243,8 @@ pub fn select_detail(db: &Db, lang: &str, kind: &str, id: i64) -> rusqlite::Resu
         "episodes" => ("episode", "episode_id", "episode_id", "episode_translation", "", plain),
         "ingredients" => ("ingredient", "ingredient_id", "ingredient_id", "ingredient_translation", ", e.grade AS grade", plain),
         "jellies" => ("jelly", "jelly_id", "jelly_id", "jelly_translation", "", plain),
+        "relics" => ("relic", "relic_id", "relic_id", "relic_translation", "", plain),
+        "skins" => ("skin", "skin_id", "skin_id", "skin_translation", ", e.grade AS grade", plain),
         _ => return Ok(None),
     };
     let graded = !extra.is_empty();
@@ -814,4 +816,68 @@ fn write_translation(
         }
     }
     Ok(())
+}
+
+/// What a treasure is tied to: the cookie or pet that unlocks it at max
+/// level, and the base it evolved from. Empty for a treasure with neither.
+#[derive(Debug, Clone, Default)]
+pub struct TreasureLinks {
+    pub unlock_section: &'static str,
+    pub unlock_id: i64,
+    pub unlock_name: String,
+    pub unlock_image: Option<String>,
+    pub base_id: i64,
+    pub base_name: String,
+    pub base_image: Option<String>,
+}
+
+impl TreasureLinks {
+    pub fn has_unlock(&self) -> bool {
+        self.unlock_id > 0 && !self.unlock_name.is_empty()
+    }
+    pub fn has_base(&self) -> bool {
+        self.base_id > 0 && !self.base_name.is_empty()
+    }
+}
+
+pub fn treasure_links(db: &Db, lang: &str, id: i64) -> rusqlite::Result<TreasureLinks> {
+    let c = conn(db)?;
+    let mut stmt = c.prepare(
+        "SELECT unlock_cookie_id, unlock_pet_id, base_treasure_id FROM treasure WHERE treasure_id = ?1",
+    )?;
+    let mut rows = stmt.query(params![id])?;
+    let Some(row) = rows.next()? else {
+        return Ok(TreasureLinks::default());
+    };
+    let unlock_cookie: Option<i64> = row.get(0)?;
+    let unlock_pet: Option<i64> = row.get(1)?;
+    let base: Option<i64> = row.get(2)?;
+    drop(rows);
+    drop(stmt);
+    drop(c);
+
+    let mut out = TreasureLinks::default();
+    if let Some(cid) = unlock_cookie.filter(|v| *v > 0) {
+        if let Some((name, image)) = entity_link(db, lang, "cookie", cid) {
+            out.unlock_section = "cookies";
+            out.unlock_id = cid;
+            out.unlock_name = name;
+            out.unlock_image = image;
+        }
+    } else if let Some(pid) = unlock_pet.filter(|v| *v > 0) {
+        if let Some((name, image)) = entity_link(db, lang, "pet", pid) {
+            out.unlock_section = "pets";
+            out.unlock_id = pid;
+            out.unlock_name = name;
+            out.unlock_image = image;
+        }
+    }
+    if let Some(bid) = base.filter(|v| *v > 0) {
+        if let Some((name, image)) = entity_link(db, lang, "treasure", bid) {
+            out.base_id = bid;
+            out.base_name = name;
+            out.base_image = image;
+        }
+    }
+    Ok(out)
 }

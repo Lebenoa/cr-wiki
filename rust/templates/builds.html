@@ -7,9 +7,21 @@
     </div>
     <form hx-get="/builds" hx-trigger="change" hx-target="#build-list" hx-push-url="true"
         class="mt-8 flex flex-wrap items-end gap-4">
-        <input type="hidden" name="cookie" value="{{ filter_cookie }}" />
-        <input type="hidden" name="pet" value="{{ filter_pet }}" />
-        <input type="hidden" name="treasure" value="{{ filter_treasure }}" />
+        <input type="hidden" name="cookie" id="sel-cookie" value="{{ filter_cookie }}" />
+        <input type="hidden" name="pet" id="sel-pet" value="{{ filter_pet }}" />
+        <input type="hidden" name="treasure" id="sel-treasure" value="{{ filter_treasure }}" />
+        <button type="button" id="slot-cookie" onclick="openCookie('cookie')"
+            class="p-4 rounded-xl flex flex-col items-center gap-1 min-h-20 border-2 border-dotted border-primary/30 bg-surface/50 hover:bg-surface transition-colors">
+            <span class="my-auto text-xs font-label text-foreground-muted uppercase">{{ ctx.l.t("build_cookie_label") }}</span>
+        </button>
+        <button type="button" id="slot-pet" onclick="openPicker('pet')"
+            class="p-4 rounded-xl flex flex-col items-center gap-1 min-h-20 border-2 border-dotted border-primary/30 bg-surface/50 hover:bg-surface transition-colors">
+            <span class="my-auto text-xs font-label text-foreground-muted uppercase">{{ ctx.l.t("build_pet_label") }}</span>
+        </button>
+        <button type="button" id="slot-treasure" onclick="openTreasure('treasure')"
+            class="p-4 rounded-xl flex flex-col items-center gap-1 min-h-20 border-2 border-dotted border-primary/30 bg-surface/50 hover:bg-surface transition-colors">
+            <span class="my-auto text-xs font-label text-foreground-muted uppercase">{{ ctx.l.t("build_treasure_label") }}</span>
+        </button>
         <label class="flex flex-col gap-1 text-xs font-label uppercase text-foreground-muted">
             {{ ctx.l.t("build_sort_label") }}
             <select name="sort" class="filter-input">
@@ -24,4 +36,14 @@
         {% include "build_cards.html" %}
     </div>
 </section>
+
+{% let kind = "cookie" %}{% let title_key = "build_pick_cookie" %}{% let steps = false %}
+{% include "picker_dialog.html" %}
+{% let kind = "pet" %}{% let title_key = "build_pick_pet" %}
+{% include "picker_dialog.html" %}
+{% let kind = "treasure" %}{% let title_key = "build_pick_treasure" %}
+{% include "picker_dialog.html" %}
+
+<script src="/js/level_slider.js"></script>
+<script src="/js/picker.js"></script>
 {% endblock %}

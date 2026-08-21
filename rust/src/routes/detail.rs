@@ -8,7 +8,7 @@ use axum::http::StatusCode;
 use axum::response::{Html, IntoResponse, Response};
 
 use crate::ctx::Ctx;
-use crate::db::{self, CombiRow, Detail, EffectLine};
+use crate::db::{self, CombiRow, Detail, EffectLine, TreasureLinks};
 use crate::richtext;
 use crate::state::AppState;
 
@@ -26,6 +26,7 @@ struct DetailPage {
     unlock_goal_html: String,
     effects: Vec<EffectLine>,
     combi: Vec<CombiRow>,
+    links: TreasureLinks,
 }
 
 pub async fn show(
@@ -35,7 +36,8 @@ pub async fn show(
 ) -> Response {
     if !matches!(
         section.as_str(),
-        "cookies" | "pets" | "treasures" | "episodes" | "ingredients" | "jellies"
+        "cookies" | "pets" | "treasures" | "episodes" | "ingredients" | "jellies" | "relics"
+            | "skins"
     ) {
         return (StatusCode::NOT_FOUND, "not found").into_response();
     }
@@ -54,17 +56,22 @@ pub async fn show(
             Vec::new()
         };
         let combi = db::combi_bonuses(&db, &lang, &section_for_db, id)?;
+        let links = if section_for_db == "treasures" {
+            db::treasure_links(&db, &lang, id)?
+        } else {
+            TreasureLinks::default()
+        };
         // rich text needs the pool too, so it is rendered on this thread
         let abilities = richtext::render(&db, &lang, &item.abilities);
         let description = richtext::render(&db, &lang, &item.description);
         let power_plus = richtext::render(&db, &lang, &item.power_plus);
         let ppr = richtext::render(&db, &lang, &item.power_plus_requirement);
         let goal = richtext::render(&db, &lang, &item.unlock_goal);
-        Ok(Some((item, effects, combi, abilities, description, power_plus, ppr, goal)))
+        Ok(Some((item, effects, combi, links, abilities, description, power_plus, ppr, goal)))
     })
     .await;
 
-    let Ok(Ok(Some((item, effects, combi, abilities_html, description_html, power_plus_html, power_plus_requirement_html, unlock_goal_html)))) = loaded
+    let Ok(Ok(Some((item, effects, combi, links, abilities_html, description_html, power_plus_html, power_plus_requirement_html, unlock_goal_html)))) = loaded
     else {
         return (StatusCode::NOT_FOUND, "not found").into_response();
     };
@@ -80,6 +87,7 @@ pub async fn show(
         unlock_goal_html,
         effects,
         combi,
+        links,
     };
     Html(page.render().unwrap_or_else(|e| format!("template error: {e}"))).into_response()
 }
