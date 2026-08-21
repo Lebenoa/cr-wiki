@@ -19,7 +19,9 @@ pub const PAGE_SIZE: i64 = 30;
 struct CatalogPage {
     ctx: Ctx,
     section: String,
+    /// the .tr keys are named for the section, plural
     title_key: String,
+    desc_key: String,
     cards: Vec<Card>,
     next_page: i64,
     tab: String,
@@ -82,12 +84,14 @@ async fn render(
     let html = if ctx.is_fragment() {
         CatalogCards { ctx, section, cards, next_page, tab }.render()
     } else {
-        let title_key = format!("{}_page_title", singular(&section));
+        let title_key = format!("{section}_page_title");
+        let desc_key = format!("{section}_page_description");
         CatalogPage {
             ctx,
             tabbed: section == "treasures",
             section,
             title_key,
+            desc_key,
             cards,
             next_page,
             tab,
@@ -97,11 +101,3 @@ async fn render(
     Html(html.unwrap_or_else(|e| format!("template error: {e}")))
 }
 
-/// `cookies` -> `cookie`, so the section maps onto the .tr key names the V
-/// templates use.
-fn singular(section: &str) -> String {
-    match section {
-        "jellies" => "jelly".to_string(),
-        s => s.trim_end_matches('s').to_string(),
-    }
-}

@@ -1,5 +1,6 @@
 {% extends "base.html" %}
-{% block title %}{{ ctx.l.t(title_key.as_str()) }}{% endblock %}
+{% import "title.html" as t %}
+{% block title %}{% call t::tags(ctx.page_title(title_key.as_str()), ctx.page_desc(desc_key.as_str()), ctx.social_image()) %}{% endblock %}
 {% block content %}
 <h1 class="page-title">{{ ctx.l.t(title_key.as_str()) }}</h1>
 {% if ctx.is_admin() %}

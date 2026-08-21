@@ -1,0 +1,12 @@
+{% macro tags(text, desc, image) %}
+<title>{{ text }}</title>
+<meta name="description" content="{{ desc }}" />
+<meta property="og:title" content="{{ text }}" />
+<meta property="og:description" content="{{ desc }}" />
+<meta property="og:image" content="{{ image }}" />
+<meta property="og:image:alt" content="{{ text }}" />
+<meta name="twitter:card" content="{{ ctx.social_card_type(image.as_str()) }}" />
+<meta name="twitter:title" content="{{ text }}" />
+<meta name="twitter:description" content="{{ desc }}" />
+<meta name="twitter:image" content="{{ image }}" />
+{% endmacro %}

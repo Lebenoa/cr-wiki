@@ -1,5 +1,6 @@
 {% extends "base.html" %}
-{% block title %}{{ item.name }}{% endblock %}
+{% import "title.html" as t %}
+{% block title %}{% call t::tags(ctx.entity_title(item.name.as_str()), ctx.entity_desc(section.as_str(), item.name.as_str()), ctx.entity_image(section.as_str(), item.image.as_ref())) %}{% endblock %}
 {% block content %}
 <section class="page-shell max-w-4xl">
     <a href="/{{ section }}" class="back-link">&larr; {{ ctx.l.t("back_to_list") }}</a>

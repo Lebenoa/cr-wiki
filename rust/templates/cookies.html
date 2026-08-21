@@ -1,5 +1,6 @@
 {% extends "base.html" %}
-{% block title %}{{ ctx.l.t("cookies_page_title") }}{% endblock %}
+{% import "title.html" as t %}
+{% block title %}{% call t::tags(ctx.page_title("cookies_page_title"), ctx.page_desc("cookies_page_description"), ctx.social_image()) %}{% endblock %}
 {% block content %}
 <h1 class="page-title">{{ ctx.l.t("cookie_page_header") }}</h1>
 <div class="catalog-grid">

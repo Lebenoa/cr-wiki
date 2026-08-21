@@ -1,5 +1,6 @@
 {% extends "base.html" %}
-{% block title %}{{ ctx.l.t("changelog_page_title") }}{% endblock %}
+{% import "title.html" as t %}
+{% block title %}{% call t::tags(ctx.page_title("changelog_page_title"), ctx.page_desc("changelog_page_description"), ctx.social_image()) %}{% endblock %}
 {% block content %}
 <section class="page-shell max-w-4xl">
     <h1 class="page-title">{{ ctx.l.t("changelog_page_header") }}</h1>

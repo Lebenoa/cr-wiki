@@ -215,9 +215,52 @@ impl Ctx {
         (1..=3).collect()
     }
 
+    /// A page title with the site name appended. Older .tr values bake the
+    /// suffix in and newer ones do not, so it is added here when missing
+    /// rather than leaving half the sections unbranded.
+    pub fn page_title(&self, key: &str) -> String {
+        self.title_of(self.l.t(key))
+    }
+
+    /// The same, for a title built from an entity name rather than a key.
+    pub fn entity_title(&self, name: &str) -> String {
+        self.title_of(self.l.t("entity_detail_title").replace("{name}", name))
+    }
+
+    fn title_of(&self, title: String) -> String {
+        let suffix = self.l.t("site_title_suffix");
+        if suffix.is_empty() || title.contains(&suffix) {
+            return title;
+        }
+        format!("{title} | {suffix}")
+    }
+
     /// The site-wide description, used when a page names no key of its own.
     pub fn meta_description(&self) -> String {
         self.l.t("site_description")
+    }
+
+    /// A page's own description. A key with no string behind it falls back
+    /// to the site one rather than printing the key.
+    pub fn page_desc(&self, key: &str) -> String {
+        let text = self.l.t(key);
+        if text == key || text.is_empty() {
+            return self.meta_description();
+        }
+        text
+    }
+
+    /// A detail page's description. Only some kinds have a template of their
+    /// own; the rest read the site line.
+    pub fn entity_desc(&self, section: &str, name: &str) -> String {
+        let key = match section {
+            "cookies" | "pets" | "treasures" => "entity_detail_description",
+            "episodes" => "episode_detail_description",
+            "ingredients" => "ingredient_detail_description",
+            "jellies" => "jelly_detail_description",
+            _ => return self.meta_description(),
+        };
+        self.page_desc(key).replace("{name}", name)
     }
 
     /// The wide banner, absolute, for Open Graph and Twitter cards.
@@ -225,8 +268,24 @@ impl Ctx {
         format!("{}/img/landscape.jpg", self.site_url.trim_end_matches('/'))
     }
 
-    pub fn social_card_type(&self) -> &'static str {
-        "summary_large_image"
+    /// A detail page shares the entity's own sprite instead, when it has one.
+    pub fn entity_image(&self, section: &str, image: Option<&String>) -> String {
+        match image {
+            Some(img) if !img.is_empty() => {
+                format!("{}/img/{section}/{img}", self.site_url.trim_end_matches('/'))
+            }
+            _ => self.social_image(),
+        }
+    }
+
+    /// An entity sprite is a square icon, so it reads better as a summary
+    /// thumbnail; the wide banner wants the large card.
+    pub fn social_card_type(&self, image: &str) -> &'static str {
+        if image.ends_with("/img/landscape.jpg") {
+            "summary_large_image"
+        } else {
+            "summary"
+        }
     }
 
     /// The wikilang cookie as an Open Graph locale tag.
