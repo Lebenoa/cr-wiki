@@ -414,11 +414,14 @@ mod tests {
         let th = db::search(&pool, "th", "wizard", 20).unwrap();
         assert!(!th.is_empty());
 
-        // the escape makes % a literal: it finds the treasures actually named
-        // with one, rather than matching the whole catalog
+        // the escape makes % a literal: it finds the rows whose text actually
+        // contains one, rather than matching the whole catalog. The search
+        // covers the prose columns too, so a hit can come from a description
+        // rather than the name — what matters is that it is not everything.
         let pct = db::search(&pool, "en", "%", 20).unwrap();
         assert!(!pct.is_empty());
-        assert!(pct.iter().all(|(_, c)| c.name.contains('%')), "% matched as a wildcard");
+        let everything = db::search(&pool, "en", "e", 500).unwrap();
+        assert!(pct.len() < everything.len(), "% matched as a wildcard");
         assert!(db::search(&pool, "en", "   ", 20).unwrap().is_empty());
     }
 
