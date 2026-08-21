@@ -636,3 +636,182 @@ pub fn select_gacha(db: &Db, lang: &str) -> rusqlite::Result<Vec<GachaPool>> {
     }
     Ok(pools)
 }
+
+/// Table names for one catalog section: the row, its id column, its
+/// translation table and that table's owner column.
+fn entity_tables(section: &str) -> Option<(&'static str, &'static str, &'static str, &'static str)> {
+    match section {
+        "cookies" => Some(("cookie", "cookie_id", "cookie_translation", "owner_id")),
+        "pets" => Some(("pet", "pet_id", "pet_translation", "pet_id")),
+        "treasures" => Some(("treasure", "treasure_id", "treasure_translation", "treasure_id")),
+        _ => None,
+    }
+}
+
+/// Creates an entity and its translation in `lang`, returning the new id.
+/// The prose columns a section does not have are simply not written.
+pub fn insert_entity(
+    db: &Db,
+    lang: &str,
+    section: &str,
+    form: &crate::routes::admin::EntityForm,
+) -> rusqlite::Result<i64> {
+    let Some((table, id_col, tr_table, owner_col)) = entity_tables(section) else {
+        return Ok(0);
+    };
+    let c = conn(db)?;
+    let now = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_secs() as i64)
+        .unwrap_or(0);
+    let image = if form.image.trim().is_empty() { None } else { Some(form.image.trim()) };
+    let grade = form.grade.unwrap_or(1);
+
+    if section == "treasures" {
+        c.execute(
+            "INSERT INTO treasure (image, grade, is_evolved, is_power_plus, family, source, sub, release_date)
+             VALUES (?1, ?2, 0, 0, '', '', '', ?3)",
+            params![image, grade, now],
+        )?;
+    } else {
+        c.execute(
+            &format!("INSERT INTO {table} (image, grade, release_date) VALUES (?1, ?2, ?3)"),
+            params![image, grade, now],
+        )?;
+    }
+    let id = c.last_insert_rowid();
+    write_translation(&c, tr_table, owner_col, section, id, lang, form)?;
+    let _ = id_col;
+    Ok(id)
+}
+
+/// Updates an entity and its translation in `lang`.
+pub fn update_entity(
+    db: &Db,
+    lang: &str,
+    section: &str,
+    id: i64,
+    form: &crate::routes::admin::EntityForm,
+) -> rusqlite::Result<bool> {
+    let Some((table, id_col, tr_table, owner_col)) = entity_tables(section) else {
+        return Ok(false);
+    };
+    let c = conn(db)?;
+    let image = if form.image.trim().is_empty() { None } else { Some(form.image.trim()) };
+    if let Some(grade) = form.grade {
+        c.execute(
+            &format!("UPDATE {table} SET grade = ?1 WHERE {id_col} = ?2"),
+            params![grade, id],
+        )?;
+    }
+    if image.is_some() {
+        c.execute(
+            &format!("UPDATE {table} SET image = ?1 WHERE {id_col} = ?2"),
+            params![image, id],
+        )?;
+    }
+    write_translation(&c, tr_table, owner_col, section, id, lang, form)?;
+    Ok(true)
+}
+
+/// Upserts the translation row for one language, so editing in Thai cannot
+/// wipe the English text and the other way round.
+fn write_translation(
+    c: &Conn,
+    tr_table: &str,
+    owner_col: &str,
+    section: &str,
+    id: i64,
+    lang: &str,
+    form: &crate::routes::admin::EntityForm,
+) -> rusqlite::Result<()> {
+    let name = form.name.trim();
+    let existing: Option<i64> = c
+        .query_row(
+            &format!("SELECT 1 FROM {tr_table} WHERE {owner_col} = ?1 AND lang = ?2"),
+            params![id, lang],
+            |r| r.get(0),
+        )
+        .ok();
+
+    match section {
+        "cookies" => {
+            if existing.is_some() {
+                c.execute(
+                    &format!(
+                        "UPDATE {tr_table} SET name = ?1, abilities = ?2, description = ?3,
+                                power_plus = ?4, power_plus_requirement = ?5, unlock_goal = ?6
+                          WHERE {owner_col} = ?7 AND lang = ?8"
+                    ),
+                    params![
+                        name,
+                        form.abilities,
+                        form.description,
+                        form.power_plus,
+                        form.power_plus_requirement,
+                        form.unlock_goal,
+                        id,
+                        lang
+                    ],
+                )?;
+            } else {
+                c.execute(
+                    &format!(
+                        "INSERT INTO {tr_table} ({owner_col}, lang, name, abilities, description,
+                                power_plus, power_plus_requirement, unlock_goal)
+                         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)"
+                    ),
+                    params![
+                        id,
+                        lang,
+                        name,
+                        form.abilities,
+                        form.description,
+                        form.power_plus,
+                        form.power_plus_requirement,
+                        form.unlock_goal
+                    ],
+                )?;
+            }
+        }
+        "pets" => {
+            if existing.is_some() {
+                c.execute(
+                    &format!(
+                        "UPDATE {tr_table} SET name = ?1, abilities = ?2, description = ?3
+                          WHERE {owner_col} = ?4 AND lang = ?5"
+                    ),
+                    params![name, form.abilities, form.description, id, lang],
+                )?;
+            } else {
+                c.execute(
+                    &format!(
+                        "INSERT INTO {tr_table} ({owner_col}, lang, name, abilities, description)
+                         VALUES (?1, ?2, ?3, ?4, ?5)"
+                    ),
+                    params![id, lang, name, form.abilities, form.description],
+                )?;
+            }
+        }
+        _ => {
+            if existing.is_some() {
+                c.execute(
+                    &format!(
+                        "UPDATE {tr_table} SET name = ?1, description = ?2
+                          WHERE {owner_col} = ?3 AND lang = ?4"
+                    ),
+                    params![name, form.description, id, lang],
+                )?;
+            } else {
+                c.execute(
+                    &format!(
+                        "INSERT INTO {tr_table} ({owner_col}, lang, name, description)
+                         VALUES (?1, ?2, ?3, ?4)"
+                    ),
+                    params![id, lang, name, form.description],
+                )?;
+            }
+        }
+    }
+    Ok(())
+}

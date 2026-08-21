@@ -62,6 +62,8 @@ pub struct BuildForm {
     pub tag_coin: Option<String>,
     #[serde(default)]
     pub tag_autofarm: Option<String>,
+    #[serde(rename = "cf-turnstile-response")]
+    pub turnstile: Option<String>,
 }
 
 /// A blank level field means the treasure sits at max. An unparseable one
@@ -170,6 +172,9 @@ pub async fn create(
     ctx: Ctx,
     Form(form): Form<BuildForm>,
 ) -> Response {
+    if !crate::turnstile::verify(&state.cfg, form.turnstile.as_deref(), "build").await {
+        return (StatusCode::FORBIDDEN, page(ctx, None, "turnstile_form_failed")).into_response();
+    }
     let (ep, ep_special) = parse_ep(form.ep.as_deref().unwrap_or(""));
     let tags = tags_of(&form);
 

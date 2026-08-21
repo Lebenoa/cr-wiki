@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}{{ ctx.l.t("admin_form_title") }}{% endblock %}
+{% block content %}
+<section class="page-shell max-w-3xl">
+    <a href="/{{ section }}" class="back-link">&larr; {{ ctx.l.t("back_to_list") }}</a>
+    <h1 class="page-title">{{ ctx.l.t("admin_form_title") }}</h1>
+    {% if !error.is_empty() %}
+    <p class="text-error text-center">{{ ctx.l.t(error.as_str()) }}</p>
+    {% endif %}
+    {% match item %}{% when Some with (it) %}
+    <form method="post" action="/{{ section }}/{{ it.id }}/edit" class="flex flex-col gap-4 mt-6">
+        <input type="text" name="name" value="{{ it.name }}" class="filter-input w-full" required />
+        <input type="text" name="image" value="{{ it.image.as_deref().unwrap_or("") }}" class="filter-input w-full"
+            placeholder="image.png" />
+        <textarea name="abilities" rows="2" class="filter-input w-full">{{ it.abilities }}</textarea>
+        <textarea name="description" rows="4" class="filter-input w-full">{{ it.description }}</textarea>
+        {% if section == "cookies" %}
+        <textarea name="power_plus" rows="2" class="filter-input w-full">{{ it.power_plus }}</textarea>
+        <textarea name="power_plus_requirement" rows="2" class="filter-input w-full">{{ it.power_plus_requirement }}</textarea>
+        <textarea name="unlock_goal" rows="2" class="filter-input w-full">{{ it.unlock_goal }}</textarea>
+        {% endif %}
+        <button type="submit" class="btn-primary">{{ ctx.l.t("admin_save_button") }}</button>
+    </form>
+    {% when None %}
+    <form method="post" action="/{{ section }}/new" class="flex flex-col gap-4 mt-6">
+        <input type="text" name="name" class="filter-input w-full" placeholder="{{ ctx.l.t("admin_name_label") }}"
+            required />
+        <input type="text" name="image" class="filter-input w-full" placeholder="image.png" />
+        <textarea name="abilities" rows="2" class="filter-input w-full"></textarea>
+        <textarea name="description" rows="4" class="filter-input w-full"></textarea>
+        {% if section == "cookies" %}
+        <textarea name="power_plus" rows="2" class="filter-input w-full"></textarea>
+        <textarea name="power_plus_requirement" rows="2" class="filter-input w-full"></textarea>
+        <textarea name="unlock_goal" rows="2" class="filter-input w-full"></textarea>
+        {% endif %}
+        <button type="submit" class="btn-primary">{{ ctx.l.t("admin_save_button") }}</button>
+    </form>
+    {% endmatch %}
+</section>
+{% endblock %}

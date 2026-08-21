@@ -25,6 +25,8 @@ struct AuthPage {
 pub struct LoginForm {
     pub username: String,
     pub password: String,
+    #[serde(rename = "cf-turnstile-response")]
+    pub turnstile: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -32,6 +34,8 @@ pub struct RegisterForm {
     pub username: String,
     pub password: String,
     pub confirm_password: String,
+    #[serde(rename = "cf-turnstile-response")]
+    pub turnstile: Option<String>,
 }
 
 fn page(ctx: Ctx, mode: &str, error: &str) -> Response {
@@ -54,6 +58,9 @@ pub async fn login(
     ctx: Ctx,
     Form(form): Form<LoginForm>,
 ) -> Response {
+    if !crate::turnstile::verify(&state.cfg, form.turnstile.as_deref(), "login").await {
+        return (StatusCode::FORBIDDEN, page(ctx, "login", "turnstile_form_failed")).into_response();
+    }
     if form.username.is_empty() || form.password.is_empty() {
         return (StatusCode::BAD_REQUEST, page(ctx, "login", "invalid_credentials")).into_response();
     }
@@ -89,6 +96,10 @@ pub async fn register(
     ctx: Ctx,
     Form(form): Form<RegisterForm>,
 ) -> Response {
+    if !crate::turnstile::verify(&state.cfg, form.turnstile.as_deref(), "register").await {
+        return (StatusCode::FORBIDDEN, page(ctx, "register", "turnstile_form_failed"))
+            .into_response();
+    }
     if form.username.is_empty() || form.password.is_empty() {
         return (StatusCode::BAD_REQUEST, page(ctx, "register", "register_required")).into_response();
     }

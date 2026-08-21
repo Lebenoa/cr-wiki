@@ -1,3 +1,5 @@
+pub mod admin;
+pub mod api;
 pub mod auth;
 pub mod builds;
 pub mod catalog;
@@ -33,4 +35,8 @@ pub struct CommonQuery {
     pub t1: Option<i64>,
     pub t2: Option<i64>,
     pub t3: Option<i64>,
+    /// which entity list the rich-text picker wants
+    pub kind: Option<String>,
+    /// where /api/set-lang should return to
+    pub next: Option<String>,
 }

@@ -19,6 +19,7 @@ mod richtext;
 mod routes;
 mod session;
 mod state;
+mod turnstile;
 
 use std::net::SocketAddr;
 use std::sync::Arc;
@@ -63,6 +64,10 @@ async fn main() {
         .route("/", get(routes::misc::index))
         .route("/search", get(routes::misc::search))
         .route("/gacha", get(routes::misc::gacha))
+        .route("/api/available-langs", get(routes::api::available_langs))
+        .route("/api/richtext-names", get(routes::api::richtext_names))
+        .route("/api/relics", get(routes::api::relics))
+        .route("/api/set-lang", post(routes::api::set_lang))
         .route("/sitemap.xml", get(routes::misc::sitemap))
         .route("/robots.txt", get(routes::misc::robots))
         .route("/changelog", get(routes::changelog::page))
@@ -80,6 +85,16 @@ async fn main() {
         .route("/login", get(routes::auth::login_form).post(routes::auth::login))
         .route("/register", get(routes::auth::register_form).post(routes::auth::register))
         .route("/logout", get(routes::auth::logout))
+        // the admin routes are registered before the catalog captures, so
+        // /cookies/new is a form rather than a detail page for id "new"
+        .route(
+            "/{section}/new",
+            get(routes::admin::new_form).post(routes::admin::create),
+        )
+        .route(
+            "/{section}/{id}/edit",
+            get(routes::admin::edit_form).post(routes::admin::update),
+        )
         // one handler per shape rather than per section: the section is a
         // path capture, so eight lists share a function
         .route("/{section}", get(routes::catalog::list))
@@ -495,6 +510,33 @@ mod tests {
         assert_eq!(again.len(), cookies.len());
         options::invalidate();
         assert_eq!(options::options(&pool, "en", "cookie").len(), cookies.len());
+    }
+
+    /// Turnstile refuses rather than waves through when it is misconfigured.
+    /// In a debug build the gate is bypassed, which is the behaviour under
+    /// test here — the same shape as the V `$if !prod` gate.
+    #[tokio::test]
+    async fn turnstile_gate() {
+        let mut cfg = config::Config::default();
+        assert!(turnstile::verify(&cfg, Some("token"), "login").await);
+        cfg.turnstile.secret = String::new();
+        // debug build: bypassed regardless, so a missing secret cannot block
+        // local development
+        assert_eq!(turnstile::verify(&cfg, None, "login").await, cfg!(debug_assertions));
+    }
+
+    /// The gacha pools carry their prizes and odds.
+    #[test]
+    fn gacha_pools() {
+        let pool = db::open("../sqlite.db").expect("open db");
+        let pools = db::select_gacha(&pool, "en").expect("gacha");
+        assert!(!pools.is_empty());
+        let entries: usize = pools.iter().map(|p| p.entries.len()).sum();
+        assert_eq!(entries, 300, "every disclosed entry is listed");
+        let first = pools.iter().find(|p| !p.entries.is_empty()).unwrap();
+        assert!(first.entries.iter().all(|e| e.odds > 0.0));
+        assert!(first.entries.iter().all(|e| !e.name.is_empty()));
+        assert!(first.entries[0].odds_label().ends_with('%'));
     }
 
     /// The sitemap covers every detail id the six sections hold.
