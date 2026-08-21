@@ -51,16 +51,36 @@ Two deliberate differences from the V original:
 - the navbar in full: the wiki dropdown, the theme popover and its custom-theme editor, the language dialog, the mobile sheet and the account menu — the same markup theme.js and theme_editor.js already drive
 - `/gacha` with the disclosed pool odds, and `/builds/preview` and `/builds/:id/verify`
 - the planner write side: `/builds/new`, `/builds/:id/edit` and `/builds/:id/delete`, with the author/owner/expiry left alone on an edit and a 404 rather than a 403 for someone else's build
+- Turnstile on login, register and build submit, refusing rather than waving through when misconfigured
+- the admin catalog forms for cookies, pets and treasures, upserting the translation per language so editing in Thai cannot wipe the English text
+- `/api/available-langs`, `/api/richtext-names`, `/api/set-lang` and `/api/relics`
+- relic and skin detail pages, and a treasure's unlock chain (the cookie or pet that grants it, and the base it evolved from)
+- admin image upload: multipart into `static/img/<section>/`, with the extension taken from the declared content type rather than the filename
+- the picker dialogs on both `/builds` and the planner, sharing one partial, driven by the existing picker.js
 
 ## Not ported yet
 
-Roughly in dependency order — the earlier ones unblock the rest.
+Nothing from the original route table. What is left is polish rather than
+porting:
 
-1. **The remaining `database/select.v`**: treasure unlock chains, evolution bases, effect-state diffing, the combi editor rows (~2.6k lines): pets, treasures, effects, combi bonuses, builds, search (FTS5 + LIKE fallback), catalog queries
-2. **Admin forms** (`app/forms.v`, ~650 lines) and image upload
-3. **Turnstile** on the login, register and build-submit forms
-4. **The relic detail page**, which has a shape of its own
-5. **The remaining API endpoints**: `/api/available-langs`, `/api/richtext-names`, `/api/set-lang`
+- the planner's **live preview wiring** — `/builds/preview` serves the
+  fragment and the page has the container, but picker.js is not yet told to
+  refresh it after each pick
+- **`/builds/:id/edit` prefill**: the form posts to the right place and the
+  guard works, but the slots render empty rather than showing the stored
+  loadout
+- the **combi editor** rows behind the admin forms, and the effect-state
+  diffing that decides when a blessed set is worth a toggle on the detail
+  page (the picker already computes it)
 
-The JS in `static/js/` is unaffected: it is served as-is and already talks to
-these routes.
+## Verifying
+
+`cargo test` covers the layers directly: 22 tests over config, i18n, paging,
+the git-log parser, every catalog query, the detail rows, rich text, search,
+grades, sessions, password hashing, the build queries, the picker lists, the
+gacha pools, Turnstile and the upload sanitiser.
+
+Nothing has been compared against the running V app page by page yet. That
+is the one thing these tests cannot stand in for, and it is the next check
+worth doing: start the V app on 6785, run this one on another port, and diff
+the pages.
