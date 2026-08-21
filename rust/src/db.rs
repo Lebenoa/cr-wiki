@@ -413,18 +413,29 @@ pub fn search(db: &Db, lang: &str, q: &str, limit: i64) -> rusqlite::Result<Vec<
     let like = format!("%{escaped}%");
     let c = conn(db)?;
     let mut out = Vec::new();
-    for (section, table, id_col, owner_col, tr_table) in [
-        ("cookies", "cookie", "cookie_id", "owner_id", "cookie_translation"),
-        ("pets", "pet", "pet_id", "pet_id", "pet_translation"),
-        ("treasures", "treasure", "treasure_id", "treasure_id", "treasure_translation"),
+    // the same columns the V app's FTS tables index, so a query finds the
+    // same rows: a cookie is searchable by its abilities text, not just its
+    // name, which is how "magnet" reaches the cookies that grant one
+    for (section, table, id_col, owner_col, tr_table, prose) in [
+        ("cookies", "cookie", "cookie_id", "owner_id", "cookie_translation", "abilities, description"),
+        ("pets", "pet", "pet_id", "pet_id", "pet_translation", "description"),
+        ("treasures", "treasure", "treasure_id", "treasure_id", "treasure_translation", "description"),
     ] {
+        // one OR per indexed column, on both the localized row and the
+        // English one behind it
+        let mut clauses: Vec<String> = Vec::new();
+        for col in std::iter::once("name").chain(prose.split(", ")) {
+            clauses.push(format!("tl.{col} LIKE ?2 ESCAPE '!'"));
+            clauses.push(format!("te.{col} LIKE ?2 ESCAPE '!'"));
+        }
+        let where_sql = clauses.join(" OR ");
         let sql = format!(
             "SELECT e.{id_col} AS id, e.image AS image, e.grade AS grade,
                     COALESCE(tl.name, te.name) AS name, te.name AS en_name
                FROM {table} e
                LEFT JOIN {tr_table} tl ON tl.{owner_col} = e.{id_col} AND tl.lang = ?1
                LEFT JOIN {tr_table} te ON te.{owner_col} = e.{id_col} AND te.lang = 'en'
-              WHERE (tl.name LIKE ?2 ESCAPE '!' OR te.name LIKE ?2 ESCAPE '!')
+              WHERE ({where_sql})
               ORDER BY COALESCE(tl.name, te.name)
               LIMIT ?3"
         );

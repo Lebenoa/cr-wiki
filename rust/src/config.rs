@@ -56,6 +56,20 @@ impl Config {
             .and_then(|s| toml::from_str(&s).ok())
             .unwrap_or_default();
 
+        // CR_HOST / CR_PORT are this port's own additions: both apps read the
+        // same Config.toml, so running them side by side needs one of them
+        // moved off 6785 without editing the shared file.
+        if let Ok(v) = std::env::var("CR_HOST") {
+            if !v.is_empty() {
+                cfg.host = v;
+            }
+        }
+        if let Ok(v) = std::env::var("CR_PORT") {
+            if let Ok(port) = v.parse::<u16>() {
+                cfg.port = port;
+            }
+        }
+
         // env overrides, as in config.v
         if let Ok(v) = std::env::var("TURNSTILE_SECRET") {
             cfg.turnstile.secret = v;
