@@ -60,22 +60,23 @@ Two deliberate differences from the V original:
 
 ## Not ported yet
 
-Nothing from the original route table. What is left is polish rather than
-porting:
+Nothing. Every route in the V app's table has an equivalent here, and the
+polish items that were listed last round are done: the planner's live
+preview, the edit-form prefill, the combo editor rows and the blessed-toggle
+diffing.
 
-- the planner's **live preview wiring** — `/builds/preview` serves the
-  fragment and the page has the container, but picker.js is not yet told to
-  refresh it after each pick
-- **`/builds/:id/edit` prefill**: the form posts to the right place and the
-  guard works, but the slots render empty rather than showing the stored
-  loadout
-- the **combi editor** rows behind the admin forms, and the effect-state
-  diffing that decides when a blessed set is worth a toggle on the detail
-  page (the picker already computes it)
+Two things are deliberately different rather than missing:
+
+- **`/combi/:id/delete` returns to `/cookies`**, not to the form it was
+  submitted from. Following the referer would mean trusting a header for a
+  redirect target; the editor is one click from the catalog either way.
+- **The V app's `$if !prod` gates become `cfg!(debug_assertions)`**, so a
+  debug build skips rate limiting and Turnstile exactly as `v run` does, and
+  `cargo build --release` enables both.
 
 ## Verifying
 
-`cargo test` covers the layers directly: 22 tests over config, i18n, paging,
+`cargo test` covers the layers directly: 25 tests over config, i18n, paging,
 the git-log parser, every catalog query, the detail rows, rich text, search,
 grades, sessions, password hashing, the build queries, the picker lists, the
 gacha pools, Turnstile and the upload sanitiser.

@@ -11,42 +11,49 @@
     {% when None %}
     <form method="post" action="/builds/new" class="mt-8">
     {% endmatch %}
-        <input type="hidden" name="cookie" id="sel-cookie" value="0" />
-        <input type="hidden" name="c2" id="sel-cookie2" value="0" />
-        <input type="hidden" name="pet" id="sel-pet" value="0" />
-        <input type="hidden" name="t1" id="sel-t1" value="0" />
-        <input type="hidden" name="t2" id="sel-t2" value="0" />
-        <input type="hidden" name="t3" id="sel-t3" value="0" />
-        <input type="hidden" name="blessed1" id="blessed-t1" value="0" />
-        <input type="hidden" name="blessed2" id="blessed-t2" value="0" />
-        <input type="hidden" name="blessed3" id="blessed-t3" value="0" />
+        <input type="hidden" name="cookie" id="sel-cookie" value="{{ prefill.cookie }}" />
+        <input type="hidden" name="c2" id="sel-cookie2" value="{{ prefill.cookie2 }}" />
+        <input type="hidden" name="pet" id="sel-pet" value="{{ prefill.pet }}" />
+        {% for t in prefill.treasures %}
+        <input type="hidden" name="t{{ loop.index }}" id="sel-t{{ loop.index }}" value="{{ t.id }}" />
+        <input type="hidden" name="blessed{{ loop.index }}" id="blessed-t{{ loop.index }}"
+            value="{{ t.blessed_int() }}" />
+        {% endfor %}
 
         <section class="rounded-2xl border border-primary/20 bg-surface/40 p-5 md:p-8">
             <h2 class="text-xs font-label uppercase tracking-widest text-foreground-muted">
                 {{ ctx.l.t("build_section_loadout") }}
             </h2>
             <div class="mt-4 grid grid-cols-2 lg:grid-cols-3 gap-5">
-                <button type="button" id="slot-cookie" onclick="openCookie('cookie')"
+                {% for slot in prefill.entity_slots() %}
+                <button type="button" id="slot-{{ slot.id }}" onclick="{{ slot.opener }}"
                     class="w-full p-5 rounded-xl flex flex-col items-center gap-2 min-h-36 border-2 border-dotted border-primary/30 bg-surface/50 hover:bg-surface transition-colors">
-                    <span class="my-auto text-xs font-label text-foreground-muted uppercase">{{ ctx.l.t("build_cookie_label") }}</span>
+                    {% if slot.filled() %}
+                    {% match slot.image %}{% when Some with (img) %}
+                    <img src="/img/{{ slot.section }}/{{ img }}" alt="{{ slot.name }}" class="size-20 object-contain" />
+                    {% when None %}{% endmatch %}
+                    <span class="text-center text-sm font-bold text-on-surface leading-tight">{{ slot.name }}</span>
+                    {% else %}
+                    <span class="my-auto text-xs font-label text-foreground-muted uppercase">{{ ctx.l.t(slot.label) }}</span>
+                    {% endif %}
                 </button>
-                <button type="button" id="slot-cookie2" onclick="openCookie('cookie2')"
-                    class="w-full p-5 rounded-xl flex flex-col items-center gap-2 min-h-36 border-2 border-dotted border-primary/30 bg-surface/50 hover:bg-surface transition-colors">
-                    <span class="my-auto text-xs font-label text-foreground-muted uppercase">{{ ctx.l.t("build_relay_label") }}</span>
-                </button>
-                <button type="button" id="slot-pet" onclick="openPicker('pet')"
-                    class="w-full p-5 rounded-xl flex flex-col items-center gap-2 min-h-36 border-2 border-dotted border-primary/30 bg-surface/50 hover:bg-surface transition-colors">
-                    <span class="my-auto text-xs font-label text-foreground-muted uppercase">{{ ctx.l.t("build_pet_label") }}</span>
-                </button>
+                {% endfor %}
             </div>
             <div class="mt-4 grid grid-cols-3 gap-5">
-                {% for slot in ["t1", "t2", "t3"] %}
-                <div class="relative" data-level-scope data-level-default="9">
-                    <button type="button" id="slot-{{ slot }}" onclick="openTreasure('{{ slot }}')"
+                {% for t in prefill.treasures %}
+                <div class="relative" data-level-scope data-level-default="{{ t.level }}">
+                    <button type="button" id="slot-t{{ loop.index }}" onclick="openTreasure('t{{ loop.index }}')"
                         class="w-full p-5 rounded-xl flex flex-col items-center gap-2 min-h-36 border-2 border-dotted border-primary/30 bg-surface/50 hover:bg-surface transition-colors">
+                        {% if t.id > 0 %}
+                        {% match t.image %}{% when Some with (img) %}
+                        <img src="/img/treasures/{{ img }}" alt="{{ t.name }}" class="size-20 object-contain" />
+                        {% when None %}{% endmatch %}
+                        <span class="text-center text-sm font-bold text-on-surface leading-tight">{{ t.name }}</span>
+                        {% else %}
                         <span class="my-auto text-xs font-label text-foreground-muted uppercase">{{ ctx.l.t("build_treasure_label") }}</span>
+                        {% endif %}
                     </button>
-                    <input type="hidden" name="{{ slot }}_level" data-level-field value="9" />
+                    <input type="hidden" name="t{{ loop.index }}_level" data-level-field value="{{ t.level }}" />
                 </div>
                 {% endfor %}
             </div>
@@ -67,15 +74,15 @@
             </label>
             <label class="flex flex-col gap-1 text-xs font-label uppercase text-foreground-muted">
                 {{ ctx.l.t("build_score_label") }}
-                <input type="number" name="score" min="0" class="filter-input" />
+                <input type="number" name="score" min="0" class="filter-input" value="{{ prefill.score_value() }}" />
             </label>
             <label class="flex flex-col gap-1 text-xs font-label uppercase text-foreground-muted">
                 {{ ctx.l.t("build_coin_label") }}
-                <input type="number" name="coin" min="0" class="filter-input" />
+                <input type="number" name="coin" min="0" class="filter-input" value="{{ prefill.coin_value() }}" />
             </label>
             <label class="flex flex-col gap-1 text-xs font-label uppercase text-foreground-muted">
                 {{ ctx.l.t("build_time_label") }}
-                <input type="number" name="time" min="0" class="filter-input" />
+                <input type="number" name="time" min="0" class="filter-input" value="{{ prefill.time_value() }}" />
             </label>
         </div>
 
@@ -88,7 +95,7 @@
 
         <label class="mt-6 flex flex-col gap-1 text-xs font-label uppercase text-foreground-muted">
             {{ ctx.l.t("build_description_label") }}
-            <textarea name="description" rows="3" class="filter-input w-full"></textarea>
+            <textarea name="description" rows="3" class="filter-input w-full">{{ prefill.description }}</textarea>
         </label>
         {% if !ctx.signed_in() %}
         <label class="mt-4 flex flex-col gap-1 text-xs font-label uppercase text-foreground-muted">

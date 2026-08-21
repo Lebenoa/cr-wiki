@@ -9,6 +9,7 @@ use serde::Deserialize;
 
 use crate::builds::{self, BuildCard};
 use crate::ctx::Ctx;
+use crate::prefill::Prefill;
 use crate::state::AppState;
 
 /// Anonymous submissions live 24 hours; a signed-in one is permanent.
@@ -20,6 +21,8 @@ struct PlannerPage {
     ctx: Ctx,
     /// filled when editing, empty when composing a new build
     build: Option<BuildCard>,
+    /// the same loadout flattened, so the template reads one shape either way
+    prefill: Prefill,
     error: String,
 }
 
@@ -106,8 +109,12 @@ fn tags_of(form: &BuildForm) -> Vec<String> {
 }
 
 fn page(ctx: Ctx, build: Option<BuildCard>, error: &str) -> Response {
+    let prefill = match build.as_ref() {
+        Some(b) => Prefill::from_build(b),
+        None => Prefill::blank(),
+    };
     Html(
-        PlannerPage { ctx, build, error: error.to_string() }
+        PlannerPage { ctx, build, prefill, error: error.to_string() }
             .render()
             .unwrap_or_else(|e| format!("template error: {e}")),
     )

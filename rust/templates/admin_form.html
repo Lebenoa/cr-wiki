@@ -42,6 +42,23 @@
         <button type="submit" class="btn-primary">{{ ctx.l.t("admin_save_button") }}</button>
     </form>
     {% endmatch %}
+    {% if !combi.is_empty() %}
+    <h2 class="section-title mt-8">{{ ctx.l.t("combi_section_title") }}</h2>
+    <ul class="flex flex-col gap-2">
+        {% for row in combi %}
+        <li class="flex items-center gap-3 rounded-xl border border-secondary/40 px-3 py-2">
+            <span class="font-bold">{{ row.partner_name }}</span>
+            <span class="text-sm text-foreground-muted">{{ row.effect }}</span>
+            {% if row.is_hidden %}
+            <span class="pill-primary">{{ ctx.l.t("combi_hidden_badge") }}</span>
+            {% endif %}
+            <form method="post" action="/combi/{{ row.id }}/delete" class="ml-auto">
+                <button type="submit" class="btn-secondary text-xs">{{ ctx.l.t("combi_remove_button") }}</button>
+            </form>
+        </li>
+        {% endfor %}
+    </ul>
+    {% endif %}
 </section>
 <script src="/js/admin_upload.js" defer></script>
 {% endblock %}

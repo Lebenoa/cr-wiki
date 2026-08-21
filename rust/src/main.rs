@@ -14,6 +14,7 @@ mod i18n;
 mod middleware;
 mod options;
 mod pagination;
+mod prefill;
 mod ratelimit;
 mod richtext;
 mod routes;
@@ -92,6 +93,7 @@ async fn main() {
             "/{section}/new",
             get(routes::admin::new_form).post(routes::admin::create),
         )
+        .route("/combi/{id}/delete", post(routes::admin::delete_combi))
         .route("/{section}/upload", post(routes::uploads::image))
         .route(
             "/{section}/{id}/edit",
@@ -587,6 +589,73 @@ mod tests {
                 .unwrap_or_else(|| panic!("{section} {} has no detail", first.id));
             assert!(!detail.name.is_empty());
         }
+    }
+
+    /// The query string picker.js actually builds must parse. It sends an
+    /// empty value for every unfilled slot, which a plain Option<i64> rejects
+    /// — that would 400 the whole preview request.
+    #[test]
+    fn preview_query_accepts_empty_slots() {
+        let empty: routes::CommonQuery =
+            serde_urlencoded::from_str("cookie=&c2=&pet=&t1=&t2=&t3=").expect("empty slots parse");
+        assert_eq!(empty.cookie, None);
+        assert_eq!(empty.t3, None);
+
+        let partial: routes::CommonQuery =
+            serde_urlencoded::from_str("cookie=89&c2=&pet=50&t1=317&t2=&t3=")
+                .expect("partial selection parses");
+        assert_eq!(partial.cookie, Some(89));
+        assert_eq!(partial.c2, None);
+        assert_eq!(partial.pet, Some(50));
+        assert_eq!(partial.t1, Some(317));
+
+        // a junk value is ignored rather than failing the request
+        let junk: routes::CommonQuery =
+            serde_urlencoded::from_str("page=abc&sel=").expect("junk parses");
+        assert_eq!(junk.page, None);
+        assert_eq!(junk.sel, None);
+    }
+
+    /// The blessed toggle appears only when the blessed set actually differs
+    /// from the normal one — a treasure whose two sets match should not offer
+    /// a switch between identical readings.
+    #[test]
+    fn blessed_toggle_only_when_it_differs() {
+        use db::EffectLine;
+        let line = |text: &str, v: &[&str], blessed: bool| EffectLine {
+            text: text.into(),
+            values: v.iter().map(|s| s.to_string()).collect(),
+            blessed,
+        };
+
+        // no blessed set at all
+        assert!(!db::blessed_differs(&[line("Magnet", &["1"], false)]));
+        // identical sets
+        assert!(!db::blessed_differs(&[
+            line("Magnet", &["1"], false),
+            line("Magnet", &["1"], true),
+        ]));
+        // a different value is a difference worth showing
+        assert!(db::blessed_differs(&[
+            line("Magnet", &["1"], false),
+            line("Magnet", &["2"], true),
+        ]));
+        // so is a different effect
+        assert!(db::blessed_differs(&[
+            line("Magnet", &["1"], false),
+            line("Revive", &["1"], true),
+        ]));
+    }
+
+    /// The combo editor lists a pairing with the row id it needs to remove it.
+    #[test]
+    fn combi_editor_rows() {
+        let pool = db::open("../sqlite.db").expect("open db");
+        let rows = db::combi_edit_rows(&pool, "en", "cookies", 89).expect("rows");
+        assert!(!rows.is_empty(), "cookie 89 pairs with a pet");
+        assert!(rows.iter().all(|r| r.id > 0), "every row carries its own id");
+        assert!(rows.iter().all(|r| !r.partner_name.is_empty()));
+        assert!(db::combi_edit_rows(&pool, "en", "treasures", 1).unwrap().is_empty());
     }
 
     /// The sitemap covers every detail id the six sections hold.

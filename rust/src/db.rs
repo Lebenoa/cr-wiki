@@ -881,3 +881,83 @@ pub fn treasure_links(db: &Db, lang: &str, id: i64) -> rusqlite::Result<Treasure
     }
     Ok(out)
 }
+
+/// Whether a treasure's blessed effect set differs from its normal one, and
+/// so is worth a toggle on the detail page. The picker computes the same
+/// thing over its own option list; this is the detail page's answer.
+pub fn blessed_differs(effects: &[EffectLine]) -> bool {
+    let normal: Vec<(&str, &Vec<String>)> = effects
+        .iter()
+        .filter(|e| !e.blessed)
+        .map(|e| (e.text.as_str(), &e.values))
+        .collect();
+    let blessed: Vec<(&str, &Vec<String>)> = effects
+        .iter()
+        .filter(|e| e.blessed)
+        .map(|e| (e.text.as_str(), &e.values))
+        .collect();
+    !blessed.is_empty() && !normal.is_empty() && normal != blessed
+}
+
+/// One combo row as the admin editor lists it: the pairing's own id, so a row
+/// can be updated or removed, alongside the partner and the effect.
+#[derive(Debug, Clone)]
+pub struct CombiEditRow {
+    pub id: i64,
+    /// the entity on the other side; the editor links to it once the row
+    /// gains an edit form of its own
+    #[allow(dead_code)]
+    pub partner_id: i64,
+    pub partner_name: String,
+    pub effect: String,
+    pub is_hidden: bool,
+}
+
+pub fn combi_edit_rows(
+    db: &Db,
+    lang: &str,
+    kind: &str,
+    id: i64,
+) -> rusqlite::Result<Vec<CombiEditRow>> {
+    let (own_col, partner_col, partner_table, partner_id_col, partner_tr, partner_owner) =
+        match kind {
+            "cookies" => ("cookie_id", "pet_id", "pet", "pet_id", "pet_translation", "pet_id"),
+            "pets" => ("pet_id", "cookie_id", "cookie", "cookie_id", "cookie_translation", "owner_id"),
+            _ => return Ok(Vec::new()),
+        };
+    let c = conn(db)?;
+    let sql = format!(
+        "SELECT cb.id AS id, p.{partner_id_col} AS partner_id,
+                COALESCE(tl.name, te.name, '') AS partner_name,
+                COALESCE(el.name, ee.name, '') AS effect,
+                cb.is_hidden AS is_hidden
+           FROM combi_bonus cb
+           JOIN {partner_table} p ON p.{partner_id_col} = cb.{partner_col}
+           LEFT JOIN {partner_tr} tl ON tl.{partner_owner} = p.{partner_id_col} AND tl.lang = ?1
+           LEFT JOIN {partner_tr} te ON te.{partner_owner} = p.{partner_id_col} AND te.lang = 'en'
+           LEFT JOIN effect_translation el ON el.effect_id = cb.effect_id AND el.lang = ?1
+           LEFT JOIN effect_translation ee ON ee.effect_id = cb.effect_id AND ee.lang = 'en'
+          WHERE cb.{own_col} = ?2
+          ORDER BY cb.id"
+    );
+    let mut stmt = c.prepare(&sql)?;
+    let rows = stmt.query_map(params![lang, id], |r| {
+        Ok(CombiEditRow {
+            id: r.get("id")?,
+            partner_id: r.get("partner_id")?,
+            partner_name: r.get("partner_name")?,
+            effect: r.get("effect")?,
+            is_hidden: r.get::<_, i64>("is_hidden")? != 0,
+        })
+    })?;
+    rows.collect()
+}
+
+/// Removes one combo pairing. The editor's only destructive action, so it
+/// takes the row id rather than a pair of entity ids — deleting by pair would
+/// take every duplicate with it.
+pub fn delete_combi(db: &Db, row_id: i64) -> rusqlite::Result<()> {
+    let c = conn(db)?;
+    c.execute("DELETE FROM combi_bonus WHERE id = ?1", params![row_id])?;
+    Ok(())
+}

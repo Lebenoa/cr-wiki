@@ -25,6 +25,9 @@ struct DetailPage {
     power_plus_requirement_html: String,
     unlock_goal_html: String,
     effects: Vec<EffectLine>,
+    /// true when the blessed set is worth a toggle, i.e. it exists and is
+    /// not identical to the normal one
+    blessed_differs: bool,
     combi: Vec<CombiRow>,
     links: TreasureLinks,
 }
@@ -76,8 +79,10 @@ pub async fn show(
         return (StatusCode::NOT_FOUND, "not found").into_response();
     };
 
+    let blessed_differs = db::blessed_differs(&effects);
     let page = DetailPage {
         ctx,
+        blessed_differs,
         section,
         item,
         abilities_html,

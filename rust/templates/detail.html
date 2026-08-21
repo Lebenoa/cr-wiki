@@ -47,7 +47,9 @@
             <span class="text-accent" data-values="{{ e.values_attr() }}">{{ e.top() }}</span>
             {% endif %}
             <span>{{ e.text }}</span>
-            {% if e.blessed %}<span class="pill-accent">{{ ctx.l.t("state_blessed") }}</span>{% endif %}
+            {% if e.blessed && blessed_differs %}
+            <span class="pill-accent">{{ ctx.l.t("state_blessed") }}</span>
+            {% endif %}
         </li>
         {% endfor %}
     </ul>

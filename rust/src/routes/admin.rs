@@ -12,7 +12,7 @@ use axum::Form;
 use serde::Deserialize;
 
 use crate::ctx::Ctx;
-use crate::db::{self, Detail};
+use crate::db::{self, CombiEditRow, Detail};
 use crate::options;
 use crate::state::AppState;
 
@@ -24,6 +24,8 @@ struct AdminForm {
     section: String,
     /// filled when editing
     item: Option<Detail>,
+    /// the combo pairings this entity takes part in; empty for a treasure
+    combi: Vec<CombiEditRow>,
     error: String,
 }
 
@@ -50,11 +52,22 @@ fn known(section: &str) -> bool {
 }
 
 fn page(ctx: Ctx, section: &str, item: Option<Detail>, error: &str) -> Response {
+    page_with(ctx, section, item, Vec::new(), error)
+}
+
+fn page_with(
+    ctx: Ctx,
+    section: &str,
+    item: Option<Detail>,
+    combi: Vec<CombiEditRow>,
+    error: &str,
+) -> Response {
     Html(
         AdminForm {
             ctx,
             section: section.to_string(),
             item,
+            combi,
             error: error.to_string(),
         }
         .render()
@@ -91,7 +104,16 @@ pub async fn edit_form(
     let Some(item) = found else {
         return (StatusCode::NOT_FOUND, "not found").into_response();
     };
-    page(ctx, &section, Some(item), "")
+    let lang = ctx.lang.clone();
+    let db = state.db.clone();
+    let section_for_db = section.clone();
+    let combi = tokio::task::spawn_blocking(move || {
+        db::combi_edit_rows(&db, &lang, &section_for_db, id)
+    })
+    .await
+    .unwrap_or_else(|_| Ok(Vec::new()))
+    .unwrap_or_default();
+    page_with(ctx, &section, Some(item), combi, "")
 }
 
 pub async fn create(
@@ -161,4 +183,21 @@ pub async fn update(
     }
     options::invalidate();
     Redirect::to(&format!("/{section}/{id}")).into_response()
+}
+
+/// Removes one combo pairing from the editor. Takes the row id rather than a
+/// pair of entity ids: deleting by pair would take every duplicate with it.
+pub async fn delete_combi(
+    State(state): State<AppState>,
+    ctx: Ctx,
+    Path(row_id): Path<i64>,
+) -> Response {
+    if !ctx.is_admin() {
+        return (StatusCode::NOT_FOUND, "not found").into_response();
+    }
+    let db = state.db.clone();
+    let _ = tokio::task::spawn_blocking(move || db::delete_combi(&db, row_id)).await;
+    options::invalidate();
+    // back to where the editor was; the referer is the entity's own form
+    Redirect::to("/cookies").into_response()
 }
