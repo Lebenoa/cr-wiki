@@ -420,6 +420,11 @@ pub fn search(db: &Db, lang: &str, q: &str, limit: i64) -> rusqlite::Result<Vec<
         ("cookies", "cookie", "cookie_id", "owner_id", "cookie_translation", "abilities, description"),
         ("pets", "pet", "pet_id", "pet_id", "pet_translation", "description"),
         ("treasures", "treasure", "treasure_id", "treasure_id", "treasure_translation", "description"),
+        // the V app's SearchResults covers these too, so a relic or an
+        // episode is findable by name the same way a cookie is
+        ("relics", "relic", "relic_id", "relic_id", "relic_translation", "description"),
+        ("episodes", "episode", "episode_id", "episode_id", "episode_translation", "description"),
+        ("ingredients", "ingredient", "ingredient_id", "ingredient_id", "ingredient_translation", "description"),
     ] {
         // one OR per indexed column, on both the localized row and the
         // English one behind it
@@ -429,8 +434,10 @@ pub fn search(db: &Db, lang: &str, q: &str, limit: i64) -> rusqlite::Result<Vec<
             clauses.push(format!("te.{col} LIKE ?2 ESCAPE '!'"));
         }
         let where_sql = clauses.join(" OR ");
+        let graded = matches!(section, "cookies" | "pets" | "treasures" | "ingredients");
+        let grade_col = if graded { "e.grade AS grade" } else { "NULL AS grade" };
         let sql = format!(
-            "SELECT e.{id_col} AS id, e.image AS image, e.grade AS grade,
+            "SELECT e.{id_col} AS id, e.image AS image, {grade_col},
                     COALESCE(tl.name, te.name) AS name, te.name AS en_name
                FROM {table} e
                LEFT JOIN {tr_table} tl ON tl.{owner_col} = e.{id_col} AND tl.lang = ?1
@@ -440,7 +447,7 @@ pub fn search(db: &Db, lang: &str, q: &str, limit: i64) -> rusqlite::Result<Vec<
               LIMIT ?3"
         );
         let mut stmt = c.prepare(&sql)?;
-        let rows = stmt.query_map(params![lang, like, limit], |r| card_from(r, true, false))?;
+        let rows = stmt.query_map(params![lang, like, limit], |r| card_from(r, graded, false))?;
         for card in rows {
             out.push((section.to_string(), card?));
         }
