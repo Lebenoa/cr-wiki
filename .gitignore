@@ -58,3 +58,4 @@ scripts/*
 !scripts/seed_data.json
 !scripts/build_*.cmd
 scripts/th/
+static/google*
