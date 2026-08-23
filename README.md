@@ -1,6 +1,6 @@
 # Cookie Run Wiki
 
-A web platform for displaying and managing rich data about collectible assets — cookies, pets, and treasures from the Cookie Run franchise. Built with the [V programming language](https://vlang.io/) and the [`veb`](https://github.com/veb-framework/veb) web framework using server-side rendering (SSR).
+A web platform for displaying and managing rich data about collectible assets — cookies, pets, and treasures from the Cookie Run franchise. Built with **Rust** ([axum](https://github.com/tokio-rs/axum), [askama](https://github.com/askama-rs/askama), [rusqlite](https://github.com/rusqlite/rusqlite)) using server-side rendering (SSR). Originally a V/veb application; the V sources were removed once the port reached parity (`PORTING.md` records the mapping).
 
 ## Features
 
@@ -9,7 +9,7 @@ A web platform for displaying and managing rich data about collectible assets �
 - **Treasure effects** — Normal/blessed effect panels with per-column value diffs and word-level text diffs for evolved treasures; every treasure carries its +0..+9 per-level values, rendered at the equipped level
 - **Community builds** — `/builds` list (EP/tag filters, infinite scroll, per-level effect values on cards) and `/builds/new` planner with modal pickers, a themed 0-9 level slider, per-card steppers, relay cookie, EP tiers, tags, anonymous 24-hour expiry, and a live combo-bonus preview; detail pages render each slot's per-level values and accept verify/issue reports
 - **Full-text search** — Navbar search over cookies/pets/treasures via SQLite FTS5, with a Thai-aware LIKE fallback (the default tokenizer can't segment Thai)
-- **Admin module** — Authenticated create/edit forms for cookies, pets, and treasures (effects, combi bonuses, rich text with `[[cookie:1]]` id links (display names localize at render time)); test credentials `test`/`test`
+- **Admin module** — Authenticated create/edit forms for cookies, pets, and treasures (effects, combi bonuses, rich text with `[[cookie:1]]` id links whose display names localize at render time); upserts translations per language so editing in Thai cannot wipe the English text
 - **Multi-language support** — i18n via `translations/*.tr` (English + Thai) with English fallback. The locale lives in the URL (`?lang=th`, English unprefixed) and is mirrored into the `wikilang` cookie, so each language has its own indexable address with `hreflang` alternates
 - **HTMX** — Partial-page updates, hx-boost navigation, server-paginated infinite scroll, and live preview refreshes without full reloads
 
@@ -17,9 +17,10 @@ A web platform for displaying and managing rich data about collectible assets �
 
 | Layer | Technology |
 |-------|------------|
-| Language | V (vlang) |
-| Web framework | veb (new backend, `-d new_veb`) |
-| Database | SQLite (with FTS5 support, `-d sqlite_fts5`) |
+| Language | Rust |
+| Web framework | axum + tokio |
+| Templates | askama (compile-time checked, escapes by default) |
+| Database | SQLite via rusqlite + r2d2 (bundled build includes FTS5) |
 | Styling | UnoCSS (Wind4 preset), generated `static/styles.css` |
 | Interactivity | HTMX (served from `/thirdparty/htmx.js`) |
 | Package manager | bun (never npm) |
@@ -28,57 +29,37 @@ A web platform for displaying and managing rich data about collectible assets �
 
 ```
 cookierun/
-├── app/                    # Controllers, middleware, request handlers
-│   ├── api/                # API helpers (available_langs)
-│   ├── util/               # Pure helpers: effect text formatting, blessed
-│   │   └── effects.v       #   diffs, EffectView (no DB access)
-│   ├── app.v               # App/Context structs, middleware, img_src()
-│   ├── builds.v            # Build list + planner + live preview partial
-│   ├── cookies.v / pets.v / treasures.v  # List, detail, admin create/edit
-│   ├── episodes.v / ingredients.v / jellies.v / skins.v / relics.v / gacha.v
-│   ├── static.v            # App-owned static cache (see below)
-│   ├── seo.v               # /sitemap.xml + /robots.txt
-│   ├── search.v            # Search endpoint
-│   ├── login.v / register.v / api.v
-│   ├── forms.v / uploads.v / richtext.v  # Admin form handling, image
-│   │                                           # uploads, [[link]] rendering
-│   └── tests.v             # Integration suite (compiled out of -prod builds)
-├── config/                 # Config.toml loading (host, port, db_file)
-├── database/               # DB-coupled code only (queries + models)
-│   ├── models/             # Domain entities (User, Cookie, Pet, Treasure, …)
-│   ├── create.v            # Insert operations
-│   ├── select.v            # Query operations (with translation fallback)
-│   ├── update.v            # Update operations
-│   └── database.v          # Connection, schema, migrations, seed fixture
+├── src/main.rs             # Router assembly, middleware ordering, tracing
+├── src/routes/             # catalog, detail, builds, planner, picker,
+│                           #   admin, auth, uploads, misc, changelog, api
+├── src/db.rs               # All SQL — bound parameters, whitelisted identifiers
+├── src/ctx.rs              # Per-request context extractor (locale, session,
+│                           #   is_local/is_admin)
+├── src/session.rs          # argon2id hashing, CSPRNG sessions with TTL
+├── src/ratelimit.rs        # Per-client token bucket (peer-keyed, bounded)
+├── src/i18n.rs             # .tr loader (startup scan, en fallback)
+├── templates/              # askama templates
+├── PORTING.md              # Port notes: what maps to what, deliberate deltas
 ├── static/                 # Static assets
-│   ├── img/treasures/      # Sprites named <english name in snake_case>.png
-│   │                       #   (placeholder URL when missing)
+│   ├── img/<entity>/       # Sprites named <english name in snake_case>.png
 │   ├── js/                 # picker.js, level_slider.js, catalog_filter.js,
-│   │                       #   gacha_tabs.js, combobox.js, richtext.js, theme.js
+│   │                       #   gacha_tabs.js, combobox.js, richtext.js,
+│   │                       #   theme.js, theme_editor.js, admin_upload.js
 │   └── styles.css          # Generated by UnoCSS — don't edit by hand
-├── templates/              # View templates (veb syntax)
-│   ├── views/              # Detail pages (cookie.html, pet.html, treasure.html)
-│   ├── components/         # Shared partials (cards, effect cards, previews)
-│   ├── layout/             # head.html, navbar.html
-│   ├── admin/              # Admin create/edit forms
-│   └── *.html              # Page templates (index, cookies, new_build, …)
 ├── translations/           # i18n .tr files (en, th)
-├── scripts/                # seed_data.json (DB fixture) + build_*.cmd — the
-│                           #   only tracked files; scrapers stay local
-├── main.v                  # Entry point (flags, test session hook)
+├── scripts/                # seed_data.json (committed DB fixture); scraper
+│                           #   scripts stay local and are never committed
 ├── Config.toml             # Runtime configuration (gitignored)
-├── uno.config.ts           # UnoCSS configuration (preflight keyframes live here)
-├── package.json            # Frontend tooling (unocss --watch)
-└── v.mod                   # V module definition
+├── uno.config.ts           # UnoCSS config (preflights/keyframes live here)
+└── package.json            # Frontend tooling (unocss watcher)
 ```
 
 ## Getting Started
 
 ### Prerequisites
 
-- [V compiler](https://vlang.io/docs/#installation) (latest)
-- SQLite build with FTS5 support (only needed for the `-d sqlite_fts5` define)
-- bun (for the UnoCSS watcher)
+- Rust toolchain (stable)
+- bun (for the UnoCSS watcher/generator)
 
 ### Installation
 
@@ -89,101 +70,71 @@ cd cookierun
 # Install frontend tooling
 bun install
 
-# Run the application — both flags are required
-v -d sqlite_fts5 -d new_veb run .
-```
+# Run the application
+cargo run
 
-> **Note:** `-d sqlite_fts5` enables SQLITE_ENABLE_FTS5 and `-d new_veb` selects veb's new backend. No `-enable-globals` is needed — the app no longer uses global variables. Omitting `-d new_veb` falls back to the legacy backend.
+The server binds per `Config.toml` (defaults without a config file: `127.0.0.1:6785`, database `sqlite.db`). `CR_HOST` / `CR_PORT` env vars override the bind address without editing the shared config.
 
-The server binds to `0.0.0.0:6785` (see `Config.toml`; defaults without a config file: `127.0.0.1:6785`, database `sqlite.db`). A fresh database seeds itself from `scripts/seed_data.json`.
+> **Database:** create/migrate/seeding used to happen at boot in the removed V layer. An existing `sqlite.db` works as-is; populating a fresh database from `scripts/seed_data.json` currently needs a manual import until that tooling is ported.
+
+**Debug vs release matters.** Debug builds skip rate limiting and Turnstile verification and grant admin to headerless loopback peers (local development needs no login). Release builds (`cargo run --release`) enable rate limiting and Turnstile and compile out the loopback bypass — always deploy a release build.
 
 ### Configuration
 
-`Config.toml` is loaded at startup (and gitignored — create your own from this sample):
+`Config.toml` is loaded at startup (gitignored — create your own from `Config.example.toml`). All fields are optional and fall back to defaults; non-positive `[ratelimit]` values clamp back to those defaults at load.
 
 ```toml
-host = "0.0.0.0"
+host = "127.0.0.1"
 port = 6785
 db_file = "sqlite.db"
-# Cloudflare Turnstile bot protection (protected POST handlers reject with
-# 403 unless siteverify passes). Verification is skipped in non-`-prod`
-# builds; a `-prod` build rejects every protected submission without a valid
-# token (fail closed). The TURNSTILE_SECRET / TURNSTILE_HOSTNAMES env vars override
-# these fields when set.
-[turnstile]
-secret = ""
-hostnames = "localhost,127.0.0.1"
 
-# Per-IP rate limiting for the public read endpoints (search, list/detail
-# pages, API/planner AJAX). A token bucket per IP: `capacity` burst tokens,
-# refilled at `refill` per second; 429 while empty. `idle_ttl` is the seconds
-# a bucket may sit unused before the sweep prunes it (the sweep only runs
-# once the bucket map grows past `sweep_above` entries).
+[turnstile]
+secret = ""                            # TURNSTILE_SECRET overrides
+hostnames = "localhost,127.0.0.1"      # TURNSTILE_HOSTNAMES overrides
+
 [ratelimit]
 capacity = 60
 refill = 20
 idle_ttl = 300
 sweep_above = 2048
+trusted_proxies = []                   # proxy IPs whose forwarded headers count
 ```
 
-All fields are optional; omitted fields fall back to the defaults in `config/config.v`, and non-positive `[ratelimit]` values are clamped back to those defaults at load. `[turnstile] hostnames` is the comma-separated frontend-hostname allowlist checked against siteverify — production deployments must set the real domain (never `localhost`).
+`[turnstile] hostnames` is the comma-separated frontend-hostname allowlist checked against siteverify — production deployments must set the real domain (never `localhost`), or every protected submission fails closed.
 
 ## Development
 
 ### Styles
 
-The stylesheet is generated by UnoCSS from class usage in `./**/*.html` and `./app/*.v`:
-
 ```bash
-bun run dev    # unocss --watch
+bunx unocss     # one-shot regenerate static/styles.css
+bun run dev     # unocss --watch
 ```
 
-This regenerates `static/styles.css` on changes to scanned files. Commit the regenerated CSS together with template class changes; never edit `static/styles.css` by hand, and never add `<style>` tags (all styling via UnoCSS utilities).
+UnoCSS scans `./**/*.html`. Commit regenerated CSS together with template class changes; never edit `static/styles.css` by hand; never add `<style>` tags or HTML comments in templates (styling via utilities plus the preflights in `uno.config.ts`, where theme palettes and keyframes live).
 
 ### Building & checking
 
 ```bash
-# Type-check (exit 0 = clean)
-v -d sqlite_fts5 -d new_veb -check .
+
+cargo check     # type-check (exit clean before yielding work)
+cargo test      # unit tests over queries, i18n, paging, grades, sessions…
 ```
-
-### Test session (non-`-prod` builds)
-
-```bash
-CR_TEST=1 v -d sqlite_fts5 -d new_veb run .
-```
-
-Boots against a fresh throwaway `sqlite_test.db` on port 6798 and runs the data-integrity + HTTP suite. Exit 0 = pass, 1 = fail. Compiled out of binaries built with `-prod`, which also re-enable Turnstile verification and rate limiting — always deploy a `-prod` build.
-
-### Database
-
-The SQLite database is created automatically at startup from the ORM-annotated structs in `database/models/*.v`, then migrations in `database/database.v` add columns/constraints for existing databases. With `-d sqlite_fts5`, it also enables WAL mode and creates FTS5 virtual tables with synchronization triggers. Local `*.db` files are gitignored.
-
-`scripts/seed_data.json` (a committed DB fixture) and `scripts/build_*.cmd` are the only tracked files in `scripts/`. Regenerate the fixture whenever data or DB translations change (`seed_if_empty()` in `database/database.v`).
-
-Static files are served by the app rather than `veb.StaticHandler`: `app/static.v` scans `static/` at startup into a `shared` url → path map and serves it from a global middleware, so an admin upload is visible immediately instead of after a restart.
 
 ## Architecture
 
 **Request lifecycle:**
 
-1. HTTP request hits a controller handler in `app/` (routes are `@['/path']` annotations; simple handlers auto-route by name)
-2. `before_request` in `app/app.v` enriches the context: language from `?lang=` then the `wikilang` cookie, user from session
-3. Controllers delegate data access to `database/`
-4. Data is persisted/queried through `database/models/*.v` entities
-5. A structured context (fetched data + local state) is prepared and passed to the view template, producing the final HTML
+1. Middleware runs first: rate limit (peer-keyed token bucket), then locale resolution + session lookup into request extensions
+2. Handlers receive an extracted `Ctx` (locale, site URL, htmx flags, user, admin decision)
+3. Data access goes through `src/db.rs` behind `spawn_blocking`
+4. askama templates render the response; escaping is on by default
 
-**Module boundaries:**
+**Invariants worth keeping:**
 
-- `database/` holds DB-coupled code only — queries, models, migrations. Effect *presentation* (value formatting, splitting, blessed diffs, `EffectView`) lives in `app/util/effects.v`; `database/` imports `app.util`, never the other way around.
-- Controllers stay thin; business logic lives in `app/` and `database/` functions returning structured results (`!` / `or {}`) — no generic exceptions.
-
-**Key patterns:**
-
-- Explicit imports only; no implicit paths
-- Localized content stored per-language (`*_translation` tables) with English fallback
-- User-facing text always goes through translation keys (`translations/{en,th}.tr` + `ctx.tr()`)
-- In-memory session store keyed by a random session ID in the `CRSESSID` http-only cookie; admin routes return 404 for unauthenticated access
+- Admin routes return **404** (not 401/403) when unauthenticated; admin = session admin, or debug-build loopback peer with no forwarded headers
+- Graded grids order via `grade::rank_sql` (display rank, where E outranks L) — never raw `grade DESC`
+- Redirect targets validated site-relative; build video links http(s)-only; sessions expire after 7 days
 
 ## API Endpoints
 
@@ -191,28 +142,27 @@ Static files are served by the app rather than `veb.StaticHandler`: `app/static.
 |--------|------|-------------|
 | GET | `/` | Homepage |
 | GET | `/search` | Search results (FTS5; Thai falls back to LIKE) |
-| GET | `/cookies`, `/pets`, `/treasures` | List pages (htmx infinite scroll) |
+| GET | `/cookies`, `/pets`, `/treasures` | List pages (all/normal/evo tabs, htmx infinite scroll) |
 | GET | `/cookies/:id`, `/pets/:id`, `/treasures/:id` | Detail pages |
 | GET/POST | `/cookies/new`, `/pets/new`, `/treasures/new` | Admin create (admin-only) |
 | GET/POST | `/cookies/:id/edit`, `/pets/:id/edit`, `/treasures/:id/edit` | Admin edit (admin-only) |
-| GET | `/episodes`, `/episodes/:id` | Episode list and detail (stages, quests, relics, odds) |
+| GET | `/episodes`, `/episodes/:id` | Episode list and detail |
 | GET | `/ingredients`, `/ingredients/:id` | Crafting ingredients (grade + drop episode) |
 | GET | `/jellies`, `/jellies/:id` | Jelly catalog and detail |
-| GET | `/skins`, `/relics` | Skin and relic catalogs |
+| GET | `/skins`, `/relics` (+ detail pages) | Skin and relic catalogs |
 | GET | `/gacha` | Disclosed draw/hatch odds, one tab card per pool |
 | GET | `/builds` | Community build list (filters, sort, pagination) |
-| GET/POST | `/builds/new` | Build planner (anyone) + anonymous submission |
+| GET/POST | `/builds/new` | Build planner + submission (anonymous allowed) |
 | GET | `/builds/preview` | Live loadout preview partial (combo bonus) |
 | GET | `/builds/:id` | Build detail (per-level treasure values, verdicts) |
 | POST | `/builds/:id/verify` | Report verified/issue verdict (authenticated) |
-| GET/POST | `/builds/:id/edit` | Edit a build (owner/admin) |
-| POST | `/builds/:id/delete` | Delete a build (owner/admin) |
-| GET/POST | `/login`, `/register` | Auth |
-| GET | `/api/available-langs` | Available languages (HTML partial for HTMX, JSON otherwise) |
-| GET | `/api/richtext-names` | Linkable entity names for the rich-text autocomplete |
-| POST | `/api/set-lang` | Set language cookie and redirect back (superseded by `?lang=`) |
+| GET/POST | `/builds/:id/edit`, POST `/builds/:id/delete` | Owner/admin only (404 otherwise) |
+| GET/POST | `/login`, `/register`; POST `/logout` | Auth |
+| GET | `/api/available-langs` | Languages (HTML partial for HTMX, JSON otherwise) |
+| GET | `/api/richtext-names` | Linkable entity names for rich-text autocomplete |
+| POST | `/api/set-lang` | Set language cookie and redirect back |
 | GET | `/sitemap.xml`, `/robots.txt` | SEO surface (locale alternates, crawl rules) |
 
 ## License
 
-MIT — see `v.mod`.
+MIT.

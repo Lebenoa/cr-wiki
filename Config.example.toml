@@ -50,3 +50,11 @@ idle_ttl = 300
 # low-traffic servers never pay for it. Default 2048. Non-positive values
 # clamp back to the default at load.
 sweep_above = 2048
+# Proxy IPs whose forwarded client headers (CF-Connecting-IP,
+# X-Forwarded-For, X-Real-Ip) may stand in for the visitor's address when
+# keying the bucket. Leave empty to key every request by its TCP peer —
+# forwarded headers from any other peer are client-spoofable, and rotating
+# one would hand out a fresh full bucket per request. Behind a reverse proxy
+# or CDN (e.g. Cloudflare), list the proxy's IPs here or every visitor shares
+# one bucket.
+trusted_proxies = []

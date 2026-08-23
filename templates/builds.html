@@ -1,149 +1,63 @@
-<!DOCTYPE html>
-<html lang="@ctx.lang">
+{% extends "base.html" %}
+{% import "title.html" as t %}
+{% block title %}{% call t::tags(ctx.page_title("builds_page_title"), ctx.page_desc("builds_page_description"), ctx.social_image()) %}{% endblock %}
+{% block content %}
+<section class="page-shell max-w-5xl">
+    <div class="flex items-center justify-between gap-4 flex-wrap">
+        <h1 class="page-title">{{ ctx.l.t("builds_page_title") }}</h1>
+        <a href="/builds/new" class="btn-primary">+ {{ ctx.l.t("new_build_button") }}</a>
+    </div>
+    <form hx-get="/builds" hx-trigger="change" hx-target="#build-list" hx-push-url="true"
+        class="mt-8 flex flex-wrap items-end gap-4">
+        <input type="hidden" name="cookie" id="sel-cookie" value="{{ filter_cookie }}" />
+        <input type="hidden" name="pet" id="sel-pet" value="{{ filter_pet }}" />
+        <input type="hidden" name="treasure" id="sel-treasure" value="{{ filter_treasure }}" />
+        <button type="button" id="slot-cookie" onclick="openCookie('cookie')"
+            class="p-4 rounded-xl flex flex-col items-center gap-1 min-h-20 border-2 border-dotted border-primary/30 bg-surface/50 hover:bg-surface transition-colors">
+            <span class="my-auto text-xs font-label text-foreground-muted uppercase">{{ ctx.l.t("build_cookie_label") }}</span>
+        </button>
+        <button type="button" id="slot-pet" onclick="openPicker('pet')"
+            class="p-4 rounded-xl flex flex-col items-center gap-1 min-h-20 border-2 border-dotted border-primary/30 bg-surface/50 hover:bg-surface transition-colors">
+            <span class="my-auto text-xs font-label text-foreground-muted uppercase">{{ ctx.l.t("build_pet_label") }}</span>
+        </button>
+        <button type="button" id="slot-treasure" onclick="openTreasure('treasure')"
+            class="p-4 rounded-xl flex flex-col items-center gap-1 min-h-20 border-2 border-dotted border-primary/30 bg-surface/50 hover:bg-surface transition-colors">
+            <span class="my-auto text-xs font-label text-foreground-muted uppercase">{{ ctx.l.t("build_treasure_label") }}</span>
+        </button>
+        <label class="flex flex-col gap-1 text-xs font-label uppercase text-foreground-muted">
+            {{ ctx.l.t("build_ep_label") }}
+            <select name="ep" class="filter-input">
+                <option value="">{{ ctx.l.t("none_option") }}</option>
+                {% for n in ctx.ep_tiers() %}
+                <option value="{{ n }}" {% if ep == n.to_string() %}selected{% endif %}>{{ ctx.ep_tier_label(n) }}</option>
+                {% endfor %}
+                {% for n in ctx.ep_specials() %}
+                <option value="s{{ n }}" {% if ep == format!("s{}", n) %}selected{% endif %}>{{ ctx.ep_special_label(n) }}</option>
+                {% endfor %}
+            </select>
+        </label>
+        <label class="flex flex-col gap-1 text-xs font-label uppercase text-foreground-muted">
+            {{ ctx.l.t("build_sort_label") }}
+            <select name="sort" class="filter-input">
+                <option value="latest" {% if sort == "latest" %}selected{% endif %}>{{ ctx.l.t("build_sort_latest") }}</option>
+                <option value="score" {% if sort == "score" %}selected{% endif %}>{{ ctx.l.t("build_sort_score") }}</option>
+                <option value="coin" {% if sort == "coin" %}selected{% endif %}>{{ ctx.l.t("build_sort_coin") }}</option>
+                <option value="time" {% if sort == "time" %}selected{% endif %}>{{ ctx.l.t("build_sort_time") }}</option>
+            </select>
+        </label>
+    </form>
+    <div id="build-list" class="mt-6 flex flex-col gap-3">
+        {% include "build_cards.html" %}
+    </div>
+</section>
 
-<head>
-    @include 'layout/head.html'
-</head>
+{% let kind = "cookie" %}{% let title_key = "build_pick_cookie" %}{% let steps = false %}
+{% include "picker_dialog.html" %}
+{% let kind = "pet" %}{% let title_key = "build_pick_pet" %}
+{% include "picker_dialog.html" %}
+{% let kind = "treasure" %}{% let title_key = "build_pick_treasure" %}
+{% include "picker_dialog.html" %}
 
-<body>
-    @include 'layout/navbar.html'
-
-    <section class="max-w-5xl mx-auto my-16 px-4">
-        <div class="flex items-center justify-between gap-4 flex-wrap">
-            <h1 class="font-headline text-accent text-4xl leading-tight">%builds_page_title</h1>
-            <a href="/builds/new" class="btn-primary">+ %new_build_button</a>
-        </div>
-
-        <form hx-get="/builds" hx-trigger="change" hx-target="#build-list" hx-push-url="true"
-            class="mt-8 flex flex-wrap items-end gap-4">
-            <input type="hidden" name="cookie" id="sel-cookie" value="@filter_cookie" />
-            <input type="hidden" name="pet" id="sel-pet" value="@filter_pet" />
-            <input type="hidden" name="treasure" id="sel-treasure" value="@filter_treasure" />
-            <div class="relative">
-                <button type="button" id="slot-cookie" data-empty="%build_cookie_label"
-                    data-clear-title="%build_clear_slot" onclick="openCookie('cookie')"
-                    class="w-full p-4 rounded-xl flex flex-col items-center gap-1 min-h-20 border-2 border-dotted border-primary/30 bg-surface/50 hover:bg-surface transition-colors">
-                    @if c := sel_cookie
-                    <img src="@{ctx.img_src('cookies', c.image)}" alt="@c.name" class="size-20 object-contain" />
-                    <span class="text-center text-sm font-bold text-on-surface leading-tight">@c.name</span>
-                    @else
-                    <span class="my-auto text-xs font-label text-foreground-muted uppercase">%build_cookie_label</span>
-                    @endif
-                </button>
-                @if _ := sel_cookie
-                <button type="button" title="%build_clear_slot" aria-label="%build_clear_slot"
-                    onclick="clearSlot('cookie')"
-                    class="slot-clear absolute -top-2 -right-2 size-6 rounded-full bg-surface border border-primary/40 text-foreground-muted hover:text-accent hover:border-accent flex items-center justify-center text-sm leading-none shadow">✕</button>
-                @endif
-            </div>
-            <div class="relative">
-                <button type="button" id="slot-pet" data-empty="%build_pet_label"
-                    data-clear-title="%build_clear_slot" onclick="openPicker('pet')"
-                    class="w-full p-4 rounded-xl flex flex-col items-center gap-1 min-h-20 border-2 border-dotted border-primary/30 bg-surface/50 hover:bg-surface transition-colors">
-                    @if p := sel_pet
-                    <img src="@{ctx.img_src('pets', p.image)}" alt="@p.name" class="size-20 object-contain" />
-                    <span class="text-center text-sm font-bold text-on-surface leading-tight">@p.name</span>
-                    @else
-                    <span class="my-auto text-xs font-label text-foreground-muted uppercase">%build_pet_label</span>
-                    @endif
-                </button>
-                @if _ := sel_pet
-                <button type="button" title="%build_clear_slot" aria-label="%build_clear_slot"
-                    onclick="clearSlot('pet')"
-                    class="slot-clear absolute -top-2 -right-2 size-6 rounded-full bg-surface border border-primary/40 text-foreground-muted hover:text-accent hover:border-accent flex items-center justify-center text-sm leading-none shadow">✕</button>
-                @endif
-            </div>
-            <div class="relative">
-                <button type="button" id="slot-treasure" data-empty="%build_treasure_label"
-                    data-clear-title="%build_clear_slot" onclick="openTreasure('treasure')"
-                    class="w-full p-4 rounded-xl flex flex-col items-center gap-1 min-h-20 border-2 border-dotted border-primary/30 bg-surface/50 hover:bg-surface transition-colors">
-                    @if t := sel_treasure
-                    <img src="@{ctx.img_src('treasures', t.image)}" alt="@t.name" class="size-20 object-contain" />
-                    <span class="text-center text-sm font-bold text-on-surface leading-tight">@t.name</span>
-                    @if t.effects.len > 0
-                    <span class="flex flex-col items-center gap-0.5">
-                        @for e in t.effects
-                        <span class="text-center text-xs text-foreground-muted leading-snug">
-                            @if e.value != ''
-                            <span class="text-accent">@e.value</span>
-                            @end
-                            @e.text
-                        </span>
-                        @endfor
-                    </span>
-                    @endif
-                    @else
-                    <span class="my-auto text-xs font-label text-foreground-muted uppercase">%build_treasure_label</span>
-                    @endif
-                </button>
-                @if _ := sel_treasure
-                <button type="button" title="%build_clear_slot" aria-label="%build_clear_slot"
-                    onclick="clearSlot('treasure')"
-                    class="slot-clear absolute -top-2 -right-2 size-6 rounded-full bg-surface border border-primary/40 text-foreground-muted hover:text-accent hover:border-accent flex items-center justify-center text-sm leading-none shadow">✕</button>
-                @endif
-            </div>
-            <label class="block space-y-1">
-                <span class="text-xs font-label text-foreground-muted uppercase">%build_ep_label</span>
-                <select name="ep"
-                    class="w-32 bg-surface border-2 border-primary/30 rounded-xl py-2 px-3 text-foreground">
-                    <option value="">%none_option</option>
-                    @for n in ep_tiers
-                    <option value="@n"
-                        @if filter_ep_raw == n.str()
-                        selected
-                        @endif
-                    >@{ctx.build_ep_label(n, 0)}</option>
-                    @endfor
-                    @for n in ep_specials
-                    <option value="s@n"
-                        @if filter_ep_raw == 's' + n.str()
-                        selected
-                        @endif
-                    >@{ctx.build_ep_label(0, n)}</option>
-                    @endfor
-                </select>
-            </label>
-            <label class="block space-y-1">
-                <span class="text-xs font-label text-foreground-muted uppercase">%build_sort_label</span>
-                <select name="sort"
-                    class="w-full bg-surface border-2 border-primary/30 rounded-xl py-2 px-3 text-foreground">
-                    <option value="score"
-                        @if sort == 'score'
-                        selected
-                        @endif
-                    >%build_sort_score</option>
-                    <option value="coin"
-                        @if sort == 'coin'
-                        selected
-                        @endif
-                    >%build_sort_coin</option>
-                    <option value="time"
-                        @if sort == 'time'
-                        selected
-                        @endif
-                    >%build_sort_time</option>
-                    <option value="latest"
-                        @if sort == 'latest'
-                        selected
-                        @endif
-                    >%build_sort_latest</option>
-                </select>
-            </label>
-        </form>
-
-        <div id="build-list" class="mt-6 flex flex-col gap-3">
-            @include 'components/build_cards.html'
-        </div>
-    </section>
-
-    @include 'components/picker_dialog_cookie.html'
-
-    @include 'components/picker_dialog_pet.html'
-
-    @include 'components/picker_dialog_treasure.html'
-
-    <script src="/js/level_slider.js"></script>
-    <script src="/js/picker.js"></script>
-</body>
-
-</html>
+<script src="/js/level_slider.js"></script>
+<script src="/js/picker.js"></script>
+{% endblock %}

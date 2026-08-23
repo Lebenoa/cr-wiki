@@ -30,12 +30,7 @@ logs/
 *.db
 *.js
 !static/thirdparty/htmx.js
-!static/js/combobox.js
-!static/js/richtext.js
-!static/js/theme.js
-!static/js/picker.js
-!static/js/level_slider.js
-!static/js/gacha_tabs.js
+!static/js/*.js
 
 # Ignore installed modules through `v install --local`:
 modules/
@@ -60,5 +55,8 @@ scripts/*
 scripts/th/
 static/google*
 
-# rust port build output
-rust/target/
+# build output
+/target/
+
+# zed flycheck artifacts
+/rust/target/

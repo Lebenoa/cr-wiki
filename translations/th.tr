@@ -1057,3 +1057,9 @@ back_to_list
 logout
 ออกจากระบบ
 -----
+build_error_video_link
+ลิงก์วิดีโอต้องเป็น URL แบบ http(s) ไม่เกิน 200 อักขระ
+-----
+build_error_description
+คำอธิบายจำกัดที่ 5000 อักขระ
+-----

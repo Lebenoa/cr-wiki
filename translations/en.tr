@@ -1057,3 +1057,9 @@ Back to list
 logout
 Log out
 -----
+build_error_video_link
+Video link must be an http(s) URL of at most 200 characters
+-----
+build_error_description
+Description is limited to 5000 characters
+-----

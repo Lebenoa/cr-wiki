@@ -1,331 +1,64 @@
-<!DOCTYPE html>
-<html lang="@ctx.lang">
-
-<head>
-    @include 'layout/head.html'
-</head>
-
-<body>
-    @include 'layout/navbar.html'
-
-    <section class="max-w-5xl mx-auto my-16 px-4">
-        <a href="/builds" class="text-sm font-bold text-accent hover:underline">← %build_back_list</a>
-
-        <header class="mt-6 flex flex-wrap items-end justify-between gap-6">
-            <div>
-                <div class="flex flex-wrap items-center gap-3">
-                    <span class="text-4xl font-headline font-bold text-accent">@{ctx.build_ep_label(b.ep, b.ep_special)}</span>
-                    @for t in b.tags
-                    <span class="font-bold text-accent text-xs border border-accent/50 rounded-full px-2 py-0.5">@{ctx.build_tag_label(t)}</span>
-                    @endfor
-                </div>
-                <div class="mt-2 text-sm text-foreground-muted">
-                    @if b.author != ""
-                    <span class="font-bold text-on-surface">@b.author</span>
-                    @else
-                    <span class="font-bold text-on-surface">%build_anonymous</span>
-                    @endif
-                    <span> · @{ctx.build_date_label(b.created_at)}</span>
-                    @if b.is_anon
-                    <span class="ml-2 text-xs">@{ctx.expires_in_label(b.expires_in_h)}</span>
-                    @endif
-                </div>
-            </div>
-            <div class="text-right">
-                <div class="text-xs font-label uppercase text-foreground-muted">%build_score_label</div>
-                <div class="text-3xl font-headline font-bold text-on-surface">@{ctx.format_num(b.score)}</div>
-            </div>
-        </header>
-
-        <div class="mt-8 grid grid-cols-2 md:grid-cols-3 gap-4">
-            <a href="/cookies/@b.cookie.id" title="@b.cookie.name"
-                class="group rounded-2xl border-2 border-primary/30 bg-surface/50 p-5 flex flex-col items-center gap-3 transition-colors hover:border-primary">
-                <img src="@{ctx.img_src('cookies', b.cookie.image)}" alt="@b.cookie.name"
-                    class="h-36 w-full object-contain" />
-                <span class="text-center font-bold text-on-surface group-hover:text-primary leading-tight">@b.cookie.name</span>
-                @if b.combi_bonus_id > 0
-                <span
-                    class="font-bold text-accent uppercase border border-accent/50 rounded-full px-2 py-0.5 text-[10px]">%combo_bonus_title</span>
-                @end
-            </a>
-            @if c2 := b.cookie2
-            <a href="/cookies/@c2.id" title="@c2.name"
-                class="group rounded-2xl border-2 border-primary/30 bg-surface/50 p-5 flex flex-col items-center gap-3 transition-colors hover:border-primary">
-                <span class="text-[10px] font-label uppercase text-foreground-muted">%build_relay_label</span>
-                <img src="@{ctx.img_src('cookies', c2.image)}" alt="@c2.name"
-                    class="h-28 w-full object-contain" />
-                <span class="text-center font-bold text-on-surface group-hover:text-primary leading-tight">@c2.name</span>
-            </a>
-            @end
-            <a href="/pets/@b.pet.id" title="@b.pet.name"
-                class="group rounded-2xl border-2 border-primary/30 bg-surface/50 p-5 flex flex-col items-center gap-3 transition-colors hover:border-primary">
-                <span class="text-[10px] font-label uppercase text-foreground-muted">%build_pet_label</span>
-                <img src="@{ctx.img_src('pets', b.pet.image)}" alt="@b.pet.name"
-                    class="h-28 w-full object-contain" />
-                <span class="text-center font-bold text-on-surface group-hover:text-primary leading-tight">@b.pet.name</span>
-            </a>
+{% extends "base.html" %}
+{% import "title.html" as t %}
+{% block title %}{% call t::tags(ctx.page_title("build_detail_page_title"), ctx.page_desc("builds_page_description"), ctx.social_image()) %}{% endblock %}
+{% block content %}
+<section class="page-shell max-w-4xl">
+    <a href="/builds" class="back-link">&larr; {{ ctx.l.t("build_back_list") }}</a>
+    <h1 class="page-title">{{ build.ep_label(ctx) }}</h1>
+    <div class="mt-4 grid grid-cols-2 lg:grid-cols-3 gap-5">
+        {% for slot in build.slots() %}
+        <div class="entity-card">
+            {% match slot.image %}{% when Some with (img) %}
+            <img src="/img/{{ slot.section }}/{{ img }}" alt="{{ slot.name }}" class="size-20 object-contain" />
+            {% when None %}{% endmatch %}
+            <span class="card-title">{{ slot.name }}</span>
+            {% if slot.level >= 0 %}
+            <span class="card-meta">{{ ctx.l.t("level") }} {{ slot.level }}</span>
+            {% endif %}
+            {% if slot.blessed %}<span class="pill-accent">{{ ctx.l.t("state_blessed") }}</span>{% endif %}
         </div>
-
-        <div class="mt-4 grid grid-cols-3 gap-4">
-            @for i, t in b.treasures
-            <a href="/treasures/@t.id" title="@t.name"
-                class="group rounded-2xl border-2 border-primary/30 bg-surface/50 p-4 flex flex-col items-center gap-2 transition-colors hover:border-primary">
-                <span class="relative block w-full">
-                    <img src="@{ctx.img_src('treasures', t.image)}" alt="@t.name"
-                        class="h-20 w-full object-contain" />
-                    @if b.treasure_levels.len > i
-                    <span
-                        class="absolute -top-2 -right-2 size-5 rounded-full bg-primary text-foreground text-[10px] font-bold flex items-center justify-center shadow">+@{b.treasure_levels[i]}</span>
-                    @end
-                </span>
-                <span class="text-center text-sm font-bold text-on-surface group-hover:text-primary leading-tight">@t.name</span>
-                @if b.treasure_blessed.len > i
-                @if b.treasure_blessed[i]
-                <span
-                    class="font-bold text-accent uppercase border border-accent/50 rounded-full px-2 py-0.5 text-[10px]">%state_blessed</span>
-                @endif
-                @endif
-                @if b.slot_effects.len > i
-                <span class="flex flex-col items-center gap-0.5">
-                    @for e in b.slot_effects[i]
-                    <span class="text-center text-xs leading-snug text-foreground-muted">
-                        @if e.value != ''
-                        <span class="text-accent">@e.value</span>
-                        @end
-                        @e.text
-                    </span>
-                    @endfor
-                </span>
-                @end
-            </a>
-            @endfor
-        </div>
-
-        @if cb := combi
-        <div class="mt-6 p-5 rounded-xl border-l-4 border-accent bg-accent/10 flex items-center gap-3 flex-wrap">
-            <span class="text-sm font-label text-foreground-muted uppercase">%combo_bonus_title</span>
-            <span class="flex items-center gap-2">
-                <img src="@{ctx.img_src('cookies', b.cookie.image)}" alt=""
-                    class="size-10 rounded-lg object-contain transition-transform duration-200 hover:scale-110" />
-                <span class="text-accent font-bold">+</span>
-                <img src="@{ctx.img_src('pets', b.pet.image)}" alt=""
-                    class="size-10 rounded-lg object-contain transition-transform duration-200 hover:scale-110" />
-            </span>
-            @if cb.effect != ""
-            <span class="text-on-surface text-base">@cb.effect</span>
-            @end
-            @if cb.is_hidden
-            <span class="font-bold text-accent uppercase border border-accent/50 rounded-full px-3 py-1 text-sm">%combi_hidden_badge</span>
-            @end
-        </div>
-        @end
-
-        @if b.score > 0 || b.coin > 0 || b.time > 0 || b.boxes > 0
-        <div class="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4">
-            @if b.score > 0
-            <div class="rounded-2xl bg-surface/50 border border-primary/20 p-4">
-                <div class="text-xs font-label uppercase text-foreground-muted">%build_score_label</div>
-                <div class="mt-1 text-xl font-headline font-bold text-on-surface">@{ctx.format_num(b.score)}</div>
-            </div>
-            @end
-            @if b.coin > 0
-            <div class="rounded-2xl bg-surface/50 border border-primary/20 p-4">
-                <div class="text-xs font-label uppercase text-foreground-muted">%build_coin_label</div>
-                <div class="mt-1 text-xl font-headline font-bold text-on-surface">@{ctx.format_num(b.coin)}</div>
-            </div>
-            @end
-            @if b.time > 0
-            <div class="rounded-2xl bg-surface/50 border border-primary/20 p-4">
-                <div class="text-xs font-label uppercase text-foreground-muted">%build_time_label</div>
-                <div class="mt-1 text-xl font-headline font-bold text-on-surface">@{ctx.format_num(b.time / 1000)} %build_time_unit</div>
-            </div>
-            @end
-            @if b.boxes > 0
-            <div class="rounded-2xl bg-surface/50 border border-primary/20 p-4">
-                <div class="text-xs font-label uppercase text-foreground-muted">%build_boxes_label</div>
-                <div class="mt-1 text-xl font-headline font-bold text-on-surface">@{ctx.format_num(b.boxes)}</div>
-            </div>
-            @end
-        </div>
-        @end
-
-        <div class="mt-6">
-            <div class="text-xs font-label uppercase text-foreground-muted">%build_boosts_label</div>
-            <div class="mt-2 flex flex-wrap gap-2">
-                @for bo in boost_keys
-                @if bo in b.boosts
-                <div class="flex flex-col items-center gap-2 border-2 border-success bg-success/10 rounded-xl py-3 px-4 select-none transition-all duration-300">
-                    <img src="@{ctx.boost_img_src(bo)}" alt="" class="size-10 object-contain" />
-                    <span class="text-center text-sm font-bold text-on-surface leading-tight">@{ctx.build_boost_label(bo)}</span>
-                    <span class="relative inline-flex items-center rounded-full px-2 py-0.5 text-xs font-bold bg-success text-on-success">
-                        %toggle_on
-                    </span>
-                </div>
-                @else
-                <div class="flex flex-col items-center gap-2 border-2 border-error/40 rounded-xl py-3 px-4 select-none transition-all duration-300 opacity-60">
-                    <img src="@{ctx.boost_img_src(bo)}" alt="" class="size-10 object-contain" />
-                    <span class="text-center text-sm font-bold text-on-surface leading-tight">@{ctx.build_boost_label(bo)}</span>
-                    <span class="relative inline-flex items-center rounded-full px-2 py-0.5 text-xs font-bold bg-error text-on-error">
-                        %toggle_off
-                    </span>
-                </div>
-                @endif
-                @endfor
-                @if b.boost != ""
-                <div class="flex flex-col items-center gap-2 border-2 border-accent/50 bg-accent/10 rounded-xl py-3 px-4 select-none transition-all duration-300">
-                    <img src="@{ctx.boost_img_src(b.boost)}" alt="" class="size-10 object-contain" />
-                    <span class="text-center text-sm font-bold text-on-surface leading-tight">@{ctx.purchase_boost_label(b.boost)}</span>
-                </div>
-                @endif
-            </div>
-        </div>
-
-        <div class="mt-6">
-            <div class="text-xs font-label uppercase text-foreground-muted">%build_power_effects_label</div>
-            <div class="mt-2 flex flex-wrap gap-2">
-                @for pk in power_effect_keys
-                @if pk in b.power_effects
-                <div class="flex flex-col items-center gap-2 border-2 border-success bg-success/10 rounded-xl py-3 px-4 select-none transition-all duration-300">
-                    <img src="@{ctx.power_effect_img_src(pk)}" alt="" class="size-10 object-contain" />
-                    <span class="text-center text-sm font-bold text-on-surface leading-tight">@{ctx.power_effect_label(pk)}</span>
-                    <span class="relative inline-flex items-center rounded-full px-2 py-0.5 text-xs font-bold bg-success text-on-success">
-                        %toggle_on
-                    </span>
-                </div>
-                @else
-                <div class="flex flex-col items-center gap-2 border-2 border-error/40 rounded-xl py-3 px-4 select-none transition-all duration-300 opacity-60">
-                    <img src="@{ctx.power_effect_img_src(pk)}" alt="" class="size-10 object-contain" />
-                    <span class="text-center text-sm font-bold text-on-surface leading-tight">@{ctx.power_effect_label(pk)}</span>
-                    <span class="relative inline-flex items-center rounded-full px-2 py-0.5 text-xs font-bold bg-error text-on-error">
-                        %toggle_off
-                    </span>
-                </div>
-                @endif
-                @endfor
-            </div>
-        </div>
-
-        @if b.description != ""
-        <div class="mt-6 rounded-2xl bg-surface/50 border border-primary/20 p-5">
-            <div class="text-xs font-label uppercase text-foreground-muted">%build_notes</div>
-            <p class="mt-2 text-foreground whitespace-pre-line leading-relaxed">@b.description</p>
-        </div>
-        @end
-
-        @if b.youtube_url != ""
-        <a href="@b.youtube_url" target="_blank" rel="noopener"
-            class="mt-5 inline-flex items-center gap-1.5 text-sm font-bold text-accent hover:underline">
-            ▶ %build_watch_video
-        </a>
-        @end
-
-        <div class="mt-6 rounded-2xl border border-primary/20 bg-surface/50 p-5">
-            <div class="text-xs font-label uppercase text-foreground-muted">%build_verify_label</div>
-            @if verify_count > 0 || issue_count > 0
-            <div class="mt-2 flex flex-wrap items-center gap-4 text-sm">
-                @if verify_count > 0
-                <span class="inline-flex items-center gap-1.5 font-bold text-success">
-                    <svg class="size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
-                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                        stroke-linejoin="round">
-                        <path d="M20 6 9 17l-5-5" />
-                    </svg>
-                    @{ctx.format_num(u64(verify_count))} %build_verified_count
-                </span>
-                @end
-                @if issue_count > 0
-                <span class="inline-flex items-center gap-1.5 font-bold text-error">
-                    <svg class="size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
-                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                        stroke-linejoin="round">
-                        <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
-                        <path d="M12 9v4" />
-                        <path d="M12 17h.01" />
-                    </svg>
-                    @{ctx.format_num(u64(issue_count))} %build_issue_count
-                </span>
-                @end
-            </div>
-            @end
-
-            @if issues.len > 0
-            <ul class="mt-3 space-y-2">
-                @for iv in issues
-                <li class="flex items-start gap-2 rounded-xl border border-error/30 bg-error/10 px-3 py-2 text-sm">
-                    <svg class="size-4 mt-0.5 shrink-0 text-error" xmlns="http://www.w3.org/2000/svg" width="24"
-                        height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                        stroke-linecap="round" stroke-linejoin="round">
-                        <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
-                        <path d="M12 9v4" />
-                        <path d="M12 17h.01" />
-                    </svg>
-                    <span class="text-foreground">@iv.reason</span>
-                    @if iv.author != ""
-                    <span class="text-foreground-muted">— @iv.author</span>
-                    @end
-                </li>
-                @end
-            </ul>
-            @end
-
-            @if mr := my_review
-            <p class="mt-2 text-sm text-foreground">
-                @if mr.verified
-                <span class="font-bold text-success">%build_you_verified</span>
-                @else
-                <span class="font-bold text-error">%build_you_flagged</span>
-                @if mr.reason != ""
-                <span class="text-foreground-muted">@mr.reason</span>
-                @end
-                @end
-            </p>
-            @end
-
-            @if _ := ctx.user
-            <form method="post" action="/builds/@b.build_id/verify" hx-post="/builds/@b.build_id/verify"
-                hx-swap="none" hx-disable="find button[type=submit]" class="mt-3 space-y-3">
-                <div id="form-error"></div>
-                <div class="cf-turnstile" data-sitekey="@{ctx.turnstile_sitekey_for_template()}" data-action="build_verify"></div>
-                <textarea name="reason" rows="2" maxlength="500"
-                    class="w-full bg-surface border-2 border-primary/30 rounded-xl p-3 text-foreground placeholder:text-foreground/30 focus:border-primary focus:ring-0 transition-all outline-none resize-y"
-                    placeholder="%build_issue_reason_placeholder"></textarea>
-                <div class="flex flex-wrap gap-2">
-                    <button type="submit" name="verified" value="1"
-                        class="inline-flex items-center gap-1.5 rounded-xl bg-success px-5 py-2.5 font-bold text-on-success hover:opacity-90 transition-opacity">
-                        <svg class="size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
-                            fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                            stroke-linejoin="round">
-                            <path d="M20 6 9 17l-5-5" />
-                        </svg>
-                        %build_verify_works
-                    </button>
-                    <button type="submit" name="verified" value="0"
-                        class="rounded-xl border-2 border-error/50 px-5 py-2.5 font-bold text-error hover:border-error transition-colors">
-                        %build_report_issue
-                    </button>
-                </div>
-            </form>
-            @else
-            <p class="mt-2 text-sm text-foreground-muted">
-                <a href="/login" class="font-bold text-accent hover:underline">%build_login_to_verify</a>
-            </p>
-            @end
-        </div>
-
-        @if can_edit
-        <div class="mt-6 flex items-center gap-3">
-            <a href="/builds/@b.build_id/edit"
-                class="rounded-xl bg-primary px-5 py-2.5 font-bold text-foreground hover:opacity-90 transition-opacity">%build_edit_button</a>
-            <form method="post" action="/builds/@b.build_id/delete" hx-post="/builds/@b.build_id/delete"
-                hx-swap="none" hx-disable="find button[type=submit]" hx-confirm="%build_delete_confirm">
-                <div id="form-error"></div>
-                <div class="cf-turnstile" data-sitekey="@{ctx.turnstile_sitekey_for_template()}" data-action="build_delete"></div>
-                <button type="submit"
-                    class="rounded-xl border-2 border-error/50 px-5 py-2.5 font-bold text-error hover:border-error transition-colors">%build_delete_button</button>
-            </form>
-        </div>
-        @end
-    </section>
-</body>
-
-</html>
+        {% endfor %}
+    </div>
+    {% if build.has_stats() %}
+    <ul class="mt-6 flex flex-wrap gap-6 text-sm">
+        {% if build.score > 0 %}<li>{{ ctx.l.t("build_score_label") }}: {{ build.score }}</li>{% endif %}
+        {% if build.coin > 0 %}<li>{{ ctx.l.t("build_coin_label") }}: {{ build.coin }}</li>{% endif %}
+        {% if build.time_ms > 0 %}<li>{{ ctx.l.t("build_time_label") }}: {{ build.time_label() }}</li>{% endif %}
+        {% if build.boxes > 0 %}<li>{{ ctx.l.t("build_boxes_label") }}: {{ build.boxes }}</li>{% endif %}
+    </ul>
+    {% endif %}
+    {% if !build.description.is_empty() %}
+    <p class="mt-6 text-foreground-muted">{{ build.description }}</p>
+    {% endif %}
+    {% if !build.boost.is_empty() || !build.boosts.is_empty() %}
+    <ul class="mt-4 flex flex-wrap gap-2">
+        {% for boost in build.boosts %}<li class="pill-primary">{{ boost }}</li>{% endfor %}
+        {% if !build.boost.is_empty() %}<li class="pill-accent">{{ build.boost }}</li>{% endif %}
+    </ul>
+    {% endif %}
+    {% if !build.youtube_url.is_empty() %}
+    <a href="{{ build.youtube_url }}" rel="nofollow noopener" class="btn-secondary mt-6 inline-flex">{{ ctx.l.t("build_youtube_label") }}</a>
+    {% endif %}
+    <div class="mt-8 flex items-center gap-4">
+        <span class="pill-accent">{{ ctx.l.t("build_verified_count") }} {{ verified }}</span>
+        <span class="pill-primary">{{ ctx.l.t("build_issue_count") }} {{ issues }}</span>
+    </div>
+    {% if ctx.signed_in() %}
+    <form method="post" action="/builds/{{ build.id }}/verify" class="mt-4 flex flex-wrap items-end gap-3">
+        <label class="flex items-center gap-2 text-sm">
+            <input type="radio" name="verified" value="1" checked /> {{ ctx.l.t("build_verify_works") }}
+        </label>
+        <label class="flex items-center gap-2 text-sm">
+            <input type="radio" name="verified" value="0" /> {{ ctx.l.t("build_report_issue") }}
+        </label>
+        <input type="text" name="reason" class="filter-input" placeholder="{{ ctx.l.t("build_issue_reason_placeholder") }}" />
+        <button type="submit" class="btn-secondary">{{ ctx.l.t("build_verify_works") }}</button>
+    </form>
+    {% else %}
+    <p class="mt-4 text-xs text-foreground-muted">{{ ctx.l.t("build_login_to_verify") }}</p>
+    {% endif %}
+    <p class="mt-6 text-xs text-foreground-muted">
+        {{ build.author }}{% if build.is_anon %} · {{ build.expires_in_h }}h{% endif %}
+    </p>
+</section>
+{% endblock %}

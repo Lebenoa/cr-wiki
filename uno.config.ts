@@ -3,7 +3,7 @@ import { defineConfig, presetAttributify, presetWind4 } from "unocss";
 export default defineConfig({
     cli: {
         entry: {
-            patterns: ["./**/*.html", "./app/*.v"],
+            patterns: ["./**/*.html"],
             outFile: "./static/styles.css",
             rewrite: true,
         },
@@ -396,6 +396,106 @@ export default defineConfig({
 				}
 				.level-slider::-moz-range-thumb:active {
 					transform: scale(1.1);
+				}`,
+        },
+        {
+            // Treasure detail page effect panels (templates/components/
+            // effect cards, blessed-state animations). These rules have no
+            // utility equivalent — gradient mask borders and named keyframes
+            // — so they live here as a preflight instead of a <style> tag
+            // (none allowed anywhere). Selectors are namespaced to the
+            // effects panels, so shipping them site-wide is inert elsewhere.
+            getCSS: () => `
+				.blessed-effect .effect-card {
+					position: relative;
+					border-color: transparent;
+				}
+				.blessed-effect .effect-card::before {
+					content: "";
+					position: absolute;
+					inset: 0;
+					border-radius: inherit;
+					padding-left: 4px;
+					background: linear-gradient(to bottom, #f43f5e, #f97316, #eab308, #22c55e, #3b82f6, #a855f7);
+					-webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+					-webkit-mask-composite: xor;
+					mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+					mask-composite: exclude;
+					pointer-events: none;
+				}
+				.effect-diff {
+					animation: diff-in 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+				}
+				#effects-normal .effect-card {
+					animation: card-in 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+				}
+				.effect-name-diff del,
+				.effect-name-diff ins {
+					display: inline-block;
+				}
+				.effect-name-diff del {
+					position: relative;
+					text-decoration: none;
+					animation: strike-color 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+					animation-fill-mode: forwards;
+				}
+				.effect-name-diff del::after {
+					content: "";
+					position: absolute;
+					left: 0;
+					width: 100%;
+					top: 50%;
+					height: 0.08em;
+					background: currentColor;
+					transform-origin: left;
+					animation: strike-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+				}
+				.effect-name-diff ins {
+					animation: diff-in 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+				}
+				.effects-panels {
+					display: grid;
+				}
+				.effects-panels>div {
+					grid-area: 1 / 1;
+				}
+				#effects-blessed.leaving .effect-diff,
+				#effects-blessed.leaving .effect-name-diff ins {
+					animation: diff-out 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+				}
+				#effects-blessed.leaving .effect-name-diff del {
+					animation: strike-color-out 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+				}
+				#effects-blessed.leaving .effect-name-diff del::after {
+					animation: strike-out 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+				}
+				@keyframes diff-out {
+					from { opacity: 1; transform: none; }
+					to { opacity: 0; transform: translateY(-2px); }
+				}
+				@keyframes strike-color-out {
+					from { color: oklch(var(--foreground-muted, 0.4 0 0)); }
+					to { color: inherit; }
+				}
+				@keyframes strike-out {
+					from { transform: scaleX(1); }
+					to { transform: scaleX(0); }
+				}
+				@keyframes card-in {
+					from { opacity: 0; transform: translateY(-4px); }
+					to { opacity: 1; transform: none; }
+				}
+				@keyframes strike-color {
+					from { color: inherit; }
+					to { color: oklch(var(--foreground-muted, 0.4 0 0)); }
+				}
+				@keyframes diff-in {
+					from { opacity: 0; transform: translateY(-2px); }
+					to { opacity: 1; transform: none; }
+				}
+				@keyframes strike-in {
+					from { transform: scaleX(0); }
+					to { transform: scaleX(1); }
 				}`,
         },
     ],

@@ -1,94 +1,121 @@
 # Repository Guidelines
 
 ## Project Overview
-The repository implements a web platform written in V (V Language) using a specialized web framework called `veb`. The purpose is to display and manage rich data about collectible assets—specifically cookies, pets, and treasures—serving as a modular content management system with server-side rendering (SSR) capabilities.
-
-## Architecture & Data Flow
-- **Overall pattern**: MVC‑like architecture adapted for V.
-- **Request lifecycle**:
-  1. Incoming HTTP request hits an entry point in `app/` controllers.
-  2. Controllers delegate business logic to a service layer located in `database/`.
-  3. Data is persisted through domain models defined in `database/models/`.
-  4. A structured context (including fetched data and local state) is prepared for rendering.
-  5. The view template (`templates/views/*.html`) consumes this context, producing the final HTML response.
-- **Key modules**:
-  - *Database layer*: entities, repositories, and domain logic.
-  - *Controller layer*: request handling and orchestration.
-  - *Service layer*: business rules (exposed as functions in `app/` or `database/`).
-  - *Utility layer*: `app/util/` — pure/presentation helpers with no DB access
-    (effect text formatting/splitting, compact values, blessed diffs,
-    `EffectView`). `database/` imports `app.util`; `app.util` must never
-    import `database` or `app` — it is the leaf module for effect helpers.
-  - *Presentation layer*: view templates.
-
-## Key Directories
-- **`database/models/*.v`**: Persistent domain entities (e.g., `User`, `Pet`, `Cookie`, `Treasure`). Defined with ORM‑like annotations (`@[]`) for primary keys, foreign keys, and constraints.
-- **`database/`**: Contains database schema definitions and model mappings.
-- **`app/`**: Controllers and high‑level request handlers. Beyond cookies/pets/treasures the site also serves `episodes`, `ingredients` (the crafting catalog, renamed from `/crafting`), `jellies`, `skins`, `relics`, `gacha`, `builds`, plus `seo.v` (sitemap/robots) and `static.v`.
-- **`templates/`**: `views/` full pages, `components/` shared partials (cards, effect cards, treasure variants, search results), `layout/` navbar/head, `admin/` forms. The shared-partials dir was renamed from `partials/` to `components/`.
-- **`scripts/seed_data.json`**: A committed DB fixture; it and `scripts/build_*.cmd` are the only tracked files in `scripts/` (see the `.gitignore` negations). A fresh DB seeds itself from it via `seed_if_empty()` in `database/database.v`, so regenerate it whenever data or DB translations change. Every other file in `scripts/` is an untracked scraper/seed script — never commit them (user preference). The treasure source of truth is `scripts/cookierundb/*.json` (scraped with bun/python from cookierundb.com, uncommitted); the per-level values, grades, and blessed states in the seed are rebuilt from it by `scripts/build_seed_cookierundb.py`. Test/admin POST round-trips mutate the live DB — when regenerating the fixture, diff against HEAD so only intended changes land (test drift has been baked in twice).
-- **`translations/{en,th}.tr`**: Translation keys consumed via `ctx.tr()`.
+Cookie Run fan wiki: cookies, pets, treasures, episodes, ingredients, jellies,
+skins, relics, gacha pools and community builds, with server-side rendered
+pages, a build planner and admin editing. The implementation is **Rust**
+(axum + askama + rusqlite) at the repo root. The original V/veb app was removed
+from the tree once the port reached parity — its history lives in git, and
+`PORTING.md` records the port's intent.
 
 ## Development Commands
-- **Run:** `v -d sqlite_fts5 -d new_veb run .` — both flags are required: `-d sqlite_fts5` enables SQLITE_ENABLE_FTS5, `-d new_veb` selects the new veb backend. No `-enable-globals` — the app no longer uses global variables. Omitting `-d new_veb` falls back to the legacy veb backend.
-- **Build scripts** (`scripts/build_*.cmd`): one bare command per file, LF-terminated and shell-agnostic, meant to be eval'd/pasted from the repo root (the V target is `.`). `build_debug.cmd` is the plain dev build, `build_watch.cmd` the live-reload dev server (`-d veb_livereload … watch run .`), `build_prod.cmd` the only deployable one — `-prod` is what re-enables Turnstile verification and rate limiting and drops the CR_TEST session. Keep them a single command with no shell-specific wrapper. The **user** runs these; the same never-compile / never-start-a-server rules below still apply to you.
-- **Typecheck:** `v -d sqlite_fts5 -d new_veb -check .` — exit 0 means clean. **NEVER compile a binary yourself** — no `v run`, no `-o cr_test(.exe)`, no `v build`: the dev-server watch owns the compile (it locks `cookierun.exe`, so a manual build in the project dir fails with `Permission denied` anyway). Note `-check` only parses/checks V source — it does not run veb template comptime, so template-level errors/warnings surface only through the watch's compile or the user-run test session. V "notice:" messages (e.g. implicit slice clone in `database/select.v`) are warnings, not errors; silence with an explicit `.clone()` or `unsafe{a[..]}`.
-- **Server:** binds 0.0.0.0:6785 (`Config.toml`). **NEVER start a dev server yourself** — no `v run`, no detached restart, no watch. If a dev server is needed (live verification, preview, curl checks), ask the user to start it and use the ask tool to get confirmation that it's up before proceeding. If one is already running, reuse it and leave it alone. If the running server serves a **stale build** (recent template/JS/V changes missing from its responses), kill the running process and `touch` a watched file (e.g. `touch app/builds.v`) to make the watch recompile and rebind — then poll the port until it answers. Never compile the binary yourself; the watch owns the build.
-- **Never `sleep N` to wait for the watch compile** — it takes ~90s+ and any wait is guessing. Poll the port in a short retry loop (`for i in $(seq 1 30); do netstat -ano | grep -q ':6785.*LISTENING' && break; sleep 2; done`), or curl the target page until 200, checking `/tmp/cr_server.log` for compile errors on timeout. When polling via URL, **capture the HTTP status separately and grep the body only after the poll confirms 200** — never grep-and-break inside the loop (`curl ... | grep -q` in the poll condition greps whatever stale/error body came back and can false-break on an old build). The watch compiles with both flags (`-d veb_livereload -d sqlite_fts5 -d new_veb`); a failed compile leaves the old binary holding the port.
-- **Test session (non-`-prod` builds):** `CR_TEST=1 v -d sqlite_fts5 -d new_veb run .` — boots against a fresh throwaway `sqlite_test.db` on port 6798 (`CR_TEST_PORT`/`CR_TEST_DB` overridable), runs the data-integrity + HTTP suite, exits 0 on pass / 1 on fail. The session is compiled out of `-prod` builds. The **user** compiles and runs the session — never build the test binary yourself (see the Typecheck rule).
-- **V comptime gates:** `$if x` checks *builtin* flags; `-d` defines use `$if x ?`. The dev-only gates (test session in `main.v`, rate-limit bypass in `app/ratelimit.v`, turnstile bypass in `app/turnstile.v`) are `$if !prod`, i.e. **on unless the binary is compiled with `-prod`** — verified: `-prod` sets `pref.is_prod` -> `#define _VPROD (1)`, which `$if prod` reads. **Deployment builds must pass `-prod`**, or the running site accepts every form submission without a Turnstile check and rate-limits nobody.
-- **Package manager:** use bun/bunx, never node/npm/npx (user preference).
+Run from the repo root:
+- **Dev run:** `cargo run` — binds `Config.toml`'s host/port (default 127.0.0.1:6785).
+  Debug builds skip rate limiting and Turnstile verification, and grant admin
+  to headerless loopback peers (local development needs no login).
+- **Release:** `cargo run --release` — this is the deployable profile: rate
+  limiting and Turnstile verification are active, and the loopback admin
+  bypass is compiled out (`cfg!(debug_assertions)`). Deployments MUST be
+  release builds, or every form submission skips the bot check.
+- **Typecheck:** `cargo check` — exit clean before yielding work.
+- **Tests:** `cargo test` (unit tests live beside the code, e.g. in
+  `src/main.rs`). Never start a dev server yourself; if one is already
+  running, reuse it and leave it alone.
+- The app reads `Config.toml`, `translations/` and `static/` from the repo
+  root; `CR_HOST` / `CR_PORT` env vars override the bind address without
+  editing the shared file.
+
+## Key Directories
+- **`src/main.rs`** — router assembly, middleware ordering, tracing setup.
+- **`src/routes/*.rs`** — one module per surface (`catalog`, `detail`,
+  `builds`, `planner`, `picker`, `admin`, `auth`, `uploads`, `misc` (sitemap,
+  robots, changelog), `api`, `errors`). List pages share one handler keyed by
+  path section.
+- **`src/db.rs`** — all SQL. Values are always bound parameters;
+  identifiers/table names come from match whitelists, never from request
+  input.
+- **`src/ctx.rs`** — per-request context extractor (locale, site URL,
+  htmx flags, session user, `is_local`/`is_admin`) mirroring the old veb
+  Context.
+- **`src/session.rs`** — argon2id password hashing (PHC strings, cross-
+  compatible with hashes the V app wrote), in-memory sessions keyed by the
+  CRSESSID cookie.
+- **`src/{ratelimit,middleware}.rs`** — per-client token bucket applied
+  before locale resolution.
+- **`templates/**`**** — askama templates (own tree; there is no shared
+  template dir anymore).
+- **`translations/{en,th}.tr`** — loaded once at startup by `i18n::load`;
+  a missing key renders as the key itself rather than panicking.
+- **`scripts/seed_data.json`** — committed data fixture. It was consumed by
+  the removed V seeding layer (`seed_if_empty`); until an import tool exists,
+  fresh databases must be populated from it manually. The upstream source of
+  truth is `scripts/cookierundb/*.json` (uncommitted scraper output); the
+  per-level values, grades and blessed states in the fixture are rebuilt from
+  it by the untracked `scripts/build_seed_cookierundb.py`. Every other file
+  in `scripts/` is untracked scraper tooling — never commit it.
+
+## Security Invariants (all verified by review; do not regress)
+- **Admin gating:** unauthenticated access to admin routes returns **404**,
+  not 401/403. `Ctx::is_admin` ORs in the loopback bypass only in debug
+  builds; `is_local` requires a loopback TCP peer AND absence of
+  `CF-Connecting-IP` / `X-Forwarded-For` / `X-Real-Ip`, failing closed when
+  no peer address is available.
+- **Forwarded headers are guilty until proven trusted:** the rate limiter
+  keys buckets on the TCP peer; forwarded headers stand in only when the peer
+  is listed in `[ratelimit] trusted_proxies` (Config.toml /
+  Config.example.toml). Behind a CDN, configure the proxy IPs there or every
+  visitor shares one bucket.
+- **Rate limiter bounds:** idle sweep past `sweep_above` entries, hard cap of
+  65,536 buckets with oldest-eviction — a flood of unique addresses must not
+  turn the map into an attacker-sized allocation.
+- **Build video links** accept only `http://` / `https://` (≤200 chars, no
+  control bytes): they render as live hrefs and HTML escaping does not
+  neutralise a `javascript:` target. Description is capped at 5000 chars.
+- **Redirect targets** must be site-relative paths of printable ASCII —
+  absolute URLs are open redirects, CR/LF bytes smuggle response headers
+  through HX-Redirect / Location.
+- **Sessions** come from the OS CSPRNG (uuid v4), carry a 7-day TTL swept on
+  access, and their cookie is HttpOnly + Secure + SameSite=Lax. Logout deletes
+  server-side.
+- **Turnstile** fails closed on missing config or any network error, and is
+  skipped only in debug builds.
 
 ## Code Conventions & Common Patterns
-- Use explicit imports rather than implicit paths.
-- **Module boundaries**: `database/` is for DB-coupled code only (queries,
-  models, migrations). Effect *presentation* — value formatting
-  (`split_effect_value`, `compact_effect_value`),
-  blessed diffs, and the `EffectView` struct — lives in `app/util/effects.v`.
-  Keep new pure helpers there, not in `database/`; the import direction is
-  `database` → `app.util` (never the reverse).
-- Follow structured results for error handling (return controlled HTTP responses).
-- **Never comment in `.html` files** — no `<!-- ... -->` in `templates/` or anywhere else. Put the reasoning in the V handler, in the partial's filename, or in the commit message. Editor reflows strip and mangle HTML comments anyway, so they do not survive.
-- Avoid unnecessary abstractions; prefer straightforward functions and modules.
-- Error handling: return status codes via the result type, not generic exceptions.
-- User-facing text always goes through translation keys (`translations/{en,th}.tr` + `ctx.tr()`) — no hardcoded labels. Adding a label touches the template and both .tr files together.
-- **Locale in the URL**: `?lang=xx` selects the language (validated against `api.available_lang()`), falling back to the `wikilang` cookie and then `en`; a valid param also refreshes the cookie. `ctx.lang_url()` backs both `canonical_url()` and the `hreflang` alternates, so English canonicalizes bare and other locales to `?lang=`. The language dialog switches with plain links, never a POST — a locale has to be reachable by URL to be indexed.
-- **SEO surface** lives in `app/seo.v`: `/sitemap.xml` lists every list page plus every detail id (`database/sitemap.v` supplies the route segment — never pluralize a kind, `jelly` -> `/jellies`) with `xhtml:link` locale alternates, and `/robots.txt` disallows the form/auth/fragment routes. `set_translate_title()` appends `site_title_suffix` when a title lacks it, so new pages stay branded.
-- **Grade model** (`database/models/grade.v`): `enum Grade as u8` ordered `e, c, b, a, s, s_plus, l` — E ("Extra") ranks ABOVE L ("Legend"). Ordering comes from `grade_values`; labels come from `ctx.grade_label(g)` — `s_plus` renders `S+`, other grades their uppercase letter. V enums convert via `.from('x')` / `.from(1)` and `.str()`. `treasure.grade` is `?int` — `none` means no wiki grade, no badge.
-- **List pages** (cookies/pets/treasures): server-paginated infinite scroll (htmx `revealed`) + client-side filters; filters must re-apply to newly fetched content. Cookies and pets order by newest release date then id descending as tie-break; treasures order by grade rank then newest release date then resolved name (unknown dates sort last via a sentinel), and `/ingredients` by grade then drop episode. **Ordering belongs in SQL** — `ORDER BY` in the query, not a comparator over the loaded rows. The one exception is `compare_treasure_options` (the picker), where the name tie-break needs two translation joins that measured slower than sorting 872 ints.
-- **Treasure effects**: stored in one table with a `state` column (`normal`/`blessed`, see `models.EffectState`) — not separate tables. Base/evo variants are linked and rendered from shared `templates/components/` partials; the list page has all/normal/evolved tabs (default All) with a prominent "evolved" badge.
-- **Per-level values**: `treasure_level` rows carry each effect's +0..+9 string values (values stay strings — effects can hold multiple numbers). Builds store a per-slot equipped level 0-9 (`treasure{1,2,3}_level`); detail/list cards render each slot's effect values at its stored level. The level slider/picker lives in `templates/components/level_slider.html` + `static/js/level_slider.js` + `static/js/picker.js`. Moving the picker's top slider repaints the whole card grid, so both scripts debounce that repaint (~120ms, and only for grids above ~64 cells — smaller controls stay instant); `flushLevelSlider()` and the picker's `flushGridLevel()` settle a pending repaint before anything reads the cells back (a pick, a per-card stepper override), and `change` on the slider flushes on pointer release.
-- **Combi bonus effects reuse the same `effect` table** via `combi_bonus.effect_id` (`find_or_create_effect` dedupes) — combo phrases are mostly treasure phrases, so no separate text column.
-- **veb `@include` takes no params** — shared form components read the caller's `@for` scope (e.g. `@e.name`); clone `<template>`s loop a typed one-element array (e.g. `[state.empty_effect]`). Static `name` attrs live in a JS `renumber()` that runs on init/add/remove/submit so one component serves several containers.
-
-## Important Files
-- **`database/models/*.v`**: Source of truth for schema definition and invariants.
-- **`app/cookies.v`**: Example controller handling GET (view) vs POST (submission).
-- **`app/app.v`**: `img_src()` returns the local image path or a `placehold.co` placeholder URL when missing — templates must use it, never build image paths directly.
-- **Image filenames**: every entity image is `static/img/<entity>/<english name in snake_case>.png` (Mint Choco Cookie -> `mint_choco_cookie.png`), with `_2`/`_3` suffixes when entities share a display name but not artwork. Never store the source catalog's coded icon names (`tr_ga034.png`, `mt_n2_5_04.png`). `image_slug()`/`upload_image()` in `app/uploads.v` name admin uploads that way; `image_slug()`/`named_image()` in `scripts/build_seed_cookierundb.py` do the same when regenerating the fixture (a name with no file on disk stores null, so `img_src()` shows the placeholder).
-- **Static files** are served by the app, not by `veb.StaticHandler` (the embed is deliberately absent, so veb's own pre-route static block compiles out). `app/static.v` scans `static/` at startup into `App.static_files` (a `shared` url -> path map) and serves it from the `serve_static` global middleware — veb runs global middleware before routing, so static still wins over routes. `upload_image()` calls `remember_static()` to add the file it just wrote, which is the whole point: veb's map is startup-only, so uploads used to 404 until a restart. Read under `rlock`, write under `lock` — never hand this map to something that reads it unsynchronised. Only extensions in `static_mime_types` (app/static.v) are served.
-- **Edit routes** live in the entity controllers (`app/{cookies,pets,treasures}.v` `/:id/edit`, `app/builds.v` `/builds/:id/edit`) with writes in `database/update.v`; admin routes (`/new/*`) are admin-only; test admin credentials are `test`/`test`. Unauthenticated access to admin routes returns **404**, not 401/403 — tests assert this. Exception: requests from localhost (loopback TCP peer with no `CF-Connecting-IP`/`X-Forwarded-For`/`X-Real-Ip` header — see `ctx.is_local()` in `app/app.v`) are granted admin without a session, so local development needs no login. Any forwarded-proxy header, spoofed or real, fails the local check closed.
-- **`templates/views/`** holds the detail pages (`cookie.html`, `pet.html`, `treasure.html`, `episode.html`, `ingredient.html`, `jelly_detail.html`); the list pages are `templates/*.html`.
-- **`README.md`** (if present): Project setup instructions.
+- **Grade model**: display rank is NOT the enum's declaration order —
+  E ("Extra") ranks ABOVE L ("Legend"). Any graded grid orders through
+  `grade::rank_sql(col)` (a CASE built from the shared rank table), never
+  `ORDER BY grade DESC`.
+- **Ordering belongs in SQL**, not in memory over loaded rows.
+- **Treasure effects** live in one table with a `state` column
+  (`normal`/`blessed`); per-level values stay strings (+0..+9 rows); builds
+  store a per-slot equipped level 0–9. Combi bonuses reuse the effect table.
+- **Images**: `static/img/<entity>/<english name snake_case>.png`, `_2`/`_3`
+  suffixes when entities share a display name but differ in artwork. Never
+  store coded catalog icon names.
+- **User-facing text** goes through translation keys present in BOTH
+  `translations/en.tr` and `th.tr` — add to both files together.
+- **Locale in the URL**: `?lang=xx` selects a language, validated against the
+  loaded locales, falling back to the `wikilang` cookie then `en`; canonical
+  URLs and hreflang alternates derive from the same helper so they cannot
+  disagree. Language switching is plain links, never POST.
+- **No `<style>` tags anywhere** and **no HTML comments in templates** —
+  styling is UnoCSS utilities plus the preflight blocks in `uno.config.ts`
+  (theme palettes, popover positioning, the treasure effect-panel animations).
 
 ## Runtime / Tooling Preferences
-- **UnoCSS**: `bun run dev` = `unocss --watch` (package.json). It regenerates `static/styles.css` from utility classes in `./**/*.html` + `./app/*.v` (uno.config.ts scan globs). Commit the regenerated CSS together with template class changes; classes only generate for files inside the scan globs — `./**/*.html` and `./app/*.v`, which do **not** include `static/js`, so a class that only ever appears in a JS file is never generated (style JS-driven state from an attribute the markup carries, e.g. the `[data-gacha-tab][aria-selected="true"]` preflight rule); test/probe files must live in the project root. Keep the watcher running — do not edit `static/styles.css` by hand.
-- **Logging**: `main.v` installs a thread-safe `log` logger (stderr + file) at boot — `logs/cookierun.log` by default, `CR_LOG_FILE` overrides (path is gitignored). Local time, `tf_ss_milli`, `always_flush` on (the default only flushes at process exit, so a running server's log looks frozen). Use `log.warn/info/debug` for app diagnostics; `database/select.v` logs corrupt rows (missing `_id` on a selected row) via `warn_missing_id`.
-- **No `<style>` tags** anywhere — all styling via UnoCSS utilities (`starting:` = `@starting-style`).
-- **htmx** is served from `/thirdparty/htmx.js` (a route; not an on-disk dir) and drives navbar search, infinite scroll, and hx-boost navigation.
-- **Chrome top-layer popover quirks** (hard-won):
-  - `width:auto` never stretches on `popover` elements — stays shrink-to-fit even with `left-2 right-2`; an explicit width is required.
-  - `100vw` includes the scrollbar column, while fixed/popover percentages resolve against the layout viewport (viewport − scrollbar). The desktop preview misaligns ~8px; on phones (overlay scrollbars) `100vw` == viewport — so use `w-screen m-0` (`margin:auto` UA-centering must be killed with `m-0`).
-  - uno.config preflight sets `position-area: bottom center` on `div[popover]`; this Chrome doesn't resolve implicit anchors so explicit positioning wins, but the preflight is a latent conflict if anchors ever resolve.
-  - Prefer physical `left-2 right-2` over logical `inset-x-2` — logical properties misbehaved in the top layer.
-- **Testing gotchas** (preview):
-  - Synthetic `.click()` in preview_evaluate does NOT trigger popover light-dismiss — use real `preview_click` clicks.
-  - htmx's `changed` trigger dedupes identical input values — re-typing the same query won't re-fire; use a fresh value or reload.
-  - Search debounce is `hx-trigger="input changed delay:300ms"`; the loading indicator uses `hx-indicator` + `not-[.hidden]` classes.
-  - Default FTS5 doesn't tokenize Thai — Thai queries in the search box are a known gap; a Thai-aware tokenizer/search path is still pending.
-  - Repeated `veb_livereload` hot reloads eventually inject the checker twice (`SyntaxError: Identifier 'veb_livereload_checker' has already been declared`), breaking page JS/htmx — a hard reload fixes it.
-  - The preview browser keeps its own session — curl cookie jars don't transfer; log in through the preview UI. The login POST sets `wikilang` *before* `CRSESSID`, so match the session cookie by name, not by order.
+- **UnoCSS**: regenerate `static/styles.css` with `bunx unocss` (config's
+  cli entry scans `./**/*.html`) whenever template classes change, and commit
+  the regenerated CSS together with the change. A class that only appears in
+  `.rs` files or JS is never generated — style JS-driven state from an
+  attribute the markup carries. Use bun/bunx, never node/npm/npx.
+- **Package manager**: bun (see above).
+- **Static assets** are served by tower-http `ServeDir` mounts in main.rs
+  (`/static`, `/js`, `/img`, `/thirdparty`, favicons) from `../static`.
 
 ## Testing & QA
-- The suite is `app/tests.v`, run through the CR_TEST session (see Development Commands) — data-integrity checks plus HTTP round-trips against a throwaway DB. There is no `_test.v` unit-test layer.
-- Coverage expectation: High coverage on business logic validation paths and state transitions.
+- `cargo test` covers unit-level behaviour (translations loading, db helpers,
+  pagination). There is no HTTP integration harness yet; when adding one,
+  boot against a throwaway database, never the live `sqlite.db`.
+- Coverage expectation: high on validation paths and state transitions —
+  including the denial branches (wrong password, cross-user edits, bad
+  upload extensions), not just happy paths.
