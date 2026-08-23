@@ -10,10 +10,21 @@ host = "0.0.0.0"
 # on 6798 (CR_TEST_PORT overrides it).
 port = 6785
 
-# Path to the SQLite database file, created and seeded on first boot. The
-# debug test session uses a throwaway sqlite_test.db instead (CR_TEST_DB
-# overrides it).
-db_file = "sqlite.db"
+# SurrealDB is the datastore. The app talks to an external SurrealDB server
+# over ws:// or http:// — it never embeds an engine. All five fields must be
+# set for the app to boot; the SURREAL_URL / SURREAL_NS / SURREAL_DB /
+# SURREAL_USER / SURREAL_PASS env vars override them when set. The
+# integration tests connect to the server named by CR_SURREAL_URL instead
+# (CR_SURREAL_NS / CR_SURREAL_DB override the namespace/database there).
+[surreal]
+# Endpoint of the SurrealDB server, e.g. "ws://127.0.0.1:8100".
+url = ""
+# Namespace and database to sign in to.
+namespace = ""
+database = ""
+# Root-level credentials the server was started with.
+username = ""
+password = ""
 
 # Cloudflare Turnstile bot protection. Protected POST handlers reject with
 # 403 unless siteverify passes; with no secret they reject every submission

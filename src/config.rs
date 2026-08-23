@@ -1,5 +1,6 @@
-//! Mirrors config/config.v: the same Config.toml, the same defaults, and the
-//! same clamping of non-positive rate-limit values back to their defaults.
+//! Config.toml: host/port, the SurrealDB server this app talks to (never an
+//! embedded engine — always ws:// or http:// over the wire), Turnstile
+//! credentials, and the rate-limit tuning.
 
 use serde::Deserialize;
 
@@ -8,7 +9,7 @@ use serde::Deserialize;
 pub struct Config {
     pub host: String,
     pub port: u16,
-    pub db_file: String,
+    pub surreal: SurrealConfig,
     pub turnstile: Turnstile,
     pub ratelimit: RateLimit,
 }
@@ -18,10 +19,29 @@ impl Default for Config {
         Self {
             host: "127.0.0.1".into(),
             port: 6785,
-            db_file: "sqlite.db".into(),
+            surreal: SurrealConfig::default(),
             turnstile: Turnstile::default(),
             ratelimit: RateLimit::default(),
         }
+    }
+}
+
+/// Where the data lives: an external SurrealDB server. The app has no local
+/// storage of its own.
+#[derive(Debug, Clone, Default, Deserialize)]
+#[serde(default)]
+pub struct SurrealConfig {
+    /// `ws://host:8000` or `http://host:8000`
+    pub url: String,
+    pub namespace: String,
+    pub database: String,
+    pub username: String,
+    pub password: String,
+}
+
+impl SurrealConfig {
+    pub fn is_configured(&self) -> bool {
+        !self.url.is_empty() && !self.namespace.is_empty() && !self.database.is_empty()
     }
 }
 
@@ -66,9 +86,8 @@ impl Config {
             .and_then(|s| toml::from_str(&s).ok())
             .unwrap_or_default();
 
-        // CR_HOST / CR_PORT are this port's own additions: both apps read the
-        // same Config.toml, so running them side by side needs one of them
-        // moved off 6785 without editing the shared file.
+        // CR_HOST / CR_PORT override the bind address without editing the
+        // shared file.
         if let Ok(v) = std::env::var("CR_HOST") {
             if !v.is_empty() {
                 cfg.host = v;
@@ -77,6 +96,33 @@ impl Config {
         if let Ok(v) = std::env::var("CR_PORT") {
             if let Ok(port) = v.parse::<u16>() {
                 cfg.port = port;
+            }
+        }
+
+        // env overrides for the database server
+        if let Ok(v) = std::env::var("SURREAL_URL") {
+            if !v.is_empty() {
+                cfg.surreal.url = v;
+            }
+        }
+        if let Ok(v) = std::env::var("SURREAL_NS") {
+            if !v.is_empty() {
+                cfg.surreal.namespace = v;
+            }
+        }
+        if let Ok(v) = std::env::var("SURREAL_DB") {
+            if !v.is_empty() {
+                cfg.surreal.database = v;
+            }
+        }
+        if let Ok(v) = std::env::var("SURREAL_USER") {
+            if !v.is_empty() {
+                cfg.surreal.username = v;
+            }
+        }
+        if let Ok(v) = std::env::var("SURREAL_PASS") {
+            if !v.is_empty() {
+                cfg.surreal.password = v;
             }
         }
 

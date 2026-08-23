@@ -76,20 +76,15 @@ pub async fn list(
     let filter_pet = q.pet.unwrap_or(0);
     let filter_treasure = q.treasure.unwrap_or(0);
 
-    let db = state.db.clone();
-    let sort_for_db = sort.clone();
-    let rows = tokio::task::spawn_blocking(move || {
-        builds::select_builds(
-            &db,
-            &lang,
-            (filter_cookie, filter_pet, filter_treasure, ep, ep_special),
-            &sort_for_db,
-            PAGE_SIZE,
-            offset,
-        )
-    })
+    let rows = builds::select_builds(
+        &state.db,
+        &lang,
+        (filter_cookie, filter_pet, filter_treasure, ep, ep_special),
+        &sort,
+        PAGE_SIZE,
+        offset,
+    )
     .await
-    .unwrap_or_else(|_| Ok(Vec::new()))
     .unwrap_or_default();
 
     let next_page = if rows.len() as i64 == PAGE_SIZE { page + 1 } else { 0 };
@@ -126,21 +121,12 @@ pub async fn show(
     ctx: Ctx,
     Path(id): Path<i64>,
 ) -> Response {
-    let lang = ctx.lang.clone();
-    let db = state.db.clone();
-    let found = tokio::task::spawn_blocking(move || builds::select_build(&db, &lang, id))
-        .await
-        .unwrap_or_else(|_| Ok(None))
-        .unwrap_or(None);
+    let found = builds::select_build(&state.db, &ctx.lang, id).await.unwrap_or(None);
 
     let Some(build) = found else {
         return super::errors::not_found(ctx);
     };
-    let db = state.db.clone();
-    let (verified, issues) = tokio::task::spawn_blocking(move || builds::review_counts(&db, id))
-        .await
-        .unwrap_or_else(|_| Ok((0, 0)))
-        .unwrap_or((0, 0));
+    let (verified, issues) = builds::review_counts(&state.db, id).await.unwrap_or((0, 0));
     Html(
         BuildDetail { ctx, build, verified, issues }
             .render()

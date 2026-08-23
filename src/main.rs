@@ -48,10 +48,14 @@ async fn main() {
     i18n::load("translations");
     tracing::info!(langs = ?i18n::available_langs(), "translations loaded");
 
-    let pool = match db::open(&format!("{}", cfg.db_file)) {
+    if !cfg.surreal.is_configured() {
+        tracing::error!("no SurrealDB server configured: set [surreal] in Config.toml");
+        return;
+    }
+    let pool = match db::connect(&cfg.surreal).await {
         Ok(p) => p,
         Err(e) => {
-            tracing::error!("cannot open {}: {e}", cfg.db_file);
+            tracing::error!("cannot connect to {}: {e}", cfg.surreal.url);
             return;
         }
     };
@@ -205,15 +209,18 @@ mod tests {
 
     /// The cookie list query runs against the real database and comes back in
     /// the catalog's order.
-    #[test]
-    fn cookie_query_and_render() {
+    #[tokio::test]
+    async fn cookie_query_and_render() {
         i18n::load("translations");
-        let pool = db::open("sqlite.db").expect("open db");
-        let rows = db::select_cookies(&pool, "en", 30, 0).expect("query");
+        let Some(pool) = live_db().await else {
+            eprintln!("skip: CR_SURREAL_URL not set");
+            return;
+        };
+        let rows = db::select_cookies(&pool, "en", 30, 0).await.expect("query");
         assert_eq!(rows.len(), 30);
         assert!(rows.iter().all(|c| !c.name.is_empty()));
 
-        let th = db::select_cookies(&pool, "th", 5, 0).expect("query th");
+        let th = db::select_cookies(&pool, "th", 5, 0).await.expect("query th");
         assert_eq!(th.len(), 5);
         // the th page still carries the English name for cross-language search
         assert!(th.iter().all(|c| !c.en_name.is_empty()));
@@ -251,6 +258,18 @@ mod tests {
         next_url: String,
         page: i64,
     }
+
+
+/// Connects to the integration server when CR_SURREAL_URL is set; tests that
+/// need data skip otherwise, so `cargo test` stays green without a server.
+async fn live_db() -> Option<db::Db> {
+    let url = std::env::var("CR_SURREAL_URL").ok()?;
+    let ns = std::env::var("CR_SURREAL_NS").unwrap_or_else(|_| "cookierun".into());
+    let database = std::env::var("CR_SURREAL_DB").unwrap_or_else(|_| "cookierun".into());
+    let user = std::env::var("SURREAL_USER").unwrap_or_else(|_| "root".into());
+    let pass = std::env::var("SURREAL_PASS").unwrap_or_default();
+    db::connect_url(&url, &ns, &database, &user, &pass).await.ok()
+}
 
     /// A context standing in for one resolved off a real request.
     fn test_ctx(lang: &str) -> ctx::Ctx {
@@ -349,27 +368,30 @@ mod tests {
 
     /// Every catalog list answers, in both locales, with the English name
     /// kept alongside for the cross-language filter.
-    #[test]
-    fn catalog_queries() {
+    #[tokio::test]
+    async fn catalog_queries() {
         i18n::load("translations");
-        let pool = db::open("sqlite.db").expect("open db");
+        let Some(pool) = live_db().await else {
+            eprintln!("skip: CR_SURREAL_URL not set");
+            return;
+        };
 
-        let cookies = db::select_cookies(&pool, "en", 30, 0).unwrap();
+        let cookies = db::select_cookies(&pool, "en", 30, 0).await.unwrap();
         assert_eq!(cookies.len(), 30);
-        let pets = db::select_pets(&pool, "th", 30, 0).unwrap();
+        let pets = db::select_pets(&pool, "th", 30, 0).await.unwrap();
         assert_eq!(pets.len(), 30);
         assert!(pets.iter().all(|p| !p.en_name.is_empty()));
 
         // the tabs partition the treasures rather than overlapping
-        let all = db::select_treasures(&pool, "en", "all", 30, 0).unwrap();
-        let normal = db::select_treasures(&pool, "en", "normal", 30, 0).unwrap();
-        let evo = db::select_treasures(&pool, "en", "evo", 30, 0).unwrap();
+        let all = db::select_treasures(&pool, "en", "all", 30, 0).await.unwrap();
+        let normal = db::select_treasures(&pool, "en", "normal", 30, 0).await.unwrap();
+        let evo = db::select_treasures(&pool, "en", "evo", 30, 0).await.unwrap();
         assert_eq!(all.len(), 30);
         assert!(normal.iter().all(|t| !t.is_evolved));
         assert!(evo.iter().all(|t| t.is_evolved));
 
         for kind in ["episodes", "ingredients", "jellies", "skins", "relics"] {
-            assert!(!db::select_simple(&pool, "en", kind).unwrap().is_empty(), "{kind} empty");
+            assert!(!db::select_simple(&pool, "en", kind).await.unwrap().is_empty(), "{kind} empty");
         }
     }
 
@@ -385,73 +407,85 @@ mod tests {
     }
 
     /// Detail rows carry the prose their kind has and nothing else.
-    #[test]
-    fn detail_rows() {
-        let pool = db::open("sqlite.db").expect("open db");
-        let cookie = db::select_detail(&pool, "en", "cookies", 89).unwrap().expect("cookie 89");
+    #[tokio::test]
+    async fn detail_rows() {
+        let Some(pool) = live_db().await else {
+            eprintln!("skip: CR_SURREAL_URL not set");
+            return;
+        };
+
+        let cookie = db::select_detail(&pool, "en", "cookies", 89).await.unwrap().expect("cookie 89");
         assert!(!cookie.name.is_empty());
         assert!(!cookie.abilities.is_empty());
 
         // a treasure has no abilities column, and effects come with ladders
-        let treasure = db::select_detail(&pool, "en", "treasures", 317).unwrap().expect("treasure");
+        let treasure = db::select_detail(&pool, "en", "treasures", 317).await.unwrap().expect("treasure");
         assert!(treasure.abilities.is_empty());
-        let effects = db::treasure_effects(&pool, "en", 317).unwrap();
+        let effects = db::treasure_effects(&pool, "en", 317).await.unwrap();
         assert!(!effects.is_empty());
         assert!(effects.iter().all(|e| e.values.len() == 10), "ten levels per effect");
 
-        assert!(db::select_detail(&pool, "en", "cookies", 99999).unwrap().is_none());
+        assert!(db::select_detail(&pool, "en", "cookies", 99999).await.unwrap().is_none());
     }
 
     /// Rich text: links resolve with their sprite, colours are constrained,
     /// and everything else is escaped.
-    #[test]
-    fn richtext_renders() {
-        let pool = db::open("sqlite.db").expect("open db");
-        let out = richtext::render(&pool, "en", "see [[89]] here");
+    #[tokio::test]
+    async fn richtext_renders() {
+        let Some(pool) = live_db().await else {
+            eprintln!("skip: CR_SURREAL_URL not set");
+            return;
+        };
+
+        let out = richtext::render(&pool, "en", "see [[89]] here").await;
         assert!(out.contains("href=\"/cookies/89\""));
         assert!(out.contains("<img src=\"/img/cookies/"));
 
         // an unresolvable ref stays literal
-        let miss = richtext::render(&pool, "en", "[[cookie:99999999]]");
+        let miss = richtext::render(&pool, "en", "[[cookie:99999999]]").await;
         assert!(miss.contains("[[cookie:99999999]]"));
 
-        let colored = richtext::render(&pool, "en", "a {color:red}red{/color} word");
+        let colored = richtext::render(&pool, "en", "a {color:red}red{/color} word").await;
         assert!(colored.contains("<span style=\"color:red\">red</span>"));
 
         // an injection attempt is not a valid colour, so the whole thing
         // renders as text: no span is opened and the quotes come out escaped
-        let bad = richtext::render(&pool, "en", "{color:red\" onclick=\"x}y{/color}");
+        let bad = richtext::render(&pool, "en", "{color:red\" onclick=\"x}y{/color}").await;
         assert!(!bad.contains("<span style="), "{bad}");
         assert!(!bad.contains("onclick=\""), "{bad}");
         assert!(bad.contains("&quot;"), "{bad}");
 
         // pasted markup is escaped
-        let script = richtext::render(&pool, "en", "<script>alert(1)</script>");
+        let script = richtext::render(&pool, "en", "<script>alert(1)</script>").await;
         assert!(!script.contains("<script>"));
         assert!(script.contains("&lt;script&gt;"));
     }
 
     /// Search matches the localized and the English name, and a wildcard in
     /// the query is a literal.
-    #[test]
-    fn search_matches_both_languages() {
-        let pool = db::open("sqlite.db").expect("open db");
-        let en = db::search(&pool, "en", "kaymak", 20).unwrap();
+    #[tokio::test]
+    async fn search_matches_both_languages() {
+        let Some(pool) = live_db().await else {
+            eprintln!("skip: CR_SURREAL_URL not set");
+            return;
+        };
+
+        let en = db::search(&pool, "en", "kaymak", 20).await.unwrap();
         assert!(en.iter().any(|(section, c)| section == "cookies" && c.name.contains("Kaymak")));
 
         // a th page still finds an entity by its English name
-        let th = db::search(&pool, "th", "wizard", 20).unwrap();
+        let th = db::search(&pool, "th", "wizard", 20).await.unwrap();
         assert!(!th.is_empty());
 
         // the escape makes % a literal: it finds the rows whose text actually
         // contains one, rather than matching the whole catalog. The search
         // covers the prose columns too, so a hit can come from a description
         // rather than the name — what matters is that it is not everything.
-        let pct = db::search(&pool, "en", "%", 20).unwrap();
+        let pct = db::search(&pool, "en", "%", 20).await.unwrap();
         assert!(!pct.is_empty());
-        let everything = db::search(&pool, "en", "e", 500).unwrap();
+        let everything = db::search(&pool, "en", "e", 500).await.unwrap();
         assert!(pct.len() < everything.len(), "% matched as a wildcard");
-        assert!(db::search(&pool, "en", "   ", 20).unwrap().is_empty());
+        assert!(db::search(&pool, "en", "   ", 20).await.unwrap().is_empty());
     }
 
     /// Argon2 in PHC form: a hash verifies, a wrong password does not, and
@@ -487,18 +521,23 @@ mod tests {
     /// The build list runs, and its labels format the way the badges expect.
     /// The table is empty on this checkout, so this covers the query path and
     /// the formatting rather than row content.
-    #[test]
-    fn build_queries_and_labels() {
-        let pool = db::open("sqlite.db").expect("open db");
+    #[tokio::test]
+    async fn build_queries_and_labels() {
+        let Some(pool) = live_db().await else {
+            eprintln!("skip: CR_SURREAL_URL not set");
+            return;
+        };
+
         for sort in ["latest", "score", "coin", "time", "nonsense"] {
             let rows = builds::select_builds(&pool, "en", (0, 0, 0, 0, 0), sort, 30, 0)
+                .await
                 .unwrap_or_else(|e| panic!("{sort}: {e}"));
             assert!(rows.len() <= 30);
         }
         // filters compose without tripping the SQL
-        assert!(builds::select_builds(&pool, "en", (89, 50, 317, 5, 0), "score", 30, 0).is_ok());
-        assert!(builds::select_builds(&pool, "en", (0, 0, 0, 0, 2), "latest", 30, 0).is_ok());
-        assert!(builds::select_build(&pool, "en", 999_999).unwrap().is_none());
+        assert!((builds::select_builds(&pool, "en", (89, 50, 317, 5, 0), "score", 30, 0)).await.is_ok());
+        assert!((builds::select_builds(&pool, "en", (0, 0, 0, 0, 2), "latest", 30, 0)).await.is_ok());
+        assert!(builds::select_build(&pool, "en", 999_999).await.unwrap().is_none());
 
         i18n::load("translations");
         let c = test_ctx("en");
@@ -516,17 +555,19 @@ mod tests {
     }
 
     /// The picker lists build, cache and carry their effect ladders.
-    #[test]
-    fn picker_options_build() {
-        i18n::load("translations");
-        let pool = db::open("sqlite.db").expect("open db");
+    #[tokio::test]
+    async fn picker_options_build() {
+        let Some(pool) = live_db().await else {
+            eprintln!("skip: CR_SURREAL_URL not set");
+            return;
+        };
 
-        let cookies = options::options(&pool, "en", "cookie");
+        let cookies = options::options(&pool, "en", "cookie").await;
         assert_eq!(cookies.len(), 93);
-        let pets = options::options(&pool, "en", "pet");
+        let pets = options::options(&pool, "en", "pet").await;
         assert_eq!(pets.len(), 100, "the two phantom Sotdae pets are gone");
 
-        let treasures = options::options(&pool, "en", "treasure");
+        let treasures = options::options(&pool, "en", "treasure").await;
         assert!(treasures.len() > 700);
         // Power+ treasures are friendly-run bonuses and cannot be equipped
         assert!(treasures.iter().any(|t| !t.effects.is_empty()));
@@ -544,10 +585,10 @@ mod tests {
         assert!(ranks.windows(2).all(|w| w[0] >= w[1]), "grade order is not monotonic");
 
         // second call comes from the cache
-        let again = options::options(&pool, "en", "cookie");
+        let again = options::options(&pool, "en", "cookie").await;
         assert_eq!(again.len(), cookies.len());
         options::invalidate();
-        assert_eq!(options::options(&pool, "en", "cookie").len(), cookies.len());
+        assert_eq!(options::options(&pool, "en", "cookie").await.len(), cookies.len());
     }
 
     /// Turnstile refuses rather than waves through when it is misconfigured.
@@ -575,10 +616,14 @@ mod tests {
     }
 
     /// The gacha pools carry their prizes and odds.
-    #[test]
-    fn gacha_pools() {
-        let pool = db::open("sqlite.db").expect("open db");
-        let pools = db::select_gacha(&pool, "en").expect("gacha");
+    #[tokio::test]
+    async fn gacha_pools() {
+        let Some(pool) = live_db().await else {
+            eprintln!("skip: CR_SURREAL_URL not set");
+            return;
+        };
+
+        let pools = db::select_gacha(&pool, "en").await.expect("gacha");
         assert!(!pools.is_empty());
         let entries: usize = pools.iter().map(|p| p.entries.len()).sum();
         assert_eq!(entries, 300, "every disclosed entry is listed");
@@ -613,11 +658,15 @@ mod tests {
     }
 
     /// A treasure's unlock chain resolves to the entity that grants it.
-    #[test]
-    fn treasure_links_resolve() {
-        let pool = db::open("sqlite.db").expect("open db");
+    #[tokio::test]
+    async fn treasure_links_resolve() {
+        let Some(pool) = live_db().await else {
+            eprintln!("skip: CR_SURREAL_URL not set");
+            return;
+        };
+
         // treasure 255 is unlocked by the surviving Sotdae Flock pet
-        let links = db::treasure_links(&pool, "en", 255).expect("links");
+        let links = db::treasure_links(&pool, "en", 255).await.expect("links");
         assert!(links.has_unlock());
         assert_eq!(links.unlock_section, "pets");
         assert_eq!(links.unlock_id, 102);
@@ -627,9 +676,10 @@ mod tests {
         // relics start at 500001 and skins at 1800001 — so the test takes an
         // id from the list rather than assuming one.
         for section in ["relics", "skins"] {
-            let list = db::select_simple(&pool, "en", section).unwrap();
+            let list = db::select_simple(&pool, "en", section).await.unwrap();
             let first = list.first().expect("a row");
             let detail = db::select_detail(&pool, "en", section, first.id)
+                .await
                 .unwrap()
                 .unwrap_or_else(|| panic!("{section} {} has no detail", first.id));
             assert!(!detail.name.is_empty());
@@ -693,21 +743,29 @@ mod tests {
     }
 
     /// The combo editor lists a pairing with the row id it needs to remove it.
-    #[test]
-    fn combi_editor_rows() {
-        let pool = db::open("sqlite.db").expect("open db");
-        let rows = db::combi_edit_rows(&pool, "en", "cookies", 89).expect("rows");
+    #[tokio::test]
+    async fn combi_editor_rows() {
+        let Some(pool) = live_db().await else {
+            eprintln!("skip: CR_SURREAL_URL not set");
+            return;
+        };
+
+        let rows = db::combi_edit_rows(&pool, "en", "cookies", 89).await.expect("rows");
         assert!(!rows.is_empty(), "cookie 89 pairs with a pet");
         assert!(rows.iter().all(|r| r.id > 0), "every row carries its own id");
         assert!(rows.iter().all(|r| !r.partner_name.is_empty()));
-        assert!(db::combi_edit_rows(&pool, "en", "treasures", 1).unwrap().is_empty());
+        assert!(db::combi_edit_rows(&pool, "en", "treasures", 1).await.unwrap().is_empty());
     }
 
     /// The sitemap covers every detail id the six sections hold.
-    #[test]
-    fn sitemap_covers_the_catalog() {
-        let pool = db::open("sqlite.db").expect("open db");
-        let entries = db::sitemap_entries(&pool).unwrap();
+    #[tokio::test]
+    async fn sitemap_covers_the_catalog() {
+        let Some(pool) = live_db().await else {
+            eprintln!("skip: CR_SURREAL_URL not set");
+            return;
+        };
+
+        let entries = db::sitemap_entries(&pool).await.unwrap();
         for section in ["cookies", "pets", "treasures", "episodes", "ingredients", "jellies"] {
             assert!(entries.iter().any(|(s, _)| s == section), "{section} missing");
         }

@@ -38,13 +38,3 @@ pub fn label(value: i64) -> String {
     }
 }
 
-/// A CASE expression ordering a grade column by rank, so SQL sorts the same
-/// way the enum does rather than by the raw ordinal.
-pub fn rank_sql(col: &str) -> String {
-    let mut out = format!("CASE {col}");
-    for ordinal in 0..7 {
-        out.push_str(&format!(" WHEN {ordinal} THEN {}", rank(ordinal)));
-    }
-    out.push_str(" ELSE -1 END");
-    out
-}

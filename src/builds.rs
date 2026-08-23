@@ -1,7 +1,6 @@
 //! Community builds: the stored loadout plus everything the cards show.
-//! Ported from the build half of database/select.v.
-
-use rusqlite::params;
+//! Ported from the build half of database/select.v; queries now speak
+//! SurrealQL against the external SurrealDB server.
 
 use crate::db::{cards_by_ids, Card, Db};
 
@@ -9,6 +8,12 @@ use crate::db::{cards_by_ids, Card, Db};
 #[derive(Debug, Clone, Default)]
 pub struct BuildCard {
     pub id: i64,
+    pub cookie: Option<Card>,
+    pub cookie2: Option<Card>,
+    pub pet: Option<Card>,
+    pub treasures: Vec<Card>,
+    pub treasure_levels: Vec<i64>,
+    pub treasure_blessed: Vec<bool>,
     pub ep: i64,
     pub ep_special: i64,
     pub tags: Vec<String>,
@@ -20,19 +25,13 @@ pub struct BuildCard {
     pub boxes: i64,
     pub description: String,
     pub youtube_url: String,
-    pub author: String,
-    /// the owner, which the edit/delete gate will compare against the session
+    /// stamped onto the record on insert; edits never touch it
     #[allow(dead_code)]
+    pub author: String,
     pub user_id: i64,
+    /// anonymous builds expire; signed-in ones do not
     pub is_anon: bool,
-    /// hours an anonymous build has left; 0 for a permanent one
     pub expires_in_h: i64,
-    pub cookie: Option<Card>,
-    pub cookie2: Option<Card>,
-    pub pet: Option<Card>,
-    pub treasures: Vec<Card>,
-    pub treasure_levels: Vec<i64>,
-    pub treasure_blessed: Vec<bool>,
 }
 
 impl BuildCard {
@@ -117,19 +116,112 @@ fn now_unix() -> i64 {
         .unwrap_or(0)
 }
 
+/// The raw build record as stored; entity slots are resolved afterwards in
+/// batched lookups rather than one query per slot per build.
+#[derive(Debug, Clone, Default, serde::Deserialize)]
+struct BuildRow {
+    id: i64,
+    cookie_id: i64,
+    cookie2_id: Option<i64>,
+    pet_id: i64,
+    #[serde(default)]
+    treasure1_id: i64,
+    #[serde(default)]
+    treasure2_id: i64,
+    #[serde(default)]
+    treasure3_id: i64,
+    #[serde(default)]
+    treasure1_blessed: bool,
+    #[serde(default)]
+    treasure2_blessed: bool,
+    #[serde(default)]
+    treasure3_blessed: bool,
+    #[serde(default)]
+    treasure1_level: i64,
+    #[serde(default)]
+    treasure2_level: i64,
+    #[serde(default)]
+    treasure3_level: i64,
+    #[serde(default)]
+    ep: i64,
+    #[serde(default)]
+    ep_special: i64,
+    #[serde(default)]
+    tag: String,
+    #[serde(default)]
+    boosts: String,
+    #[serde(default)]
+    boost: String,
+    #[serde(default)]
+    score: i64,
+    #[serde(default)]
+    coin: i64,
+    #[serde(default)]
+    time: i64,
+    #[serde(default)]
+    boxes: i64,
+    #[serde(default)]
+    description: String,
+    #[serde(default)]
+    youtube_url: String,
+    #[serde(default)]
+    author: String,
+    #[serde(default)]
+    user_id: i64,
+    expires_at: Option<i64>,
+}
+
+impl BuildRow {
+    fn into_card(self, now: i64) -> BuildCard {
+        BuildCard {
+            id: self.id,
+            ep: self.ep,
+            ep_special: self.ep_special,
+            tags: split_list(&self.tag),
+            boosts: split_list(&self.boosts),
+            boost: self.boost,
+            score: self.score,
+            coin: self.coin,
+            time_ms: self.time,
+            boxes: self.boxes,
+            description: self.description,
+            youtube_url: self.youtube_url,
+            author: self.author,
+            user_id: self.user_id,
+            is_anon: self.expires_at.is_some(),
+            expires_in_h: self
+                .expires_at
+                .map(|e| ((e - now) / 3600).max(0))
+                .unwrap_or(0),
+            treasure_levels: vec![
+                self.treasure1_level,
+                self.treasure2_level,
+                self.treasure3_level,
+            ],
+            treasure_blessed: vec![
+                self.treasure1_blessed,
+                self.treasure2_blessed,
+                self.treasure3_blessed,
+            ],
+            ..Default::default()
+        }
+    }
+}
+
 /// The list, filtered and sorted the way the V query does. Expired anonymous
 /// builds are excluded by the query rather than swept, so nothing has to run
-/// on a timer.
-pub fn select_builds(
+/// on a timer. Filters are integers parsed upstream, so they inline safely;
+/// only free-text values ever travel as bound parameters.
+pub async fn select_builds(
     db: &Db,
     lang: &str,
     filter: (i64, i64, i64, i64, i64),
     sort: &str,
     limit: i64,
     offset: i64,
-) -> rusqlite::Result<Vec<BuildCard>> {
+) -> crate::db::Result<Vec<BuildCard>> {
     let (f_cookie, f_pet, f_treasure, f_ep, f_ep_special) = filter;
-    let mut where_sql = String::from("1=1");
+    let mut where_sql = String::new();
     if f_cookie > 0 {
         where_sql.push_str(&format!(" AND cookie_id = {f_cookie}"));
     }
@@ -147,119 +239,76 @@ pub fn select_builds(
     if f_ep_special > 0 {
         where_sql.push_str(&format!(" AND ep_special = {f_ep_special}"));
     }
-    select_where(db, lang, &where_sql, sort, limit, offset)
+    select_where(db, lang, &where_sql, sort, limit, offset).await
 }
 
-/// The shared body: a WHERE clause the callers assemble, then the batched
+/// The shared body: a WHERE fragment the callers assemble, then the batched
 /// entity lookups. `select_build` reuses it so the expiry rule lives once.
-fn select_where(
+async fn select_where(
     db: &Db,
     lang: &str,
     filter_sql: &str,
     sort: &str,
     limit: i64,
     offset: i64,
-) -> rusqlite::Result<Vec<BuildCard>> {
+) -> crate::db::Result<Vec<BuildCard>> {
     let now = now_unix();
-    let where_sql = format!("({filter_sql}) AND (expires_at IS NULL OR expires_at > {now})");
 
     // the id is the tie-break on every sort, so paging cannot repeat a row
     let order = match sort {
-        "score" => "score DESC, build_id DESC",
-        "coin" => "coin DESC, build_id DESC",
-        "time" => "time ASC, build_id DESC",
-        _ => "created_at DESC, build_id DESC",
+        "score" => "score DESC, id DESC",
+        "coin" => "coin DESC, id DESC",
+        "time" => "time ASC, id DESC",
+        _ => "created_at DESC, id DESC",
     };
 
-    let raw: Vec<(BuildCard, i64, Option<i64>, i64, [i64; 3])> = {
-        let c = db
-            .get()
-            .map_err(|e| rusqlite::Error::InvalidParameterName(format!("pool: {e}")))?;
-        let sql = format!(
-            "SELECT build_id, cookie_id, cookie2_id, pet_id, treasure1_id, treasure2_id,
-                    treasure3_id, treasure1_blessed, treasure2_blessed, treasure3_blessed,
-                    treasure1_level, treasure2_level, treasure3_level, ep, ep_special, tag,
-                    boosts, boost, score, coin, time, boxes, description, youtube_url,
-                    author, user_id, expires_at
-               FROM build WHERE {where_sql} ORDER BY {order} LIMIT ?1 OFFSET ?2"
-        );
-        let mut stmt = c.prepare(&sql)?;
-        let rows = stmt.query_map(params![limit, offset], |r| {
-            let expires_at: Option<i64> = r.get("expires_at")?;
-            let card = BuildCard {
-                id: r.get("build_id")?,
-                ep: r.get("ep")?,
-                ep_special: r.get("ep_special")?,
-                tags: split_list(&r.get::<_, Option<String>>("tag")?.unwrap_or_default()),
-                boosts: split_list(&r.get::<_, Option<String>>("boosts")?.unwrap_or_default()),
-                boost: r.get::<_, Option<String>>("boost")?.unwrap_or_default(),
-                score: r.get("score")?,
-                coin: r.get("coin")?,
-                time_ms: r.get("time")?,
-                boxes: r.get("boxes")?,
-                description: r.get::<_, Option<String>>("description")?.unwrap_or_default(),
-                youtube_url: r.get::<_, Option<String>>("youtube_url")?.unwrap_or_default(),
-                author: r.get::<_, Option<String>>("author")?.unwrap_or_default(),
-                user_id: r.get("user_id")?,
-                is_anon: expires_at.is_some(),
-                expires_in_h: expires_at.map(|e| ((e - now) / 3600).max(0)).unwrap_or(0),
-                treasure_levels: vec![
-                    r.get("treasure1_level")?,
-                    r.get("treasure2_level")?,
-                    r.get("treasure3_level")?,
-                ],
-                treasure_blessed: vec![
-                    r.get::<_, i64>("treasure1_blessed")? != 0,
-                    r.get::<_, i64>("treasure2_blessed")? != 0,
-                    r.get::<_, i64>("treasure3_blessed")? != 0,
-                ],
-                ..Default::default()
-            };
-            Ok((
-                card,
-                r.get("cookie_id")?,
-                r.get("cookie2_id")?,
-                r.get("pet_id")?,
-                [
-                    r.get("treasure1_id")?,
-                    r.get("treasure2_id")?,
-                    r.get("treasure3_id")?,
-                ],
-            ))
-        })?;
-        rows.collect::<rusqlite::Result<_>>()?
-    };
+    let sql = format!(
+        "SELECT record::id(id) AS id, cookie_id, cookie2_id, pet_id,
+                treasure1_id, treasure2_id, treasure3_id,
+                treasure1_blessed, treasure2_blessed, treasure3_blessed,
+                treasure1_level, treasure2_level, treasure3_level,
+                ep, ep_special, tag, boosts, boost, score, coin, time, boxes,
+                description, youtube_url, author, user_id, expires_at, created_at
+           FROM build
+          WHERE (expires_at IS NONE OR expires_at > $now){filter_sql}
+          ORDER BY {order}
+          LIMIT {limit} START {offset}"
+    );
+    let rows: Vec<BuildRow> = db.query(&sql).bind(("now", now)).await?.take(0)?;
 
     // the entities come back in three batched queries rather than one per
     // slot per build, which is what the V lookups do
     let mut cookie_ids: Vec<i64> = Vec::new();
     let mut pet_ids: Vec<i64> = Vec::new();
     let mut treasure_ids: Vec<i64> = Vec::new();
-    for (_, cookie, cookie2, pet, treasures) in &raw {
-        push_id(&mut cookie_ids, *cookie);
-        if let Some(c2) = cookie2 {
-            push_id(&mut cookie_ids, *c2);
+    for b in &rows {
+        push_id(&mut cookie_ids, b.cookie_id);
+        if let Some(c2) = b.cookie2_id {
+            push_id(&mut cookie_ids, c2);
         }
-        push_id(&mut pet_ids, *pet);
-        for t in treasures {
-            push_id(&mut treasure_ids, *t);
+        push_id(&mut pet_ids, b.pet_id);
+        for t in [b.treasure1_id, b.treasure2_id, b.treasure3_id] {
+            push_id(&mut treasure_ids, t);
         }
     }
-    let cookies = cards_by_ids(db, lang, "cookies", &cookie_ids)?;
-    let pets = cards_by_ids(db, lang, "pets", &pet_ids)?;
-    let treasures = cards_by_ids(db, lang, "treasures", &treasure_ids)?;
+    let cookies = cards_by_ids(db, lang, "cookies", &cookie_ids).await?;
+    let pets = cards_by_ids(db, lang, "pets", &pet_ids).await?;
+    let treasures = cards_by_ids(db, lang, "treasures", &treasure_ids).await?;
 
     let find = |list: &[Card], id: i64| list.iter().find(|c| c.id == id).cloned();
-    Ok(raw
-        .into_iter()
-        .map(|(mut card, cookie, cookie2, pet, tids)| {
-            card.cookie = find(&cookies, cookie);
-            card.cookie2 = cookie2.and_then(|id| find(&cookies, id));
-            card.pet = find(&pets, pet);
-            card.treasures = tids.iter().filter_map(|id| find(&treasures, *id)).collect();
-            card
-        })
-        .collect())
+    let mut out = Vec::with_capacity(rows.len());
+    for row in rows {
+        let mut card = row.clone().into_card(now);
+        card.cookie = find(&cookies, row.cookie_id);
+        card.cookie2 = row.cookie2_id.and_then(|id| find(&cookies, id));
+        card.pet = find(&pets, row.pet_id);
+        card.treasures = [row.treasure1_id, row.treasure2_id, row.treasure3_id]
+            .iter()
+            .filter_map(|id| find(&treasures, *id))
+            .collect();
+        out.push(card);
+    }
+    Ok(out)
 }
 
 fn push_id(list: &mut Vec<i64>, id: i64) {
@@ -270,8 +319,8 @@ fn push_id(list: &mut Vec<i64>, id: i64) {
 
 /// One build by id, through the same query so the expiry rule cannot drift:
 /// an expired anonymous build is simply not found.
-pub fn select_build(db: &Db, lang: &str, id: i64) -> rusqlite::Result<Option<BuildCard>> {
-    let found = select_where(db, lang, &format!("build_id = {id}"), "latest", 1, 0)?;
+pub async fn select_build(db: &Db, lang: &str, id: i64) -> crate::db::Result<Option<BuildCard>> {
+    let found = select_where(db, lang, &format!(" AND id = {id}"), "latest", 1, 0).await?;
     Ok(found.into_iter().next())
 }
 
@@ -295,154 +344,171 @@ pub struct NewBuild {
     pub boxes: i64,
     pub description: String,
     pub youtube_url: String,
+    /// stamped onto the record on insert; edits never touch it
+    #[allow(dead_code)]
     pub author: String,
     pub user_id: i64,
     /// unix seconds for an anonymous build, None for a permanent one
     pub expires_at: Option<i64>,
 }
 
-/// Inserts a build and returns its id, or 0 when the write failed.
-pub fn insert_build(db: &Db, b: &NewBuild) -> rusqlite::Result<i64> {
-    let c = db
-        .get()
-        .map_err(|e| rusqlite::Error::InvalidParameterName(format!("pool: {e}")))?;
-    c.execute(
-        "INSERT INTO build (cookie_id, cookie2_id, pet_id, combi_bonus_id,
-                            treasure1_id, treasure2_id, treasure3_id,
-                            treasure1_blessed, treasure2_blessed, treasure3_blessed,
-                            treasure1_level, treasure2_level, treasure3_level,
-                            ep, ep_special, tag, boosts, boost, power_effects,
-                            score, coin, time, boxes, description, youtube_url,
-                            author, user_id, created_at, expires_at)
-         VALUES (?1, ?2, ?3, 0, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12,
-                 ?13, ?14, ?15, '', '', '', ?16, ?17, ?18, ?19, ?20, ?21,
-                 ?22, ?23, ?24, ?25)",
-        params![
-            b.cookie,
-            b.cookie2,
-            b.pet,
-            b.treasures[0],
-            b.treasures[1],
-            b.treasures[2],
-            b.blessed[0] as i64,
-            b.blessed[1] as i64,
-            b.blessed[2] as i64,
-            b.levels[0],
-            b.levels[1],
-            b.levels[2],
-            b.ep,
-            b.ep_special,
-            b.tags,
-            b.score,
-            b.coin,
-            b.time_ms,
-            b.boxes,
-            b.description,
-            b.youtube_url,
-            b.author,
-            b.user_id,
-            now_unix(),
-            b.expires_at,
-        ],
-    )?;
-    Ok(c.last_insert_rowid())
+/// Builds take max+1 like everything else.
+async fn next_build_id(db: &Db) -> crate::db::Result<i64> {
+    let mut res = db
+        .query("LET $ids = (SELECT VALUE record::id(id) FROM build); RETURN array::max($ids) ?? 0;")
+        .await?;
+    let max = res.take::<Option<i64>>(1)?;
+    Ok(max.unwrap_or(0) + 1)
 }
 
-pub fn delete_build(db: &Db, id: i64) -> rusqlite::Result<()> {
-    let c = db
-        .get()
-        .map_err(|e| rusqlite::Error::InvalidParameterName(format!("pool: {e}")))?;
-    c.execute("DELETE FROM build_review WHERE build_id = ?1", params![id])?;
-    c.execute("DELETE FROM build WHERE build_id = ?1", params![id])?;
+fn build_sets(b: &NewBuild) -> String {
+    format!(
+        concat!(
+            "cookie_id = {c},",
+            "cookie2_id = {c2},",
+            "pet_id = {p},",
+            "treasure1_id = {t1},",
+            "treasure2_id = {t2},",
+            "treasure3_id = {t3},",
+            "treasure1_blessed = {b1},",
+            "treasure2_blessed = {b2},",
+            "treasure3_blessed = {b3},",
+            "treasure1_level = {l1},",
+            "treasure2_level = {l2},",
+            "treasure3_level = {l3},",
+            "ep = {ep},",
+            "ep_special = {eps},",
+            "score = {s},",
+            "coin = {co},",
+            "time = {t},",
+            "boxes = {bx}",
+        ),
+        c = b.cookie,
+        c2 = b.cookie2.map(|v| v.to_string()).unwrap_or_else(|| "NONE".into()),
+        p = b.pet,
+        t1 = b.treasures[0],
+        t2 = b.treasures[1],
+        t3 = b.treasures[2],
+        b1 = b.blessed[0],
+        b2 = b.blessed[1],
+        b3 = b.blessed[2],
+        l1 = b.levels[0],
+        l2 = b.levels[1],
+        l3 = b.levels[2],
+        ep = b.ep,
+        eps = b.ep_special,
+        s = b.score,
+        co = b.coin,
+        t = b.time_ms,
+        bx = b.boxes,
+    )
+}
+
+/// Inserts a build and returns its id, or 0 when the write failed.
+pub async fn insert_build(db: &Db, b: &NewBuild) -> crate::db::Result<i64> {
+    let id = next_build_id(db).await?;
+    let sql = format!(
+        "CREATE build:{id} SET {}, created_at = {now},
+            tag = $tags,
+            description = $desc, youtube_url = $yt,
+            author = $author, user_id = {uid}, expires_at = $exp",
+        build_sets(b),
+        uid = b.user_id,
+        now = now_unix(),
+    );
+    // an explicit 0 reads back as "permanent" everywhere the expiry rule looks;
+    // binding None would store NONE and read back identically
+    let exp = b.expires_at.unwrap_or(0);
+    match db
+        .query(&sql)
+        .bind(("tags", b.tags.clone()))
+        .bind(("desc", b.description.clone()))
+        .bind(("yt", b.youtube_url.clone()))
+        .bind(("exp", exp))
+        .await
+        .and_then(|r| r.check().map(|_| ()))
+    {
+        Ok(_) => Ok(id),
+        Err(_) => Ok(0),
+    }
+}
+
+pub async fn delete_build(db: &Db, id: i64) -> crate::db::Result<()> {
+    db.query("DELETE review WHERE build_id = $id")
+        .bind(("id", id))
+        .await?
+        .check()?;
+    db.query("DELETE type::thing(\"build\", $id)")
+        .bind(("id", id))
+        .await?
+        .check()?;
     Ok(())
 }
 
 /// Updates a build in place. Author, owner and expiry are untouched: an edit
 /// must not turn an anonymous build permanent or change who owns it.
-pub fn update_build(db: &Db, id: i64, b: &NewBuild) -> rusqlite::Result<()> {
-    let c = db
-        .get()
-        .map_err(|e| rusqlite::Error::InvalidParameterName(format!("pool: {e}")))?;
-    c.execute(
-        "UPDATE build SET cookie_id = ?1, cookie2_id = ?2, pet_id = ?3,
-                treasure1_id = ?4, treasure2_id = ?5, treasure3_id = ?6,
-                treasure1_blessed = ?7, treasure2_blessed = ?8, treasure3_blessed = ?9,
-                treasure1_level = ?10, treasure2_level = ?11, treasure3_level = ?12,
-                ep = ?13, ep_special = ?14, tag = ?15, score = ?16, coin = ?17,
-                time = ?18, boxes = ?19, description = ?20, youtube_url = ?21
-          WHERE build_id = ?22",
-        params![
-            b.cookie,
-            b.cookie2,
-            b.pet,
-            b.treasures[0],
-            b.treasures[1],
-            b.treasures[2],
-            b.blessed[0] as i64,
-            b.blessed[1] as i64,
-            b.blessed[2] as i64,
-            b.levels[0],
-            b.levels[1],
-            b.levels[2],
-            b.ep,
-            b.ep_special,
-            b.tags,
-            b.score,
-            b.coin,
-            b.time_ms,
-            b.boxes,
-            b.description,
-            b.youtube_url,
-            id,
-        ],
-    )?;
+pub async fn update_build(db: &Db, id: i64, b: &NewBuild) -> crate::db::Result<()> {
+    let sql = format!(
+        "UPDATE build:{id} SET {},
+            tag = $tags, description = $desc, youtube_url = $yt",
+        build_sets(b),
+    );
+    db.query(&sql)
+        .bind(("tags", b.tags.clone()))
+        .bind(("desc", b.description.clone()))
+        .bind(("yt", b.youtube_url.clone()))
+        .await?
+        .check()?;
     Ok(())
 }
 
 /// The verify tallies on a build: how many people confirmed it works and how
 /// many reported an issue.
-pub fn review_counts(db: &Db, build_id: i64) -> rusqlite::Result<(i64, i64)> {
-    let c = db
-        .get()
-        .map_err(|e| rusqlite::Error::InvalidParameterName(format!("pool: {e}")))?;
-    let mut stmt = c.prepare(
-        "SELECT SUM(verified = 1) AS ok, SUM(verified = 0) AS bad
-           FROM build_review WHERE build_id = ?1",
-    )?;
-    let mut rows = stmt.query(params![build_id])?;
-    let Some(row) = rows.next()? else {
-        return Ok((0, 0));
-    };
-    Ok((
-        row.get::<_, Option<i64>>("ok")?.unwrap_or(0),
-        row.get::<_, Option<i64>>("bad")?.unwrap_or(0),
-    ))
+pub async fn review_counts(db: &Db, build_id: i64) -> crate::db::Result<(i64, i64)> {
+    #[derive(serde::Deserialize)]
+    struct Group {
+        verified: bool,
+        count: i64,
+    }
+    let groups: Vec<Group> = db
+        .query(
+            "SELECT verified, count() AS count FROM review WHERE build_id = $id GROUP BY verified",
+        )
+        .bind(("id", build_id))
+        .await?
+        .take(0)?;
+    let mut ok = 0;
+    let mut bad = 0;
+    for g in groups {
+        if g.verified {
+            ok += g.count;
+        } else {
+            bad += g.count;
+        }
+    }
+    Ok((ok, bad))
 }
 
-/// One person's verdict, replacing any earlier one from the same user — the
-/// unique key makes this an upsert rather than a second vote.
-pub fn upsert_review(
+/// One person's verdict, replacing any earlier one from the same user. The
+/// record id IS the (build, user) pair, so this is an upsert by construction
+/// rather than a second vote.
+pub async fn upsert_review(
     db: &Db,
     build_id: i64,
     user_id: i64,
     verified: bool,
     reason: &str,
-) -> rusqlite::Result<()> {
-    let c = db
-        .get()
-        .map_err(|e| rusqlite::Error::InvalidParameterName(format!("pool: {e}")))?;
+) -> crate::db::Result<()> {
     let now = now_unix();
-    let changed = c.execute(
-        "UPDATE build_review SET verified = ?1, reason = ?2, updated_at = ?3
-          WHERE build_id = ?4 AND user_id = ?5",
-        params![verified as i64, reason, now, build_id, user_id],
-    )?;
-    if changed == 0 {
-        c.execute(
-            "INSERT INTO build_review (build_id, user_id, verified, reason, created_at, updated_at)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?5)",
-            params![build_id, user_id, verified as i64, reason, now],
-        )?;
-    }
+    let sql = format!(
+        "UPSERT review:[{build_id},{user_id}] SET
+            build_id = {build_id}, user_id = {user_id}, verified = {},
+            reason = $reason, updated_at = {now}",
+        verified as i64
+    );
+    db.query(&sql)
+        .bind(("reason", reason.to_string()))
+        .await?
+        .check()?;
     Ok(())
 }

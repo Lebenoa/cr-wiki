@@ -69,7 +69,6 @@ async fn render(
     if !known(&section) {
         return super::errors::not_found(ctx);
     }
-    let lang = ctx.lang.clone();
     let page = q.page.unwrap_or(1).max(1);
     let offset = (page - 1).saturating_mul(PAGE_SIZE);
     let tab = match q.tab.as_deref() {
@@ -77,21 +76,15 @@ async fn render(
         _ => "all".to_string(),
     };
 
+    let _unused_lang_guard: () = ();
     let paginated = matches!(section.as_str(), "cookies" | "pets" | "treasures");
-    let cards = {
-        let db = state.db.clone();
-        let section = section.clone();
-        let tab = tab.clone();
-        tokio::task::spawn_blocking(move || match section.as_str() {
-            "cookies" => db::select_cookies(&db, &lang, PAGE_SIZE, offset),
-            "pets" => db::select_pets(&db, &lang, PAGE_SIZE, offset),
-            "treasures" => db::select_treasures(&db, &lang, &tab, PAGE_SIZE, offset),
-            other => db::select_simple(&db, &lang, other),
-        })
-        .await
-        .unwrap_or_else(|_| Ok(Vec::new()))
-        .unwrap_or_default()
-    };
+    let cards = match section.as_str() {
+        "cookies" => db::select_cookies(&state.db, &ctx.lang, PAGE_SIZE, offset).await,
+        "pets" => db::select_pets(&state.db, &ctx.lang, PAGE_SIZE, offset).await,
+        "treasures" => db::select_treasures(&state.db, &ctx.lang, &tab, PAGE_SIZE, offset).await,
+        other => db::select_simple(&state.db, &ctx.lang, other).await,
+    }
+    .unwrap_or_default();
 
     let next_page = if paginated && cards.len() as i64 == PAGE_SIZE { page + 1 } else { 0 };
 

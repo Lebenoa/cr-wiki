@@ -65,9 +65,9 @@ fn section_of(kind: &str) -> &'static str {
     }
 }
 
-/// Renders one prose field. Names are memoized per call, so a description
-/// linking the same entity three times still costs one query.
-pub fn render(db: &Db, lang: &str, raw: &str) -> String {
+/// Renders one prose field. Names are resolved sequentially — the memo map
+/// keeps a description linking the same entity three times to one query.
+pub async fn render(db: &Db, lang: &str, raw: &str) -> String {
     // the overwhelming majority of fields carry no markup at all
     if !raw.contains("[[") && !raw.contains("{color:") {
         return escape(raw);
@@ -83,10 +83,13 @@ pub fn render(db: &Db, lang: &str, raw: &str) -> String {
                 let inner: String = chars[i + 2..end].iter().collect();
                 if let Some((kind, id)) = split_ref(&inner) {
                     let key = format!("{kind}:{id}");
-                    let hit = cache
-                        .entry(key)
-                        .or_insert_with(|| db::entity_link(db, lang, kind, id))
-                        .clone();
+                    let hit = if cache.contains_key(&key) {
+                        cache[&key].clone()
+                    } else {
+                        let v = db::entity_link(db, lang, kind, id).await;
+                        cache.insert(key.clone(), v.clone());
+                        v
+                    };
                     if let Some((name, image)) = hit {
                         let dir = section_of(kind);
                         // the anchor stays a plain inline box: inline-flex

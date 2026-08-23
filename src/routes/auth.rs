@@ -93,12 +93,7 @@ pub async fn login(
     if form.username.is_empty() || form.password.is_empty() {
         return (StatusCode::BAD_REQUEST, page(ctx, "login", "invalid_credentials")).into_response();
     }
-    let db = state.db.clone();
-    let username = form.username.clone();
-    let found = tokio::task::spawn_blocking(move || db::find_user(&db, &username))
-        .await
-        .unwrap_or_else(|_| Ok(None))
-        .unwrap_or(None);
+    let found = db::find_user(&state.db, &form.username).await.unwrap_or(None);
 
     let Some(user) = found else {
         // no such user: still pay for a hash, so the answer takes as long as
@@ -140,11 +135,8 @@ pub async fn register(
             .into_response();
     };
 
-    let db = state.db.clone();
-    let username = form.username.clone();
-    let created = tokio::task::spawn_blocking(move || db::create_user(&db, &username, &hash))
+    let created = db::create_user(&state.db, &form.username, &hash)
         .await
-        .unwrap_or_else(|_| Ok(None))
         .unwrap_or(None);
 
     let Some(user) = created else {

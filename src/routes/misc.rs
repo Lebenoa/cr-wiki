@@ -35,13 +35,7 @@ pub async fn search(
     q: Query<CommonQuery>,
 ) -> Html<String> {
     let query = q.q.clone().unwrap_or_default();
-    let lang = ctx.lang.clone();
-    let db = state.db.clone();
-    let needle = query.clone();
-    let hits = tokio::task::spawn_blocking(move || db::search(&db, &lang, &needle, 20))
-        .await
-        .unwrap_or_else(|_| Ok(Vec::new()))
-        .unwrap_or_default();
+    let hits = db::search(&state.db, &ctx.lang, &query, 20).await.unwrap_or_default();
     Html(
         SearchPage { ctx, q: query, hits }
             .render()
@@ -58,12 +52,7 @@ struct GachaPage {
 
 /// The disclosed draw pools with their odds.
 pub async fn gacha(State(state): State<AppState>, ctx: Ctx) -> Html<String> {
-    let lang = ctx.lang.clone();
-    let db = state.db.clone();
-    let pools = tokio::task::spawn_blocking(move || db::select_gacha(&db, &lang))
-        .await
-        .unwrap_or_else(|_| Ok(Vec::new()))
-        .unwrap_or_default();
+    let pools = db::select_gacha(&state.db, &ctx.lang).await.unwrap_or_default();
     Html(
         GachaPage { ctx, pools }
             .render()
@@ -84,8 +73,7 @@ pub async fn sitemap(State(state): State<AppState>, ctx: Ctx) -> ([(&'static str
     .map(|s| s.to_string())
     .collect();
 
-    let db = state.db.clone();
-    if let Ok(Ok(entries)) = tokio::task::spawn_blocking(move || db::sitemap_entries(&db)).await {
+    if let Ok(entries) = db::sitemap_entries(&state.db).await {
         paths.extend(entries.into_iter().map(|(section, id)| format!("/{section}/{id}")));
     }
 

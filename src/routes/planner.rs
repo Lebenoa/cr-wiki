@@ -163,19 +163,13 @@ pub async fn update(
             return (StatusCode::BAD_REQUEST, page(ctx, Some(existing), key)).into_response()
         }
     };
-    let db = state.db.clone();
-    let _ = tokio::task::spawn_blocking(move || builds::update_build(&db, id, &record)).await;
+    let _ = builds::update_build(&state.db, id, &record).await;
     Redirect::to(&format!("/builds/{id}")).into_response()
 }
 
 /// Loads a build only when the caller may change it.
 async fn load_owned(state: &AppState, ctx: &Ctx, id: i64) -> Option<BuildCard> {
-    let lang = ctx.lang.clone();
-    let db = state.db.clone();
-    let found = tokio::task::spawn_blocking(move || builds::select_build(&db, &lang, id))
-        .await
-        .ok()?
-        .ok()??;
+    let found = builds::select_build(&state.db, &ctx.lang, id).await.ok()??;
     can_edit(ctx, &found).then_some(found)
 }
 
@@ -210,11 +204,7 @@ pub async fn create(
         Err(key) => return (StatusCode::BAD_REQUEST, page(ctx, None, key)).into_response(),
     };
 
-    let db = state.db.clone();
-    let created = tokio::task::spawn_blocking(move || builds::insert_build(&db, &record))
-        .await
-        .unwrap_or_else(|_| Ok(0))
-        .unwrap_or(0);
+    let created = builds::insert_build(&state.db, &record).await.unwrap_or(0);
 
     if created <= 0 {
         return (StatusCode::INTERNAL_SERVER_ERROR, page(ctx, None, "build_error_save"))
@@ -228,12 +218,7 @@ pub async fn delete(
     ctx: Ctx,
     Path(id): Path<i64>,
 ) -> Response {
-    let lang = ctx.lang.clone();
-    let db = state.db.clone();
-    let found = tokio::task::spawn_blocking(move || builds::select_build(&db, &lang, id))
-        .await
-        .unwrap_or_else(|_| Ok(None))
-        .unwrap_or(None);
+    let found = builds::select_build(&state.db, &ctx.lang, id).await.unwrap_or(None);
 
     let Some(build) = found else {
         return super::errors::not_found(ctx);
@@ -243,8 +228,7 @@ pub async fn delete(
     if !can_edit(&ctx, &build) {
         return super::errors::not_found(ctx);
     }
-    let db = state.db.clone();
-    let _ = tokio::task::spawn_blocking(move || builds::delete_build(&db, id)).await;
+    let _ = builds::delete_build(&state.db, id).await;
     Redirect::to("/builds").into_response()
 }
 
@@ -348,23 +332,14 @@ pub async fn verify(
     let Some(user) = ctx.user.as_ref().map(|u| u.id) else {
         return (StatusCode::FORBIDDEN, "sign in to verify").into_response();
     };
-    let lang = ctx.lang.clone();
-    let db = state.db.clone();
-    let exists = tokio::task::spawn_blocking(move || builds::select_build(&db, &lang, id))
-        .await
-        .unwrap_or_else(|_| Ok(None))
-        .unwrap_or(None);
+    let exists = builds::select_build(&state.db, &ctx.lang, id).await.unwrap_or(None);
     if exists.is_none() {
         return super::errors::not_found(ctx);
     }
 
     let ok = form.verified.as_deref() == Some("1");
     let reason = form.reason.clone().unwrap_or_default();
-    let db = state.db.clone();
-    let _ = tokio::task::spawn_blocking(move || {
-        builds::upsert_review(&db, id, user, ok, &reason)
-    })
-    .await;
+    let _ = builds::upsert_review(&state.db, id, user, ok, &reason).await;
     Redirect::to(&format!("/builds/{id}")).into_response()
 }
 

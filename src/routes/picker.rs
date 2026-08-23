@@ -7,7 +7,6 @@
 
 use askama::Template;
 use axum::extract::{Path, Query, State};
-use axum::http::StatusCode;
 use axum::response::{Html, IntoResponse, Response};
 
 use crate::ctx::Ctx;
@@ -122,7 +121,6 @@ pub async fn preview(
     ctx: Ctx,
     q: Query<CommonQuery>,
 ) -> Html<String> {
-    let lang = ctx.lang.clone();
     let wanted: Vec<(&'static str, &'static str, i64)> = vec![
         ("cookie", "cookies", q.cookie.unwrap_or(0)),
         ("cookie", "cookies", q.c2.unwrap_or(0)),
@@ -131,22 +129,15 @@ pub async fn preview(
         ("treasure", "treasures", q.t2.unwrap_or(0)),
         ("treasure", "treasures", q.t3.unwrap_or(0)),
     ];
-    let db = state.db.clone();
-    let picks = tokio::task::spawn_blocking(move || {
-        wanted
-            .into_iter()
-            .filter(|(_, _, id)| *id > 0)
-            .filter_map(|(kind, section, id)| {
-                db::entity_link(&db, &lang, kind, id).map(|(name, image)| PickedSlot {
-                    section,
-                    name,
-                    image,
-                })
-            })
-            .collect::<Vec<_>>()
-    })
-    .await
-    .unwrap_or_default();
+    let mut picks = Vec::new();
+    for (kind, section, id) in wanted {
+        if id <= 0 {
+            continue;
+        }
+        if let Some((name, image)) = db::entity_link(&state.db, &ctx.lang, kind, id).await {
+            picks.push(PickedSlot { section, name, image });
+        }
+    }
 
     Html(
         PreviewFragment { ctx, picks }
@@ -175,26 +166,15 @@ pub async fn options_grid(
     let sel = q.sel.unwrap_or(0);
     let partner = q.partner.unwrap_or(0);
 
-    let db_pool = state.db.clone();
-    let kind_for_db = kind.clone();
-    let lang_for_db = lang.clone();
-    let built = tokio::task::spawn_blocking(move || {
-        let all = options::options(&db_pool, &lang_for_db, &kind_for_db);
-        // the combo partners of the other slot's pick: a combo is the main
-        // reason a planner picks one pet over another, and the grid is too
-        // long to hunt through
-        let combi = if partner > 0 && kind_for_db != "treasure" {
-            let partner_kind = if kind_for_db == "pet" { "cookies" } else { "pets" };
-            db::combi_partner_ids(&db_pool, partner_kind, partner).unwrap_or_default()
-        } else {
-            Vec::new()
-        };
-        (all, combi)
-    })
-    .await;
-
-    let Ok((all, combi)) = built else {
-        return (StatusCode::INTERNAL_SERVER_ERROR, "options unavailable").into_response();
+    let all = options::options(&state.db, &ctx.lang, &kind).await;
+    // the combo partners of the other slot's pick: a combo is the main
+    // reason a planner picks one pet over another, and the grid is too
+    // long to hunt through
+    let combi = if partner > 0 && kind != "treasure" {
+        let partner_kind = if kind == "pet" { "cookies" } else { "pets" };
+        db::combi_partner_ids(&state.db, partner_kind, partner).await.unwrap_or_default()
+    } else {
+        Vec::new()
     };
 
     let mut matched: Vec<PickerOption> = all

@@ -9,9 +9,9 @@ tokio = { version = "1", features = ["rt-multi-thread", "macros", "net", "signal
 tower = "0.5"
 tower-http = { version = "0.6", features = ["fs", "trace", "catch-panic"] }
 askama = "0.12"
-rusqlite = { version = "0.32", features = ["bundled"] }
-r2d2 = "0.8"
-r2d2_sqlite = "0.25"
+# SurrealDB client: the app never embeds a storage engine — it always talks
+# to an external server (ws:// or http://) over the wire.
+surrealdb = { version = "2", default-features = false, features = ["protocol-ws", "protocol-http"] }
 serde = { version = "1", features = ["derive"] }
 toml = "0.8"
 tracing = "0.1"
@@ -23,3 +23,22 @@ reqwest = { version = "0.12", default-features = false, features = ["rustls-tls"
 
 [dev-dependencies]
 serde_urlencoded = "0.7.1"
+
+# `cargo build --features import` also builds surreal-import, the one-shot
+# tool that reads the legacy sqlite.db and writes it into a SurrealDB server.
+[features]
+import = ["dep:rusqlite"]
+
+[dependencies.rusqlite]
+version = "0.32"
+features = ["bundled"]
+optional = true
+
+[[bin]]
+name = "cookierun"
+path = "src/main.rs"
+
+[[bin]]
+name = "surreal-import"
+path = "src/bin/surreal_import.rs"
+required-features = ["import"]

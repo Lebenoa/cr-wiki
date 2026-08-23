@@ -52,46 +52,33 @@ pub async fn show(
     ) {
         return super::errors::not_found(ctx);
     }
-    let lang = ctx.lang.clone();
-    let db = state.db.clone();
-    let section_for_db = section.clone();
-
-    let loaded = tokio::task::spawn_blocking(move || {
-        let item = db::select_detail(&db, &lang, &section_for_db, id)?;
-        let Some(item) = item else {
-            return Ok::<_, rusqlite::Error>(None);
-        };
-        let effects = if section_for_db == "treasures" {
-            db::treasure_effects(&db, &lang, id)?
-        } else {
-            Vec::new()
-        };
-        let combi = db::combi_bonuses(&db, &lang, &section_for_db, id)?;
-        let links = if section_for_db == "treasures" {
-            db::treasure_links(&db, &lang, id)?
-        } else {
-            TreasureLinks::default()
-        };
-        // the reverse link: what this cookie or pet unlocks
-        let unlocks = match section_for_db.as_str() {
-            "cookies" => db::unlocked_treasure(&db, &lang, "cookie", id)?,
-            "pets" => db::unlocked_treasure(&db, &lang, "pet", id)?,
-            _ => None,
-        };
-        // rich text needs the pool too, so it is rendered on this thread
-        let abilities = richtext::render(&db, &lang, &item.abilities);
-        let description = richtext::render(&db, &lang, &item.description);
-        let power_plus = richtext::render(&db, &lang, &item.power_plus);
-        let ppr = richtext::render(&db, &lang, &item.power_plus_requirement);
-        let goal = richtext::render(&db, &lang, &item.unlock_goal);
-        Ok(Some((item, effects, combi, links, unlocks, abilities, description, power_plus, ppr, goal)))
-    })
-    .await;
-
-    let Ok(Ok(Some((item, effects, combi, links, unlocks, abilities_html, description_html, power_plus_html, power_plus_requirement_html, unlock_goal_html)))) = loaded
-    else {
+    let item = db::select_detail(&state.db, &ctx.lang, &section, id).await.unwrap_or(None);
+    let Some(item) = item else {
         return super::errors::not_found(ctx);
     };
+    let effects = if section == "treasures" {
+        db::treasure_effects(&state.db, &ctx.lang, id).await.unwrap_or_default()
+    } else {
+        Vec::new()
+    };
+    let combi = db::combi_bonuses(&state.db, &ctx.lang, &section, id).await.unwrap_or_default();
+    let links = if section == "treasures" {
+        db::treasure_links(&state.db, &ctx.lang, id).await.unwrap_or_default()
+    } else {
+        TreasureLinks::default()
+    };
+    // the reverse link: what this cookie or pet unlocks
+    let unlocks = match section.as_str() {
+        "cookies" => db::unlocked_treasure(&state.db, &ctx.lang, "cookie", id).await.unwrap_or(None),
+        "pets" => db::unlocked_treasure(&state.db, &ctx.lang, "pet", id).await.unwrap_or(None),
+        _ => None,
+    };
+    let abilities_html = richtext::render(&state.db, &ctx.lang, &item.abilities).await;
+    let description_html = richtext::render(&state.db, &ctx.lang, &item.description).await;
+    let power_plus_html = richtext::render(&state.db, &ctx.lang, &item.power_plus).await;
+    let power_plus_requirement_html =
+        richtext::render(&state.db, &ctx.lang, &item.power_plus_requirement).await;
+    let unlock_goal_html = richtext::render(&state.db, &ctx.lang, &item.unlock_goal).await;
 
     let blessed_differs = db::blessed_differs(&effects);
     let page = DetailPage {

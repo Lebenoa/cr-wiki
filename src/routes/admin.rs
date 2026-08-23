@@ -117,28 +117,16 @@ pub async fn edit_form(
     if !ctx.is_admin() || !known(&section) {
         return super::errors::not_found(ctx);
     }
-    let lang = ctx.lang.clone();
-    let db = state.db.clone();
-    let section_for_db = section.clone();
-    let found = tokio::task::spawn_blocking(move || {
-        db::select_detail(&db, &lang, &section_for_db, id)
-    })
-    .await
-    .unwrap_or_else(|_| Ok(None))
-    .unwrap_or(None);
+    let found = db::select_detail(&state.db, &ctx.lang, &section, id)
+        .await
+        .unwrap_or(None);
 
     let Some(item) = found else {
         return super::errors::not_found(ctx);
     };
-    let lang = ctx.lang.clone();
-    let db = state.db.clone();
-    let section_for_db = section.clone();
-    let combi = tokio::task::spawn_blocking(move || {
-        db::combi_edit_rows(&db, &lang, &section_for_db, id)
-    })
-    .await
-    .unwrap_or_else(|_| Ok(Vec::new()))
-    .unwrap_or_default();
+    let combi = db::combi_edit_rows(&state.db, &ctx.lang, &section, id)
+        .await
+        .unwrap_or_default();
     page_with(ctx, &section, Some(item), combi, "")
 }
 
@@ -155,15 +143,9 @@ pub async fn create(
         return (StatusCode::BAD_REQUEST, page(ctx, &section, None, "admin_error_name"))
             .into_response();
     }
-    let lang = ctx.lang.clone();
-    let db = state.db.clone();
-    let section_for_db = section.clone();
-    let created = tokio::task::spawn_blocking(move || {
-        db::insert_entity(&db, &lang, &section_for_db, &form)
-    })
-    .await
-    .unwrap_or_else(|_| Ok(0))
-    .unwrap_or(0);
+    let created = db::insert_entity(&state.db, &ctx.lang, &section, &form)
+        .await
+        .unwrap_or(0);
 
     if created <= 0 {
         return (
@@ -190,15 +172,9 @@ pub async fn update(
         return (StatusCode::BAD_REQUEST, page(ctx, &section, None, "admin_error_name"))
             .into_response();
     }
-    let lang = ctx.lang.clone();
-    let db = state.db.clone();
-    let section_for_db = section.clone();
-    let ok = tokio::task::spawn_blocking(move || {
-        db::update_entity(&db, &lang, &section_for_db, id, &form)
-    })
-    .await
-    .unwrap_or_else(|_| Ok(false))
-    .unwrap_or(false);
+    let ok = db::update_entity(&state.db, &ctx.lang, &section, id, &form)
+        .await
+        .unwrap_or(false);
 
     if !ok {
         return (
@@ -221,8 +197,7 @@ pub async fn delete_combi(
     if !ctx.is_admin() {
         return super::errors::not_found(ctx);
     }
-    let db = state.db.clone();
-    let _ = tokio::task::spawn_blocking(move || db::delete_combi(&db, row_id)).await;
+    let _ = db::delete_combi(&state.db, row_id).await;
     options::invalidate();
     // back to where the editor was; the referer is the entity's own form
     Redirect::to("/cookies").into_response()

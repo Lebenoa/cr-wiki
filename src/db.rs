@@ -1,18 +1,62 @@
-//! SQLite access. rusqlite rather than an async driver: the V app talks to
-//! SQLite synchronously and the queries are short, so a blocking pool behind
-//! `spawn_blocking` keeps the port a translation instead of a rewrite.
+//! SurrealDB access. The app never embeds a storage engine: every query goes
+//! over the wire (`ws://` or `http://`) to an external server configured in
+//! Config.toml's `[surreal]` section.
+//!
+//! Modeling notes (this is a document store, not SQL):
+//! - translations live NESTED inside each entity as `tr: { en: {...}, th:
+//!   {...} }`, so the locale-fallback joins collapse into a path read:
+//!   `(tr[$lang].name ?? tr.en.name)`
+//! - a treasure's effect lines are denormalized onto the record as
+//!   `effect_lines: [{ state, en, th, values: [..+0..+9] }]`
+//! - ids are numeric (`cookie:123`); `record::id(id)` projects them back to
+//!   plain integers so routes keep their `/section/:id` shape
+//! - graded entities carry a maintained `rank` column (grade::rank), because
+//!   ordering by display rank must happen in the database
 
-use r2d2::Pool;
-use r2d2_sqlite::SqliteConnectionManager;
-use rusqlite::{params, params_from_iter, Row};
+use surrealdb::engine::any::Any;
+use surrealdb::opt::auth::Root;
+use surrealdb::Surreal;
 
+use crate::config::SurrealConfig;
 use crate::grade;
 
-pub type Db = Pool<SqliteConnectionManager>;
+pub type Db = Surreal<Any>;
 
-pub fn open(path: &str) -> Result<Db, r2d2::Error> {
-    let manager = SqliteConnectionManager::file(path);
-    Pool::builder().max_size(8).build(manager)
+pub type Result<T> = surrealdb::Result<T>;
+
+/// Connects to the external server and selects the namespace/database. No
+/// local engine exists behind this — an unreachable URL is a hard startup
+/// error.
+pub async fn connect(cfg: &SurrealConfig) -> Result<Db> {
+    connect_url(&cfg.url, &cfg.namespace, &cfg.database, &cfg.username, &cfg.password).await
+}
+
+/// Connects to an external server (`ws://` or `http://`). No local engine
+/// exists behind this — an unreachable URL is a hard startup error.
+pub async fn connect_url(
+    url: &str,
+    ns: &str,
+    database: &str,
+    username: &str,
+    password: &str,
+) -> Result<Db> {
+    let db = surrealdb::engine::any::connect(url).await?;
+    if !username.is_empty() {
+        db.signin(Root { username, password }).await?;
+    }
+    db.use_ns(ns).use_db(database).await?;
+    Ok(db)
+}
+
+/// The largest numeric id in a table, 0 when empty. New records take max+1;
+/// writes are admin-only and rare, so the unguarded read-modify-write is fine.
+async fn next_id(db: &Db, table: &str) -> Result<i64> {
+    let mut res = db
+        .query("LET $ids = (SELECT VALUE record::id(id) FROM type::table($tb)); RETURN array::max($ids) ?? 0;")
+        .bind(("tb", table.to_string()))
+        .await?;
+    let max = res.take::<Option<i64>>(1)?;
+    Ok(max.unwrap_or(0))
 }
 
 /// One catalog card: what the grid needs, with the English name alongside so
@@ -37,6 +81,32 @@ impl Card {
     }
     pub fn has_grade(&self) -> bool {
         self.grade.is_some()
+    }
+}
+
+#[derive(Debug, Clone, Default, serde::Deserialize)]
+struct CardRow {
+    id: i64,
+    #[serde(default)]
+    name: String,
+    #[serde(default)]
+    en_name: String,
+    image: Option<String>,
+    grade: Option<i64>,
+    #[serde(default)]
+    is_evolved: bool,
+}
+
+impl From<CardRow> for Card {
+    fn from(r: CardRow) -> Self {
+        Card {
+            id: r.id,
+            name: r.name,
+            en_name: r.en_name,
+            image: r.image,
+            grade: r.grade,
+            is_evolved: r.is_evolved,
+        }
     }
 }
 
@@ -75,6 +145,260 @@ impl Detail {
     }
 }
 
+/// Which table a catalog section reads, plus whether it grades its rows and
+/// stamps release dates. Every list/detail/search query branches through
+/// this instead of carrying per-section SQL.
+pub(crate) struct Kind {
+    pub(crate) table: &'static str,
+    pub(crate) graded: bool,
+    pub(crate) dated: bool,
+}
+
+fn kind_of(section: &str) -> Option<Kind> {
+    let (table, graded, dated) = match section {
+        "cookies" => ("cookie", true, true),
+        "pets" => ("pet", true, true),
+        "treasures" => ("treasure", true, true),
+        "episodes" => ("episode", false, false),
+        "ingredients" => ("ingredient", true, false),
+        "jellies" => ("jelly", false, false),
+        "relics" => ("relic", false, false),
+        "skins" => ("skin", true, false),
+        _ => return None,
+    };
+    Some(Kind { table, graded, dated })
+}
+
+/// The card projection every list shares: locale-fallback name, English name
+/// beside it, ordered by `order`.
+async fn select_cards(
+    db: &Db,
+    lang: &str,
+    kind: &Kind,
+    extra_select: &str,
+    where_sql: &str,
+    order: &str,
+    limit: Option<i64>,
+    start: Option<i64>,
+    needle: Option<String>,
+) -> Result<Vec<Card>> {
+    let mut sql = format!(
+        "SELECT record::id(id) AS id, image{extra_select},
+                (tr[$lang].name ?? tr.en.name) AS name, tr.en.name AS en_name
+           FROM type::table($tb)"
+    );
+    if !where_sql.is_empty() {
+        sql.push_str(" WHERE ");
+        sql.push_str(where_sql);
+    }
+    sql.push_str(order);
+    if let Some(l) = limit {
+        sql.push_str(&format!(" LIMIT {l}"));
+    }
+    if let Some(s) = start {
+        sql.push_str(&format!(" START {s}"));
+    }
+    let mut q = db
+        .query(&sql)
+        .bind(("lang", lang.to_string()))
+        .bind(("tb", kind.table.to_string()));
+    if let Some(n) = needle {
+        q = q.bind(("needle", n));
+    }
+    let rows: Vec<CardRow> = q.await?.take(0)?;
+    Ok(rows.into_iter().map(Card::from).collect())
+}
+
+/// Newest release date first with the id as the tie-break. Without that
+/// second key pages tied on release_date could repeat or skip between
+/// offset=0 and offset=30 fetches.
+pub async fn select_cookies(db: &Db, lang: &str, limit: i64, offset: i64) -> Result<Vec<Card>> {
+    select_cards(
+        db,
+        lang,
+        &kind_of("cookies").expect("static"),
+        ", grade, release_date",
+        "tr.en.name != NONE OR tr[$lang].name != NONE",
+        " ORDER BY release_date DESC, id DESC",
+        Some(limit),
+        Some(offset),
+        None,
+    )
+    .await
+}
+
+pub async fn select_pets(db: &Db, lang: &str, limit: i64, offset: i64) -> Result<Vec<Card>> {
+    select_cards(
+        db,
+        lang,
+        &kind_of("pets").expect("static"),
+        ", grade, release_date",
+        "tr.en.name != NONE OR tr[$lang].name != NONE",
+        " ORDER BY release_date DESC, id DESC",
+        Some(limit),
+        Some(offset),
+        None,
+    )
+    .await
+}
+
+/// Grade (highest first), then newest, then name. `tab` is all/normal/evo.
+/// Rank comes from the maintained column: the enum ordinal is NOT the display
+/// order (E outranks L).
+pub async fn select_treasures(
+    db: &Db,
+    lang: &str,
+    tab: &str,
+    limit: i64,
+    offset: i64,
+) -> Result<Vec<Card>> {
+    let tab_where = match tab {
+        "normal" => " AND is_evolved = false",
+        "evo" => " AND is_evolved = true",
+        _ => "",
+    };
+    let where_sql = format!(
+        "(tr.en.name != NONE OR tr[$lang].name != NONE){tab_where}"
+    );
+    select_cards(
+        db,
+        lang,
+        &kind_of("treasures").expect("static"),
+        ", grade, is_evolved, rank, release_date",
+        &where_sql,
+        " ORDER BY rank DESC, release_date DESC, name ASC",
+        Some(limit),
+        Some(offset),
+        None,
+    )
+    .await
+}
+
+/// The simple catalogs, which share a shape and are unpaginated in the V app.
+/// Graded grids order rarest-first by display rank, not the raw column.
+pub async fn select_simple(db: &Db, lang: &str, kind: &str) -> Result<Vec<Card>> {
+    let kind = match kind {
+        "episodes" => Kind { table: "episode", graded: false, dated: false },
+        "ingredients" => Kind { table: "ingredient", graded: true, dated: false },
+        "jellies" => Kind { table: "jelly", graded: false, dated: false },
+        "skins" => Kind { table: "skin", graded: true, dated: false },
+        "relics" => Kind { table: "relic", graded: false, dated: false },
+        _ => return Ok(Vec::new()),
+    };
+    let order = if kind.graded {
+        " ORDER BY rank DESC, id".to_string()
+    } else {
+        " ORDER BY id".to_string()
+    };
+    let extra = if kind.graded { ", grade, rank" } else { "" };
+    select_cards(
+        db,
+        lang,
+        &kind,
+        extra,
+        "tr.en.name != NONE OR tr[$lang].name != NONE",
+        &order,
+        None,
+        None,
+        None,
+    )
+    .await
+}
+
+#[derive(Debug, Clone, Default, serde::Deserialize)]
+struct DetailRow {
+    id: i64,
+    #[serde(default)]
+    name: String,
+    #[serde(default)]
+    en_name: String,
+    image: Option<String>,
+    grade: Option<i64>,
+    #[serde(default)]
+    abilities: String,
+    #[serde(default)]
+    description: String,
+    #[serde(default)]
+    power_plus: String,
+    #[serde(default)]
+    power_plus_requirement: String,
+    #[serde(default)]
+    unlock_goal: String,
+    #[serde(default)]
+    release_date: Option<i64>,
+}
+
+/// One entity's detail row. Prose falls back locale -> English inside the
+/// nested translation object; fields a kind does not have come back empty.
+pub async fn select_detail(db: &Db, lang: &str, section: &str, id: i64) -> Result<Option<Detail>> {
+    let Some(kind) = kind_of(section) else {
+        return Ok(None);
+    };
+    let sql = format!(
+        "SELECT record::id(id) AS id, image{extra}, release_date,
+                (tr[$lang].name ?? tr.en.name ?? '') AS name,
+                (tr.en.name ?? '') AS en_name,
+                (tr[$lang].abilities ?? tr.en.abilities ?? '') AS abilities,
+                (tr[$lang].description ?? tr.en.description ?? '') AS description,
+                (tr[$lang].power_plus ?? tr.en.power_plus ?? '') AS power_plus,
+                (tr[$lang].power_plus_requirement ?? tr.en.power_plus_requirement ?? '') AS ppr,
+                (tr[$lang].unlock_goal ?? tr.en.unlock_goal ?? '') AS unlock_goal
+           FROM type::table($tb)
+          WHERE record::id(id) = $id
+          LIMIT 1",
+        extra = if kind.graded { ", grade" } else { "" },
+    );
+    let mut rows: Vec<DetailRow> = db
+        .query(&sql)
+        .bind(("lang", lang.to_string()))
+        .bind(("tb", kind.table.to_string()))
+        .bind(("id", id))
+        .await?
+        .take(0)?;
+    Ok(rows.pop().map(|r| Detail {
+        id: r.id,
+        name: r.name,
+        en_name: r.en_name,
+        image: r.image,
+        grade: if kind.graded { r.grade } else { None },
+        abilities: r.abilities,
+        description: r.description,
+        power_plus: r.power_plus,
+        power_plus_requirement: r.power_plus_requirement,
+        unlock_goal: r.unlock_goal,
+        release_date: if kind.dated { r.release_date.unwrap_or(0) } else { 0 },
+    }))
+}
+
+/// The treasure a cookie or pet unlocks, if any — the reverse of the link
+/// the treasure page shows. `kind` is "cookie" or "pet".
+pub async fn unlocked_treasure(
+    db: &Db,
+    lang: &str,
+    kind: &str,
+    id: i64,
+) -> Result<Option<(i64, String, Option<String>)>> {
+    let col = match kind {
+        "cookie" => "unlock_cookie_id",
+        "pet" => "unlock_pet_id",
+        _ => return Ok(None),
+    };
+    let sql = format!(
+        "SELECT record::id(id) AS id, image,
+                (tr[$lang].name ?? tr.en.name ?? '') AS name
+           FROM treasure
+          WHERE {col} = $id
+          LIMIT 1"
+    );
+    let mut rows: Vec<CardRow> = db
+        .query(&sql)
+        .bind(("lang", lang.to_string()))
+        .bind(("id", id))
+        .await?
+        .take(0)?;
+    Ok(rows.pop().map(|r| (r.id, r.name, r.image)))
+}
+
 /// One effect line on a treasure, carrying the whole 0-9 ladder so the level
 /// slider repaints without another request.
 #[derive(Debug, Clone, Default)]
@@ -93,6 +417,50 @@ impl EffectLine {
     }
 }
 
+#[derive(Debug, Clone, Default, serde::Deserialize)]
+struct EffectLineRow {
+    state: i64,
+    #[serde(default)]
+    en: String,
+    #[serde(default)]
+    th: String,
+    #[serde(default)]
+    values: Vec<String>,
+}
+
+impl EffectLineRow {
+    fn into_line(self, lang: &str) -> EffectLine {
+        let text = match lang == "th" && !self.th.is_empty() {
+            true => self.th.clone(),
+            false => self.en.clone(),
+        };
+        EffectLine {
+            text,
+            values: self.values,
+            blessed: self.state == 1,
+        }
+    }
+}
+
+/// A treasure's effect lines with their 0-9 ladders, normal and blessed,
+/// deduped and in wiki order — all stored on the record itself.
+pub async fn treasure_effects(db: &Db, lang: &str, id: i64) -> Result<Vec<EffectLine>> {
+    #[derive(serde::Deserialize)]
+    struct Row {
+        #[serde(default)]
+        effect_lines: Vec<EffectLineRow>,
+    }
+    let mut rows: Vec<Row> = db
+        .query("SELECT effect_lines FROM type::thing(\"treasure\", $id)")
+        .bind(("id", id))
+        .await?
+        .take(0)?;
+    Ok(rows
+        .pop()
+        .map(|r| r.effect_lines.into_iter().map(|e| e.into_line(lang)).collect())
+        .unwrap_or_default())
+}
+
 /// The other half of a cookie/pet pair, as the detail pages list it.
 #[derive(Debug, Clone, Default)]
 pub struct CombiRow {
@@ -103,405 +471,212 @@ pub struct CombiRow {
     pub is_hidden: bool,
 }
 
-type Conn = r2d2::PooledConnection<SqliteConnectionManager>;
-
-fn conn(db: &Db) -> rusqlite::Result<Conn> {
-    db.get()
-        .map_err(|e| rusqlite::Error::InvalidParameterName(format!("pool: {e}")))
-}
-
-fn card_from(row: &Row, has_grade: bool, has_evolved: bool) -> rusqlite::Result<Card> {
-    Ok(Card {
-        id: row.get("id")?,
-        name: row.get("name")?,
-        en_name: row.get::<_, Option<String>>("en_name")?.unwrap_or_default(),
-        image: row.get("image")?,
-        grade: if has_grade { row.get("grade")? } else { None },
-        is_evolved: if has_evolved { row.get::<_, i64>("is_evolved")? != 0 } else { false },
-    })
-}
-
-/// The join every catalog list shares: the row, its translation in `lang`,
-/// and the English one behind it. Rows translated in neither are dropped,
-/// matching the V queries.
-fn catalog_sql(
-    table: &str,
-    id_col: &str,
-    owner_col: &str,
-    tr_table: &str,
-    extra: &str,
-    order: &str,
-) -> String {
-    format!(
-        "SELECT e.{id_col} AS id, e.image AS image{extra},
-                COALESCE(tl.name, te.name) AS name,
-                te.name AS en_name
-           FROM {table} e
-           LEFT JOIN {tr_table} tl ON tl.{owner_col} = e.{id_col} AND tl.lang = ?1
-           LEFT JOIN {tr_table} te ON te.{owner_col} = e.{id_col} AND te.lang = 'en'
-          WHERE tl.name IS NOT NULL OR te.name IS NOT NULL
-          {order}"
-    )
-}
-
-/// Newest release date first with the id as the tie-break. Without that
-/// second key SQLite may order rows tied on release_date differently between
-/// the offset=0 and offset=30 fetches, and infinite scroll would repeat or
-/// skip cards.
-pub fn select_cookies(db: &Db, lang: &str, limit: i64, offset: i64) -> rusqlite::Result<Vec<Card>> {
-    let c = conn(db)?;
-    let sql = catalog_sql(
-        "cookie",
-        "cookie_id",
-        "owner_id",
-        "cookie_translation",
-        ", e.grade AS grade",
-        "ORDER BY e.release_date DESC, e.cookie_id DESC LIMIT ?2 OFFSET ?3",
-    );
-    let mut stmt = c.prepare(&sql)?;
-    let rows = stmt.query_map(params![lang, limit, offset], |r| card_from(r, true, false))?;
-    rows.collect()
-}
-
-pub fn select_pets(db: &Db, lang: &str, limit: i64, offset: i64) -> rusqlite::Result<Vec<Card>> {
-    let c = conn(db)?;
-    let sql = catalog_sql(
-        "pet",
-        "pet_id",
-        "pet_id",
-        "pet_translation",
-        ", e.grade AS grade",
-        "ORDER BY e.release_date DESC, e.pet_id DESC LIMIT ?2 OFFSET ?3",
-    );
-    let mut stmt = c.prepare(&sql)?;
-    let rows = stmt.query_map(params![lang, limit, offset], |r| card_from(r, true, false))?;
-    rows.collect()
-}
-
-/// Grade (highest first), then newest, then name. `tab` is all/normal/evo.
-pub fn select_treasures(
-    db: &Db,
-    lang: &str,
-    tab: &str,
-    limit: i64,
-    offset: i64,
-) -> rusqlite::Result<Vec<Card>> {
-    let c = conn(db)?;
-    let tab_where = match tab {
-        "normal" => " AND e.is_evolved = 0",
-        "evo" => " AND e.is_evolved = 1",
-        _ => "",
-    };
-    let sql = format!(
-        "SELECT e.treasure_id AS id, e.image AS image, e.grade AS grade,
-                e.is_evolved AS is_evolved,
-                COALESCE(tl.name, te.name) AS name, te.name AS en_name
-           FROM treasure e
-           LEFT JOIN treasure_translation tl ON tl.treasure_id = e.treasure_id AND tl.lang = ?1
-           LEFT JOIN treasure_translation te ON te.treasure_id = e.treasure_id AND te.lang = 'en'
-          WHERE (tl.name IS NOT NULL OR te.name IS NOT NULL){tab_where}
-          ORDER BY {rank} DESC, e.release_date DESC, COALESCE(tl.name, te.name) ASC
-          LIMIT ?2 OFFSET ?3",
-        rank = grade::rank_sql("e.grade")
-    );
-    let mut stmt = c.prepare(&sql)?;
-    let rows = stmt.query_map(params![lang, limit, offset], |r| card_from(r, true, true))?;
-    rows.collect()
-}
-
-/// The simple catalogs, which share a shape and are unpaginated in the V app.
-pub fn select_simple(db: &Db, lang: &str, kind: &str) -> rusqlite::Result<Vec<Card>> {
-    let (table, id_col, tr_table, extra, graded) = match kind {
-        "episodes" => ("episode", "episode_id", "episode_translation", "", false),
-        "ingredients" => (
-            "ingredient",
-            "ingredient_id",
-            "ingredient_translation",
-            ", e.grade AS grade",
-            true,
-        ),
-        "jellies" => ("jelly", "jelly_id", "jelly_translation", "", false),
-        "skins" => ("skin", "skin_id", "skin_translation", ", e.grade AS grade", true),
-        "relics" => ("relic", "relic_id", "relic_translation", "", false),
-        _ => return Ok(Vec::new()),
-    };
-    let c = conn(db)?;
-    // graded grids order rarest-first by display rank, not the raw column:
-    // the enum's declaration order is NOT the display order (E ranks above
-    // L), so `grade DESC` alone would drop E-grade rows to the bottom —
-    // grade::rank_sql maps stored values through the shared rank table
-    let order = if graded {
-        format!("ORDER BY {} DESC, e.{id_col}", crate::grade::rank_sql("e.grade"))
-    } else {
-        format!("ORDER BY e.{id_col}")
-    };
-    let sql = catalog_sql(table, id_col, id_col, tr_table, extra, &order);
-    let mut stmt = c.prepare(&sql)?;
-    let rows = stmt.query_map(params![lang], |r| card_from(r, graded, false))?;
-    rows.collect()
-}
-
-/// One entity's detail row. Columns a kind does not have come back empty.
-pub fn select_detail(db: &Db, lang: &str, kind: &str, id: i64) -> rusqlite::Result<Option<Detail>> {
-    let cookie_prose = ", tr.abilities AS abilities, tr.description AS description, tr.power_plus AS power_plus, tr.power_plus_requirement AS ppr, tr.unlock_goal AS unlock_goal";
-    let pet_prose = ", tr.abilities AS abilities, tr.description AS description, '' AS power_plus, '' AS ppr, '' AS unlock_goal";
-    let plain = ", '' AS abilities, tr.description AS description, '' AS power_plus, '' AS ppr, '' AS unlock_goal";
-    let (table, id_col, owner_col, tr_table, extra, prose) = match kind {
-        "cookies" => ("cookie", "cookie_id", "owner_id", "cookie_translation", ", e.grade AS grade", cookie_prose),
-        "pets" => ("pet", "pet_id", "pet_id", "pet_translation", ", e.grade AS grade", pet_prose),
-        "treasures" => ("treasure", "treasure_id", "treasure_id", "treasure_translation", ", e.grade AS grade", plain),
-        "episodes" => ("episode", "episode_id", "episode_id", "episode_translation", "", plain),
-        "ingredients" => ("ingredient", "ingredient_id", "ingredient_id", "ingredient_translation", ", e.grade AS grade", plain),
-        "jellies" => ("jelly", "jelly_id", "jelly_id", "jelly_translation", "", plain),
-        "relics" => ("relic", "relic_id", "relic_id", "relic_translation", "", plain),
-        "skins" => ("skin", "skin_id", "skin_id", "skin_translation", ", e.grade AS grade", plain),
-        _ => return Ok(None),
-    };
-    let graded = !extra.is_empty();
-    // only these three tables carry the column
-    let has_date = matches!(kind, "cookies" | "pets" | "treasures");
-    let dated = if has_date { ", COALESCE(e.release_date, 0) AS release_date" } else { "" };
-    let c = conn(db)?;
-    let sql = format!(
-        "SELECT e.{id_col} AS id, e.image AS image{extra}{dated},
-                COALESCE(tr.name, '') AS name, COALESCE(te.name, '') AS en_name{prose}
-           FROM {table} e
-           LEFT JOIN {tr_table} tr ON tr.{owner_col} = e.{id_col} AND tr.lang IN (?1, 'en')
-           LEFT JOIN {tr_table} te ON te.{owner_col} = e.{id_col} AND te.lang = 'en'
-          WHERE e.{id_col} = ?2
-          ORDER BY (tr.lang = ?1) DESC
-          LIMIT 1"
-    );
-    let mut stmt = c.prepare(&sql)?;
-    let mut rows = stmt.query(params![lang, id])?;
-    let Some(row) = rows.next()? else {
-        return Ok(None);
-    };
-    Ok(Some(Detail {
-        id: row.get("id")?,
-        name: row.get("name")?,
-        en_name: row.get("en_name")?,
-        image: row.get("image")?,
-        grade: if graded { row.get("grade")? } else { None },
-        abilities: row.get::<_, Option<String>>("abilities")?.unwrap_or_default(),
-        description: row.get::<_, Option<String>>("description")?.unwrap_or_default(),
-        power_plus: row.get::<_, Option<String>>("power_plus")?.unwrap_or_default(),
-        power_plus_requirement: row.get::<_, Option<String>>("ppr")?.unwrap_or_default(),
-        unlock_goal: row.get::<_, Option<String>>("unlock_goal")?.unwrap_or_default(),
-        release_date: if has_date { row.get("release_date")? } else { 0 },
-    }))
-}
-
-/// The treasure a cookie or pet unlocks, if any — the reverse of the link
-/// the treasure page shows. `kind` is "cookie" or "pet".
-pub fn unlocked_treasure(
-    db: &Db,
-    lang: &str,
-    kind: &str,
+#[derive(Debug, Clone, Default, serde::Deserialize)]
+struct CombiRecord {
+    /// the pairing's own numeric id, so the admin editor can delete one row
     id: i64,
-) -> rusqlite::Result<Option<(i64, String, Option<String>)>> {
-    let col = match kind {
-        "cookie" => "unlock_cookie_id",
-        "pet" => "unlock_pet_id",
-        _ => return Ok(None),
-    };
-    let c = conn(db)?;
-    let sql = format!(
-        "SELECT t.treasure_id AS id, t.image AS image,
-                COALESCE(tl.name, te.name, '') AS name
-           FROM treasure t
-           LEFT JOIN treasure_translation tl ON tl.treasure_id = t.treasure_id AND tl.lang = ?1
-           LEFT JOIN treasure_translation te ON te.treasure_id = t.treasure_id AND te.lang = 'en'
-          WHERE t.{col} = ?2
-          LIMIT 1"
-    );
-    let mut stmt = c.prepare(&sql)?;
-    let mut rows = stmt.query(params![lang, id])?;
-    match rows.next()? {
-        Some(row) => Ok(Some((row.get("id")?, row.get("name")?, row.get("image")?))),
-        None => Ok(None),
-    }
+    cookie_id: i64,
+    pet_id: i64,
+    #[serde(default)]
+    en: String,
+    #[serde(default)]
+    th: String,
+    #[serde(default)]
+    is_hidden: bool,
 }
 
-/// A treasure's effect lines with their 0-9 ladders, normal and blessed,
-/// deduped and in wiki order. The column is bracket-quoted because `values`
-/// is a keyword in newer SQLite.
-pub fn treasure_effects(db: &Db, lang: &str, id: i64) -> rusqlite::Result<Vec<EffectLine>> {
-    let c = conn(db)?;
-    let links: Vec<(i64, i64, String)> = {
-        let mut stmt = c.prepare(
-            "SELECT te.effect_id AS effect_id, te.state AS state,
-                    COALESCE(el.name, ee.name, '') AS text
-               FROM treasure_effect te
-               LEFT JOIN effect_translation el ON el.effect_id = te.effect_id AND el.lang = ?1
-               LEFT JOIN effect_translation ee ON ee.effect_id = te.effect_id AND ee.lang = 'en'
-              WHERE te.treasure_id = ?2
-              ORDER BY te.treasure_effect_id",
-        )?;
-        let rows = stmt.query_map(params![lang, id], |r| {
-            Ok((r.get("effect_id")?, r.get("state")?, r.get("text")?))
-        })?;
-        rows.collect::<rusqlite::Result<_>>()?
-    };
-
-    let mut out = Vec::new();
-    let mut seen: Vec<(i64, i64)> = Vec::new();
-    let mut lv = c.prepare(
-        "SELECT [values] AS v FROM treasure_level
-          WHERE treasure_id = ?1 AND effect_id = ?2 AND state = ?3
-          ORDER BY level",
-    )?;
-    for (effect_id, state, text) in links {
-        if seen.contains(&(effect_id, state)) {
-            continue;
-        }
-        seen.push((effect_id, state));
-        let values: Vec<String> = lv
-            .query_map(params![id, effect_id, state], |r| r.get::<_, String>("v"))?
-            .collect::<rusqlite::Result<_>>()?;
-        out.push(EffectLine { text, values, blessed: state == 1 });
+/// Name lookup for a batch of ids in one query, locale fallback applied.
+/// Returns a map keyed by id so callers stitch pairs together.
+pub(crate) async fn names_for(
+    db: &Db,
+    lang: &str,
+    kind: &Kind,
+    ids: &[i64],
+) -> Result<std::collections::HashMap<i64, (String, Option<String>)>> {
+    let mut map = std::collections::HashMap::new();
+    if ids.is_empty() {
+        return Ok(map);
     }
-    Ok(out)
+    let list = ids.iter().map(|i| format!("{}:{}", kind.table, i)).collect::<Vec<_>>();
+    let sql = format!(
+        "SELECT record::id(id) AS id, image,
+                (tr[$lang].name ?? tr.en.name ?? '') AS name
+           FROM {}
+          WHERE id IN [{}]",
+        kind.table,
+        list.join(", ")
+    );
+    let rows: Vec<CardRow> = db
+        .query(&sql)
+        .bind(("lang", lang.to_string()))
+        .await?
+        .take(0)?;
+    for r in rows {
+        map.insert(r.id, (r.name, r.image));
+    }
+    Ok(map)
 }
 
 /// The combo bonuses a cookie or pet takes part in, partner resolved.
-pub fn combi_bonuses(db: &Db, lang: &str, kind: &str, id: i64) -> rusqlite::Result<Vec<CombiRow>> {
-    let (own_col, partner_col, partner_table, partner_id_col, partner_tr, partner_owner) =
-        match kind {
-            "cookies" => ("cookie_id", "pet_id", "pet", "pet_id", "pet_translation", "pet_id"),
-            "pets" => ("pet_id", "cookie_id", "cookie", "cookie_id", "cookie_translation", "owner_id"),
-            _ => return Ok(Vec::new()),
-        };
-    let c = conn(db)?;
-    let sql = format!(
-        "SELECT p.{partner_id_col} AS partner_id, p.image AS partner_image,
-                COALESCE(tl.name, te.name, '') AS partner_name,
-                COALESCE(el.name, ee.name, '') AS effect,
-                cb.is_hidden AS is_hidden
-           FROM combi_bonus cb
-           JOIN {partner_table} p ON p.{partner_id_col} = cb.{partner_col}
-           LEFT JOIN {partner_tr} tl ON tl.{partner_owner} = p.{partner_id_col} AND tl.lang = ?1
-           LEFT JOIN {partner_tr} te ON te.{partner_owner} = p.{partner_id_col} AND te.lang = 'en'
-           LEFT JOIN effect_translation el ON el.effect_id = cb.effect_id AND el.lang = ?1
-           LEFT JOIN effect_translation ee ON ee.effect_id = cb.effect_id AND ee.lang = 'en'
-          WHERE cb.{own_col} = ?2
-          ORDER BY cb.id"
-    );
-    let mut stmt = c.prepare(&sql)?;
-    let rows = stmt.query_map(params![lang, id], |r| {
-        Ok(CombiRow {
-            partner_id: r.get("partner_id")?,
-            partner_name: r.get("partner_name")?,
-            partner_image: r.get("partner_image")?,
-            effect: r.get("effect")?,
-            is_hidden: r.get::<_, i64>("is_hidden")? != 0,
+async fn combis(db: &Db, lang: &str, own: &str, id: i64) -> Result<Vec<(CombiRecord, CombiRow)>> {
+    if id <= 0 || own != "cookies" {
+        // combi pairings hang off cookies only; other sections list none
+        return Ok(Vec::new());
+    }
+    let mut records: Vec<CombiRecord> = db
+        .query(&format!(
+            "SELECT record::id(id) AS id, cookie_id, pet_id, en, th, is_hidden
+               FROM combi WHERE cookie_id = $id ORDER BY id"
+        ))
+        .bind(("id", id))
+        .await?
+        .take(0)?;
+
+    let partner_section = if own == "cookies" { "pets" } else { "cookies" };
+    let partner_kind = kind_of(partner_section).expect("static");
+    let ids: Vec<i64> = records
+        .iter()
+        .map(|c| if own == "cookies" { c.pet_id } else { c.cookie_id })
+        .collect();
+    let partners = names_for(db, lang, &partner_kind, &ids).await?;
+
+    Ok(records
+        .drain(..)
+        .map(|c| {
+            let partner_id = if own == "cookies" { c.pet_id } else { c.cookie_id };
+            let (partner_name, partner_image) =
+                partners.get(&partner_id).cloned().unwrap_or_default();
+            let effect = match lang == "th" && !c.th.is_empty() {
+                true => c.th.clone(),
+                false => c.en.clone(),
+            };
+            let row = CombiRow {
+                partner_id,
+                partner_name,
+                partner_image,
+                effect,
+                is_hidden: c.is_hidden,
+            };
+            (c, row)
         })
-    })?;
-    rows.collect()
+        .collect())
 }
 
-/// Name and sprite for a rich-text link, in one query — which keeps a
-/// description with several links from costing a round trip each.
-pub fn entity_link(db: &Db, lang: &str, kind: &str, id: i64) -> Option<(String, Option<String>)> {
-    let (table, id_col, tr_table, owner_col) = match kind {
-        "pet" => ("pet", "pet_id", "pet_translation", "pet_id"),
-        "treasure" => ("treasure", "treasure_id", "treasure_translation", "treasure_id"),
-        _ => ("cookie", "cookie_id", "cookie_translation", "owner_id"),
+pub async fn combi_bonuses(db: &Db, lang: &str, kind: &str, id: i64) -> Result<Vec<CombiRow>> {
+    Ok(combis(db, lang, kind, id)
+        .await?
+        .into_iter()
+        .map(|(_, row)| row)
+        .collect())
+}
+
+/// Name and sprite for a rich-text link, resolved like everywhere else:
+/// requested locale first, English behind it.
+pub async fn entity_link(db: &Db, lang: &str, kind: &str, id: i64) -> Option<(String, Option<String>)> {
+    let section = match kind {
+        "pet" => "pets",
+        "treasure" => "treasures",
+        _ => "cookies",
     };
-    let c = conn(db).ok()?;
-    let sql = format!(
-        "SELECT e.image AS image, t.name AS name
-           FROM {table} e
-           LEFT JOIN {tr_table} t ON t.{owner_col} = e.{id_col} AND t.lang IN (?1, 'en')
-          WHERE e.{id_col} = ?2
-          ORDER BY (t.lang = ?1) DESC
-          LIMIT 1"
-    );
-    let mut stmt = c.prepare(&sql).ok()?;
-    let mut rows = stmt.query(params![lang, id]).ok()?;
-    let row = rows.next().ok()??;
-    let name: Option<String> = row.get("name").ok()?;
-    let image: Option<String> = row.get("image").ok()?;
-    name.filter(|n| !n.is_empty()).map(|n| (n, image))
+    let k = kind_of(section)?;
+    let mut rows: Vec<CardRow> = db
+        .query(&format!(
+            "SELECT record::id(id) AS id, image,
+                    (tr[$lang].name ?? tr.en.name ?? '') AS name,
+                    (tr.en.name ?? '') AS en_name
+               FROM {}
+              WHERE record::id(id) = $id
+              LIMIT 1",
+            k.table
+        ))
+        .bind(("lang", lang.to_string()))
+        .bind(("id", id))
+        .await
+        .ok()?
+        .take(0)
+        .ok()?;
+    let row = rows.pop()?;
+    let name = if row.name.is_empty() { row.en_name } else { row.name };
+    if name.is_empty() {
+        None
+    } else {
+        Some((name, row.image))
+    }
 }
 
 /// Every (section, id) pair the sitemap lists.
-pub fn sitemap_entries(db: &Db) -> rusqlite::Result<Vec<(String, i64)>> {
-    let c = conn(db)?;
+pub async fn sitemap_entries(db: &Db) -> Result<Vec<(String, i64)>> {
     let mut out = Vec::new();
-    for (section, table, id_col) in [
-        ("cookies", "cookie", "cookie_id"),
-        ("pets", "pet", "pet_id"),
-        ("treasures", "treasure", "treasure_id"),
-        ("episodes", "episode", "episode_id"),
-        ("ingredients", "ingredient", "ingredient_id"),
-        ("jellies", "jelly", "jelly_id"),
+    for (section, table) in [
+        ("cookies", "cookie"),
+        ("pets", "pet"),
+        ("treasures", "treasure"),
+        ("episodes", "episode"),
+        ("ingredients", "ingredient"),
+        ("jellies", "jelly"),
     ] {
-        let mut stmt = c.prepare(&format!("SELECT {id_col} FROM {table} ORDER BY {id_col}"))?;
-        let ids: Vec<i64> = stmt.query_map([], |r| r.get(0))?.collect::<rusqlite::Result<_>>()?;
+        let ids: Vec<i64> = db
+            .query(&format!("SELECT VALUE record::id(id) FROM {table}"))
+            .await?
+            .take(0)?;
         out.extend(ids.into_iter().map(|id| (section.to_string(), id)));
     }
     Ok(out)
 }
 
-/// Cross-entity search over the localized and English names. LIKE rather than
-/// FTS: Thai has no word breaks, so the tokenizer misses terms a substring
-/// match finds, and the V app keeps the same fallback for exactly that. The
-/// escape character is `!` so a literal % or _ in the query cannot act as a
-/// wildcard.
-pub fn search(db: &Db, lang: &str, q: &str, limit: i64) -> rusqlite::Result<Vec<(String, Card)>> {
+/// Cross-entity search over the localized and English names. Substring
+/// matching rather than a full-text index for the same reason the V app kept
+/// LIKE: Thai has no word breaks, so a tokenizer misses terms a substring
+/// finds. Both sides are lowercased because `~` is case-sensitive.
+pub async fn search(db: &Db, lang: &str, q: &str, limit: i64) -> Result<Vec<(String, Card)>> {
     let q = q.trim();
     if q.is_empty() {
         return Ok(Vec::new());
     }
-    let escaped = q.replace('!', "!!").replace('%', "!%").replace('_', "!_");
-    let like = format!("%{escaped}%");
-    let c = conn(db)?;
+    let needle = q.to_lowercase();
     let mut out = Vec::new();
-    // the same columns the V app's FTS tables index, so a query finds the
-    // same rows: a cookie is searchable by its abilities text, not just its
-    // name, which is how "magnet" reaches the cookies that grant one
-    for (section, table, id_col, owner_col, tr_table, prose) in [
-        ("cookies", "cookie", "cookie_id", "owner_id", "cookie_translation", "abilities, description"),
-        ("pets", "pet", "pet_id", "pet_id", "pet_translation", "description"),
-        ("treasures", "treasure", "treasure_id", "treasure_id", "treasure_translation", "description"),
-        // the V app's SearchResults covers these too, so a relic or an
-        // episode is findable by name the same way a cookie is
-        ("relics", "relic", "relic_id", "relic_id", "relic_translation", "description"),
-        ("episodes", "episode", "episode_id", "episode_id", "episode_translation", "description"),
-        ("ingredients", "ingredient", "ingredient_id", "ingredient_id", "ingredient_translation", "description"),
+    // the columns searched mirror the old FTS tables: a cookie is findable by
+    // its abilities text, not just its name
+    for (section, prose) in [
+        ("cookies", vec!["abilities", "description"]),
+        ("pets", vec!["description"]),
+        ("treasures", vec!["description"]),
+        ("relics", vec!["description"]),
+        ("episodes", vec!["description"]),
+        ("ingredients", vec!["description"]),
     ] {
-        // one OR per indexed column, on both the localized row and the
-        // English one behind it
-        let mut clauses: Vec<String> = Vec::new();
-        for col in std::iter::once("name").chain(prose.split(", ")) {
-            clauses.push(format!("tl.{col} LIKE ?2 ESCAPE '!'"));
-            clauses.push(format!("te.{col} LIKE ?2 ESCAPE '!'"));
+        let kind = kind_of(section).expect("known section");
+        let mut clauses = vec![
+            "string::lowercase(tr.en.name) CONTAINS $needle".to_string(),
+            format!("string::lowercase(tr[$lang].name ?? '') CONTAINS $needle"),
+        ];
+        for col in prose {
+            clauses.push(format!(
+                "string::lowercase(tr.en.{col} ?? '') CONTAINS $needle"
+            ));
+            clauses.push(format!(
+                "string::lowercase(tr[$lang].{col} ?? '') CONTAINS $needle"
+            ));
         }
-        let where_sql = clauses.join(" OR ");
-        let graded = matches!(section, "cookies" | "pets" | "treasures" | "ingredients");
-        let grade_col = if graded { "e.grade AS grade" } else { "NULL AS grade" };
-        let sql = format!(
-            "SELECT e.{id_col} AS id, e.image AS image, {grade_col},
-                    COALESCE(tl.name, te.name) AS name, te.name AS en_name
-               FROM {table} e
-               LEFT JOIN {tr_table} tl ON tl.{owner_col} = e.{id_col} AND tl.lang = ?1
-               LEFT JOIN {tr_table} te ON te.{owner_col} = e.{id_col} AND te.lang = 'en'
-              WHERE ({where_sql})
-              ORDER BY COALESCE(tl.name, te.name)
-              LIMIT ?3"
-        );
-        let mut stmt = c.prepare(&sql)?;
-        let rows = stmt.query_map(params![lang, like, limit], |r| card_from(r, graded, false))?;
-        for card in rows {
-            out.push((section.to_string(), card?));
-        }
+        let extra = if kind.graded { ", grade" } else { "" };
+        let cards = select_cards(
+            db,
+            lang,
+            &kind,
+            extra,
+            &clauses.join(" OR "),
+            " ORDER BY name ASC",
+            Some(limit),
+            None,
+            Some(needle.clone()),
+        )
+        .await?;
+        out.extend(cards.into_iter().map(|card| (section.to_string(), card)));
     }
     Ok(out)
 }
 
-/// A user row, for the session layer (see PORTING.md).
-#[allow(dead_code)]
+/// A user row, for the session layer.
 #[derive(Debug, Clone)]
 pub struct User {
     pub id: i64,
@@ -510,51 +685,85 @@ pub struct User {
     pub is_admin: bool,
 }
 
-#[allow(dead_code)]
-pub fn find_user(db: &Db, username: &str) -> rusqlite::Result<Option<User>> {
-    let c = conn(db)?;
-    let mut stmt = c.prepare(
-        "SELECT user_id, username, password, is_admin FROM user WHERE username = ?1 LIMIT 1",
-    )?;
-    let mut rows = stmt.query(params![username])?;
-    let Some(row) = rows.next()? else {
-        return Ok(None);
-    };
-    Ok(Some(User {
-        id: row.get("user_id")?,
-        username: row.get("username")?,
-        password: row.get("password")?,
-        is_admin: row.get::<_, i64>("is_admin")? != 0,
+#[derive(serde::Deserialize)]
+struct UserRow {
+    id: i64,
+    username: String,
+    password: String,
+    #[serde(default)]
+    is_admin: bool,
+}
+
+pub async fn find_user(db: &Db, username: &str) -> Result<Option<User>> {
+    let mut rows: Vec<UserRow> = db
+        .query("SELECT record::id(id) AS id, username, password, is_admin FROM user WHERE username = $u LIMIT 1")
+        .bind(("u", username.to_string()))
+        .await?
+        .take(0)?;
+    Ok(rows.pop().map(|r| User {
+        id: r.id,
+        username: r.username,
+        password: r.password,
+        is_admin: r.is_admin,
     }))
+}
+
+/// Creates a user with an already-hashed password. `None` when the username
+/// is taken, which the unique index enforces rather than a prior SELECT.
+pub async fn create_user(db: &Db, username: &str, password_hash: &str) -> Result<Option<User>> {
+    let id = next_id(db, "user").await? + 1;
+    let res = db
+        .query("CREATE type::thing(\"user\", $id) SET username = $u, password = $p, is_admin = false, created_at = time::unix();")
+        .bind(("id", id))
+        .bind(("u", username.to_string()))
+        .bind(("p", password_hash.to_string()))
+        .await?;
+    match res.check() {
+        Ok(_) => Ok(Some(User {
+            id,
+            username: username.to_string(),
+            password: password_hash.to_string(),
+            is_admin: false,
+        })),
+        // a duplicate username trips the unique index; the form says taken
+        Err(e) => {
+            if e.to_string().contains("already contains") {
+                Ok(None)
+            } else {
+                Err(e)
+            }
+        }
+    }
 }
 
 /// Hydrates an explicit id list, preserving the caller's order — which is the
 /// ranking, so it has to survive the round trip.
-#[allow(dead_code)]
-pub fn cards_by_ids(db: &Db, lang: &str, kind: &str, ids: &[i64]) -> rusqlite::Result<Vec<Card>> {
+pub async fn cards_by_ids(db: &Db, lang: &str, kind: &str, ids: &[i64]) -> Result<Vec<Card>> {
     if ids.is_empty() {
         return Ok(Vec::new());
     }
-    let (table, id_col, owner_col, tr_table) = match kind {
-        "pets" => ("pet", "pet_id", "pet_id", "pet_translation"),
-        "treasures" => ("treasure", "treasure_id", "treasure_id", "treasure_translation"),
-        _ => ("cookie", "cookie_id", "owner_id", "cookie_translation"),
+    let k = match kind_of(kind) {
+        Some(k) => k,
+        None => return Ok(Vec::new()),
     };
-    let c = conn(db)?;
-    let holes = std::iter::repeat("?").take(ids.len()).collect::<Vec<_>>().join(",");
+    let list = ids.iter().map(|i| format!("{}:{}", k.table, i)).collect::<Vec<_>>();
     let sql = format!(
-        "SELECT e.{id_col} AS id, e.image AS image, e.grade AS grade,
-                COALESCE(tl.name, te.name) AS name, te.name AS en_name
-           FROM {table} e
-           LEFT JOIN {tr_table} tl ON tl.{owner_col} = e.{id_col} AND tl.lang = ?1
-           LEFT JOIN {tr_table} te ON te.{owner_col} = e.{id_col} AND te.lang = 'en'
-          WHERE e.{id_col} IN ({holes})"
+        "SELECT record::id(id) AS id, image{}, (tr[$lang].name ?? tr.en.name ?? '') AS name,
+                (tr.en.name ?? '') AS en_name
+           FROM {}
+          WHERE id IN [{}]",
+        if k.graded { ", grade" } else { "" },
+        k.table,
+        list.join(", ")
     );
-    let mut stmt = c.prepare(&sql)?;
-    let mut args: Vec<String> = vec![lang.to_string()];
-    args.extend(ids.iter().map(|i| i.to_string()));
-    let rows = stmt.query_map(params_from_iter(args.iter()), |r| card_from(r, true, false))?;
-    let found: Vec<Card> = rows.collect::<rusqlite::Result<_>>()?;
+    let found: Vec<Card> = db
+        .query(&sql)
+        .bind(("lang", lang.to_string()))
+        .await?
+        .take::<Vec<CardRow>>(0)?
+        .into_iter()
+        .map(Card::from)
+        .collect();
     let mut ordered = Vec::with_capacity(found.len());
     for id in ids {
         if let Some(card) = found.iter().find(|c| c.id == *id) {
@@ -564,58 +773,29 @@ pub fn cards_by_ids(db: &Db, lang: &str, kind: &str, ids: &[i64]) -> rusqlite::R
     Ok(ordered)
 }
 
-/// Creates a user with an already-hashed password. `None` when the username
-/// is taken, which the unique index enforces rather than a prior SELECT.
-#[allow(dead_code)]
-pub fn create_user(db: &Db, username: &str, password_hash: &str) -> rusqlite::Result<Option<User>> {
-    let c = conn(db)?;
-    let now = std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .map(|d| d.as_secs() as i64)
-        .unwrap_or(0);
-    let res = c.execute(
-        "INSERT INTO user (username, password, is_admin, created_at) VALUES (?1, ?2, 0, ?3)",
-        params![username, password_hash, now],
-    );
-    match res {
-        Ok(_) => Ok(Some(User {
-            id: c.last_insert_rowid(),
-            username: username.to_string(),
-            password: password_hash.to_string(),
-            is_admin: false,
-        })),
-        // a duplicate username is a constraint violation, not an error worth
-        // surfacing: the form says the name is taken
-        Err(rusqlite::Error::SqliteFailure(e, _)) if e.code == rusqlite::ErrorCode::ConstraintViolation => Ok(None),
-        Err(e) => Err(e),
-    }
-}
-
 /// The ids that pair with `kind` id `id` for a combo bonus. Just the ids: the
 /// picker floats them to the top of the other slot's grid and needs neither
 /// the names, the sprites nor the effect text.
-pub fn combi_partner_ids(db: &Db, kind: &str, id: i64) -> rusqlite::Result<Vec<i64>> {
+pub async fn combi_partner_ids(db: &Db, kind: &str, id: i64) -> Result<Vec<i64>> {
     if id <= 0 {
         return Ok(Vec::new());
     }
-    let (own_col, partner_col) = match kind {
-        "cookies" => ("cookie_id", "pet_id"),
-        "pets" => ("pet_id", "cookie_id"),
-        _ => return Ok(Vec::new()),
-    };
-    let c = conn(db)?;
-    let sql = format!("SELECT DISTINCT {partner_col} FROM combi_bonus WHERE {own_col} = ?1");
-    let mut stmt = c.prepare(&sql)?;
-    let rows = stmt.query_map(params![id], |r| r.get::<_, i64>(0))?;
-    rows.collect()
+    let own_col = if kind == "cookies" { "cookie_id" } else { "pet_id" };
+    let partner_col = if kind == "cookies" { "pet_id" } else { "cookie_id" };
+    let mut res = db
+        .query(&format!(
+            "SELECT VALUE DISTINCT {partner_col} FROM combi WHERE {own_col} = $id"
+        ))
+        .bind(("id", id))
+        .await?;
+    res.take(0)
 }
 
 /// One draw pool with its disclosed odds, as the gacha page lists them.
 #[derive(Debug, Clone)]
 pub struct GachaPool {
     pub id: i64,
-    /// the tier slug, which the .tr key is built from; the table's own
-    /// `name` column holds a key rather than prose, so nothing reads it
+    /// the tier slug, which the .tr key is built from
     pub tier: String,
     pub entries: Vec<GachaEntry>,
 }
@@ -654,246 +834,269 @@ impl GachaEntry {
     }
 }
 
-/// Every pool with its entries in the catalog's own order. The prize name is
-/// resolved through the same locale fallback as everywhere else.
-pub fn select_gacha(db: &Db, lang: &str) -> rusqlite::Result<Vec<GachaPool>> {
-    let c = conn(db)?;
-    let mut pools: Vec<GachaPool> = {
-        let mut stmt = c.prepare("SELECT pool_id, tier FROM gacha_pool ORDER BY pool_id")?;
-        let rows = stmt.query_map([], |r| {
-            Ok(GachaPool {
-                id: r.get("pool_id")?,
-                tier: r.get::<_, Option<String>>("tier")?.unwrap_or_default(),
-                entries: Vec::new(),
-            })
-        })?;
-        rows.collect::<rusqlite::Result<_>>()?
-    };
-
-    let mut stmt = c.prepare(
-        "SELECT g.pool_id AS pool_id, g.odds AS odds, g.grade AS grade,
-                g.treasure_id AS treasure_id, g.pet_id AS pet_id,
-                COALESCE(tt.name, te.name, pt.name, pe.name, '') AS name,
-                COALESCE(te.name, pe.name, '') AS en_name,
-                COALESCE(t.is_evolved, 0) AS is_evolved,
-                COALESCE(t.image, p.image) AS image
-           FROM gacha_pool_entry g
-           LEFT JOIN treasure t ON t.treasure_id = g.treasure_id
-           LEFT JOIN treasure_translation tt ON tt.treasure_id = g.treasure_id AND tt.lang = ?1
-           LEFT JOIN treasure_translation te ON te.treasure_id = g.treasure_id AND te.lang = 'en'
-           LEFT JOIN pet p ON p.pet_id = g.pet_id
-           LEFT JOIN pet_translation pt ON pt.pet_id = g.pet_id AND pt.lang = ?1
-           LEFT JOIN pet_translation pe ON pe.pet_id = g.pet_id AND pe.lang = 'en'
-          ORDER BY g.sort_order",
-    )?;
-    let rows = stmt.query_map(params![lang], |r| {
-        let treasure_id: Option<i64> = r.get("treasure_id")?;
-        let pet_id: Option<i64> = r.get("pet_id")?;
-        let (section, id) = match (treasure_id, pet_id) {
-            (Some(t), _) => ("treasures", t),
-            (_, Some(p)) => ("pets", p),
-            _ => ("treasures", 0),
-        };
-        Ok((
-            r.get::<_, i64>("pool_id")?,
-            GachaEntry {
-                section,
-                id,
-                name: r.get("name")?,
-                en_name: r.get("en_name")?,
-                image: r.get("image")?,
-                grade: r.get("grade")?,
-                odds: r.get("odds")?,
-                is_evolved: r.get::<_, i64>("is_evolved")? != 0,
-            },
-        ))
-    })?;
-    for row in rows {
-        let (pool_id, entry) = row?;
-        if let Some(pool) = pools.iter_mut().find(|p| p.id == pool_id) {
-            pool.entries.push(entry);
-        }
-    }
-    Ok(pools)
+#[derive(serde::Deserialize)]
+struct GachaPoolRow {
+    id: i64,
+    #[serde(default)]
+    tier: String,
+    #[serde(default)]
+    entries: Vec<GachaEntryRef>,
 }
 
-/// Table names for one catalog section: the row, its id column, its
-/// translation table and that table's owner column.
-fn entity_tables(section: &str) -> Option<(&'static str, &'static str, &'static str, &'static str)> {
+#[derive(serde::Deserialize)]
+struct GachaEntryRef {
+    t: Option<i64>,
+    p: Option<i64>,
+    odds: f64,
+}
+
+/// Every pool with its entries in the catalog's own order. The prize name is
+/// resolved through the same locale fallback as everywhere else: pools store
+/// references, names come from one batched lookup per prize kind.
+pub async fn select_gacha(db: &Db, lang: &str) -> Result<Vec<GachaPool>> {
+    let pools: Vec<GachaPoolRow> = db
+        .query("SELECT record::id(id) AS id, tier, entries FROM gacha_pool ORDER BY id")
+        .await?
+        .take(0)?;
+
+    let mut treasure_ids: Vec<i64> = Vec::new();
+    let mut pet_ids: Vec<i64> = Vec::new();
+    for p in &pools {
+        for e in &p.entries {
+            if let Some(t) = e.t.filter(|v| *v > 0) {
+                if !treasure_ids.contains(&t) {
+                    treasure_ids.push(t);
+                }
+            }
+            if let Some(pet) = e.p.filter(|v| *v > 0) {
+                if !pet_ids.contains(&pet) {
+                    pet_ids.push(pet);
+                }
+            }
+        }
+    }
+
+    #[derive(serde::Deserialize)]
+    struct PrizeRow {
+        id: i64,
+        image: Option<String>,
+        grade: Option<i64>,
+        #[serde(default)]
+        is_evolved: bool,
+        #[serde(default)]
+        name: String,
+        #[serde(default)]
+        en_name: String,
+    }
+    async fn prizes(db: &Db, lang: &str, table: &str, ids: &[i64]) -> Result<std::collections::HashMap<i64, PrizeRow>> {
+        let mut map = std::collections::HashMap::new();
+        if ids.is_empty() {
+            return Ok(map);
+        }
+        let list = ids.iter().map(|i| format!("{table}:{i}")).collect::<Vec<_>>();
+        let rows: Vec<PrizeRow> = db
+            .query(&format!(
+                "SELECT record::id(id) AS id, image, grade, (is_evolved ?? false) AS is_evolved,
+                        (tr[$lang].name ?? tr.en.name ?? '') AS name,
+                        (tr.en.name ?? '') AS en_name
+                   FROM {table}
+                  WHERE id IN [{}]",
+                list.join(", ")
+            ))
+            .bind(("lang", lang.to_string()))
+            .await?
+            .take(0)?;
+        for r in rows {
+            map.insert(r.id, r);
+        }
+        Ok(map)
+    }
+
+    let treasures = prizes(db, lang, "treasure", &treasure_ids).await?;
+    let pets = prizes(db, lang, "pet", &pet_ids).await?;
+
+    let mut out = Vec::with_capacity(pools.len());
+    for p in pools {
+        let mut entries = Vec::with_capacity(p.entries.len());
+        for e in p.entries {
+            let (section, id) = match (e.t.filter(|v| *v > 0), e.p.filter(|v| *v > 0)) {
+                (Some(t), _) => ("treasures", t),
+                (_, Some(pet)) => ("pets", pet),
+                _ => continue,
+            };
+            let prize = if section == "treasures" {
+                treasures.get(&id)
+            } else {
+                pets.get(&id)
+            };
+            let Some(prize) = prize else { continue };
+            entries.push(GachaEntry {
+                section,
+                id,
+                name: prize.name.clone(),
+                en_name: prize.en_name.clone(),
+                image: prize.image.clone(),
+                grade: prize.grade,
+                odds: e.odds,
+                is_evolved: prize.is_evolved,
+            });
+        }
+        out.push(GachaPool { id: p.id, tier: p.tier, entries });
+    }
+    Ok(out)
+}
+
+/// Table names for one catalog section.
+fn entity_table(section: &str) -> Option<&'static str> {
     match section {
-        "cookies" => Some(("cookie", "cookie_id", "cookie_translation", "owner_id")),
-        "pets" => Some(("pet", "pet_id", "pet_translation", "pet_id")),
-        "treasures" => Some(("treasure", "treasure_id", "treasure_translation", "treasure_id")),
+        "cookies" => Some("cookie"),
+        "pets" => Some("pet"),
+        "treasures" => Some("treasure"),
         _ => None,
     }
 }
 
 /// Creates an entity and its translation in `lang`, returning the new id.
-/// The prose columns a section does not have are simply not written.
-pub fn insert_entity(
+pub async fn insert_entity(
     db: &Db,
     lang: &str,
     section: &str,
     form: &crate::routes::admin::EntityForm,
-) -> rusqlite::Result<i64> {
-    let Some((table, id_col, tr_table, owner_col)) = entity_tables(section) else {
+) -> Result<i64> {
+    let Some(table) = entity_table(section) else {
         return Ok(0);
     };
-    let c = conn(db)?;
-    let now = std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .map(|d| d.as_secs() as i64)
-        .unwrap_or(0);
-    let image = if form.image.trim().is_empty() { None } else { Some(form.image.trim()) };
-    let grade = form.grade.unwrap_or(1);
+    let id = next_id(db, table).await? + 1;
+    let now = now_unix();
+    let image = clean_image(&form.image);
 
-    if section == "treasures" {
-        c.execute(
-            "INSERT INTO treasure (image, grade, is_evolved, is_power_plus, family, source, sub, release_date)
-             VALUES (?1, ?2, 0, 0, '', '', '', ?3)",
-            params![image, grade, now],
-        )?;
-    } else {
-        c.execute(
-            &format!("INSERT INTO {table} (image, grade, release_date) VALUES (?1, ?2, ?3)"),
-            params![image, grade, now],
-        )?;
+    let mut sets: Vec<String> = vec!["image = $image".to_string()];
+    let graded = matches!(section, "cookies" | "pets" | "treasures" | "ingredients" | "skins");
+    if graded {
+        // display rank is maintained on write so reads can ORDER BY it:
+        // the enum ordinal is not the display order (E outranks L)
+        let g = form.grade.unwrap_or(1);
+        sets.push(format!("rank = {}", grade::rank(g)));
+        sets.push(format!("grade = {g}"));
+        sets.push(format!("release_date = {now}"));
     }
-    let id = c.last_insert_rowid();
-    write_translation(&c, tr_table, owner_col, section, id, lang, form)?;
-    let _ = id_col;
+    if section == "treasures" {
+        sets.push("is_evolved = false".to_string());
+    }
+    db.query(&format!("CREATE {table}:{id} SET {}", sets.join(", ")))
+        .bind(("image", image))
+        .await?
+        .check()?;
+    write_translation(db, lang, section, table, id, form).await?;
     Ok(id)
 }
 
 /// Updates an entity and its translation in `lang`.
-pub fn update_entity(
+pub async fn update_entity(
     db: &Db,
     lang: &str,
     section: &str,
     id: i64,
     form: &crate::routes::admin::EntityForm,
-) -> rusqlite::Result<bool> {
-    let Some((table, id_col, tr_table, owner_col)) = entity_tables(section) else {
+) -> Result<bool> {
+    let Some(table) = entity_table(section) else {
         return Ok(false);
     };
-    let c = conn(db)?;
-    let image = if form.image.trim().is_empty() { None } else { Some(form.image.trim()) };
-    if let Some(grade) = form.grade {
-        c.execute(
-            &format!("UPDATE {table} SET grade = ?1 WHERE {id_col} = ?2"),
-            params![grade, id],
-        )?;
+    let image = clean_image(&form.image);
+    let mut sets = Vec::new();
+    if let Some(g) = form.grade {
+        sets.push(format!("rank = {}", grade::rank(g)));
+        sets.push(format!("grade = {g}"));
     }
     if image.is_some() {
-        c.execute(
-            &format!("UPDATE {table} SET image = ?1 WHERE {id_col} = ?2"),
-            params![image, id],
-        )?;
+        sets.push("image = $image".to_string());
     }
-    write_translation(&c, tr_table, owner_col, section, id, lang, form)?;
+    if !sets.is_empty() {
+        db.query(&format!("UPDATE {table}:{id} SET {}", sets.join(", ")))
+            .bind(("image", image))
+            .await?
+            .check()?;
+    }
+    write_translation(db, lang, section, table, id, form).await?;
     Ok(true)
 }
 
-/// Upserts the translation row for one language, so editing in Thai cannot
-/// wipe the English text and the other way round.
-fn write_translation(
-    c: &Conn,
-    tr_table: &str,
-    owner_col: &str,
-    section: &str,
-    id: i64,
-    lang: &str,
-    form: &crate::routes::admin::EntityForm,
-) -> rusqlite::Result<()> {
-    let name = form.name.trim();
-    let existing: Option<i64> = c
-        .query_row(
-            &format!("SELECT 1 FROM {tr_table} WHERE {owner_col} = ?1 AND lang = ?2"),
-            params![id, lang],
-            |r| r.get(0),
-        )
-        .ok();
+fn clean_image(image: &str) -> Option<String> {
+    let trimmed = image.trim();
+    if trimmed.is_empty() { None } else { Some(trimmed.to_string()) }
+}
 
+/// Upserts the translation for one language INSIDE the nested tr object, so
+/// editing in Thai cannot wipe the English text and the other way round.
+async fn write_translation(
+    db: &Db,
+    lang: &str,
+    section: &str,
+    table: &str,
+    id: i64,
+    form: &crate::routes::admin::EntityForm,
+) -> Result<()> {
+    // merge client-side: fetch existing tr.$lang, overlay the submitted
+    // fields, write the whole object back — deterministic regardless of how
+    // many languages exist
+    #[derive(Default, serde::Deserialize, serde::Serialize)]
+    struct Tr {
+        #[serde(default)]
+        name: String,
+        #[serde(default)]
+        abilities: String,
+        #[serde(default)]
+        description: String,
+        #[serde(default)]
+        power_plus: String,
+        #[serde(default)]
+        power_plus_requirement: String,
+        #[serde(default)]
+        unlock_goal: String,
+    }
+    #[derive(Default, serde::Deserialize)]
+    struct TrWrap {
+        #[serde(default)]
+        tr: std::collections::BTreeMap<String, Tr>,
+    }
+    let mut wrap: TrWrap = db
+        .query("SELECT tr FROM type::thing($tb, $id)")
+        .bind(("tb", table.to_string()))
+        .bind(("id", id))
+        .await?
+        .take::<Vec<TrWrap>>(0)?
+        .pop()
+        .unwrap_or_default();
+    let entry = wrap.tr.entry(lang.to_string()).or_default();
+    entry.name = form.name.trim().to_string();
     match section {
         "cookies" => {
-            if existing.is_some() {
-                c.execute(
-                    &format!(
-                        "UPDATE {tr_table} SET name = ?1, abilities = ?2, description = ?3,
-                                power_plus = ?4, power_plus_requirement = ?5, unlock_goal = ?6
-                          WHERE {owner_col} = ?7 AND lang = ?8"
-                    ),
-                    params![
-                        name,
-                        form.abilities,
-                        form.description,
-                        form.power_plus,
-                        form.power_plus_requirement,
-                        form.unlock_goal,
-                        id,
-                        lang
-                    ],
-                )?;
-            } else {
-                c.execute(
-                    &format!(
-                        "INSERT INTO {tr_table} ({owner_col}, lang, name, abilities, description,
-                                power_plus, power_plus_requirement, unlock_goal)
-                         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)"
-                    ),
-                    params![
-                        id,
-                        lang,
-                        name,
-                        form.abilities,
-                        form.description,
-                        form.power_plus,
-                        form.power_plus_requirement,
-                        form.unlock_goal
-                    ],
-                )?;
-            }
+            entry.abilities = form.abilities.clone();
+            entry.description = form.description.clone();
+            entry.power_plus = form.power_plus.clone();
+            entry.power_plus_requirement = form.power_plus_requirement.clone();
+            entry.unlock_goal = form.unlock_goal.clone();
         }
         "pets" => {
-            if existing.is_some() {
-                c.execute(
-                    &format!(
-                        "UPDATE {tr_table} SET name = ?1, abilities = ?2, description = ?3
-                          WHERE {owner_col} = ?4 AND lang = ?5"
-                    ),
-                    params![name, form.abilities, form.description, id, lang],
-                )?;
-            } else {
-                c.execute(
-                    &format!(
-                        "INSERT INTO {tr_table} ({owner_col}, lang, name, abilities, description)
-                         VALUES (?1, ?2, ?3, ?4, ?5)"
-                    ),
-                    params![id, lang, name, form.abilities, form.description],
-                )?;
-            }
+            entry.abilities = form.abilities.clone();
+            entry.description = form.description.clone();
         }
-        _ => {
-            if existing.is_some() {
-                c.execute(
-                    &format!(
-                        "UPDATE {tr_table} SET name = ?1, description = ?2
-                          WHERE {owner_col} = ?3 AND lang = ?4"
-                    ),
-                    params![name, form.description, id, lang],
-                )?;
-            } else {
-                c.execute(
-                    &format!(
-                        "INSERT INTO {tr_table} ({owner_col}, lang, name, description)
-                         VALUES (?1, ?2, ?3, ?4)"
-                    ),
-                    params![id, lang, name, form.description],
-                )?;
-            }
-        }
+        _ => entry.description = form.description.clone(),
     }
+    db.query("UPDATE type::thing($tb, $id) SET tr = $tr")
+        .bind(("tb", table.to_string()))
+        .bind(("id", id))
+        .bind(("tr", wrap.tr))
+        .await?
+        .check()?;
     Ok(())
+}
+
+fn now_unix() -> i64 {
+    std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_secs() as i64)
+        .unwrap_or(0)
 }
 
 /// What a treasure is tied to: the cookie or pet that unlocks it at max
@@ -918,40 +1121,40 @@ impl TreasureLinks {
     }
 }
 
-pub fn treasure_links(db: &Db, lang: &str, id: i64) -> rusqlite::Result<TreasureLinks> {
-    let c = conn(db)?;
-    let mut stmt = c.prepare(
-        "SELECT unlock_cookie_id, unlock_pet_id, base_treasure_id FROM treasure WHERE treasure_id = ?1",
-    )?;
-    let mut rows = stmt.query(params![id])?;
-    let Some(row) = rows.next()? else {
+pub async fn treasure_links(db: &Db, lang: &str, id: i64) -> Result<TreasureLinks> {
+    #[derive(Default, serde::Deserialize)]
+    struct Row {
+        unlock_cookie_id: Option<i64>,
+        unlock_pet_id: Option<i64>,
+        base_treasure_id: Option<i64>,
+    }
+    let mut rows: Vec<Row> = db
+        .query("SELECT unlock_cookie_id, unlock_pet_id, base_treasure_id FROM type::thing(\"treasure\", $id)")
+        .bind(("id", id))
+        .await?
+        .take(0)?;
+    let Some(row) = rows.pop() else {
         return Ok(TreasureLinks::default());
     };
-    let unlock_cookie: Option<i64> = row.get(0)?;
-    let unlock_pet: Option<i64> = row.get(1)?;
-    let base: Option<i64> = row.get(2)?;
-    drop(rows);
-    drop(stmt);
-    drop(c);
 
     let mut out = TreasureLinks::default();
-    if let Some(cid) = unlock_cookie.filter(|v| *v > 0) {
-        if let Some((name, image)) = entity_link(db, lang, "cookie", cid) {
+    if let Some(cid) = row.unlock_cookie_id.filter(|v| *v > 0) {
+        if let Some((name, image)) = entity_link(db, lang, "cookie", cid).await {
             out.unlock_section = "cookies";
             out.unlock_id = cid;
             out.unlock_name = name;
             out.unlock_image = image;
         }
-    } else if let Some(pid) = unlock_pet.filter(|v| *v > 0) {
-        if let Some((name, image)) = entity_link(db, lang, "pet", pid) {
+    } else if let Some(pid) = row.unlock_pet_id.filter(|v| *v > 0) {
+        if let Some((name, image)) = entity_link(db, lang, "pet", pid).await {
             out.unlock_section = "pets";
             out.unlock_id = pid;
             out.unlock_name = name;
             out.unlock_image = image;
         }
     }
-    if let Some(bid) = base.filter(|v| *v > 0) {
-        if let Some((name, image)) = entity_link(db, lang, "treasure", bid) {
+    if let Some(bid) = row.base_treasure_id.filter(|v| *v > 0) {
+        if let Some((name, image)) = entity_link(db, lang, "treasure", bid).await {
             out.base_id = bid;
             out.base_name = name;
             out.base_image = image;
@@ -961,8 +1164,7 @@ pub fn treasure_links(db: &Db, lang: &str, id: i64) -> rusqlite::Result<Treasure
 }
 
 /// Whether a treasure's blessed effect set differs from its normal one, and
-/// so is worth a toggle on the detail page. The picker computes the same
-/// thing over its own option list; this is the detail page's answer.
+/// so is worth a toggle on the detail page.
 pub fn blessed_differs(effects: &[EffectLine]) -> bool {
     let normal: Vec<(&str, &Vec<String>)> = effects
         .iter()
@@ -991,51 +1193,30 @@ pub struct CombiEditRow {
     pub is_hidden: bool,
 }
 
-pub fn combi_edit_rows(
+pub async fn combi_edit_rows(
     db: &Db,
     lang: &str,
     kind: &str,
     id: i64,
-) -> rusqlite::Result<Vec<CombiEditRow>> {
-    let (own_col, partner_col, partner_table, partner_id_col, partner_tr, partner_owner) =
-        match kind {
-            "cookies" => ("cookie_id", "pet_id", "pet", "pet_id", "pet_translation", "pet_id"),
-            "pets" => ("pet_id", "cookie_id", "cookie", "cookie_id", "cookie_translation", "owner_id"),
-            _ => return Ok(Vec::new()),
-        };
-    let c = conn(db)?;
-    let sql = format!(
-        "SELECT cb.id AS id, p.{partner_id_col} AS partner_id,
-                COALESCE(tl.name, te.name, '') AS partner_name,
-                COALESCE(el.name, ee.name, '') AS effect,
-                cb.is_hidden AS is_hidden
-           FROM combi_bonus cb
-           JOIN {partner_table} p ON p.{partner_id_col} = cb.{partner_col}
-           LEFT JOIN {partner_tr} tl ON tl.{partner_owner} = p.{partner_id_col} AND tl.lang = ?1
-           LEFT JOIN {partner_tr} te ON te.{partner_owner} = p.{partner_id_col} AND te.lang = 'en'
-           LEFT JOIN effect_translation el ON el.effect_id = cb.effect_id AND el.lang = ?1
-           LEFT JOIN effect_translation ee ON ee.effect_id = cb.effect_id AND ee.lang = 'en'
-          WHERE cb.{own_col} = ?2
-          ORDER BY cb.id"
-    );
-    let mut stmt = c.prepare(&sql)?;
-    let rows = stmt.query_map(params![lang, id], |r| {
-        Ok(CombiEditRow {
-            id: r.get("id")?,
-            partner_id: r.get("partner_id")?,
-            partner_name: r.get("partner_name")?,
-            effect: r.get("effect")?,
-            is_hidden: r.get::<_, i64>("is_hidden")? != 0,
+) -> Result<Vec<CombiEditRow>> {
+    let rows = combis(db, lang, kind, id).await?;
+    Ok(rows
+        .into_iter()
+        .map(|(record, row)| CombiEditRow {
+            id: record.id,
+            partner_id: row.partner_id,
+            partner_name: row.partner_name,
+            effect: row.effect,
+            is_hidden: row.is_hidden,
         })
-    })?;
-    rows.collect()
+        .collect())
 }
 
-/// Removes one combo pairing. The editor's only destructive action, so it
-/// takes the row id rather than a pair of entity ids — deleting by pair would
-/// take every duplicate with it.
-pub fn delete_combi(db: &Db, row_id: i64) -> rusqlite::Result<()> {
-    let c = conn(db)?;
-    c.execute("DELETE FROM combi_bonus WHERE id = ?1", params![row_id])?;
+/// Removes one combo pairing by record id.
+pub async fn delete_combi(db: &Db, row_id: i64) -> Result<()> {
+    db.query("DELETE type::thing(\"combi\", $id)")
+        .bind(("id", row_id))
+        .await?
+        .check()?;
     Ok(())
 }

@@ -33,16 +33,11 @@ pub async fn richtext_names(
         "treasure" => "treasures",
         _ => "cookies",
     };
-    let lang = ctx.lang.clone();
-    let pool = state.db.clone();
-    let names = tokio::task::spawn_blocking(move || {
-        crate::options::options(&pool, &lang, &kind)
-            .into_iter()
-            .map(|o| json!({ "id": o.id, "name": o.name, "en_name": o.en_name }))
-            .collect::<Vec<_>>()
-    })
-    .await
-    .unwrap_or_default();
+    let names = crate::options::options(&state.db, &ctx.lang, &kind)
+        .await
+        .into_iter()
+        .map(|o| json!({ "id": o.id, "name": o.name, "en_name": o.en_name }))
+        .collect::<Vec<_>>();
     Json(json!({ "kind": section, "names": names }))
 }
 
@@ -78,11 +73,8 @@ pub async fn set_lang(q: Query<CommonQuery>) -> Response {
 /// Kept next to the other API handlers: the relic list, which has no page of
 /// its own yet but is already queryable.
 pub async fn relics(State(state): State<AppState>, ctx: Ctx) -> Json<serde_json::Value> {
-    let lang = ctx.lang.clone();
-    let pool = state.db.clone();
-    let rows = tokio::task::spawn_blocking(move || db::select_simple(&pool, &lang, "relics"))
+    let rows = db::select_simple(&state.db, &ctx.lang, "relics")
         .await
-        .unwrap_or_else(|_| Ok(Vec::new()))
         .unwrap_or_default();
     Json(json!({
         "relics": rows

@@ -4,9 +4,10 @@
 Cookie Run fan wiki: cookies, pets, treasures, episodes, ingredients, jellies,
 skins, relics, gacha pools and community builds, with server-side rendered
 pages, a build planner and admin editing. The implementation is **Rust**
-(axum + askama + rusqlite) at the repo root. The original V/veb app was removed
-from the tree once the port reached parity — its history lives in git, and
-`PORTING.md` records the port's intent.
+(axum + askama) at the repo root, storing data in **SurrealDB v2** over
+ws:// or http:// — it never embeds an engine. The original V/veb app and the
+interim rusqlite port were both removed once their successors reached parity —
+their history lives in git, and `PORTING.md` records the mappings.
 
 ## Development Commands
 Run from the repo root:
@@ -26,14 +27,13 @@ Run from the repo root:
   editing the shared file.
 
 ## Key Directories
-- **`src/main.rs`** — router assembly, middleware ordering, tracing setup.
 - **`src/routes/*.rs`** — one module per surface (`catalog`, `detail`,
   `builds`, `planner`, `picker`, `admin`, `auth`, `uploads`, `misc` (sitemap,
   robots, changelog), `api`, `errors`). List pages share one handler keyed by
   path section.
-- **`src/db.rs`** — all SQL. Values are always bound parameters;
-  identifiers/table names come from match whitelists, never from request
-  input.
+- **`src/db.rs`** — all SurrealQL against the external SurrealDB server
+  (`[surreal]` in Config.toml). Values are always bound parameters;
+  tables/identifiers come from match whitelists, never from request input.
 - **`src/ctx.rs`** — per-request context extractor (locale, site URL,
   htmx flags, session user, `is_local`/`is_admin`) mirroring the old veb
   Context.
@@ -46,13 +46,14 @@ Run from the repo root:
   template dir anymore).
 - **`translations/{en,th}.tr`** — loaded once at startup by `i18n::load`;
   a missing key renders as the key itself rather than panicking.
-- **`scripts/seed_data.json`** — committed data fixture. It was consumed by
-  the removed V seeding layer (`seed_if_empty`); until an import tool exists,
-  fresh databases must be populated from it manually. The upstream source of
-  truth is `scripts/cookierundb/*.json` (uncommitted scraper output); the
-  per-level values, grades and blessed states in the fixture are rebuilt from
-  it by the untracked `scripts/build_seed_cookierundb.py`. Every other file
-  in `scripts/` is untracked scraper tooling — never commit it.
+- **`src/bin/surreal_import.rs`** — one-shot migrator: loads the legacy
+  `sqlite.db` fixture into a SurrealDB server. Built only under the `import`
+  feature (`cargo build --features import --bin surreal-import`) so the
+  runtime binary never links SQLite. The upstream source of truth is
+  `scripts/cookierundb/*.json` (uncommitted scraper output); the fixture's
+  per-level values, grades and blessed states are rebuilt from it by the
+  untracked `scripts/build_seed_cookierundb.py`. Every other file in
+  `scripts/` is untracked scraper tooling — never commit it.
 
 ## Security Invariants (all verified by review; do not regress)
 - **Admin gating:** unauthenticated access to admin routes returns **404**,
@@ -82,9 +83,9 @@ Run from the repo root:
 
 ## Code Conventions & Common Patterns
 - **Grade model**: display rank is NOT the enum's declaration order —
-  E ("Extra") ranks ABOVE L ("Legend"). Any graded grid orders through
-  `grade::rank_sql(col)` (a CASE built from the shared rank table), never
-  `ORDER BY grade DESC`.
+  E ("Extra") ranks ABOVE L ("Legend"). Graded entities carry a maintained
+  `rank` column (written on every insert/update via `grade::rank`), and every
+  graded grid orders `ORDER BY rank DESC`, never by the raw `grade` ordinal.
 - **Ordering belongs in SQL**, not in memory over loaded rows.
 - **Treasure effects** live in one table with a `state` column
   (`normal`/`blessed`); per-level values stay strings (+0..+9 rows); builds
@@ -113,9 +114,12 @@ Run from the repo root:
   (`/static`, `/js`, `/img`, `/thirdparty`, favicons) from `../static`.
 
 ## Testing & QA
-- `cargo test` covers unit-level behaviour (translations loading, db helpers,
-  pagination). There is no HTTP integration harness yet; when adding one,
-  boot against a throwaway database, never the live `sqlite.db`.
+- `cargo test` covers unit-level behaviour (translations loading, i18n keys,
+  pagination, grade ranking). Database-backed integration tests are gated on
+  `CR_SURREAL_URL` (+ `SURREAL_USER` / `SURREAL_PASS`): with it set they run
+  against that live server, without it they skip with a notice. Point it at a
+  scratch namespace/database — never at data you cannot lose; the tests only
+  read, but a misconfigured URL is still a live server.
 - Coverage expectation: high on validation paths and state transitions —
   including the denial branches (wrong password, cross-user edits, bad
   upload extensions), not just happy paths.
