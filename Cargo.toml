@@ -7,38 +7,24 @@ edition = "2021"
 axum = { version = "0.8", features = ["macros", "multipart"] }
 tokio = { version = "1", features = ["rt-multi-thread", "macros", "net", "signal"] }
 tower = "0.5"
-tower-http = { version = "0.6", features = ["fs", "trace", "catch-panic"] }
-askama = "0.12"
+tower-http = { version = "0.7", features = ["fs", "trace", "catch-panic"] }
+askama = "0.16"
 # SurrealDB client: the app never embeds a storage engine — it always talks
 # to an external server (ws:// or http://) over the wire.
-surrealdb = { version = "2", default-features = false, features = ["protocol-ws", "protocol-http"] }
+surrealdb = { version = "3", default-features = false, features = ["protocol-ws", "protocol-http"] }
 serde = { version = "1", features = ["derive"] }
-toml = "0.8"
+toml = "1"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 argon2 = "0.5.3"
 uuid = { version = "1.24.1", features = ["v4"] }
 serde_json = "1.0.151"
-reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "json"] }
+reqwest = { version = "0.13", default-features = false, features = ["rustls", "json", "form"] }
 
 [dev-dependencies]
 serde_urlencoded = "0.7.1"
-
-# `cargo build --features import` also builds surreal-import, the one-shot
-# tool that reads the legacy sqlite.db and writes it into a SurrealDB server.
-[features]
-import = ["dep:rusqlite"]
-
-[dependencies.rusqlite]
-version = "0.32"
-features = ["bundled"]
-optional = true
 
 [[bin]]
 name = "cookierun"
 path = "src/main.rs"
 
-[[bin]]
-name = "surreal-import"
-path = "src/bin/surreal_import.rs"
-required-features = ["import"]

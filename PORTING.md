@@ -2,10 +2,11 @@
 
 **The port is complete: the V sources were removed from the tree after the
 final review round (their history lives in git). This file remains as the
-map from old to new.** The app reads `Config.toml`, `translations/`,
-`static/` and `sqlite.db` from the repo root; run it there with
-`cargo run`. `cargo test` needs none of those: it exercises the parsing,
-paging, queries and templates directly.
+map from old to new.** The app reads `Config.toml`, `translations/` and
+`static/` from the repo root, and talks to an external SurrealDB v3 server
+configured in `[surreal]`; run it there with `cargo run`. `cargo test`
+needs none of those: it exercises the parsing, paging, queries and
+templates directly.
 
 Post-removal hardening that originated on the V side and was carried here:
 sessions expire after 7 days (swept on access), the loopback admin bypass is
@@ -20,7 +21,7 @@ order by display rank rather than raw grade.
 | --- | --- | --- |
 | HTTP | axum + tokio | closest thing to veb's routing with a live ecosystem |
 | templates | askama | compile-time checked like veb's comptime templates, and escapes by default |
-| SQLite | rusqlite + r2d2, behind `spawn_blocking` | the V queries are synchronous and short; an async driver would turn a translation into a rewrite. FTS5 comes from the bundled build |
+| SQLite | rusqlite + r2d2, behind `spawn_blocking` (later replaced by SurrealDB v3) | the V queries are synchronous and short; an async driver would turn a translation into a rewrite. FTS5 com
 | config | serde + toml | same file, same defaults, same env overrides |
 | i18n | hand-rolled `.tr` loader | the format is this project's own |
 

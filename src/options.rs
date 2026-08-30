@@ -12,6 +12,7 @@ use std::sync::Mutex;
 
 use surrealdb::engine::any::Any;
 use surrealdb::Surreal;
+use surrealdb::types::SurrealValue;
 
 use crate::grade;
 
@@ -130,7 +131,8 @@ async fn build_simple(
         "pet" => "pet",
         _ => "cookie",
     };
-    #[derive(serde::Deserialize)]
+    #[derive(Default, SurrealValue)]
+    #[surreal(default)]
     struct Row {
         id: i64,
         name: String,
@@ -168,17 +170,16 @@ async fn build_simple(
 /// friendly-run bonuses that cannot be equipped, so they are left out. The
 /// effect ladders ride along on each record — no second query needed.
 async fn build_treasures(db: &Db, lang: &str) -> crate::db::Result<Vec<PickerOption>> {
-    #[derive(serde::Deserialize)]
+    #[derive(Default, SurrealValue)]
+    #[surreal(default)]
     struct EffectLineRow {
         state: i64,
-        #[serde(default)]
         en: String,
-        #[serde(default)]
         th: String,
-        #[serde(default)]
         values: Vec<String>,
     }
-    #[derive(serde::Deserialize)]
+    #[derive(Default, SurrealValue)]
+    #[surreal(default)]
     struct Row {
         id: i64,
         name: String,
@@ -186,13 +187,10 @@ async fn build_treasures(db: &Db, lang: &str) -> crate::db::Result<Vec<PickerOpt
         image: Option<String>,
         grade: Option<i64>,
         is_evolved: bool,
-        #[serde(default)]
         #[allow(dead_code)]
         rank: i64,
-        #[serde(default)]
         #[allow(dead_code)]
         release_date: i64,
-        #[serde(default)]
         effect_lines: Vec<EffectLineRow>,
     }
 

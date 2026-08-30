@@ -15,6 +15,7 @@
 
 use surrealdb::engine::any::Any;
 use surrealdb::opt::auth::Root;
+use surrealdb::types::SurrealValue;
 use surrealdb::Surreal;
 
 use crate::config::SurrealConfig;
@@ -42,7 +43,7 @@ pub async fn connect_url(
 ) -> Result<Db> {
     let db = surrealdb::engine::any::connect(url).await?;
     if !username.is_empty() {
-        db.signin(Root { username, password }).await?;
+        db.signin(Root { username: username.to_string(), password: password.to_string() }).await?;
     }
     db.use_ns(ns).use_db(database).await?;
     Ok(db)
@@ -84,16 +85,14 @@ impl Card {
     }
 }
 
-#[derive(Debug, Clone, Default, serde::Deserialize)]
+#[derive(Debug, Clone, Default, SurrealValue)]
+#[surreal(default)]
 struct CardRow {
     id: i64,
-    #[serde(default)]
     name: String,
-    #[serde(default)]
     en_name: String,
     image: Option<String>,
     grade: Option<i64>,
-    #[serde(default)]
     is_evolved: bool,
 }
 
@@ -305,26 +304,19 @@ pub async fn select_simple(db: &Db, lang: &str, kind: &str) -> Result<Vec<Card>>
     .await
 }
 
-#[derive(Debug, Clone, Default, serde::Deserialize)]
+#[derive(Debug, Clone, Default, SurrealValue)]
+#[surreal(default)]
 struct DetailRow {
     id: i64,
-    #[serde(default)]
     name: String,
-    #[serde(default)]
     en_name: String,
     image: Option<String>,
     grade: Option<i64>,
-    #[serde(default)]
     abilities: String,
-    #[serde(default)]
     description: String,
-    #[serde(default)]
     power_plus: String,
-    #[serde(default)]
     power_plus_requirement: String,
-    #[serde(default)]
     unlock_goal: String,
-    #[serde(default)]
     release_date: Option<i64>,
 }
 
@@ -417,14 +409,12 @@ impl EffectLine {
     }
 }
 
-#[derive(Debug, Clone, Default, serde::Deserialize)]
+#[derive(Debug, Clone, Default, SurrealValue)]
+#[surreal(default)]
 struct EffectLineRow {
     state: i64,
-    #[serde(default)]
     en: String,
-    #[serde(default)]
     th: String,
-    #[serde(default)]
     values: Vec<String>,
 }
 
@@ -445,9 +435,9 @@ impl EffectLineRow {
 /// A treasure's effect lines with their 0-9 ladders, normal and blessed,
 /// deduped and in wiki order — all stored on the record itself.
 pub async fn treasure_effects(db: &Db, lang: &str, id: i64) -> Result<Vec<EffectLine>> {
-    #[derive(serde::Deserialize)]
+    #[derive(Default, SurrealValue)]
+    #[surreal(default)]
     struct Row {
-        #[serde(default)]
         effect_lines: Vec<EffectLineRow>,
     }
     let mut rows: Vec<Row> = db
@@ -471,17 +461,15 @@ pub struct CombiRow {
     pub is_hidden: bool,
 }
 
-#[derive(Debug, Clone, Default, serde::Deserialize)]
+#[derive(Debug, Clone, Default, SurrealValue)]
+#[surreal(default)]
 struct CombiRecord {
     /// the pairing's own numeric id, so the admin editor can delete one row
     id: i64,
     cookie_id: i64,
     pet_id: i64,
-    #[serde(default)]
     en: String,
-    #[serde(default)]
     th: String,
-    #[serde(default)]
     is_hidden: bool,
 }
 
@@ -685,12 +673,12 @@ pub struct User {
     pub is_admin: bool,
 }
 
-#[derive(serde::Deserialize)]
+#[derive(Default, SurrealValue)]
+#[surreal(default)]
 struct UserRow {
     id: i64,
     username: String,
     password: String,
-    #[serde(default)]
     is_admin: bool,
 }
 
@@ -834,16 +822,16 @@ impl GachaEntry {
     }
 }
 
-#[derive(serde::Deserialize)]
+#[derive(Default, SurrealValue)]
+#[surreal(default)]
 struct GachaPoolRow {
     id: i64,
-    #[serde(default)]
     tier: String,
-    #[serde(default)]
     entries: Vec<GachaEntryRef>,
 }
 
-#[derive(serde::Deserialize)]
+#[derive(Default, SurrealValue)]
+#[surreal(default)]
 struct GachaEntryRef {
     t: Option<i64>,
     p: Option<i64>,
@@ -874,19 +862,15 @@ pub async fn select_gacha(db: &Db, lang: &str) -> Result<Vec<GachaPool>> {
                 }
             }
         }
-    }
-
-    #[derive(serde::Deserialize)]
-    struct PrizeRow {
+    }        #[derive(Default, SurrealValue)]
+        #[surreal(default)]
+        struct PrizeRow {
         id: i64,
         image: Option<String>,
         grade: Option<i64>,
-        #[serde(default)]
-        is_evolved: bool,
-        #[serde(default)]
-        name: String,
-        #[serde(default)]
-        en_name: String,
+            is_evolved: bool,
+            name: String,
+            en_name: String,
     }
     async fn prizes(db: &Db, lang: &str, table: &str, ids: &[i64]) -> Result<std::collections::HashMap<i64, PrizeRow>> {
         let mut map = std::collections::HashMap::new();
@@ -1039,25 +1023,20 @@ async fn write_translation(
     // merge client-side: fetch existing tr.$lang, overlay the submitted
     // fields, write the whole object back — deterministic regardless of how
     // many languages exist
-    #[derive(Default, serde::Deserialize, serde::Serialize)]
+    #[derive(Default, SurrealValue, serde::Serialize)]
+    #[surreal(default)]
     struct Tr {
-        #[serde(default)]
-        name: String,
-        #[serde(default)]
-        abilities: String,
-        #[serde(default)]
-        description: String,
-        #[serde(default)]
-        power_plus: String,
-        #[serde(default)]
-        power_plus_requirement: String,
-        #[serde(default)]
-        unlock_goal: String,
+            name: String,
+            abilities: String,
+            description: String,
+            power_plus: String,
+            power_plus_requirement: String,
+            unlock_goal: String,
     }
-    #[derive(Default, serde::Deserialize)]
+    #[derive(Default, SurrealValue)]
+    #[surreal(default)]
     struct TrWrap {
-        #[serde(default)]
-        tr: std::collections::BTreeMap<String, Tr>,
+            tr: std::collections::BTreeMap<String, Tr>,
     }
     let mut wrap: TrWrap = db
         .query("SELECT tr FROM type::thing($tb, $id)")
@@ -1122,7 +1101,8 @@ impl TreasureLinks {
 }
 
 pub async fn treasure_links(db: &Db, lang: &str, id: i64) -> Result<TreasureLinks> {
-    #[derive(Default, serde::Deserialize)]
+    #[derive(Default, SurrealValue)]
+    #[surreal(default)]
     struct Row {
         unlock_cookie_id: Option<i64>,
         unlock_pet_id: Option<i64>,

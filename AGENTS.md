@@ -4,7 +4,7 @@
 Cookie Run fan wiki: cookies, pets, treasures, episodes, ingredients, jellies,
 skins, relics, gacha pools and community builds, with server-side rendered
 pages, a build planner and admin editing. The implementation is **Rust**
-(axum + askama) at the repo root, storing data in **SurrealDB v2** over
+(axum + askama) at the repo root, storing data in **SurrealDB v3** over
 ws:// or http:// — it never embeds an engine. The original V/veb app and the
 interim rusqlite port were both removed once their successors reached parity —
 their history lives in git, and `PORTING.md` records the mappings.
@@ -46,14 +46,11 @@ Run from the repo root:
   template dir anymore).
 - **`translations/{en,th}.tr`** — loaded once at startup by `i18n::load`;
   a missing key renders as the key itself rather than panicking.
-- **`src/bin/surreal_import.rs`** — one-shot migrator: loads the legacy
-  `sqlite.db` fixture into a SurrealDB server. Built only under the `import`
-  feature (`cargo build --features import --bin surreal-import`) so the
-  runtime binary never links SQLite. The upstream source of truth is
-  `scripts/cookierundb/*.json` (uncommitted scraper output); the fixture's
-  per-level values, grades and blessed states are rebuilt from it by the
-  untracked `scripts/build_seed_cookierundb.py`. Every other file in
-  `scripts/` is untracked scraper tooling — never commit it.
+- The upstream source of truth for seed data is `scripts/cookierundb/*.json`
+  (uncommitted scraper output); the fixture's per-level values, grades and
+  blessed states are rebuilt from it by the untracked
+  `scripts/build_seed_cookierundb.py`. Every other file in `scripts/` is
+  untracked scraper tooling — never commit it.
 
 ## Security Invariants (all verified by review; do not regress)
 - **Admin gating:** unauthenticated access to admin routes returns **404**,

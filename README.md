@@ -20,7 +20,7 @@ A web platform for displaying and managing rich data about collectible assets â€
 | Language | Rust |
 | Web framework | axum + tokio |
 | Templates | askama (compile-time checked, escapes by default) |
-| Database | SurrealDB v2 (external server over ws:// or http://; schemaless documents with numeric ids) |
+| Database | SurrealDB v3 (external server over ws:// or http://; schemaless documents with numeric ids) |
 | Styling | UnoCSS (Wind4 preset), generated `static/styles.css` |
 | Interactivity | HTMX (served from `/thirdparty/htmx.js`) |
 | Package manager | bun (never npm) |
@@ -60,7 +60,7 @@ cookierun/
 
 - Rust toolchain (stable)
 - bun (for the UnoCSS watcher/generator)
-- A [SurrealDB](https://surrealdb.com) v2 server the app can reach (start one with `surreal start --user root --pass root --allow-all`)
+- A [SurrealDB](https://surrealdb.com) v3 server the app can reach (start one with `surreal start --user root --pass root --allow-all`)
 
 ### Installation
 
@@ -71,9 +71,6 @@ cd cookierun
 # Install frontend tooling
 bun install
 
-# Load the legacy SQLite fixture into SurrealDB (one-shot migrator; the
-# `import` feature keeps SQLite out of the runtime binary)
-cargo run --features import --bin surreal-import -- sqlite.db ws://127.0.0.1:8100 cookierun cookierun root root
 
 # Point the app at the server and run
 cargo run

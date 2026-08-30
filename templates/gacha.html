@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% import "title.html" as t %}
-{% block title %}{% call t::tags(ctx.page_title("gacha_page_title"), ctx.page_desc("gacha_page_description"), ctx.social_image()) %}{% endblock %}
+{% block title %}{{ t::tags(ctx.page_title("gacha_page_title"), ctx.page_desc("gacha_page_description"), ctx.social_image()) }}{% endblock %}
 {% block content %}
 <h1 class="page-title">{{ ctx.l.t("gacha_page_header") }}</h1>
 

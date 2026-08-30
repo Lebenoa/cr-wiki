@@ -1,0 +1,4 @@
+# surrealdb-core v3 pulls diskann-wide 0.54, which does not compile on
+# newer nightlies (E0283 in its AVX-512 dispatch). Stable 1.98+ is fine.
+[toolchain]
+channel = "stable"

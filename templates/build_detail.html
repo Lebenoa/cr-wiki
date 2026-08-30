@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% import "title.html" as t %}
-{% block title %}{% call t::tags(ctx.page_title("build_detail_page_title"), ctx.page_desc("builds_page_description"), ctx.social_image()) %}{% endblock %}
+{% block title %}{{ t::tags(ctx.page_title("build_detail_page_title"), ctx.page_desc("builds_page_description"), ctx.social_image()) }}{% endblock %}
 {% block content %}
 <section class="page-shell max-w-4xl">
     <a href="/builds" class="back-link">&larr; {{ ctx.l.t("build_back_list") }}</a>

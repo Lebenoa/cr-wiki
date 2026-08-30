@@ -597,7 +597,12 @@ async fn live_db() -> Option<db::Db> {
     /// (no network: the empty secret rejects before any request is made).
     #[tokio::test]
     async fn turnstile_gate() {
+        // only the debug branch mutates the config, so the binding is `mut`
+        // there and not in release
+        #[cfg(debug_assertions)]
         let mut cfg = config::Config::default();
+        #[cfg(not(debug_assertions))]
+        let cfg = config::Config::default();
 
         #[cfg(debug_assertions)]
         {

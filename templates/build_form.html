@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% import "title.html" as t %}
-{% block title %}{% call t::tags(ctx.page_title("new_build_page_title"), ctx.page_desc("builds_page_description"), ctx.social_image()) %}{% endblock %}
+{% block title %}{{ t::tags(ctx.page_title("new_build_page_title"), ctx.page_desc("builds_page_description"), ctx.social_image()) }}{% endblock %}
 {% block robots %}<meta name="robots" content="noindex, nofollow" />{% endblock %}
 {% block content %}
 <section class="page-shell max-w-4xl">

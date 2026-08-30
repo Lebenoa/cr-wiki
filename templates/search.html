@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% import "title.html" as t %}
-{% block title %}{% call t::tags(ctx.page_title("search_page_title"), ctx.meta_description(), ctx.social_image()) %}{% endblock %}
+{% block title %}{{ t::tags(ctx.page_title("search_page_title"), ctx.meta_description(), ctx.social_image()) }}{% endblock %}
 {% block content %}
 <section class="page-shell">
     <h1 class="page-title">{{ ctx.l.t("search_page_title") }}</h1>

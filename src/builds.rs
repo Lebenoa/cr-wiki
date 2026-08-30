@@ -2,6 +2,8 @@
 //! Ported from the build half of database/select.v; queries now speak
 //! SurrealQL against the external SurrealDB server.
 
+use surrealdb::types::SurrealValue;
+
 use crate::db::{cards_by_ids, Card, Db};
 
 /// One build as the list and detail pages render it.
@@ -118,55 +120,34 @@ fn now_unix() -> i64 {
 
 /// The raw build record as stored; entity slots are resolved afterwards in
 /// batched lookups rather than one query per slot per build.
-#[derive(Debug, Clone, Default, serde::Deserialize)]
+#[derive(Debug, Clone, Default, SurrealValue)]
+#[surreal(default)]
 struct BuildRow {
     id: i64,
     cookie_id: i64,
     cookie2_id: Option<i64>,
     pet_id: i64,
-    #[serde(default)]
     treasure1_id: i64,
-    #[serde(default)]
     treasure2_id: i64,
-    #[serde(default)]
     treasure3_id: i64,
-    #[serde(default)]
     treasure1_blessed: bool,
-    #[serde(default)]
     treasure2_blessed: bool,
-    #[serde(default)]
     treasure3_blessed: bool,
-    #[serde(default)]
     treasure1_level: i64,
-    #[serde(default)]
     treasure2_level: i64,
-    #[serde(default)]
     treasure3_level: i64,
-    #[serde(default)]
     ep: i64,
-    #[serde(default)]
     ep_special: i64,
-    #[serde(default)]
     tag: String,
-    #[serde(default)]
     boosts: String,
-    #[serde(default)]
     boost: String,
-    #[serde(default)]
     score: i64,
-    #[serde(default)]
     coin: i64,
-    #[serde(default)]
     time: i64,
-    #[serde(default)]
     boxes: i64,
-    #[serde(default)]
     description: String,
-    #[serde(default)]
     youtube_url: String,
-    #[serde(default)]
     author: String,
-    #[serde(default)]
     user_id: i64,
     expires_at: Option<i64>,
 }
@@ -465,7 +446,8 @@ pub async fn update_build(db: &Db, id: i64, b: &NewBuild) -> crate::db::Result<(
 /// The verify tallies on a build: how many people confirmed it works and how
 /// many reported an issue.
 pub async fn review_counts(db: &Db, build_id: i64) -> crate::db::Result<(i64, i64)> {
-    #[derive(serde::Deserialize)]
+    #[derive(Default, SurrealValue)]
+    #[surreal(default)]
     struct Group {
         verified: bool,
         count: i64,
