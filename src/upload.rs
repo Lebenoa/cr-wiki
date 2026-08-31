@@ -60,10 +60,10 @@ pub fn safe_stem(raw: &str) -> String {
 /// the seed script's image naming uses.
 pub fn unique_name(dir: &Path, stem: &str, ext: &str) -> String {
     let mut candidate = format!("{stem}.{ext}");
-    let mut n = 2;
+    let mut n: u32 = 2;
     while dir.join(&candidate).exists() {
         candidate = format!("{stem}_{n}.{ext}");
-        n += 1;
+        n = n.saturating_add(1);
         if n > 99 {
             break;
         }

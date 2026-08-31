@@ -3,7 +3,7 @@
 //! highest as c, b, a, s, s+, l, e — E ("Extra") outranks L ("Legend").
 
 /// enum ordinal -> slug, matching `enum Grade { e c b a s s_plus l }`
-pub fn slug(value: i64) -> &'static str {
+pub const fn slug(value: i64) -> &'static str {
     match value {
         0 => "e",
         1 => "c",
@@ -17,7 +17,7 @@ pub fn slug(value: i64) -> &'static str {
 }
 
 /// enum ordinal -> sort rank, lowest grade first. Ungraded ranks below all.
-pub fn rank(value: i64) -> i64 {
+pub const fn rank(value: i64) -> i64 {
     match value {
         1 => 0, // c
         2 => 1, // b

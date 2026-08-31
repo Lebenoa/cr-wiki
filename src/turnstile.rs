@@ -35,6 +35,7 @@ pub const SITEKEY: &str = "0x4AAAAAAERZ9YLl2pq5_2hu";
 /// HTTP suite and local development have no widget to solve. This is `#[cfg]`,
 /// not `cfg!`, so neither build compiles the other path.
 #[cfg(debug_assertions)]
+#[allow(clippy::unused_async, clippy::needless_pass_by_ref_mut)] // signature parity with the release path
 pub async fn verify(_cfg: &Config, _token: Option<&str>, _expected_action: &str) -> bool {
     true
 }

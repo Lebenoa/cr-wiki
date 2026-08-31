@@ -4,7 +4,7 @@
 //! an admin writes the catalog, yet the planner and its htmx partials would
 //! otherwise rebuild them per request — the treasure list alone reads every
 //! treasure with its effect ladder and then sorts. Built once per language
-//! here and dropped on a catalog write, which is what app/options_cache.v
+//! here and dropped on a catalog write, which is what `app/options_cache.v`
 //! did.
 
 use std::collections::HashMap;
@@ -33,12 +33,12 @@ pub struct PickerOption {
 
 impl PickerOption {
     pub fn grade_slug(&self) -> String {
-        self.grade.map(grade::slug).unwrap_or("").to_string()
+        self.grade.map_or_else(String::new, |g| grade::slug(g).to_string())
     }
     pub fn grade_label(&self) -> String {
-        self.grade.map(grade::label).unwrap_or_default()
+        self.grade.map_or_else(String::new, grade::label)
     }
-    pub fn has_grade(&self) -> bool {
+    pub const fn has_grade(&self) -> bool {
         self.grade.is_some()
     }
     /// A blessed set worth toggling between: present, and different from the
@@ -63,11 +63,10 @@ impl EffectOption {
     pub fn top(&self) -> String {
         self.values.last().cloned().unwrap_or_default()
     }
-    pub fn has_values(&self) -> bool {
+    pub const fn has_values(&self) -> bool {
         !self.values.is_empty()
     }
 }
-
 #[derive(Default)]
 struct Cache {
     cookies: HashMap<String, Vec<PickerOption>>,
@@ -92,16 +91,26 @@ pub fn invalidate() {
 /// hot path; the async mutex is only ever held by one builder at a time.
 pub async fn options(db: &Db, lang: &str, kind: &str) -> Vec<PickerOption> {
     let key = lang.to_string();
-    {
-        let c = cache().lock().expect("picker cache poisoned");
-        let hit = match kind {
-            "cookie" => c.cookies.get(&key),
-            "pet" => c.pets.get(&key),
-            _ => c.treasures.get(&key),
+    let hit = {
+        // a poisoned cache means a builder panicked mid-write; the lists are
+        // rebuildable, so drop the stale contents and start over
+        let c = match cache().lock() {
+            Ok(c) => c,
+            Err(p) => {
+                // take the data out of the poisoned guard, reset, carry on
+                let mut c = p.into_inner();
+                *c = Cache::default();
+                c
+            }
         };
-        if let Some(list) = hit {
-            return list.clone();
+        match kind {
+            "cookie" => c.cookies.get(&key).cloned(),
+            "pet" => c.pets.get(&key).cloned(),
+            _ => c.treasures.get(&key).cloned(),
         }
+    };
+    if let Some(list) = hit {
+        return list;
     }
     // double-checked build: two concurrent misses build twice, last insert
     // wins, both lists are identical because they read the same snapshot
@@ -111,7 +120,10 @@ pub async fn options(db: &Db, lang: &str, kind: &str) -> Vec<PickerOption> {
         _ => build_treasures(db, lang).await.unwrap_or_default(),
     };
 
-    let mut c = cache().lock().expect("picker cache poisoned");
+    let mut c = match cache().lock() {
+        Ok(c) => c,
+        Err(p) => p.into_inner(),
+    };
     match kind {
         "cookie" => c.cookies.insert(key.clone(), built.clone()),
         "pet" => c.pets.insert(key.clone(), built.clone()),
@@ -127,10 +139,6 @@ async fn build_simple(
     lang: &str,
     kind: &str,
 ) -> crate::db::Result<Vec<PickerOption>> {
-    let table = match kind {
-        "pet" => "pet",
-        _ => "cookie",
-    };
     #[derive(Default, SurrealValue)]
     #[surreal(default)]
     struct Row {
@@ -140,15 +148,22 @@ async fn build_simple(
         image: Option<String>,
         grade: Option<i64>,
     }
+    let table = match kind {
+        "pet" => "pet",
+        _ => "cookie",
+    };
     let rows: Vec<Row> = db
-        .query(&format!(
-            "SELECT record::id(id) AS id, image, grade,
-                    (tr[$lang].name ?? tr.en.name ?? '') AS name,
-                    (tr.en.name ?? '') AS en_name
-               FROM {table}
-              WHERE tr.en.name != NONE OR tr[$lang].name != NONE
-              ORDER BY id DESC"
-        ))
+        .query(
+            format!(
+                "SELECT record::id(id) AS id, image, grade,
+                        (tr[$lang].name ?? tr.en.name ?? '') AS name,
+                        (tr.en.name ?? '') AS en_name
+                   FROM {table}
+                  WHERE tr.en.name != NONE OR tr[$lang].name != NONE
+                  ORDER BY id DESC"
+            )
+            .as_str(),
+        )
         .bind(("lang", lang.to_string()))
         .await?
         .take(0)?;
@@ -224,9 +239,10 @@ async fn build_treasures(db: &Db, lang: &str) -> crate::db::Result<Vec<PickerOpt
                 ..Default::default()
             };
             for line in &r.effect_lines {
-                let text = match lang == "th" && !line.th.is_empty() {
-                    true => line.th.clone(),
-                    false => line.en.clone(),
+                let text = if lang == "th" && !line.th.is_empty() {
+                    line.th.clone()
+                } else {
+                    line.en.clone()
                 };
                 let option = EffectOption {
                     text,

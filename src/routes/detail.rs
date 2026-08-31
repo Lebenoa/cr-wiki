@@ -83,7 +83,6 @@ pub async fn show(
     let blessed_differs = db::blessed_differs(&effects);
     let page = DetailPage {
         ctx,
-        blessed_differs,
         section,
         item,
         abilities_html,
@@ -92,6 +91,7 @@ pub async fn show(
         power_plus_requirement_html,
         unlock_goal_html,
         effects,
+        blessed_differs,
         combi,
         links,
         unlocks,

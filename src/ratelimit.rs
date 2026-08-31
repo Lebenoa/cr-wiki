@@ -1,5 +1,5 @@
 //! Per-IP token bucket for the public read endpoints, ported from
-//! app/ratelimit.v.
+//! `app/ratelimit.v`.
 //!
 //! Each IP gets `capacity` burst tokens, refilled at `refill` per second, and
 //! gets a 429 while the bucket is empty, so heavy read traffic cannot starve
@@ -52,6 +52,7 @@ impl Limiter {
     /// must not be rate limited. This is `#[cfg]`, not `cfg!`, so neither
     /// build compiles — or can accidentally re-enable — the other path.
     #[cfg(debug_assertions)]
+    #[allow(clippy::unused_self, clippy::missing_const_for_fn)]
     pub fn check(&self, _ip: &str) -> Decision {
         Decision::Allow
     }
@@ -73,7 +74,7 @@ impl Limiter {
         // allocation of key vectors).
         if buckets.len() as i64 > self.cfg.sweep_above {
             let ttl = self.cfg.idle_ttl;
-            buckets.retain(|_, b| now - b.last_fill <= ttl);
+            buckets.retain(|_, b| now.saturating_sub(b.last_fill) <= ttl);
         }
         if !buckets.contains_key(ip) && buckets.len() >= MAX_BUCKETS {
             let oldest = buckets
@@ -90,9 +91,11 @@ impl Limiter {
             .or_insert(Bucket { tokens: self.cfg.capacity, last_fill: now });
 
         // refill by wall-clock elapsed time, capped at the burst capacity
-        let elapsed = now - bucket.last_fill;
+        let elapsed = now.saturating_sub(bucket.last_fill);
         if elapsed > 0 {
-            bucket.tokens = (bucket.tokens + elapsed as f64 * self.cfg.refill).min(self.cfg.capacity);
+            bucket.tokens = (bucket.tokens
+                + i64::try_from(elapsed).unwrap_or(0) as f64 * self.cfg.refill)
+                .min(self.cfg.capacity);
             bucket.last_fill = now;
         }
 
@@ -112,6 +115,5 @@ impl Limiter {
 fn now_unix() -> i64 {
     SystemTime::now()
         .duration_since(UNIX_EPOCH)
-        .map(|d| d.as_secs() as i64)
-        .unwrap_or(0)
+        .map_or(0, |d| i64::try_from(d.as_secs()).unwrap_or(0))
 }

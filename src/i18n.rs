@@ -36,7 +36,7 @@ fn parse(text: &str) -> HashMap<String, String> {
 }
 
 /// Reads every `*.tr` in `dir` except `lang_map.tr`, keyed by file stem — the
-/// same scan api/available_langs.v does, and memoized the same way.
+/// same scan `api/available_langs.v` does, and memoized the same way.
 pub fn load(dir: &str) {
     let mut catalog: HashMap<String, HashMap<String, String>> = HashMap::new();
     if let Ok(entries) = std::fs::read_dir(dir) {

@@ -35,11 +35,12 @@ pub async fn page(ctx: Ctx, q: Query<CommonQuery>) -> Html<String> {
     let (entries, next_url) = match slice_page(page, PAGE_SIZE, all.len()) {
         Some((start, end)) => {
             let next = if end < all.len() {
-                format!("/changelog?page={}", page + 1)
+                format!("/changelog?page={}", page.saturating_add(1))
             } else {
                 String::new()
             };
-            (all[start..end].to_vec(), next)
+            let window = all.get(start..end).map(<[changelog::ChangeEntry]>::to_vec).unwrap_or_default();
+            (window, next)
         }
         None => (Vec::new(), String::new()),
     };

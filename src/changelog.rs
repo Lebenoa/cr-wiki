@@ -128,15 +128,25 @@ fn split_subject(subject: &str) -> (String, String, String) {
         return (String::new(), String::new(), subject.to_string());
     };
     let (mut head, rest) = subject.split_at(colon);
-    let rest = rest[1..].trim();
+    let Some(rest) = rest.get(1..) else {
+        return (String::new(), String::new(), subject.to_string());
+    };
+    let rest = rest.trim();
     if head.is_empty() || rest.is_empty() {
         return (String::new(), String::new(), subject.to_string());
     }
     let mut scope = String::new();
     if let Some(open) = head.find('(') {
         if head.ends_with(')') {
-            scope = head[open + 1..head.len() - 1].to_string();
-            head = &head[..open];
+            // the parens are ASCII, so both cuts are char boundaries by
+            // construction; the subslices cannot be None
+            if let (Some(inner), Some(before)) =
+                (head.get(open.saturating_add(1)..), head.get(..open))
+            {
+                let inner = inner.strip_suffix(')').unwrap_or(inner);
+                scope = inner.to_string();
+                head = before;
+            }
         }
     }
     if head.is_empty() || !head.bytes().all(|c| c.is_ascii_lowercase()) {

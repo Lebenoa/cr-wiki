@@ -1,14 +1,14 @@
 //! The admin-authored wiki markup in prose fields, rendered to safe HTML.
 //!
-//!   [[12]] / [[cookie:12]] / [[pet:5]] / [[treasure:9]]
+//!   `[[12]]` / `[[cookie:12]]` / `[[pet:5]]` / `[[treasure:9]]`
 //!       a link to that entity, with its sprite ahead of the name. Ids are
 //!       stable and language-independent; the name resolves per request.
-//!   {color:red}text{/color}
+//!   `{color:red}text{/color}`
 //!       a coloured span, the value restricted to characters that cannot
 //!       break out of the attribute.
 //!
 //! Everything else is escaped, so stray brackets or pasted markup render as
-//! text. Ported from app/richtext.v.
+//! text. Ported from `app/richtext.v`.
 
 use std::collections::HashMap;
 
@@ -65,6 +65,15 @@ fn section_of(kind: &str) -> &'static str {
     }
 }
 
+/// A clamped char-window over the raw text: indexes are always in bounds,
+/// so the scanner cannot panic on truncated markup.
+fn slice(chars: &[char], from: usize, to: usize) -> String {
+    let from = from.min(chars.len());
+    let to = to.min(chars.len()).max(from);
+    let window = chars.get(from..to).unwrap_or(&[]);
+    window.iter().collect()
+}
+
 /// Renders one prose field. Names are resolved sequentially — the memo map
 /// keeps a description linking the same entity three times to one query.
 pub async fn render(db: &Db, lang: &str, raw: &str) -> String {
@@ -74,20 +83,20 @@ pub async fn render(db: &Db, lang: &str, raw: &str) -> String {
     }
     let mut cache: HashMap<String, Option<(String, Option<String>)>> = HashMap::new();
     let chars: Vec<char> = raw.chars().collect();
-    let mut out = String::with_capacity(raw.len() + 64);
+    let mut out = String::with_capacity(raw.len().saturating_add(64));
     let mut i = 0usize;
 
     while i < chars.len() {
-        if chars[i] == '[' && i + 1 < chars.len() && chars[i + 1] == '[' {
-            if let Some(end) = find(&chars, i + 2, "]]") {
-                let inner: String = chars[i + 2..end].iter().collect();
+        if chars.get(i) == Some(&'[') && chars.get(i.saturating_add(1)) == Some(&'[') {
+            if let Some(end) = find(&chars, i.saturating_add(2), "]]") {
+                let inner = slice(&chars, i.saturating_add(2), end);
                 if let Some((kind, id)) = split_ref(&inner) {
                     let key = format!("{kind}:{id}");
-                    let hit = if cache.contains_key(&key) {
-                        cache[&key].clone()
+                    let hit = if let Some(hit) = cache.get(&key) {
+                        hit.clone()
                     } else {
                         let v = db::entity_link(db, lang, kind, id).await;
-                        cache.insert(key.clone(), v.clone());
+                        cache.insert(key, v.clone());
                         v
                     };
                     if let Some((name, image)) = hit {
@@ -96,52 +105,59 @@ pub async fn render(db: &Db, lang: &str, raw: &str) -> String {
                         // would make it an atomic inline that cannot break
                         // across lines, so a long name in a narrow column
                         // would overflow instead of wrapping
-                        out.push_str(&format!(
-                            "<a href=\"/{dir}/{id}\" class=\"font-bold hover:text-primary transition-colors\">"
-                        ));
+                        out.push_str("<a href=\"/");
+                        out.push_str(dir);
+                        out.push('/');
+                        out.push_str(&id.to_string());
+                        out.push_str("\" class=\"font-bold hover:text-primary transition-colors\">");
                         if let Some(img) = image.filter(|s| !s.is_empty()) {
-                            out.push_str(&format!(
-                                "<img src=\"/img/{dir}/{}\" alt=\"\" loading=\"lazy\" class=\"inline-block size-5 mr-1 object-contain align-text-bottom\" />",
-                                escape(&img)
-                            ));
+                            out.push_str("<img src=\"/img/");
+                            out.push_str(dir);
+                            out.push('/');
+                            out.push_str(&escape(&img));
+                            out.push_str("\" alt=\"\" loading=\"lazy\" class=\"inline-block size-5 mr-1 object-contain align-text-bottom\" />");
                         }
                         // the underline lives on the text, not the anchor: a
                         // decoration on the anchor is drawn across the sprite
                         out.push_str("<span class=\"underline decoration-primary decoration-2 underline-offset-4\">");
                         out.push_str(&escape(&name));
                         out.push_str("</span></a>");
-                        i = end + 2;
+                        i = end.saturating_add(2);
                         continue;
                     }
                 }
             }
         }
-        if chars[i] == '{' && starts_at(&chars, i, "{color:") {
-            if let Some(close) = find(&chars, i + 7, "}") {
-                let value: String = chars[i + 7..close].iter().collect();
+        if chars.get(i) == Some(&'{') && starts_at(&chars, i, "{color:") {
+            if let Some(close) = find(&chars, i.saturating_add(7), "}") {
+                let value = slice(&chars, i.saturating_add(7), close);
                 if valid_color(&value) {
-                    if let Some(end) = find(&chars, close + 1, "{/color}") {
-                        let inner: String = chars[close + 1..end].iter().collect();
-                        out.push_str(&format!("<span style=\"color:{value}\">"));
+                    if let Some(end) = find(&chars, close.saturating_add(1), "{/color}") {
+                        let inner = slice(&chars, close.saturating_add(1), end);
+                        out.push_str("<span style=\"color:");
+                        out.push_str(&value);
+                        out.push_str("\">");
                         out.push_str(&escape(&inner));
                         out.push_str("</span>");
-                        i = end + "{/color}".len();
+                        i = end.saturating_add("{/color}".chars().count());
                         continue;
                     }
                 }
             }
         }
-        out.push_str(&escape(&chars[i].to_string()));
-        i += 1;
+        out.push_str(&escape(&chars.get(i).copied().map_or(String::new(), String::from)));
+        i = i.saturating_add(1);
     }
     out
 }
 
 fn starts_at(chars: &[char], at: usize, needle: &str) -> bool {
-    needle.chars().enumerate().all(|(k, c)| chars.get(at + k) == Some(&c))
+    needle.chars().enumerate().all(|(k, c)| chars.get(at.saturating_add(k)) == Some(&c))
 }
 
 fn find(chars: &[char], from: usize, needle: &str) -> Option<usize> {
     let n: Vec<char> = needle.chars().collect();
-    (from..chars.len().saturating_sub(n.len() - 1)).find(|&i| chars[i..i + n.len()] == n[..])
+    let len = n.len();
+    (from..chars.len().saturating_sub(len.saturating_sub(1)))
+        .find(|&i| chars.get(i..i.saturating_add(len)) == Some(&n[..]))
 }

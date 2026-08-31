@@ -1,4 +1,4 @@
-//! The two layers every request goes through, in the order before_request
+//! The two layers every request goes through, in the order `before_request`
 //! applies them: rate limit first (a denied request should cost nothing
 //! further), then locale resolution.
 
@@ -15,7 +15,7 @@ use crate::state::AppState;
 
 /// Resolves the locale and the signed-in user once per request, and
 /// refreshes the `wikilang` cookie when the URL carried a new one — the whole
-/// of before_request.
+/// of `before_request`.
 pub async fn context(State(state): State<AppState>, mut req: Request, next: Next) -> Response {
     if let Some(key) = ctx::cookie(req.headers(), SESSION_COOKIE) {
         if let Some(user) = state.sessions.get(&key) {

@@ -74,14 +74,14 @@ pub async fn gacha(State(state): State<AppState>, ctx: Ctx) -> Html<String> {
 /// Every list page plus every detail id, each with its locale alternates. A
 /// section missing here is one crawlers only reach by luck.
 pub async fn sitemap(State(state): State<AppState>, ctx: Ctx) -> ([(&'static str, &'static str); 1], String) {
-    let base = ctx.site_url.clone();
+    let base = ctx.site_url;
     let langs = i18n::available_langs();
     let mut paths: Vec<String> = [
         "/", "/cookies", "/pets", "/treasures", "/builds", "/changelog", "/episodes",
         "/ingredients", "/jellies", "/skins", "/relics", "/gacha",
     ]
-    .iter()
-    .map(|s| s.to_string())
+    .into_iter()
+    .map(str::to_string)
     .collect();
 
     if let Ok(entries) = db::sitemap_entries(&state.db).await {
@@ -92,16 +92,24 @@ pub async fn sitemap(State(state): State<AppState>, ctx: Ctx) -> ([(&'static str
         "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\" xmlns:xhtml=\"http://www.w3.org/1999/xhtml\">\n",
     );
     for path in &paths {
-        xml.push_str(&format!("<url><loc>{base}{path}</loc>"));
+        xml.push_str("<url><loc>");
+        xml.push_str(&base);
+        xml.push_str(path);
+        xml.push_str("</loc>");
         for lang in &langs {
             let suffix = if lang == i18n::DEFAULT_LANG { String::new() } else { format!("?lang={lang}") };
-            xml.push_str(&format!(
-                "<xhtml:link rel=\"alternate\" hreflang=\"{lang}\" href=\"{base}{path}{suffix}\"/>"
-            ));
+            xml.push_str("<xhtml:link rel=\"alternate\" hreflang=\"");
+            xml.push_str(lang);
+            xml.push_str("\" href=\"");
+            xml.push_str(&base);
+            xml.push_str(path);
+            xml.push_str(&suffix);
+            xml.push_str("\"/>");
         }
-        xml.push_str(&format!(
-            "<xhtml:link rel=\"alternate\" hreflang=\"x-default\" href=\"{base}{path}\"/></url>\n"
-        ));
+        xml.push_str("<xhtml:link rel=\"alternate\" hreflang=\"x-default\" href=\"");
+        xml.push_str(&base);
+        xml.push_str(path);
+        xml.push_str("\"/></url>\n");
     }
     xml.push_str("</urlset>\n");
     ([("content-type", "application/xml; charset=utf-8")], xml)
@@ -109,7 +117,7 @@ pub async fn sitemap(State(state): State<AppState>, ctx: Ctx) -> ([(&'static str
 
 /// The form, auth and fragment routes are noise for a crawler.
 pub async fn robots(ctx: Ctx) -> ([(&'static str, &'static str); 1], String) {
-    let base = ctx.site_url.clone();
+    let base = ctx.site_url;
     let body = format!(
         "User-agent: *\nDisallow: /login\nDisallow: /register\nDisallow: /builds/new\nDisallow: /builds/preview\nDisallow: /builds/options/\nDisallow: /search\nAllow: /\n\nSitemap: {base}/sitemap.xml\n"
     );

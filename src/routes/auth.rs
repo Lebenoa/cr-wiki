@@ -164,8 +164,8 @@ pub async fn logout(State(state): State<AppState>, headers: HeaderMap) -> Respon
     res
 }
 
-/// HttpOnly so script cannot read the session, SameSite=Lax so it survives a
-/// normal navigation but not a cross-site form post.
+/// `HttpOnly` so script cannot read the session, `SameSite=Lax` so it survives
+/// a normal navigation but not a cross-site form post.
 fn set_session_cookie(headers: &mut HeaderMap, key: &str) {
     if let Ok(v) =
         HeaderValue::from_str(&format!("{SESSION_COOKIE}={key}; path=/; HttpOnly; SameSite=Lax"))

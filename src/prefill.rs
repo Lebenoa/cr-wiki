@@ -3,6 +3,7 @@
 //! either way instead of branching on an Option in a dozen places.
 
 use crate::builds::BuildCard;
+use crate::db::Card;
 
 #[derive(Debug, Default)]
 pub struct Prefill {
@@ -36,7 +37,7 @@ pub struct TreasureSlot {
 impl TreasureSlot {
     /// The hidden input wants 1/0, not true/false.
     pub fn blessed_int(&self) -> i64 {
-        self.blessed as i64
+        i64::from(self.blessed)
     }
 }
 
@@ -51,7 +52,7 @@ pub struct EntitySlot {
 }
 
 impl EntitySlot {
-    pub fn filled(&self) -> bool {
+    pub const fn filled(&self) -> bool {
         !self.name.is_empty()
     }
 }
@@ -68,35 +69,48 @@ impl Prefill {
     /// The form as an existing build left it.
     pub fn from_build(b: &BuildCard) -> Self {
         let mut treasures: Vec<TreasureSlot> = (0..3)
-            .map(|i| match b.treasures.get(i) {
-                Some(t) => TreasureSlot {
-                    id: t.id,
-                    name: t.name.clone(),
-                    image: t.image.clone(),
-                    level: b.treasure_levels.get(i).copied().unwrap_or(9),
-                    blessed: b.treasure_blessed.get(i).copied().unwrap_or(false),
-                },
-                None => TreasureSlot { level: 9, ..Default::default() },
+            .map(|i| {
+                b.treasures.get(i).map_or_else(
+                    || TreasureSlot { level: 9, ..Default::default() },
+                    |t| TreasureSlot {
+                        id: t.id,
+                        name: t.name.clone(),
+                        image: t.image.clone(),
+                        level: b.treasure_levels.get(i).copied().unwrap_or(9),
+                        blessed: b.treasure_blessed.get(i).copied().unwrap_or(false),
+                    },
+                )
             })
             .collect();
         treasures.truncate(3);
 
+        let (cookie, cookie_name, cookie_image) = Self::slot_parts(b.cookie.as_ref());
+        let (relay, relay_name, relay_image) = Self::slot_parts(b.cookie2.as_ref());
+        let (pet, pet_name, pet_image) = Self::slot_parts(b.pet.as_ref());
         Self {
-            cookie: b.cookie.as_ref().map(|c| c.id).unwrap_or(0),
-            cookie_name: b.cookie.as_ref().map(|c| c.name.clone()).unwrap_or_default(),
-            cookie_image: b.cookie.as_ref().and_then(|c| c.image.clone()),
-            cookie2: b.cookie2.as_ref().map(|c| c.id).unwrap_or(0),
-            cookie2_name: b.cookie2.as_ref().map(|c| c.name.clone()).unwrap_or_default(),
-            cookie2_image: b.cookie2.as_ref().and_then(|c| c.image.clone()),
-            pet: b.pet.as_ref().map(|p| p.id).unwrap_or(0),
-            pet_name: b.pet.as_ref().map(|p| p.name.clone()).unwrap_or_default(),
-            pet_image: b.pet.as_ref().and_then(|p| p.image.clone()),
+            cookie,
+            cookie_name,
+            cookie_image,
+            cookie2: relay,
+            cookie2_name: relay_name,
+            cookie2_image: relay_image,
+            pet,
+            pet_name,
+            pet_image,
             treasures,
             score: b.score,
             coin: b.coin,
             time_ms: b.time_ms,
             description: b.description.clone(),
         }
+    }
+
+    /// (id, name, image) out of an optional card, blank when absent.
+    fn slot_parts(card: Option<&Card>) -> (i64, String, Option<String>) {
+        card.map_or_else(
+            || (0, String::new(), None),
+            |c| (c.id, c.name.clone(), c.image.clone()),
+        )
     }
 
     /// The three entity slots in display order.

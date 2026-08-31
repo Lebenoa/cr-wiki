@@ -35,11 +35,12 @@ struct PickerGrid {
 }
 
 impl PickerGrid {
+    // askama passes loop variables by reference, so the id arrives as &i64
+    #[allow(clippy::trivially_copy_pass_by_ref)]
     fn is_combi(&self, id: &i64) -> bool {
         self.combi.contains(id)
     }
 }
-
 /// Every term has to appear somewhere in the option, though not in the same
 /// place: "magnet revive" finds the treasures carrying a magnet effect *and*
 /// a revive effect, which a single substring test could never match because
@@ -87,14 +88,22 @@ fn next_url(kind: &str, lang: &str, q: &str, tab: &str, sel: i64, partner: i64, 
 /// Percent-encodes the few characters a query value can carry that would
 /// otherwise end the parameter.
 fn urlencode(s: &str) -> String {
+    const HEX: &[u8; 16] = b"0123456789ABCDEF";
     let mut out = String::with_capacity(s.len());
     for b in s.bytes() {
         match b {
             b'A'..=b'Z' | b'a'..=b'z' | b'0'..=b'9' | b'-' | b'_' | b'.' | b'~' => {
-                out.push(b as char)
+                out.push(char::from(b));
             }
             b' ' => out.push('+'),
-            _ => out.push_str(&format!("%{b:02X}")),
+            _ => {
+                let hi = usize::from(b / 16);
+                let lo = usize::from(b % 16);
+                // a byte is two nibbles; both indices stay under 16
+                out.push('%');
+                out.push(char::from(*HEX.get(hi).unwrap_or(&b'0')));
+                out.push(char::from(*HEX.get(lo).unwrap_or(&b'0')));
+            }
         }
     }
     out
@@ -157,7 +166,7 @@ pub async fn options_grid(
     }
     let lang = ctx.lang.clone();
     let raw_q = q.q.clone().unwrap_or_default().trim().to_lowercase();
-    let terms: Vec<String> = raw_q.split_whitespace().map(|s| s.to_string()).collect();
+    let terms: Vec<String> = raw_q.split_whitespace().map(str::to_string).collect();
     let tab = match q.tab.as_deref() {
         Some(t @ ("normal" | "evo")) => t.to_string(),
         _ => "all".to_string(),
@@ -202,11 +211,15 @@ pub async fn options_grid(
     let (options_page, next) = match slice_page(page, PAGE_SIZE, total) {
         Some((start, end)) => {
             let next = if end < total {
-                next_url(&kind, &lang, &raw_q, &tab, sel, partner, page + 1)
+                next_url(&kind, &lang, &raw_q, &tab, sel, partner, page.saturating_add(1))
             } else {
                 String::new()
             };
-            (matched[start..end].to_vec(), next)
+            let window = matched
+                .get(start..end)
+                .map(<[PickerOption]>::to_vec)
+                .unwrap_or_default();
+            (window, next)
         }
         None if page > 1 => {
             // scrolled past the end (a stale sentinel): nothing to append

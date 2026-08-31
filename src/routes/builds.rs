@@ -51,15 +51,15 @@ struct BuildDetail {
     issues: i64,
 }
 
-/// The EP combobox value: "1".."7" for a regular tier, "s1".."s3" for a
-/// special one. Returns (ep, ep_special).
+/// The EP combobox value: `"1".."7"` for a regular tier, `"s1".."s3"` for a
+/// special one. Returns `(ep, ep_special)`.
 fn parse_ep(raw: &str) -> (i64, i64) {
     if let Some(rest) = raw.strip_prefix('s') {
         let n = rest.parse::<i64>().unwrap_or(0);
         return (0, if (1..=3).contains(&n) { n } else { 0 });
     }
     let n = raw.parse::<i64>().unwrap_or(0);
-    ((1..=7).contains(&n).then_some(n).unwrap_or(0), 0)
+    (if (1..=7).contains(&n) { n } else { 0 }, 0)
 }
 
 pub async fn list(
@@ -69,7 +69,7 @@ pub async fn list(
 ) -> Html<String> {
     let lang = ctx.lang.clone();
     let page = q.page.unwrap_or(1).max(1);
-    let offset = (page - 1).saturating_mul(PAGE_SIZE);
+    let offset = page.saturating_sub(1).saturating_mul(PAGE_SIZE);
     let sort = match q.sort.as_deref() {
         Some(s @ ("score" | "coin" | "time" | "verified")) => s.to_string(),
         _ => "latest".to_string(),
@@ -95,7 +95,8 @@ pub async fn list(
     .await
     .unwrap_or_default();
 
-    let next_page = if rows.len() as i64 == PAGE_SIZE { page + 1 } else { 0 };
+    let next_page =
+        if i64::try_from(rows.len()).unwrap_or(0) == PAGE_SIZE { page.saturating_add(1) } else { 0 };
     let html = if ctx.is_fragment() {
         BuildCards {
             ctx,

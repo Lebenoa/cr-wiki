@@ -109,10 +109,9 @@ fn tags_of(form: &BuildForm) -> Vec<String> {
 }
 
 fn page(ctx: Ctx, build: Option<BuildCard>, error: &str) -> Response {
-    let prefill = match build.as_ref() {
-        Some(b) => Prefill::from_build(b),
-        None => Prefill::blank(),
-    };
+    let prefill = build
+        .as_ref()
+        .map_or_else(Prefill::blank, Prefill::from_build);
     Html(
         PlannerPage { ctx, build, prefill, error: error.to_string() }
             .render()
@@ -191,13 +190,13 @@ pub async fn create(
         return (StatusCode::BAD_REQUEST, page(ctx, None, "build_error_ep_tag")).into_response();
     }
 
-    let user_id = ctx.user.as_ref().map(|u| u.id).unwrap_or(0);
-    let author = match ctx.user.as_ref() {
-        Some(u) => u.username.clone(),
-        None => form.author.clone().unwrap_or_default(),
-    };
+    let user_id = ctx.user.as_ref().map_or(0, |u| u.id);
+    let author = ctx
+        .user
+        .as_ref()
+        .map_or_else(|| form.author.clone().unwrap_or_default(), |u| u.username.clone());
     // an anonymous build expires; a signed-in one does not
-    let expires_at = if user_id > 0 { None } else { Some(now_unix() + ANON_TTL_SECS) };
+    let expires_at = if user_id > 0 { None } else { Some(now_unix().saturating_add(ANON_TTL_SECS)) };
 
     let record = match record_from(&form, ep, ep_special, tags, author, user_id, expires_at) {
         Ok(r) => r,
@@ -235,13 +234,8 @@ pub async fn delete(
 /// The author or an admin. An anonymous build has no owner, so only an admin
 /// can touch it.
 fn can_edit(ctx: &Ctx, build: &BuildCard) -> bool {
-    if ctx.is_admin() {
-        return true;
-    }
-    match ctx.user.as_ref() {
-        Some(u) => build.user_id > 0 && build.user_id == u.id,
-        None => false,
-    }
+    ctx.is_admin()
+        || ctx.user.as_ref().is_some_and(|u| build.user_id > 0 && build.user_id == u.id)
 }
 
 
@@ -250,7 +244,7 @@ fn can_edit(ctx: &Ctx, build: &BuildCard) -> bool {
 /// that carries no markup characters. Submission is anonymous, so the scheme
 /// check is the only thing standing between a visitor and stored XSS.
 fn validated_youtube_url(raw: Option<&String>) -> Result<String, &'static str> {
-    let u = raw.as_deref().map(|s| s.trim()).unwrap_or("");
+    let u = raw.map_or("", |s| s.trim());
     if u.is_empty() {
         return Ok(String::new());
     }
@@ -268,7 +262,7 @@ fn validated_youtube_url(raw: Option<&String>) -> Result<String, &'static str> {
 }
 
 fn validated_description(raw: Option<&String>) -> Result<String, &'static str> {
-    let d = raw.as_deref().map(|s| s.trim()).unwrap_or("");
+    let d = raw.map_or("", |s| s.trim());
     if d.chars().count() > 5000 {
         return Err("build_error_description");
     }
@@ -276,6 +270,7 @@ fn validated_description(raw: Option<&String>) -> Result<String, &'static str> {
 }
 
 /// The shared field mapping, so create and update cannot drift apart.
+#[allow(clippy::needless_pass_by_value)] // tags arrives pre-assembled for both callers
 fn record_from(
     form: &BuildForm,
     ep: i64,
@@ -304,7 +299,7 @@ fn record_from(
         score: number(form.score.as_ref()),
         coin: number(form.coin.as_ref()),
         // the form is in seconds, the column in milliseconds
-        time_ms: number(form.time.as_ref()) * 1000,
+        time_ms: number(form.time.as_ref()).saturating_mul(1000),
         boxes: number(form.boxes.as_ref()),
         description,
         youtube_url,
@@ -346,6 +341,5 @@ pub async fn verify(
 fn now_unix() -> i64 {
     std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
-        .map(|d| d.as_secs() as i64)
-        .unwrap_or(0)
+        .map_or(0, |d| i64::try_from(d.as_secs()).unwrap_or(0))
 }

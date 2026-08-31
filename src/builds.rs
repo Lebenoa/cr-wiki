@@ -1,14 +1,13 @@
 //! Community builds: the stored loadout plus everything the cards show.
-//! Ported from the build half of database/select.v; queries now speak
-//! SurrealQL against the external SurrealDB server.
+//! Ported from the build half of `database/select.v`; queries now speak
+//! `SurrealQL` against the external `SurrealDB` server.
 
 use surrealdb::types::SurrealValue;
 
 use crate::db::{cards_by_ids, Card, Db};
 
 /// One build as the list and detail pages render it.
-#[derive(Debug, Clone, Default)]
-pub struct BuildCard {
+#[derive(Debug, Clone, Default)]pub struct BuildCard {
     pub id: i64,
     pub cookie: Option<Card>,
     pub cookie2: Option<Card>,
@@ -53,7 +52,6 @@ impl BuildCard {
         let secs = self.time_ms / 1000;
         format!("{}:{:02}", secs / 60, secs % 60)
     }
-
     /// The five loadout slots in display order, each already knowing which
     /// image directory it came from — the templates iterate one list rather
     /// than repeating the same block per slot.
@@ -86,7 +84,7 @@ impl BuildCard {
         out
     }
 
-    pub fn has_stats(&self) -> bool {
+    pub const fn has_stats(&self) -> bool {
         self.score > 0 || self.coin > 0 || self.time_ms > 0 || self.boxes > 0
     }
 }
@@ -104,17 +102,16 @@ pub struct Slot {
 
 fn split_list(raw: &str) -> Vec<String> {
     raw.split(',')
-        .map(|s| s.trim())
+        .map(str::trim)
         .filter(|s| !s.is_empty())
-        .map(|s| s.to_string())
+        .map(str::to_string)
         .collect()
 }
 
 fn now_unix() -> i64 {
     std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
-        .map(|d| d.as_secs() as i64)
-        .unwrap_or(0)
+        .map_or(0, |d| i64::try_from(d.as_secs()).unwrap_or(0))
 }
 
 /// The raw build record as stored; entity slots are resolved afterwards in
@@ -169,10 +166,9 @@ impl BuildRow {
             author: self.author,
             user_id: self.user_id,
             is_anon: self.expires_at.is_some(),
-            expires_in_h: self
-                .expires_at
-                .map(|e| ((e - now) / 3600).max(0))
-                .unwrap_or(0),
+            expires_in_h: self.expires_at.map_or(0, |e| {
+                (e.saturating_sub(now) / 3600).max(0)
+            }),
             treasure_levels: vec![
                 self.treasure1_level,
                 self.treasure2_level,
@@ -202,24 +198,30 @@ pub async fn select_builds(
     offset: i64,
 ) -> crate::db::Result<Vec<BuildCard>> {
     let (f_cookie, f_pet, f_treasure, f_ep, f_ep_special) = filter;
-    let mut where_sql = String::new();
+    let mut clauses: Vec<String> = Vec::new();
     if f_cookie > 0 {
-        where_sql.push_str(&format!(" AND cookie_id = {f_cookie}"));
+        clauses.push(format!("cookie_id = {f_cookie}"));
     }
     if f_pet > 0 {
-        where_sql.push_str(&format!(" AND pet_id = {f_pet}"));
+        clauses.push(format!("pet_id = {f_pet}"));
     }
     if f_treasure > 0 {
-        where_sql.push_str(&format!(
-            " AND (treasure1_id = {f_treasure} OR treasure2_id = {f_treasure} OR treasure3_id = {f_treasure})"
+        clauses.push(format!(
+            "(treasure1_id = {f_treasure} OR treasure2_id = {f_treasure} OR treasure3_id = {f_treasure})"
         ));
     }
     if f_ep > 0 {
-        where_sql.push_str(&format!(" AND ep = {f_ep} AND ep_special = 0"));
+        clauses.push(format!("ep = {f_ep} AND ep_special = 0"));
     }
     if f_ep_special > 0 {
-        where_sql.push_str(&format!(" AND ep_special = {f_ep_special}"));
+        clauses.push(format!("ep_special = {f_ep_special}"));
     }
+    let where_sql = clauses.join(" AND ");
+    let where_sql = if where_sql.is_empty() {
+        String::new()
+    } else {
+        format!(" AND {where_sql}")
+    };
     select_where(db, lang, &where_sql, sort, author, limit, offset).await
 }
 
@@ -227,9 +229,9 @@ pub async fn select_builds(
 /// entity lookups. `select_build` reuses it so the expiry rule lives once.
 ///
 /// The expiry WHERE carries `expires_at = 0` because a permanent build stores
-/// an explicit 0 (the insert binds `unwrap_or(0)`), and `IS NONE` never matches
-/// a stored zero — the plain `> $now` test alone would hide every signed-in
-/// author's builds.
+/// an explicit 0 (the insert binds `unwrap_or(0)`), and `IS NONE` never
+/// matches a stored zero — the plain `> $now` test alone would hide every
+/// signed-in author's builds.
 async fn select_where(
     db: &Db,
     lang: &str,
@@ -327,7 +329,7 @@ pub async fn select_build(db: &Db, lang: &str, id: i64) -> crate::db::Result<Opt
     Ok(found.into_iter().next())
 }
 
-/// A build about to be written. Separate from BuildCard because that one
+/// A build about to be written. Separate from `BuildCard` because that one
 /// carries resolved entities for rendering, while this carries the ids the
 /// row actually stores.
 #[derive(Debug, Clone)]
@@ -361,7 +363,7 @@ async fn next_build_id(db: &Db) -> crate::db::Result<i64> {
         .query("LET $ids = (SELECT VALUE record::id(id) FROM build); RETURN array::max($ids) ?? 0;")
         .await?;
     let max = res.take::<Option<i64>>(1)?;
-    Ok(max.unwrap_or(0) + 1)
+    Ok(max.unwrap_or(0).saturating_add(1))
 }
 
 fn build_sets(b: &NewBuild) -> String {
@@ -387,7 +389,7 @@ fn build_sets(b: &NewBuild) -> String {
             "boxes = {bx}",
         ),
         c = b.cookie,
-        c2 = b.cookie2.map(|v| v.to_string()).unwrap_or_else(|| "NONE".into()),
+        c2 = b.cookie2.map_or_else(|| "NONE".to_string(), |v| v.to_string()),
         p = b.pet,
         t1 = b.treasures[0],
         t2 = b.treasures[1],
@@ -422,7 +424,7 @@ pub async fn insert_build(db: &Db, b: &NewBuild) -> crate::db::Result<i64> {
     // an explicit 0 reads back as "permanent" everywhere the expiry rule looks;
     // binding None would store NONE and read back identically
     let exp = b.expires_at.unwrap_or(0);
-    match db
+    let wrote = db
         .query(&sql)
         .bind(("tags", b.tags.clone()))
         .bind(("desc", b.description.clone()))
@@ -430,10 +432,8 @@ pub async fn insert_build(db: &Db, b: &NewBuild) -> crate::db::Result<i64> {
         .bind(("exp", exp))
         .await
         .and_then(|r| r.check().map(|_| ()))
-    {
-        Ok(_) => Ok(id),
-        Err(_) => Ok(0),
-    }
+        .is_ok();
+    if wrote { Ok(id) } else { Ok(0) }
 }
 
 pub async fn delete_build(db: &Db, id: i64) -> crate::db::Result<()> {
@@ -481,13 +481,13 @@ pub async fn review_counts(db: &Db, build_id: i64) -> crate::db::Result<(i64, i6
         .bind(("id", build_id))
         .await?
         .take(0)?;
-    let mut ok = 0;
-    let mut bad = 0;
+    let mut ok = 0i64;
+    let mut bad = 0i64;
     for g in groups {
         if g.verified {
-            ok += g.count;
+            ok = ok.saturating_add(g.count);
         } else {
-            bad += g.count;
+            bad = bad.saturating_add(g.count);
         }
     }
     Ok((ok, bad))
@@ -504,11 +504,11 @@ pub async fn upsert_review(
     reason: &str,
 ) -> crate::db::Result<()> {
     let now = now_unix();
+    let verified = i64::from(verified);
     let sql = format!(
         "UPSERT review:[{build_id},{user_id}] SET
-            build_id = {build_id}, user_id = {user_id}, verified = {},
+            build_id = {build_id}, user_id = {user_id}, verified = {verified},
             reason = $reason, updated_at = {now}",
-        verified as i64
     );
     db.query(&sql)
         .bind(("reason", reason.to_string()))

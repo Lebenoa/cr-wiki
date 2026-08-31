@@ -42,7 +42,9 @@ pub async fn fallback(ctx: Ctx) -> Response {
 }
 
 /// The panic hook has no request to read, so the page renders in the default
-/// locale rather than the visitor's.
+/// locale rather than the visitor's. `CatchPanicLayer` requires the box by
+/// value, so the lint's advice does not apply here.
+#[allow(clippy::needless_pass_by_value)]
 pub fn panic_response(err: Box<dyn std::any::Any + Send + 'static>) -> Response {
     let detail = err
         .downcast_ref::<String>()

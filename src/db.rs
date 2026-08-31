@@ -1,6 +1,6 @@
-//! SurrealDB access. The app never embeds a storage engine: every query goes
+//! `SurrealDB` access. The app never embeds a storage engine: every query goes
 //! over the wire (`ws://` or `http://`) to an external server configured in
-//! Config.toml's `[surreal]` section.
+//! `Config.toml`'s `[surreal]` section.
 //!
 //! Modeling notes (this is a document store, not SQL):
 //! - translations live NESTED inside each entity as `tr: { en: {...}, th:
@@ -10,8 +10,8 @@
 //!   `effect_lines: [{ state, en, th, values: [..+0..+9] }]`
 //! - ids are numeric (`cookie:123`); `record::id(id)` projects them back to
 //!   plain integers so routes keep their `/section/:id` shape
-//! - graded entities carry a maintained `rank` column (grade::rank), because
-//!   ordering by display rank must happen in the database
+//! - graded entities carry a maintained `rank` column (`grade::rank`),
+//!   because ordering by display rank must happen in the database
 
 use surrealdb::engine::any::Any;
 use surrealdb::opt::auth::Root;
@@ -74,13 +74,13 @@ pub struct Card {
 
 impl Card {
     pub fn grade_slug(&self) -> String {
-        self.grade.map(grade::slug).unwrap_or("").to_string()
+        self.grade.map_or_else(String::new, |g| grade::slug(g).to_string())
     }
-    /// "S+" for s_plus, the uppercase letter otherwise
+    /// "S+" for `s_plus`, the uppercase letter otherwise
     pub fn grade_label(&self) -> String {
-        self.grade.map(grade::label).unwrap_or_default()
+        self.grade.map_or_else(String::new, grade::label)
     }
-    pub fn has_grade(&self) -> bool {
+    pub const fn has_grade(&self) -> bool {
         self.grade.is_some()
     }
 }
@@ -98,14 +98,7 @@ struct CardRow {
 
 impl From<CardRow> for Card {
     fn from(r: CardRow) -> Self {
-        Card {
-            id: r.id,
-            name: r.name,
-            en_name: r.en_name,
-            image: r.image,
-            grade: r.grade,
-            is_evolved: r.is_evolved,
-        }
+        Self { id: r.id, name: r.name, en_name: r.en_name, image: r.image, grade: r.grade, is_evolved: r.is_evolved }
     }
 }
 
@@ -134,12 +127,12 @@ pub struct Detail {
 
 impl Detail {
     pub fn grade_slug(&self) -> String {
-        self.grade.map(grade::slug).unwrap_or("").to_string()
+        self.grade.map_or_else(String::new, |g| grade::slug(g).to_string())
     }
     pub fn grade_label(&self) -> String {
-        self.grade.map(grade::label).unwrap_or_default()
+        self.grade.map_or_else(String::new, grade::label)
     }
-    pub fn has_grade(&self) -> bool {
+    pub const fn has_grade(&self) -> bool {
         self.grade.is_some()
     }
 }
@@ -147,10 +140,10 @@ impl Detail {
 /// Which table a catalog section reads, plus whether it grades its rows and
 /// stamps release dates. Every list/detail/search query branches through
 /// this instead of carrying per-section SQL.
-pub(crate) struct Kind {
-    pub(crate) table: &'static str,
-    pub(crate) graded: bool,
-    pub(crate) dated: bool,
+pub struct Kind {
+    pub table: &'static str,
+    pub graded: bool,
+    pub dated: bool,
 }
 
 fn kind_of(section: &str) -> Option<Kind> {
@@ -169,7 +162,9 @@ fn kind_of(section: &str) -> Option<Kind> {
 }
 
 /// The card projection every list shares: locale-fallback name, English name
-/// beside it, ordered by `order`.
+/// beside it, ordered by `order`. Every argument is one axis the callers
+/// actually vary — whitelisted fragments, never request text.
+#[allow(clippy::too_many_arguments)]
 async fn select_cards(
     db: &Db,
     lang: &str,
@@ -192,10 +187,12 @@ async fn select_cards(
     }
     sql.push_str(order);
     if let Some(l) = limit {
-        sql.push_str(&format!(" LIMIT {l}"));
+        sql.push_str(" LIMIT ");
+        sql.push_str(&l.to_string());
     }
     if let Some(s) = start {
-        sql.push_str(&format!(" START {s}"));
+        sql.push_str(" START ");
+        sql.push_str(&s.to_string());
     }
     let mut q = db
         .query(&sql)
@@ -209,13 +206,13 @@ async fn select_cards(
 }
 
 /// Newest release date first with the id as the tie-break. Without that
-/// second key pages tied on release_date could repeat or skip between
-/// offset=0 and offset=30 fetches.
+/// second key pages tied on `release_date` could repeat or skip between
+/// `offset=0` and `offset=30` fetches.
 pub async fn select_cookies(db: &Db, lang: &str, limit: i64, offset: i64) -> Result<Vec<Card>> {
     select_cards(
         db,
         lang,
-        &kind_of("cookies").expect("static"),
+        &kind_of("cookies").unwrap_or(Kind { table: "cookie", graded: true, dated: true }),
         ", grade, release_date",
         "tr.en.name != NONE OR tr[$lang].name != NONE",
         " ORDER BY release_date DESC, id DESC",
@@ -230,7 +227,7 @@ pub async fn select_pets(db: &Db, lang: &str, limit: i64, offset: i64) -> Result
     select_cards(
         db,
         lang,
-        &kind_of("pets").expect("static"),
+        &kind_of("pets").unwrap_or(Kind { table: "pet", graded: true, dated: true }),
         ", grade, release_date",
         "tr.en.name != NONE OR tr[$lang].name != NONE",
         " ORDER BY release_date DESC, id DESC",
@@ -262,7 +259,7 @@ pub async fn select_treasures(
     select_cards(
         db,
         lang,
-        &kind_of("treasures").expect("static"),
+        &kind_of("treasures").unwrap_or(Kind { table: "treasure", graded: true, dated: true }),
         ", grade, is_evolved, rank, release_date",
         &where_sql,
         " ORDER BY rank DESC, release_date DESC, name ASC",
@@ -420,9 +417,10 @@ struct EffectLineRow {
 
 impl EffectLineRow {
     fn into_line(self, lang: &str) -> EffectLine {
-        let text = match lang == "th" && !self.th.is_empty() {
-            true => self.th.clone(),
-            false => self.en.clone(),
+        let text = if lang == "th" && !self.th.is_empty() {
+            self.th.clone()
+        } else {
+            self.en.clone()
         };
         EffectLine {
             text,
@@ -475,7 +473,7 @@ struct CombiRecord {
 
 /// Name lookup for a batch of ids in one query, locale fallback applied.
 /// Returns a map keyed by id so callers stitch pairs together.
-pub(crate) async fn names_for(
+pub async fn names_for(
     db: &Db,
     lang: &str,
     kind: &Kind,
@@ -511,17 +509,18 @@ async fn combis(db: &Db, lang: &str, own: &str, id: i64) -> Result<Vec<(CombiRec
         // combi pairings hang off cookies only; other sections list none
         return Ok(Vec::new());
     }
-    let mut records: Vec<CombiRecord> = db
-        .query(&format!(
+    let records: Vec<CombiRecord> = db
+        .query(
             "SELECT record::id(id) AS id, cookie_id, pet_id, en, th, is_hidden
-               FROM combi WHERE cookie_id = $id ORDER BY id"
-        ))
+               FROM combi WHERE cookie_id = $id ORDER BY id",
+        )
         .bind(("id", id))
         .await?
         .take(0)?;
 
     let partner_section = if own == "cookies" { "pets" } else { "cookies" };
-    let partner_kind = kind_of(partner_section).expect("static");
+    let partner_kind = kind_of(partner_section)
+        .unwrap_or(Kind { table: "pet", graded: true, dated: true });
     let ids: Vec<i64> = records
         .iter()
         .map(|c| if own == "cookies" { c.pet_id } else { c.cookie_id })
@@ -529,14 +528,15 @@ async fn combis(db: &Db, lang: &str, own: &str, id: i64) -> Result<Vec<(CombiRec
     let partners = names_for(db, lang, &partner_kind, &ids).await?;
 
     Ok(records
-        .drain(..)
+        .into_iter()
         .map(|c| {
             let partner_id = if own == "cookies" { c.pet_id } else { c.cookie_id };
             let (partner_name, partner_image) =
                 partners.get(&partner_id).cloned().unwrap_or_default();
-            let effect = match lang == "th" && !c.th.is_empty() {
-                true => c.th.clone(),
-                false => c.en.clone(),
+            let effect = if lang == "th" && !c.th.is_empty() {
+                c.th.clone()
+            } else {
+                c.en.clone()
             };
             let row = CombiRow {
                 partner_id,
@@ -568,15 +568,18 @@ pub async fn entity_link(db: &Db, lang: &str, kind: &str, id: i64) -> Option<(St
     };
     let k = kind_of(section)?;
     let mut rows: Vec<CardRow> = db
-        .query(&format!(
-            "SELECT record::id(id) AS id, image,
-                    (tr[$lang].name ?? tr.en.name ?? '') AS name,
-                    (tr.en.name ?? '') AS en_name
-               FROM {}
-              WHERE record::id(id) = $id
-              LIMIT 1",
-            k.table
-        ))
+        .query(
+            format!(
+                "SELECT record::id(id) AS id, image,
+                        (tr[$lang].name ?? tr.en.name ?? '') AS name,
+                        (tr.en.name ?? '') AS en_name
+                   FROM {}
+                  WHERE record::id(id) = $id
+                  LIMIT 1",
+                k.table
+            )
+            .as_str(),
+        )
         .bind(("lang", lang.to_string()))
         .bind(("id", id))
         .await
@@ -604,7 +607,7 @@ pub async fn sitemap_entries(db: &Db) -> Result<Vec<(String, i64)>> {
         ("jellies", "jelly"),
     ] {
         let ids: Vec<i64> = db
-            .query(&format!("SELECT VALUE record::id(id) FROM {table}"))
+            .query(format!("SELECT VALUE record::id(id) FROM {table}").as_str())
             .await?
             .take(0)?;
         out.extend(ids.into_iter().map(|id| (section.to_string(), id)));
@@ -633,10 +636,12 @@ pub async fn search(db: &Db, lang: &str, q: &str, limit: i64) -> Result<Vec<(Str
         ("episodes", vec!["description"]),
         ("ingredients", vec!["description"]),
     ] {
-        let kind = kind_of(section).expect("known section");
+        let Some(kind) = kind_of(section) else {
+            continue; // not a catalog section; nothing to search
+        };
         let mut clauses = vec![
             "string::lowercase(tr.en.name) CONTAINS $needle".to_string(),
-            format!("string::lowercase(tr[$lang].name ?? '') CONTAINS $needle"),
+            "string::lowercase(tr[$lang].name ?? '') CONTAINS $needle".to_string(),
         ];
         for col in prose {
             clauses.push(format!(
@@ -699,7 +704,7 @@ pub async fn find_user(db: &Db, username: &str) -> Result<Option<User>> {
 /// Creates a user with an already-hashed password. `None` when the username
 /// is taken, which the unique index enforces rather than a prior SELECT.
 pub async fn create_user(db: &Db, username: &str, password_hash: &str) -> Result<Option<User>> {
-    let id = next_id(db, "user").await? + 1;
+    let id = next_id(db, "user").await?.saturating_add(1);
     let res = db
         .query("CREATE type::record(\"user\", $id) SET username = $u, password = $p, is_admin = false, created_at = time::unix();")
         .bind(("id", id))
@@ -727,12 +732,13 @@ pub async fn create_user(db: &Db, username: &str, password_hash: &str) -> Result
 /// Hydrates an explicit id list, preserving the caller's order — which is the
 /// ranking, so it has to survive the round trip.
 pub async fn cards_by_ids(db: &Db, lang: &str, kind: &str, ids: &[i64]) -> Result<Vec<Card>> {
-    if ids.is_empty() {
+    let k = if ids.is_empty() {
         return Ok(Vec::new());
-    }
-    let k = match kind_of(kind) {
-        Some(k) => k,
-        None => return Ok(Vec::new()),
+    } else {
+        match kind_of(kind) {
+            Some(k) => k,
+            None => return Ok(Vec::new()),
+        }
     };
     let list = ids.iter().map(|i| format!("{}:{}", k.table, i)).collect::<Vec<_>>();
     let sql = format!(
@@ -771,9 +777,10 @@ pub async fn combi_partner_ids(db: &Db, kind: &str, id: i64) -> Result<Vec<i64>>
     let own_col = if kind == "cookies" { "cookie_id" } else { "pet_id" };
     let partner_col = if kind == "cookies" { "pet_id" } else { "cookie_id" };
     let mut res = db
-        .query(&format!(
-            "SELECT VALUE DISTINCT {partner_col} FROM combi WHERE {own_col} = $id"
-        ))
+        .query(
+            format!("SELECT VALUE DISTINCT {partner_col} FROM combi WHERE {own_col} = $id")
+                .as_str(),
+        )
         .bind(("id", id))
         .await?;
     res.take(0)
@@ -803,13 +810,13 @@ pub struct GachaEntry {
 
 impl GachaEntry {
     pub fn grade_slug(&self) -> String {
-        self.grade.map(grade::slug).unwrap_or("").to_string()
+        self.grade.map_or_else(String::new, |g| grade::slug(g).to_string())
     }
-    pub fn has_grade(&self) -> bool {
+    pub const fn has_grade(&self) -> bool {
         self.grade.is_some()
     }
     pub fn grade_label(&self) -> String {
-        self.grade.map(grade::label).unwrap_or_default()
+        self.grade.map_or_else(String::new, grade::label)
     }
     /// The odds as the page prints them: the stored value with no padding,
     /// so 4.4 reads "4.4%" rather than "4.40%".
@@ -838,6 +845,45 @@ struct GachaEntryRef {
     odds: f64,
 }
 
+/// One gacha prize row: the batched lookup result behind an entry.
+#[derive(Default, SurrealValue)]
+#[surreal(default)]
+struct PrizeRow {
+    id: i64,
+    image: Option<String>,
+    grade: Option<i64>,
+    is_evolved: bool,
+    name: String,
+    en_name: String,
+}
+
+async fn prizes(db: &Db, lang: &str, table: &str, ids: &[i64]) -> Result<std::collections::HashMap<i64, PrizeRow>> {
+    let mut map = std::collections::HashMap::new();
+    if ids.is_empty() {
+        return Ok(map);
+    }
+    let list = ids.iter().map(|i| format!("{table}:{i}")).collect::<Vec<_>>();
+    let rows: Vec<PrizeRow> = db
+        .query(
+            format!(
+                "SELECT record::id(id) AS id, image, grade, (is_evolved ?? false) AS is_evolved,
+                        (tr[$lang].name ?? tr.en.name ?? '') AS name,
+                        (tr.en.name ?? '') AS en_name
+                   FROM {table}
+                  WHERE id IN [{}]",
+                list.join(", ")
+            )
+            .as_str(),
+        )
+        .bind(("lang", lang.to_string()))
+        .await?
+        .take(0)?;
+    for r in rows {
+        map.insert(r.id, r);
+    }
+    Ok(map)
+}
+
 /// Every pool with its entries in the catalog's own order. The prize name is
 /// resolved through the same locale fallback as everywhere else: pools store
 /// references, names come from one batched lookup per prize kind.
@@ -862,38 +908,6 @@ pub async fn select_gacha(db: &Db, lang: &str) -> Result<Vec<GachaPool>> {
                 }
             }
         }
-    }        #[derive(Default, SurrealValue)]
-        #[surreal(default)]
-        struct PrizeRow {
-        id: i64,
-        image: Option<String>,
-        grade: Option<i64>,
-            is_evolved: bool,
-            name: String,
-            en_name: String,
-    }
-    async fn prizes(db: &Db, lang: &str, table: &str, ids: &[i64]) -> Result<std::collections::HashMap<i64, PrizeRow>> {
-        let mut map = std::collections::HashMap::new();
-        if ids.is_empty() {
-            return Ok(map);
-        }
-        let list = ids.iter().map(|i| format!("{table}:{i}")).collect::<Vec<_>>();
-        let rows: Vec<PrizeRow> = db
-            .query(&format!(
-                "SELECT record::id(id) AS id, image, grade, (is_evolved ?? false) AS is_evolved,
-                        (tr[$lang].name ?? tr.en.name ?? '') AS name,
-                        (tr.en.name ?? '') AS en_name
-                   FROM {table}
-                  WHERE id IN [{}]",
-                list.join(", ")
-            ))
-            .bind(("lang", lang.to_string()))
-            .await?
-            .take(0)?;
-        for r in rows {
-            map.insert(r.id, r);
-        }
-        Ok(map)
     }
 
     let treasures = prizes(db, lang, "treasure", &treasure_ids).await?;
@@ -950,7 +964,7 @@ pub async fn insert_entity(
     let Some(table) = entity_table(section) else {
         return Ok(0);
     };
-    let id = next_id(db, table).await? + 1;
+    let id = next_id(db, table).await?.saturating_add(1);
     let now = now_unix();
     let image = clean_image(&form.image);
 
@@ -967,7 +981,7 @@ pub async fn insert_entity(
     if section == "treasures" {
         sets.push("is_evolved = false".to_string());
     }
-    db.query(&format!("CREATE {table}:{id} SET {}", sets.join(", ")))
+    db.query(format!("CREATE {table}:{id} SET {}", sets.join(", ")).as_str())
         .bind(("image", image))
         .await?
         .check()?;
@@ -996,7 +1010,7 @@ pub async fn update_entity(
         sets.push("image = $image".to_string());
     }
     if !sets.is_empty() {
-        db.query(&format!("UPDATE {table}:{id} SET {}", sets.join(", ")))
+        db.query(format!("UPDATE {table}:{id} SET {}", sets.join(", ")).as_str())
             .bind(("image", image))
             .await?
             .check()?;
@@ -1050,17 +1064,17 @@ async fn write_translation(
     entry.name = form.name.trim().to_string();
     match section {
         "cookies" => {
-            entry.abilities = form.abilities.clone();
-            entry.description = form.description.clone();
-            entry.power_plus = form.power_plus.clone();
-            entry.power_plus_requirement = form.power_plus_requirement.clone();
-            entry.unlock_goal = form.unlock_goal.clone();
+            entry.abilities.clone_from(&form.abilities);
+            entry.description.clone_from(&form.description);
+            entry.power_plus.clone_from(&form.power_plus);
+            entry.power_plus_requirement.clone_from(&form.power_plus_requirement);
+            entry.unlock_goal.clone_from(&form.unlock_goal);
         }
         "pets" => {
-            entry.abilities = form.abilities.clone();
-            entry.description = form.description.clone();
+            entry.abilities.clone_from(&form.abilities);
+            entry.description.clone_from(&form.description);
         }
-        _ => entry.description = form.description.clone(),
+        _ => entry.description.clone_from(&form.description),
     }
     db.query("UPDATE type::record($tb, $id) SET tr = $tr")
         .bind(("tb", table.to_string()))
@@ -1074,8 +1088,7 @@ async fn write_translation(
 fn now_unix() -> i64 {
     std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
-        .map(|d| d.as_secs() as i64)
-        .unwrap_or(0)
+        .map_or(0, |d| i64::try_from(d.as_secs()).unwrap_or(0))
 }
 
 /// What a treasure is tied to: the cookie or pet that unlocks it at max
@@ -1092,10 +1105,10 @@ pub struct TreasureLinks {
 }
 
 impl TreasureLinks {
-    pub fn has_unlock(&self) -> bool {
+    pub const fn has_unlock(&self) -> bool {
         self.unlock_id > 0 && !self.unlock_name.is_empty()
     }
-    pub fn has_base(&self) -> bool {
+    pub const fn has_base(&self) -> bool {
         self.base_id > 0 && !self.base_name.is_empty()
     }
 }
@@ -1104,9 +1117,9 @@ pub async fn treasure_links(db: &Db, lang: &str, id: i64) -> Result<TreasureLink
     #[derive(Default, SurrealValue)]
     #[surreal(default)]
     struct Row {
-        unlock_cookie_id: Option<i64>,
-        unlock_pet_id: Option<i64>,
-        base_treasure_id: Option<i64>,
+        unlock_cookie: Option<i64>,
+        unlock_pet: Option<i64>,
+        base_treasure: Option<i64>,
     }
     let mut rows: Vec<Row> = db
         .query("SELECT unlock_cookie_id, unlock_pet_id, base_treasure_id FROM type::record(\"treasure\", $id)")
@@ -1118,14 +1131,14 @@ pub async fn treasure_links(db: &Db, lang: &str, id: i64) -> Result<TreasureLink
     };
 
     let mut out = TreasureLinks::default();
-    if let Some(cid) = row.unlock_cookie_id.filter(|v| *v > 0) {
+    if let Some(cid) = row.unlock_cookie.filter(|v| *v > 0) {
         if let Some((name, image)) = entity_link(db, lang, "cookie", cid).await {
             out.unlock_section = "cookies";
             out.unlock_id = cid;
             out.unlock_name = name;
             out.unlock_image = image;
         }
-    } else if let Some(pid) = row.unlock_pet_id.filter(|v| *v > 0) {
+    } else if let Some(pid) = row.unlock_pet.filter(|v| *v > 0) {
         if let Some((name, image)) = entity_link(db, lang, "pet", pid).await {
             out.unlock_section = "pets";
             out.unlock_id = pid;
@@ -1133,7 +1146,7 @@ pub async fn treasure_links(db: &Db, lang: &str, id: i64) -> Result<TreasureLink
             out.unlock_image = image;
         }
     }
-    if let Some(bid) = row.base_treasure_id.filter(|v| *v > 0) {
+    if let Some(bid) = row.base_treasure.filter(|v| *v > 0) {
         if let Some((name, image)) = entity_link(db, lang, "treasure", bid).await {
             out.base_id = bid;
             out.base_name = name;

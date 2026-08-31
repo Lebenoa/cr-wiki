@@ -18,7 +18,8 @@ pub const LANG_COOKIE: &str = "wikilang";
 #[derive(Clone, Debug)]
 pub struct LangChoice {
     pub lang: String,
-    /// set when the response should refresh the cookie, as before_request does
+    /// set when the response should refresh the cookie, as `before_request`
+    /// does
     pub write_cookie: bool,
 }
 
@@ -42,16 +43,18 @@ pub struct Ctx {
 impl<S: Send + Sync> FromRequestParts<S> for Ctx {
     type Rejection = Infallible;
 
+    // axum 0.8's FromRequestParts is already async-fn-in-trait; no await here
+    // because the context only reads already-extracted parts
+    #[allow(clippy::unused_async_trait_impl)]
     async fn from_request_parts(parts: &mut Parts, _state: &S) -> Result<Self, Self::Rejection> {
         let lang = parts
             .extensions
             .get::<LangChoice>()
-            .map(|c| c.lang.clone())
-            .unwrap_or_else(|| DEFAULT_LANG.to_string());
+            .map_or_else(|| DEFAULT_LANG.to_string(), |c| c.lang.clone());
         let user = parts.extensions.get::<SessionUser>().cloned();
         let h = &parts.headers;
         let peer = parts.extensions.get::<ConnectInfo<SocketAddr>>().map(|c| c.0);
-        Ok(Ctx {
+        Ok(Self {
             user,
             l: Loc::new(&lang),
             lang,
@@ -69,7 +72,7 @@ impl Ctx {
     /// time it runs the extractors are gone, and the 500 page still has a
     /// navbar to render.
     pub fn minimal() -> Self {
-        Ctx {
+        Self {
             lang: crate::i18n::DEFAULT_LANG.to_string(),
             l: crate::i18n::Loc::new(crate::i18n::DEFAULT_LANG),
             path: "/".to_string(),
@@ -94,6 +97,8 @@ impl Ctx {
         format!("{}{}{}", self.site_url, self.path, suffix)
     }
 
+    /// The loaded locales; a method because askama calls it on the context.
+    #[allow(clippy::unused_self)]
     pub fn langs(&self) -> Vec<String> {
         i18n::available_langs()
     }
@@ -106,7 +111,7 @@ impl Ctx {
     }
 
     /// The navbar entry's classes, active or not — the same two class lists
-    /// nav_link builds in app.v.
+    /// `nav_link` builds in `app.v`.
     pub fn nav_class(&self, section: &str) -> &'static str {
         if self.nav_section_active(section) {
             "font-semibold text-center text-primary border-b-2 border-primary pb-1 transition-all duration-1000"
@@ -115,7 +120,9 @@ impl Ctx {
         }
     }
 
-    /// The sections behind the Wiki dropdown, in navbar order.
+    /// The sections behind the Wiki dropdown, in navbar order. A method
+    /// because askama calls it on the context.
+    #[allow(clippy::unused_self)]
     pub fn wiki_sections(&self) -> Vec<&'static str> {
         vec![
             "cookies",
@@ -135,6 +142,7 @@ impl Ctx {
         self.wiki_sections().iter().any(|s| self.nav_section_active(s))
     }
 
+    /// The Wiki dropdown trigger's classes, active or not.
     pub fn wiki_class(&self) -> &'static str {
         if self.wiki_active() {
             "font-semibold text-center text-primary border-b-2 border-primary pb-1 transition-all duration-1000"
@@ -143,8 +151,10 @@ impl Ctx {
         }
     }
 
-    /// The theme names the picker offers. The palettes live in the UnoCSS
-    /// preflight; the dropdown only toggles the data-theme attribute.
+    /// The theme names the picker offers. The palettes live in the `UnoCSS`
+    /// preflight; the dropdown only toggles the data-theme attribute. A
+    /// method because askama calls it on the context.
+    #[allow(clippy::unused_self)]
     pub fn themes(&self) -> Vec<&'static str> {
         vec![
             "default",
@@ -158,9 +168,11 @@ impl Ctx {
         ]
     }
 
-    /// The palette tokens the custom-theme editor may override. The --on-*
+    /// The palette tokens the custom-theme editor may override. The `--on-*`
     /// contrast partners are derived from the chosen colour rather than
     /// exposed, so a theme cannot end up with unreadable text on a button.
+    /// A method because askama calls it on the context.
+    #[allow(clippy::unused_self)]
     pub fn theme_tokens(&self) -> Vec<&'static str> {
         vec![
             "background",
@@ -178,29 +190,34 @@ impl Ctx {
         ]
     }
 
-    /// theme_token_* keys use an underscore, since a hyphen is not valid in
+    /// `theme_token_*` keys use an underscore, since a hyphen is not valid in
     /// a translation key.
+    #[allow(clippy::unused_self)] // askama calls it on the context
     pub fn theme_token_key(&self, token: &str) -> String {
         format!("theme_token_{}", token.replace('-', "_"))
     }
 
+    #[allow(clippy::unused_self)] // askama calls it on the context
     pub fn theme_key(&self, name: &str) -> String {
         format!("theme_{name}")
     }
 
     /// A combo pairs a cookie with a pet, so the partner of one is the other.
+    // str equality is not a const trait yet, so this cannot be a const fn;
+    // the self parameter stays because askama calls it on the context
+    #[allow(clippy::unused_self, clippy::missing_const_for_fn)]
     pub fn combi_partner_section(&self, section: &str) -> &'static str {
         if section == "cookies" { "pets" } else { "cookies" }
     }
 
     /// A fragment swap, as opposed to an hx-boosted navigation which still
     /// wants the whole page.
-    pub fn is_fragment(&self) -> bool {
+    pub const fn is_fragment(&self) -> bool {
         self.htmx && !self.boosted
     }
 
     /// Admin permission: an admin session, or a loopback request — which is
-    /// what makes local development admin without a login, as in app.v.
+    /// what makes local development admin without a login, as in `app.v`.
     pub fn is_admin(&self) -> bool {
         if self.user.as_ref().is_some_and(|u| u.is_admin) {
             return true;
@@ -232,19 +249,24 @@ impl Ctx {
 
     /// The combobox option labels. Askama hands loop variables out by
     /// reference, so these take one rather than making every call site deref.
+    #[allow(clippy::trivially_copy_pass_by_ref)]
     pub fn ep_tier_label(&self, n: &i64) -> String {
         self.build_ep_label(*n, 0)
     }
 
+    #[allow(clippy::trivially_copy_pass_by_ref)]
     pub fn ep_special_label(&self, n: &i64) -> String {
         self.build_ep_label(0, *n)
     }
 
     /// The regular EP tiers and the special ones, for the filter combobox.
+    /// A method because askama calls it on the context.
+    #[allow(clippy::unused_self)]
     pub fn ep_tiers(&self) -> Vec<i64> {
         (1..=7).collect()
     }
 
+    #[allow(clippy::unused_self)]
     pub fn ep_specials(&self) -> Vec<i64> {
         (1..=3).collect()
     }
@@ -257,6 +279,8 @@ impl Ctx {
     }
 
     /// The same, for a title built from an entity name rather than a key.
+    // the {name} placeholder is consumed by replace(), not a formatting macro
+    #[allow(clippy::literal_string_with_formatting_args)]
     pub fn entity_title(&self, name: &str) -> String {
         self.title_of(self.l.t("entity_detail_title").replace("{name}", name))
     }
@@ -286,6 +310,8 @@ impl Ctx {
 
     /// A detail page's description. Only some kinds have a template of their
     /// own; the rest read the site line.
+    // the {name} placeholder is consumed by replace(), not a formatting macro
+    #[allow(clippy::literal_string_with_formatting_args)]
     pub fn entity_desc(&self, section: &str, name: &str) -> String {
         let key = match section {
             "cookies" | "pets" | "treasures" => "entity_detail_description",
@@ -298,6 +324,7 @@ impl Ctx {
     }
 
     /// The wide banner, absolute, for Open Graph and Twitter cards.
+    #[allow(clippy::unused_self)] // askama calls it on the context
     pub fn social_image(&self) -> String {
         format!("{}/img/landscape.jpg", self.site_url.trim_end_matches('/'))
     }
@@ -313,7 +340,9 @@ impl Ctx {
     }
 
     /// An entity sprite is a square icon, so it reads better as a summary
-    /// thumbnail; the wide banner wants the large card.
+    /// thumbnail; the wide banner wants the large card. A method because
+    /// askama calls it on the context.
+    #[allow(clippy::unused_self)]
     pub fn social_card_type(&self, image: &str) -> &'static str {
         if image.ends_with("/img/landscape.jpg") {
             "summary_large_image"
@@ -347,12 +376,14 @@ impl Ctx {
         self.l.t(&format!("gacha_tier_{tier}"))
     }
 
-    /// The public Turnstile site key, for the widget divs.
-    pub fn turnstile_sitekey(&self) -> &'static str {
+    /// The public Turnstile site key, for the widget divs. A method because
+    /// askama calls it on the context.
+    #[allow(clippy::unused_self)]
+    pub const fn turnstile_sitekey(&self) -> &'static str {
         crate::turnstile::SITEKEY
     }
 
-    pub fn signed_in(&self) -> bool {
+    pub const fn signed_in(&self) -> bool {
         self.user.is_some()
     }
 }
@@ -368,10 +399,10 @@ fn site_url(h: &HeaderMap) -> String {
         }
     }
     let scheme = header(h, "X-Forwarded-Proto").unwrap_or("http");
-    match header(h, "host") {
-        Some(host) => format!("{scheme}://{host}"),
-        None => "http://localhost:6785".to_string(),
-    }
+    header(h, "host").map_or_else(
+        || "http://localhost:6785".to_string(),
+        |host| format!("{scheme}://{host}"),
+    )
 }
 
 /// Loopback only when no proxy header is present: any of them means the peer
@@ -400,8 +431,7 @@ pub fn client_ip(
     trusted_proxies: &[String],
 ) -> String {
     let peer_str = peer
-        .map(|a| a.ip().to_string())
-        .unwrap_or_else(|| "unknown".to_string());
+        .map_or_else(|| "unknown".to_string(), |a| a.ip().to_string());
     if trusted_proxies.iter().any(|p| p == &peer_str) {
         for name in ["CF-Connecting-IP", "X-Real-Ip"] {
             if let Some(v) = header(h, name) {

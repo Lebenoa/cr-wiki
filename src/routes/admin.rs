@@ -48,8 +48,10 @@ pub struct EntityForm {
 }
 
 impl AdminForm {
-    /// The .tr keys are per-section ("save_cookie_button"), so the template
-    /// builds none of them itself.
+    /// The `.tr` keys are per-section (`save_cookie_button`), so the template
+    /// builds none of them itself. A method because askama calls it on the
+    /// context struct.
+    #[allow(clippy::unused_self)]
     fn singular(&self) -> &'static str {
         match self.section.as_str() {
             "pets" => "pet",

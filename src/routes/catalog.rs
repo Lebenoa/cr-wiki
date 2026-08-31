@@ -70,13 +70,12 @@ async fn render(
         return super::errors::not_found(ctx);
     }
     let page = q.page.unwrap_or(1).max(1);
-    let offset = (page - 1).saturating_mul(PAGE_SIZE);
+    let offset = page.saturating_sub(1).saturating_mul(PAGE_SIZE);
     let tab = match q.tab.as_deref() {
         Some(t @ ("normal" | "evo")) => t.to_string(),
         _ => "all".to_string(),
     };
 
-    let _unused_lang_guard: () = ();
     let paginated = matches!(section.as_str(), "cookies" | "pets" | "treasures");
     let cards = match section.as_str() {
         "cookies" => db::select_cookies(&state.db, &ctx.lang, PAGE_SIZE, offset).await,
@@ -86,7 +85,11 @@ async fn render(
     }
     .unwrap_or_default();
 
-    let next_page = if paginated && cards.len() as i64 == PAGE_SIZE { page + 1 } else { 0 };
+    let next_page = if paginated && i64::try_from(cards.len()).unwrap_or(0) == PAGE_SIZE {
+        page.saturating_add(1)
+    } else {
+        0
+    };
 
     let html = if ctx.is_fragment() {
         CatalogCards { ctx, section, cards, next_page, tab }.render()

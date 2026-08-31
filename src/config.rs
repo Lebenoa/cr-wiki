@@ -1,5 +1,5 @@
-//! Config.toml: host/port, the SurrealDB server this app talks to (never an
-//! embedded engine — always ws:// or http:// over the wire), Turnstile
+//! `Config.toml`: host/port, the `SurrealDB` server this app talks to (never an
+//! embedded engine — always `ws://` or `http://` over the wire), Turnstile
 //! credentials, and the rate-limit tuning.
 
 use serde::Deserialize;
@@ -26,7 +26,7 @@ impl Default for Config {
     }
 }
 
-/// Where the data lives: an external SurrealDB server. The app has no local
+/// Where the data lives: an external `SurrealDB` server. The app has no local
 /// storage of its own.
 #[derive(Debug, Clone, Default, Deserialize)]
 #[serde(default)]
@@ -40,7 +40,7 @@ pub struct SurrealConfig {
 }
 
 impl SurrealConfig {
-    pub fn is_configured(&self) -> bool {
+    pub const fn is_configured(&self) -> bool {
         !self.url.is_empty() && !self.namespace.is_empty() && !self.database.is_empty()
     }
 }
@@ -81,7 +81,7 @@ impl Config {
     /// Loads Config.toml, falling back to the defaults when it is missing or
     /// unparseable — the V version prints and carries on the same way.
     pub fn load(path: &str) -> Self {
-        let mut cfg: Config = std::fs::read_to_string(path)
+        let mut cfg: Self = std::fs::read_to_string(path)
             .ok()
             .and_then(|s| toml::from_str(&s).ok())
             .unwrap_or_default();

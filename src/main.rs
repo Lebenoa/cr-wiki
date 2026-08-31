@@ -1,8 +1,9 @@
-//! Rust port of the CookieRun fan wiki (see AGENTS.md for the V original).
+//! Rust port of the `CookieRun` fan wiki (see `AGENTS.md` for the V
+//! original).
 //!
-//! Ported so far: config, the .tr catalogs, the SQLite pool, static files,
-//! and the /changelog and /cookies pages. Everything else still lives in the
-//! V app next door; see PORTING.md for the running list.
+//! Ported so far: config, the `.tr` catalogs, the SQLite pool, static files,
+//! and the `/changelog` and `/cookies` pages. Everything else still lives in
+//! the V app next door; see `PORTING.md` for the running list.
 
 mod builds;
 mod changelog;
