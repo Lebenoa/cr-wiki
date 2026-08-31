@@ -488,17 +488,23 @@ async fn live_db() -> Option<db::Db> {
         assert!(db::search(&pool, "en", "   ", 20).await.unwrap().is_empty());
     }
 
-    /// Argon2 in PHC form: a hash verifies, a wrong password does not, and
-    /// two hashes of the same password differ because the salt is fresh.
-    #[test]
-    fn password_hashing() {
-        let hash = session::hash_password("correct horse").expect("hash");
+    /// Argon2 in PHC form, through SurrealDB's crypto functions: a hash
+    /// verifies, a wrong password does not, and two hashes of the same
+    /// password differ because the salt is fresh.
+    #[tokio::test]
+    async fn password_hashing() {
+        let Some(pool) = live_db().await else {
+            eprintln!("skip: CR_SURREAL_URL not set");
+            return;
+        };
+
+        let hash = session::hash_password(&pool, "correct horse").await.expect("hash");
         assert!(hash.starts_with("$argon2"), "PHC format, so V can read it: {hash}");
-        assert!(session::verify_password("correct horse", &hash));
-        assert!(!session::verify_password("wrong horse", &hash));
-        let again = session::hash_password("correct horse").expect("hash");
+        assert!(session::verify_password(&pool, "correct horse", &hash).await);
+        assert!(!session::verify_password(&pool, "wrong horse", &hash).await);
+        let again = session::hash_password(&pool, "correct horse").await.expect("hash");
         assert_ne!(hash, again, "salt must be fresh per hash");
-        assert!(!session::verify_password("correct horse", "not-a-hash"));
+        assert!(!session::verify_password(&pool, "correct horse", "not-a-hash").await);
     }
 
     /// A session round trip: start, read back, end.
@@ -563,9 +569,9 @@ async fn live_db() -> Option<db::Db> {
         };
 
         let cookies = options::options(&pool, "en", "cookie").await;
-        assert_eq!(cookies.len(), 93);
+        assert_eq!(cookies.len(), 94);
         let pets = options::options(&pool, "en", "pet").await;
-        assert_eq!(pets.len(), 100, "the two phantom Sotdae pets are gone");
+        assert_eq!(pets.len(), 101, "the two phantom Sotdae pets are gone");
 
         let treasures = options::options(&pool, "en", "treasure").await;
         assert!(treasures.len() > 700);
@@ -631,7 +637,7 @@ async fn live_db() -> Option<db::Db> {
         let pools = db::select_gacha(&pool, "en").await.expect("gacha");
         assert!(!pools.is_empty());
         let entries: usize = pools.iter().map(|p| p.entries.len()).sum();
-        assert_eq!(entries, 300, "every disclosed entry is listed");
+        assert_eq!(entries, 304, "every disclosed entry is listed");
         let first = pools.iter().find(|p| !p.entries.is_empty()).unwrap();
         assert!(first.entries.iter().all(|e| e.odds > 0.0));
         assert!(first.entries.iter().all(|e| !e.name.is_empty()));
@@ -670,11 +676,11 @@ async fn live_db() -> Option<db::Db> {
             return;
         };
 
-        // treasure 255 is unlocked by the surviving Sotdae Flock pet
+        // treasure 255 (Banana Lion Tail) is unlocked by pet 77, Banana Lion
         let links = db::treasure_links(&pool, "en", 255).await.expect("links");
         assert!(links.has_unlock());
         assert_eq!(links.unlock_section, "pets");
-        assert_eq!(links.unlock_id, 102);
+        assert_eq!(links.unlock_id, 77);
         assert!(!links.unlock_name.is_empty());
 
         // relics and skins have detail rows now. Their ids are not 1-based —

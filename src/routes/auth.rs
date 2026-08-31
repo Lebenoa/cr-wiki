@@ -98,10 +98,10 @@ pub async fn login(
     let Some(user) = found else {
         // no such user: still pay for a hash, so the answer takes as long as
         // a real check and cannot be told apart by timing
-        session::waste_time(&form.password);
+        session::waste_time(&state.db, &form.password).await;
         return (StatusCode::NOT_FOUND, page(ctx, "login", "invalid_credentials")).into_response();
     };
-    if !session::verify_password(&form.password, &user.password) {
+    if !session::verify_password(&state.db, &form.password, &user.password).await {
         return (StatusCode::NOT_FOUND, page(ctx, "login", "invalid_credentials")).into_response();
     }
 
@@ -130,7 +130,7 @@ pub async fn register(
     if form.password != form.confirm_password {
         return (StatusCode::BAD_REQUEST, page(ctx, "register", "register_mismatch")).into_response();
     }
-    let Ok(hash) = session::hash_password(&form.password) else {
+    let Ok(hash) = session::hash_password(&state.db, &form.password).await else {
         return (StatusCode::INTERNAL_SERVER_ERROR, page(ctx, "register", "register_failed"))
             .into_response();
     };

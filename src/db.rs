@@ -441,7 +441,7 @@ pub async fn treasure_effects(db: &Db, lang: &str, id: i64) -> Result<Vec<Effect
         effect_lines: Vec<EffectLineRow>,
     }
     let mut rows: Vec<Row> = db
-        .query("SELECT effect_lines FROM type::thing(\"treasure\", $id)")
+        .query("SELECT effect_lines FROM type::record(\"treasure\", $id)")
         .bind(("id", id))
         .await?
         .take(0)?;
@@ -701,7 +701,7 @@ pub async fn find_user(db: &Db, username: &str) -> Result<Option<User>> {
 pub async fn create_user(db: &Db, username: &str, password_hash: &str) -> Result<Option<User>> {
     let id = next_id(db, "user").await? + 1;
     let res = db
-        .query("CREATE type::thing(\"user\", $id) SET username = $u, password = $p, is_admin = false, created_at = time::unix();")
+        .query("CREATE type::record(\"user\", $id) SET username = $u, password = $p, is_admin = false, created_at = time::unix();")
         .bind(("id", id))
         .bind(("u", username.to_string()))
         .bind(("p", password_hash.to_string()))
@@ -1039,7 +1039,7 @@ async fn write_translation(
             tr: std::collections::BTreeMap<String, Tr>,
     }
     let mut wrap: TrWrap = db
-        .query("SELECT tr FROM type::thing($tb, $id)")
+        .query("SELECT tr FROM type::record($tb, $id)")
         .bind(("tb", table.to_string()))
         .bind(("id", id))
         .await?
@@ -1062,7 +1062,7 @@ async fn write_translation(
         }
         _ => entry.description = form.description.clone(),
     }
-    db.query("UPDATE type::thing($tb, $id) SET tr = $tr")
+    db.query("UPDATE type::record($tb, $id) SET tr = $tr")
         .bind(("tb", table.to_string()))
         .bind(("id", id))
         .bind(("tr", wrap.tr))
@@ -1109,7 +1109,7 @@ pub async fn treasure_links(db: &Db, lang: &str, id: i64) -> Result<TreasureLink
         base_treasure_id: Option<i64>,
     }
     let mut rows: Vec<Row> = db
-        .query("SELECT unlock_cookie_id, unlock_pet_id, base_treasure_id FROM type::thing(\"treasure\", $id)")
+        .query("SELECT unlock_cookie_id, unlock_pet_id, base_treasure_id FROM type::record(\"treasure\", $id)")
         .bind(("id", id))
         .await?
         .take(0)?;
@@ -1194,7 +1194,7 @@ pub async fn combi_edit_rows(
 
 /// Removes one combo pairing by record id.
 pub async fn delete_combi(db: &Db, row_id: i64) -> Result<()> {
-    db.query("DELETE type::thing(\"combi\", $id)")
+    db.query("DELETE type::record(\"combi\", $id)")
         .bind(("id", row_id))
         .await?
         .check()?;

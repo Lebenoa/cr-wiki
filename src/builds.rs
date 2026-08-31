@@ -419,7 +419,7 @@ pub async fn delete_build(db: &Db, id: i64) -> crate::db::Result<()> {
         .bind(("id", id))
         .await?
         .check()?;
-    db.query("DELETE type::thing(\"build\", $id)")
+    db.query("DELETE type::record(\"build\", $id)")
         .bind(("id", id))
         .await?
         .check()?;
