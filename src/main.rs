@@ -534,15 +534,17 @@ async fn live_db() -> Option<db::Db> {
             return;
         };
 
-        for sort in ["latest", "score", "coin", "time", "nonsense"] {
-            let rows = builds::select_builds(&pool, "en", (0, 0, 0, 0, 0), sort, 30, 0)
+        for sort in ["latest", "verified", "score", "coin", "time", "nonsense"] {
+            let rows = builds::select_builds(&pool, "en", (0, 0, 0, 0, 0), sort, "", 30, 0)
                 .await
                 .unwrap_or_else(|e| panic!("{sort}: {e}"));
             assert!(rows.len() <= 30);
         }
         // filters compose without tripping the SQL
-        assert!((builds::select_builds(&pool, "en", (89, 50, 317, 5, 0), "score", 30, 0)).await.is_ok());
-        assert!((builds::select_builds(&pool, "en", (0, 0, 0, 0, 2), "latest", 30, 0)).await.is_ok());
+        assert!((builds::select_builds(&pool, "en", (89, 50, 317, 5, 0), "score", "", 30, 0)).await.is_ok());
+        assert!((builds::select_builds(&pool, "en", (0, 0, 0, 0, 2), "latest", "", 30, 0)).await.is_ok());
+        // the author filter is bound, not inline, and empty means no filter
+        assert!((builds::select_builds(&pool, "en", (0, 0, 0, 0, 0), "latest", "alice", 30, 0)).await.is_ok());
         assert!(builds::select_build(&pool, "en", 999_999).await.unwrap().is_none());
 
         i18n::load("translations");

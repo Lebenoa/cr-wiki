@@ -23,6 +23,8 @@ struct BuildsPage {
     filter_pet: i64,
     filter_treasure: i64,
     ep: String,
+    /// free-text author filter, empty when unset
+    author: String,
 }
 
 #[derive(Template)]
@@ -36,6 +38,8 @@ struct BuildCards {
     filter_pet: i64,
     filter_treasure: i64,
     ep: String,
+    /// free-text author filter, empty when unset
+    author: String,
 }
 
 #[derive(Template)]
@@ -67,7 +71,7 @@ pub async fn list(
     let page = q.page.unwrap_or(1).max(1);
     let offset = (page - 1).saturating_mul(PAGE_SIZE);
     let sort = match q.sort.as_deref() {
-        Some(s @ ("score" | "coin" | "time")) => s.to_string(),
+        Some(s @ ("score" | "coin" | "time" | "verified")) => s.to_string(),
         _ => "latest".to_string(),
     };
     let ep_raw = q.ep.clone().unwrap_or_default();
@@ -75,12 +79,16 @@ pub async fn list(
     let filter_cookie = q.cookie.unwrap_or(0);
     let filter_pet = q.pet.unwrap_or(0);
     let filter_treasure = q.treasure.unwrap_or(0);
+    // bound as a parameter downstream; trimmed so a stray space cannot
+    // silently filter everything out
+    let author = q.author.clone().unwrap_or_default().trim().to_string();
 
     let rows = builds::select_builds(
         &state.db,
         &lang,
         (filter_cookie, filter_pet, filter_treasure, ep, ep_special),
         &sort,
+        &author,
         PAGE_SIZE,
         offset,
     )
@@ -98,6 +106,7 @@ pub async fn list(
             filter_pet,
             filter_treasure,
             ep: ep_raw,
+            author,
         }
         .render()
     } else {
@@ -110,6 +119,7 @@ pub async fn list(
             filter_pet,
             filter_treasure,
             ep: ep_raw,
+            author,
         }
         .render()
     };

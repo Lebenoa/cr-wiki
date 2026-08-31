@@ -8,19 +8,6 @@
         <input type="search" name="q" value="{{ q }}" class="filter-input"
             placeholder="{{ ctx.l.t("navbar_search_placeholder") }}" />
     </form>
-    {% if hits.is_empty() %}
-    <p class="text-center text-foreground-muted py-12">{{ ctx.l.t("search_no_results") }}</p>
-    {% else %}
-    <div class="catalog-grid">
-        {% for hit in hits %}
-        <a href="/{{ hit.0 }}/{{ hit.1.id }}" class="entity-card">
-            {% match hit.1.image %}{% when Some with (img) %}
-            <img src="/img/{{ hit.0 }}/{{ img }}" alt="{{ hit.1.name }}" class="h-20 w-full object-contain">
-            {% when None %}{% endmatch %}
-            <span class="card-title">{{ hit.1.name }}</span>
-        </a>
-        {% endfor %}
-    </div>
-    {% endif %}
+    {% include "search_results.html" %}
 </section>
 {% endblock %}

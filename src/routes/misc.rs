@@ -29,6 +29,16 @@ struct SearchPage {
     hits: Vec<(String, Card)>,
 }
 
+/// The dropdown body the navbar swaps into `#search-results`: the same hits as
+/// the full page, without the page shell. One template serves both so the two
+/// views cannot drift.
+#[derive(Template)]
+#[template(path = "search_results.html")]
+struct SearchResults {
+    ctx: Ctx,
+    hits: Vec<(String, Card)>,
+}
+
 pub async fn search(
     State(state): State<AppState>,
     ctx: Ctx,
@@ -36,11 +46,12 @@ pub async fn search(
 ) -> Html<String> {
     let query = q.q.clone().unwrap_or_default();
     let hits = db::search(&state.db, &ctx.lang, &query, 20).await.unwrap_or_default();
-    Html(
-        SearchPage { ctx, q: query, hits }
-            .render()
-            .unwrap_or_else(|e| format!("template error: {e}")),
-    )
+    let html = if ctx.is_fragment() {
+        SearchResults { ctx, hits }.render()
+    } else {
+        SearchPage { ctx, q: query, hits }.render()
+    };
+    Html(html.unwrap_or_else(|e| format!("template error: {e}")))
 }
 
 #[derive(Template)]

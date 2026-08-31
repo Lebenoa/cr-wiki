@@ -69,4 +69,7 @@ pub struct CommonQuery {
     pub kind: Option<String>,
     /// where /api/set-lang should return to
     pub next: Option<String>,
+    /// the build list's free-text author filter
+    #[serde(default)]
+    pub author: Option<String>,
 }

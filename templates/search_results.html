@@ -1,0 +1,15 @@
+{% if hits.is_empty() %}
+<p class="text-center text-foreground-muted py-4 px-2">{{ ctx.l.t("search_no_results") }}</p>
+{% else %}
+{% for hit in hits %}
+<a href="/{{ hit.0 }}/{{ hit.1.id }}" class="flex items-center gap-3 rounded-lg p-2 hover:bg-surface transition-colors">
+    {% match hit.1.image %}{% when Some with (img) %}
+    <img src="/img/{{ hit.0 }}/{{ img }}" alt="{{ hit.1.name }}" class="size-10 object-contain shrink-0">
+    {% when None %}{% endmatch %}
+    <span class="flex flex-col min-w-0">
+        <span class="card-title truncate">{{ hit.1.name }}</span>
+        <span class="text-xs text-foreground-muted">{{ ctx.l.t(hit.0) }}</span>
+    </span>
+</a>
+{% endfor %}
+{% endif %}

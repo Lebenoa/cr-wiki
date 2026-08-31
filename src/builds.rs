@@ -28,7 +28,6 @@ pub struct BuildCard {
     pub description: String,
     pub youtube_url: String,
     /// stamped onto the record on insert; edits never touch it
-    #[allow(dead_code)]
     pub author: String,
     pub user_id: i64,
     /// anonymous builds expire; signed-in ones do not
@@ -198,6 +197,7 @@ pub async fn select_builds(
     lang: &str,
     filter: (i64, i64, i64, i64, i64),
     sort: &str,
+    author: &str,
     limit: i64,
     offset: i64,
 ) -> crate::db::Result<Vec<BuildCard>> {
@@ -220,28 +220,46 @@ pub async fn select_builds(
     if f_ep_special > 0 {
         where_sql.push_str(&format!(" AND ep_special = {f_ep_special}"));
     }
-    select_where(db, lang, &where_sql, sort, limit, offset).await
+    select_where(db, lang, &where_sql, sort, author, limit, offset).await
 }
 
 /// The shared body: a WHERE fragment the callers assemble, then the batched
 /// entity lookups. `select_build` reuses it so the expiry rule lives once.
+///
+/// The expiry WHERE carries `expires_at = 0` because a permanent build stores
+/// an explicit 0 (the insert binds `unwrap_or(0)`), and `IS NONE` never matches
+/// a stored zero — the plain `> $now` test alone would hide every signed-in
+/// author's builds.
 async fn select_where(
     db: &Db,
     lang: &str,
     filter_sql: &str,
     sort: &str,
+    author: &str,
     limit: i64,
     offset: i64,
 ) -> crate::db::Result<Vec<BuildCard>> {
     let now = now_unix();
 
-    // the id is the tie-break on every sort, so paging cannot repeat a row
-    let order = match sort {
-        "score" => "score DESC, id DESC",
-        "coin" => "coin DESC, id DESC",
-        "time" => "time ASC, id DESC",
-        _ => "created_at DESC, id DESC",
+    // the id is the tie-break on every sort, so paging cannot repeat a row.
+    // The verified count rides the projection as an alias because SurrealDB v3
+    // refuses an ORDER BY term that the projection does not name.
+    let (order, ok_select) = match sort {
+        "score" => ("score DESC, id DESC", ""),
+        "coin" => ("coin DESC, id DESC", ""),
+        "time" => ("time ASC, id DESC", ""),
+        "verified" => (
+            "verified_ok DESC, id DESC",
+            ",
+                array::len((SELECT id FROM review
+                             WHERE build_id = record::id($parent.id)
+                               AND verified = true)) AS verified_ok",
+        ),
+        _ => ("created_at DESC, id DESC", ""),
     };
+
+    // free text filters travel as bound parameters, never inline
+    let author_filter = if author.is_empty() { "" } else { " AND author = $author" };
 
     let sql = format!(
         "SELECT record::id(id) AS id, cookie_id, cookie2_id, pet_id,
@@ -249,13 +267,17 @@ async fn select_where(
                 treasure1_blessed, treasure2_blessed, treasure3_blessed,
                 treasure1_level, treasure2_level, treasure3_level,
                 ep, ep_special, tag, boosts, boost, score, coin, time, boxes,
-                description, youtube_url, author, user_id, expires_at, created_at
+                description, youtube_url, author, user_id, expires_at, created_at{ok_select}
            FROM build
-          WHERE (expires_at IS NONE OR expires_at > $now){filter_sql}
+          WHERE (expires_at IS NONE OR expires_at = 0 OR expires_at > $now){author_filter}{filter_sql}
           ORDER BY {order}
           LIMIT {limit} START {offset}"
     );
-    let rows: Vec<BuildRow> = db.query(&sql).bind(("now", now)).await?.take(0)?;
+    let mut q = db.query(&sql).bind(("now", now));
+    if !author.is_empty() {
+        q = q.bind(("author", author.to_string()));
+    }
+    let rows: Vec<BuildRow> = q.await?.take(0)?;
 
     // the entities come back in three batched queries rather than one per
     // slot per build, which is what the V lookups do
@@ -301,7 +323,7 @@ fn push_id(list: &mut Vec<i64>, id: i64) {
 /// One build by id, through the same query so the expiry rule cannot drift:
 /// an expired anonymous build is simply not found.
 pub async fn select_build(db: &Db, lang: &str, id: i64) -> crate::db::Result<Option<BuildCard>> {
-    let found = select_where(db, lang, &format!(" AND id = {id}"), "latest", 1, 0).await?;
+    let found = select_where(db, lang, &format!(" AND record::id(id) = {id}"), "latest", "", 1, 0).await?;
     Ok(found.into_iter().next())
 }
 

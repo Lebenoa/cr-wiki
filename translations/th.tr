@@ -799,8 +799,14 @@ build_sort_coin
 build_sort_time
 เวลาน้อยสุด
 -----
+build_sort_verified
+ยืนยันมากสุด
+-----
 build_sort_latest
 ล่าสุด
+-----
+build_search_author_placeholder
+กรองตามชื่อผู้โพสต์
 -----
 build_anonymous
 ผู้ไม่ระบุชื่อ

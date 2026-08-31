@@ -37,9 +37,15 @@
             </select>
         </label>
         <label class="flex flex-col gap-1 text-xs font-label uppercase text-foreground-muted">
+            {{ ctx.l.t("build_author_label") }}
+            <input type="text" name="author" value="{{ author }}" class="filter-input"
+                placeholder="{{ ctx.l.t("build_search_author_placeholder") }}" />
+        </label>
+        <label class="flex flex-col gap-1 text-xs font-label uppercase text-foreground-muted">
             {{ ctx.l.t("build_sort_label") }}
             <select name="sort" class="filter-input">
                 <option value="latest" {% if sort == "latest" %}selected{% endif %}>{{ ctx.l.t("build_sort_latest") }}</option>
+                <option value="verified" {% if sort == "verified" %}selected{% endif %}>{{ ctx.l.t("build_sort_verified") }}</option>
                 <option value="score" {% if sort == "score" %}selected{% endif %}>{{ ctx.l.t("build_sort_score") }}</option>
                 <option value="coin" {% if sort == "coin" %}selected{% endif %}>{{ ctx.l.t("build_sort_coin") }}</option>
                 <option value="time" {% if sort == "time" %}selected{% endif %}>{{ ctx.l.t("build_sort_time") }}</option>

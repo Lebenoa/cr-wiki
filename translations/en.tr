@@ -799,8 +799,14 @@ Most Coins
 build_sort_time
 Best Time
 -----
+build_sort_verified
+Most Verified
+-----
 build_sort_latest
 Newest
+-----
+build_search_author_placeholder
+Filter by author
 -----
 build_anonymous
 Anonymous

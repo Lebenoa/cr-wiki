@@ -22,7 +22,7 @@
 <p class="text-center text-foreground-muted py-12">{{ ctx.l.t("build_empty_list") }}</p>
 {% endif %}
 {% if next_page > 0 %}
-<div hx-get="/builds?sort={{ sort }}&cookie={{ filter_cookie }}&pet={{ filter_pet }}&treasure={{ filter_treasure }}&ep={{ ep }}&page={{ next_page }}"
+<div hx-get="/builds?sort={{ sort }}&cookie={{ filter_cookie }}&pet={{ filter_pet }}&treasure={{ filter_treasure }}&ep={{ ep }}&author={{ author }}&page={{ next_page }}"
     hx-trigger="revealed" hx-swap="outerHTML"></div>
 {% else %}
 <div></div>
