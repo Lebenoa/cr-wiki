@@ -1,9 +1,11 @@
-//! Rust port of the `CookieRun` fan wiki (see `AGENTS.md` for the V
-//! original).
-//!
-//! Ported so far: config, the `.tr` catalogs, the SQLite pool, static files,
-//! and the `/changelog` and `/cookies` pages. Everything else still lives in
-//! the V app next door; see `PORTING.md` for the running list.
+//! `CookieRun` fan wiki: catalogs, community builds, the planner and admin
+//! editing, served by axum + askama against an external `SurrealDB` server
+//! configured in `Config.toml`'s `[surreal]`. The old-to-new map from the
+//! original V app lives in `PORTING.md`.
+
+// `unwrap`/`expect`/`panic` are denied crate-wide (Cargo.toml `[lints]`);
+// tests use them freely, production code does not.
+#![cfg_attr(test, allow(clippy::unwrap_used, clippy::expect_used, clippy::panic))]
 
 mod builds;
 mod changelog;
@@ -19,8 +21,10 @@ mod prefill;
 mod ratelimit;
 mod richtext;
 mod routes;
+mod section;
 mod session;
 mod state;
+mod time;
 mod turnstile;
 mod upload;
 
@@ -34,12 +38,14 @@ use tower_http::services::{ServeDir, ServeFile};
 
 use state::AppState;
 
+/// Router assembly in one function: the layer order (rate limit, then
+/// locale, then routes) is the thing worth seeing whole.
+#[allow(clippy::too_many_lines)] // splitting it would hide the middleware order
 #[tokio::main]
 async fn main() {
     tracing_subscriber::fmt()
         .with_env_filter(
-            tracing_subscriber::EnvFilter::try_from_default_env()
-                .unwrap_or_else(|_| "info".into()),
+            tracing_subscriber::EnvFilter::try_from_default_env().unwrap_or_else(|_| "info".into()),
         )
         .init();
 
@@ -82,7 +88,10 @@ async fn main() {
         .route("/builds", get(routes::builds::list))
         .route("/builds/options/{kind}", get(routes::picker::options_grid))
         .route("/builds/preview", get(routes::picker::preview))
-        .route("/builds/new", get(routes::planner::new_form).post(routes::planner::create))
+        .route(
+            "/builds/new",
+            get(routes::planner::new_form).post(routes::planner::create),
+        )
         .route("/builds/{id}/delete", post(routes::planner::delete))
         .route("/builds/{id}/verify", post(routes::planner::verify))
         .route(
@@ -90,8 +99,14 @@ async fn main() {
             get(routes::planner::edit_form).post(routes::planner::update),
         )
         .route("/builds/{id}", get(routes::builds::show))
-        .route("/login", get(routes::auth::login_form).post(routes::auth::login))
-        .route("/register", get(routes::auth::register_form).post(routes::auth::register))
+        .route(
+            "/login",
+            get(routes::auth::login_form).post(routes::auth::login),
+        )
+        .route(
+            "/register",
+            get(routes::auth::register_form).post(routes::auth::register),
+        )
         .route("/logout", get(routes::auth::logout))
         // the admin routes are registered before the catalog captures, so
         // /cookies/new is a form rather than a detail page for id "new"
@@ -142,8 +157,11 @@ async fn main() {
         }
     };
     tracing::info!("listening on {addr}");
-    if let Err(e) =
-        axum::serve(listener, app.into_make_service_with_connect_info::<SocketAddr>()).await
+    if let Err(e) = axum::serve(
+        listener,
+        app.into_make_service_with_connect_info::<SocketAddr>(),
+    )
+    .await
     {
         tracing::error!("server error: {e}");
     }
@@ -174,7 +192,10 @@ mod tests {
         assert!(i18n::available_langs().contains(&"en".to_string()));
         assert!(i18n::available_langs().contains(&"th".to_string()));
         assert_eq!(i18n::t("en", "changelog_page_header"), "Changelog");
-        assert_eq!(i18n::t("en", "changelog_unavailable"), "No changelog available.");
+        assert_eq!(
+            i18n::t("en", "changelog_unavailable"),
+            "No changelog available."
+        );
         assert_ne!(i18n::t("th", "changelog_page_header"), "Changelog");
         // a miss falls back to English, then to the key itself
         assert_eq!(i18n::t("th", "no_such_key_at_all"), "no_such_key_at_all");
@@ -221,7 +242,9 @@ mod tests {
         assert_eq!(rows.len(), 30);
         assert!(rows.iter().all(|c| !c.name.is_empty()));
 
-        let th = db::select_cookies(&pool, "th", 5, 0).await.expect("query th");
+        let th = db::select_cookies(&pool, "th", 5, 0)
+            .await
+            .expect("query th");
         assert_eq!(th.len(), 5);
         // the th page still carries the English name for cross-language search
         assert!(th.iter().all(|c| !c.en_name.is_empty()));
@@ -231,7 +254,11 @@ mod tests {
     #[test]
     fn templates_render() {
         i18n::load("translations");
-        let entries = changelog::entries().iter().take(3).cloned().collect::<Vec<_>>();
+        let entries = changelog::entries()
+            .iter()
+            .take(3)
+            .cloned()
+            .collect::<Vec<_>>();
         let page = TestChangelog {
             ctx: test_ctx("en"),
             entries,
@@ -260,17 +287,18 @@ mod tests {
         page: i64,
     }
 
-
-/// Connects to the integration server when CR_SURREAL_URL is set; tests that
-/// need data skip otherwise, so `cargo test` stays green without a server.
-async fn live_db() -> Option<db::Db> {
-    let url = std::env::var("CR_SURREAL_URL").ok()?;
-    let ns = std::env::var("CR_SURREAL_NS").unwrap_or_else(|_| "cookierun".into());
-    let database = std::env::var("CR_SURREAL_DB").unwrap_or_else(|_| "cookierun".into());
-    let user = std::env::var("SURREAL_USER").unwrap_or_else(|_| "root".into());
-    let pass = std::env::var("SURREAL_PASS").unwrap_or_default();
-    db::connect_url(&url, &ns, &database, &user, &pass).await.ok()
-}
+    /// Connects to the integration server when `CR_SURREAL_URL` is set; tests that
+    /// need data skip otherwise, so `cargo test` stays green without a server.
+    async fn live_db() -> Option<db::Db> {
+        let url = std::env::var("CR_SURREAL_URL").ok()?;
+        let ns = std::env::var("CR_SURREAL_NS").unwrap_or_else(|_| "cookierun".into());
+        let database = std::env::var("CR_SURREAL_DB").unwrap_or_else(|_| "cookierun".into());
+        let user = std::env::var("SURREAL_USER").unwrap_or_else(|_| "root".into());
+        let pass = std::env::var("SURREAL_PASS").unwrap_or_default();
+        db::connect_url(&url, &ns, &database, &user, &pass)
+            .await
+            .ok()
+    }
 
     /// A context standing in for one resolved off a real request.
     fn test_ctx(lang: &str) -> ctx::Ctx {
@@ -291,8 +319,8 @@ async fn live_db() -> Option<db::Db> {
     /// cookie to be written.
     #[test]
     fn lang_resolution() {
-        i18n::load("translations");
         use axum::http::{HeaderMap, HeaderValue};
+        i18n::load("translations");
 
         let empty = HeaderMap::new();
         let c = ctx::resolve_lang(None, &empty);
@@ -328,15 +356,26 @@ async fn live_db() -> Option<db::Db> {
         let trusted = vec!["10.0.0.9".to_string()];
 
         let mut h = HeaderMap::new();
-        h.insert("X-Forwarded-For", HeaderValue::from_static("1.2.3.4, 5.6.7.8"));
+        h.insert(
+            "X-Forwarded-For",
+            HeaderValue::from_static("1.2.3.4, 5.6.7.8"),
+        );
         // untrusted peer: the spoofable header loses
         assert_eq!(ctx::client_ip(&h, Some(peer), &[]), "10.0.0.9");
         assert_eq!(ctx::client_ip(&h, None, &trusted), "unknown");
         // trusted peer: the first XFF hop stands in for the visitor
-        assert_eq!(ctx::client_ip(&h, Some(peer), &trusted), "1.2.3.4", "first hop, not the chain");
+        assert_eq!(
+            ctx::client_ip(&h, Some(peer), &trusted),
+            "1.2.3.4",
+            "first hop, not the chain"
+        );
 
         h.insert("CF-Connecting-IP", HeaderValue::from_static("9.9.9.9"));
-        assert_eq!(ctx::client_ip(&h, Some(peer), &trusted), "9.9.9.9", "CF wins over XFF");
+        assert_eq!(
+            ctx::client_ip(&h, Some(peer), &trusted),
+            "9.9.9.9",
+            "CF wins over XFF"
+        );
         assert_eq!(ctx::client_ip(&h, Some(peer), &[]), "10.0.0.9");
     }
 
@@ -345,25 +384,40 @@ async fn live_db() -> Option<db::Db> {
     /// drives the algorithm directly.
     #[test]
     fn token_bucket_drains_and_refills() {
-        let cfg = config::RateLimit { capacity: 3.0, refill: 1.0, idle_ttl: 300, sweep_above: 2048, trusted_proxies: Vec::new() };
+        let cfg = config::RateLimit {
+            capacity: 3.0,
+            refill: 1.0,
+            idle_ttl: 300,
+            sweep_above: 2048,
+            trusted_proxies: Vec::new(),
+        };
         let limiter = ratelimit::Limiter::new(cfg);
 
         // Debug builds bypass limiting entirely (see Limiter::check); the
         // drain/refill/deny algorithm is exercised by `cargo test --release`.
         #[cfg(debug_assertions)]
-        assert!(matches!(limiter.check("1.1.1.1"), ratelimit::Decision::Allow));
+        assert!(matches!(
+            limiter.check("1.1.1.1"),
+            ratelimit::Decision::Allow
+        ));
 
         #[cfg(not(debug_assertions))]
         {
             for _ in 0..3 {
-                assert!(matches!(limiter.check("1.1.1.1"), ratelimit::Decision::Allow));
+                assert!(matches!(
+                    limiter.check("1.1.1.1"),
+                    ratelimit::Decision::Allow
+                ));
             }
             match limiter.check("1.1.1.1") {
                 ratelimit::Decision::Deny(after) => assert!(after >= 1),
                 ratelimit::Decision::Allow => panic!("bucket should be empty"),
             }
             // a different IP has its own bucket
-            assert!(matches!(limiter.check("2.2.2.2"), ratelimit::Decision::Allow));
+            assert!(matches!(
+                limiter.check("2.2.2.2"),
+                ratelimit::Decision::Allow
+            ));
         }
     }
 
@@ -384,19 +438,31 @@ async fn live_db() -> Option<db::Db> {
         assert!(pets.iter().all(|p| !p.en_name.is_empty()));
 
         // the tabs partition the treasures rather than overlapping
-        let all = db::select_treasures(&pool, "en", "all", 30, 0).await.unwrap();
-        let normal = db::select_treasures(&pool, "en", "normal", 30, 0).await.unwrap();
-        let evo = db::select_treasures(&pool, "en", "evo", 30, 0).await.unwrap();
+        let all = db::select_treasures(&pool, "en", "all", 30, 0)
+            .await
+            .unwrap();
+        let normal = db::select_treasures(&pool, "en", "normal", 30, 0)
+            .await
+            .unwrap();
+        let evo = db::select_treasures(&pool, "en", "evo", 30, 0)
+            .await
+            .unwrap();
         assert_eq!(all.len(), 30);
         assert!(normal.iter().all(|t| !t.is_evolved));
         assert!(evo.iter().all(|t| t.is_evolved));
 
         for kind in ["episodes", "ingredients", "jellies", "skins", "relics"] {
-            assert!(!db::select_simple(&pool, "en", kind).await.unwrap().is_empty(), "{kind} empty");
+            assert!(
+                !db::select_simple(&pool, "en", kind)
+                    .await
+                    .unwrap()
+                    .is_empty(),
+                "{kind} empty"
+            );
         }
     }
 
-    /// Grade ordering follows grade_values, where E outranks L.
+    /// Grade ordering follows `grade_values`, where E outranks L.
     #[test]
     fn grade_ordering() {
         assert_eq!(grade::slug(5), "s_plus");
@@ -415,18 +481,30 @@ async fn live_db() -> Option<db::Db> {
             return;
         };
 
-        let cookie = db::select_detail(&pool, "en", "cookies", 89).await.unwrap().expect("cookie 89");
+        let cookie = db::select_detail(&pool, "en", "cookies", 89)
+            .await
+            .unwrap()
+            .expect("cookie 89");
         assert!(!cookie.name.is_empty());
         assert!(!cookie.abilities.is_empty());
 
         // a treasure has no abilities column, and effects come with ladders
-        let treasure = db::select_detail(&pool, "en", "treasures", 317).await.unwrap().expect("treasure");
+        let treasure = db::select_detail(&pool, "en", "treasures", 317)
+            .await
+            .unwrap()
+            .expect("treasure");
         assert!(treasure.abilities.is_empty());
         let effects = db::treasure_effects(&pool, "en", 317).await.unwrap();
         assert!(!effects.is_empty());
-        assert!(effects.iter().all(|e| e.values.len() == 10), "ten levels per effect");
+        assert!(
+            effects.iter().all(|e| e.values.len() == 10),
+            "ten levels per effect"
+        );
 
-        assert!(db::select_detail(&pool, "en", "cookies", 99999).await.unwrap().is_none());
+        assert!(db::select_detail(&pool, "en", "cookies", 99999)
+            .await
+            .unwrap()
+            .is_none());
     }
 
     /// Rich text: links resolve with their sprite, colours are constrained,
@@ -438,26 +516,31 @@ async fn live_db() -> Option<db::Db> {
             return;
         };
 
-        let out = richtext::render(&pool, "en", "see [[89]] here").await;
+        let mut memo = richtext::LinkCache::new();
+        let out = richtext::render_with(&pool, "en", "see [[89]] here", &mut memo).await;
         assert!(out.contains("href=\"/cookies/89\""));
         assert!(out.contains("<img src=\"/img/cookies/"));
 
         // an unresolvable ref stays literal
-        let miss = richtext::render(&pool, "en", "[[cookie:99999999]]").await;
+        let miss = richtext::render_with(&pool, "en", "[[cookie:99999999]]", &mut memo).await;
         assert!(miss.contains("[[cookie:99999999]]"));
 
-        let colored = richtext::render(&pool, "en", "a {color:red}red{/color} word").await;
+        let colored =
+            richtext::render_with(&pool, "en", "a {color:red}red{/color} word", &mut memo).await;
         assert!(colored.contains("<span style=\"color:red\">red</span>"));
 
         // an injection attempt is not a valid colour, so the whole thing
         // renders as text: no span is opened and the quotes come out escaped
-        let bad = richtext::render(&pool, "en", "{color:red\" onclick=\"x}y{/color}").await;
+        let bad =
+            richtext::render_with(&pool, "en", "{color:red\" onclick=\"x}y{/color}", &mut memo)
+                .await;
         assert!(!bad.contains("<span style="), "{bad}");
         assert!(!bad.contains("onclick=\""), "{bad}");
         assert!(bad.contains("&quot;"), "{bad}");
 
         // pasted markup is escaped
-        let script = richtext::render(&pool, "en", "<script>alert(1)</script>").await;
+        let script =
+            richtext::render_with(&pool, "en", "<script>alert(1)</script>", &mut memo).await;
         assert!(!script.contains("<script>"));
         assert!(script.contains("&lt;script&gt;"));
     }
@@ -472,7 +555,9 @@ async fn live_db() -> Option<db::Db> {
         };
 
         let en = db::search(&pool, "en", "kaymak", 20).await.unwrap();
-        assert!(en.iter().any(|(section, c)| section == "cookies" && c.name.contains("Kaymak")));
+        assert!(en
+            .iter()
+            .any(|(section, c)| section == "cookies" && c.name.contains("Kaymak")));
 
         // a th page still finds an entity by its English name
         let th = db::search(&pool, "th", "wizard", 20).await.unwrap();
@@ -489,7 +574,7 @@ async fn live_db() -> Option<db::Db> {
         assert!(db::search(&pool, "en", "   ", 20).await.unwrap().is_empty());
     }
 
-    /// Argon2 in PHC form, through SurrealDB's crypto functions: a hash
+    /// Argon2 in PHC form, through `SurrealDB`'s crypto functions: a hash
     /// verifies, a wrong password does not, and two hashes of the same
     /// password differ because the salt is fresh.
     #[tokio::test]
@@ -499,11 +584,18 @@ async fn live_db() -> Option<db::Db> {
             return;
         };
 
-        let hash = session::hash_password(&pool, "correct horse").await.expect("hash");
-        assert!(hash.starts_with("$argon2"), "PHC format, so V can read it: {hash}");
+        let hash = session::hash_password(&pool, "correct horse")
+            .await
+            .expect("hash");
+        assert!(
+            hash.starts_with("$argon2"),
+            "PHC format, so V can read it: {hash}"
+        );
         assert!(session::verify_password(&pool, "correct horse", &hash).await);
         assert!(!session::verify_password(&pool, "wrong horse", &hash).await);
-        let again = session::hash_password(&pool, "correct horse").await.expect("hash");
+        let again = session::hash_password(&pool, "correct horse")
+            .await
+            .expect("hash");
         assert_ne!(hash, again, "salt must be fresh per hash");
         assert!(!session::verify_password(&pool, "correct horse", "not-a-hash").await);
     }
@@ -542,18 +634,40 @@ async fn live_db() -> Option<db::Db> {
             assert!(rows.len() <= 30);
         }
         // filters compose without tripping the SQL
-        assert!((builds::select_builds(&pool, "en", (89, 50, 317, 5, 0), "score", "", 30, 0)).await.is_ok());
-        assert!((builds::select_builds(&pool, "en", (0, 0, 0, 0, 2), "latest", "", 30, 0)).await.is_ok());
+        assert!(
+            (builds::select_builds(&pool, "en", (89, 50, 317, 5, 0), "score", "", 30, 0))
+                .await
+                .is_ok()
+        );
+        assert!(
+            (builds::select_builds(&pool, "en", (0, 0, 0, 0, 2), "latest", "", 30, 0))
+                .await
+                .is_ok()
+        );
         // the author filter is bound, not inline, and empty means no filter
-        assert!((builds::select_builds(&pool, "en", (0, 0, 0, 0, 0), "latest", "alice", 30, 0)).await.is_ok());
-        assert!(builds::select_build(&pool, "en", 999_999).await.unwrap().is_none());
+        assert!(
+            (builds::select_builds(&pool, "en", (0, 0, 0, 0, 0), "latest", "alice", 30, 0))
+                .await
+                .is_ok()
+        );
+        assert!(builds::select_build(&pool, "en", 999_999)
+            .await
+            .unwrap()
+            .is_none());
 
         i18n::load("translations");
         let c = test_ctx("en");
-        let mut b = builds::BuildCard { ep: 5, ..Default::default() };
+        let mut b = builds::BuildCard {
+            ep: 5,
+            ..Default::default()
+        };
         assert_eq!(b.ep_label(&c), "EP 5");
         b.ep_special = 2;
-        assert_eq!(b.ep_label(&c), "Special EP 2", "a special tier wins over the plain one");
+        assert_eq!(
+            b.ep_label(&c),
+            "Special EP 2",
+            "a special tier wins over the plain one"
+        );
         b.time_ms = 95_400;
         assert_eq!(b.time_label(), "1:35");
         b.time_ms = 0;
@@ -571,12 +685,18 @@ async fn live_db() -> Option<db::Db> {
             return;
         };
 
-        let cookies = options::options(&pool, "en", "cookie").await;
+        let cookies = options::options(&pool, "en", "cookie")
+            .await
+            .expect("cookie options");
         assert_eq!(cookies.len(), 94);
-        let pets = options::options(&pool, "en", "pet").await;
+        let pets = options::options(&pool, "en", "pet")
+            .await
+            .expect("pet options");
         assert_eq!(pets.len(), 101, "the two phantom Sotdae pets are gone");
 
-        let treasures = options::options(&pool, "en", "treasure").await;
+        let treasures = options::options(&pool, "en", "treasure")
+            .await
+            .expect("treasure options");
         assert!(treasures.len() > 700);
         // Power+ treasures are friendly-run bonuses and cannot be equipped
         assert!(treasures.iter().any(|t| !t.effects.is_empty()));
@@ -585,19 +705,40 @@ async fn live_db() -> Option<db::Db> {
             .find(|t| t.effects.iter().any(|e| !e.values.is_empty()))
             .expect("a treasure with a ladder");
         assert_eq!(
-            with_ladder.effects.iter().find(|e| !e.values.is_empty()).unwrap().values.len(),
+            with_ladder
+                .effects
+                .iter()
+                .find(|e| !e.values.is_empty())
+                .unwrap()
+                .values
+                .len(),
             10
         );
 
         // the grade order puts the highest first, and E outranks L
-        let ranks: Vec<i64> = treasures.iter().filter_map(|t| t.grade).map(grade::rank).collect();
-        assert!(ranks.windows(2).all(|w| w[0] >= w[1]), "grade order is not monotonic");
+        let ranks: Vec<i64> = treasures
+            .iter()
+            .filter_map(|t| t.grade)
+            .map(grade::rank)
+            .collect();
+        assert!(
+            ranks.windows(2).all(|w| w[0] >= w[1]),
+            "grade order is not monotonic"
+        );
 
         // second call comes from the cache
-        let again = options::options(&pool, "en", "cookie").await;
+        let again = options::options(&pool, "en", "cookie")
+            .await
+            .expect("cookie options");
         assert_eq!(again.len(), cookies.len());
         options::invalidate();
-        assert_eq!(options::options(&pool, "en", "cookie").await.len(), cookies.len());
+        assert_eq!(
+            options::options(&pool, "en", "cookie")
+                .await
+                .expect("cookie options")
+                .len(),
+            cookies.len()
+        );
     }
 
     /// Turnstile refuses rather than waves through when it is misconfigured.
@@ -733,7 +874,7 @@ async fn live_db() -> Option<db::Db> {
         use db::EffectLine;
         let line = |text: &str, v: &[&str], blessed: bool| EffectLine {
             text: text.into(),
-            values: v.iter().map(|s| s.to_string()).collect(),
+            values: v.iter().map(ToString::to_string).collect(),
             blessed,
         };
 
@@ -764,11 +905,19 @@ async fn live_db() -> Option<db::Db> {
             return;
         };
 
-        let rows = db::combi_edit_rows(&pool, "en", "cookies", 89).await.expect("rows");
+        let rows = db::combi_edit_rows(&pool, "en", "cookies", 89)
+            .await
+            .expect("rows");
         assert!(!rows.is_empty(), "cookie 89 pairs with a pet");
-        assert!(rows.iter().all(|r| r.id > 0), "every row carries its own id");
+        assert!(
+            rows.iter().all(|r| r.id > 0),
+            "every row carries its own id"
+        );
         assert!(rows.iter().all(|r| !r.partner_name.is_empty()));
-        assert!(db::combi_edit_rows(&pool, "en", "treasures", 1).await.unwrap().is_empty());
+        assert!(db::combi_edit_rows(&pool, "en", "treasures", 1)
+            .await
+            .unwrap()
+            .is_empty());
     }
 
     /// The sitemap covers every detail id the six sections hold.
@@ -780,8 +929,18 @@ async fn live_db() -> Option<db::Db> {
         };
 
         let entries = db::sitemap_entries(&pool).await.unwrap();
-        for section in ["cookies", "pets", "treasures", "episodes", "ingredients", "jellies"] {
-            assert!(entries.iter().any(|(s, _)| s == section), "{section} missing");
+        for section in [
+            "cookies",
+            "pets",
+            "treasures",
+            "episodes",
+            "ingredients",
+            "jellies",
+        ] {
+            assert!(
+                entries.iter().any(|(s, _)| s == section),
+                "{section} missing"
+            );
         }
         assert!(entries.len() > 1000);
     }

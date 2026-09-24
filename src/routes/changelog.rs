@@ -39,7 +39,10 @@ pub async fn page(ctx: Ctx, q: Query<CommonQuery>) -> Html<String> {
             } else {
                 String::new()
             };
-            let window = all.get(start..end).map(<[changelog::ChangeEntry]>::to_vec).unwrap_or_default();
+            let window = all
+                .get(start..end)
+                .map(<[changelog::ChangeEntry]>::to_vec)
+                .unwrap_or_default();
             (window, next)
         }
         None => (Vec::new(), String::new()),
@@ -48,9 +51,21 @@ pub async fn page(ctx: Ctx, q: Query<CommonQuery>) -> Html<String> {
     // an infinite-scroll swap wants the rows alone; an hx-boosted navigation
     // is still a page load and wants the whole document
     let html = if ctx.is_fragment() {
-        ChangelogEntries { ctx, entries, next_url, page }.render()
+        ChangelogEntries {
+            ctx,
+            entries,
+            next_url,
+            page,
+        }
+        .render()
     } else {
-        ChangelogPage { ctx, entries, next_url, page }.render()
+        ChangelogPage {
+            ctx,
+            entries,
+            next_url,
+            page,
+        }
+        .render()
     };
     Html(html.unwrap_or_else(|e| format!("template error: {e}")))
 }

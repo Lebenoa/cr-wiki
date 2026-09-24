@@ -38,3 +38,20 @@ pub fn label(value: i64) -> String {
     }
 }
 
+/// The three accessors every graded view repeats: one `grade` method per
+/// struct, slug/label/has shared here so the pair cannot drift apart.
+/// Askama templates call these on the context structs, so the trait must be
+/// in scope wherever a template struct wraps a graded type.
+pub trait Graded {
+    fn grade(&self) -> Option<i64>;
+    fn grade_slug(&self) -> String {
+        self.grade()
+            .map_or_else(String::new, |g| slug(g).to_string())
+    }
+    fn grade_label(&self) -> String {
+        self.grade().map_or_else(String::new, label)
+    }
+    fn has_grade(&self) -> bool {
+        self.grade().is_some()
+    }
+}

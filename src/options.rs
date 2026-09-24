@@ -8,11 +8,11 @@
 //! did.
 
 use std::collections::HashMap;
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex, MutexGuard, PoisonError};
 
 use surrealdb::engine::any::Any;
-use surrealdb::Surreal;
 use surrealdb::types::SurrealValue;
+use surrealdb::Surreal;
 
 use crate::grade;
 
@@ -32,21 +32,18 @@ pub struct PickerOption {
 }
 
 impl PickerOption {
-    pub fn grade_slug(&self) -> String {
-        self.grade.map_or_else(String::new, |g| grade::slug(g).to_string())
-    }
-    pub fn grade_label(&self) -> String {
-        self.grade.map_or_else(String::new, grade::label)
-    }
-    pub const fn has_grade(&self) -> bool {
-        self.grade.is_some()
-    }
     /// A blessed set worth toggling between: present, and different from the
     /// normal one.
     pub fn has_blessed_toggle(&self) -> bool {
         !self.effects_blessed.is_empty()
             && !self.effects.is_empty()
             && self.effects_blessed != self.effects
+    }
+}
+
+impl grade::Graded for PickerOption {
+    fn grade(&self) -> Option<i64> {
+        self.grade
     }
 }
 
@@ -69,14 +66,23 @@ impl EffectOption {
 }
 #[derive(Default)]
 struct Cache {
-    cookies: HashMap<String, Vec<PickerOption>>,
-    pets: HashMap<String, Vec<PickerOption>>,
-    treasures: HashMap<String, Vec<PickerOption>>,
+    cookies: HashMap<String, Arc<Vec<PickerOption>>>,
+    pets: HashMap<String, Arc<Vec<PickerOption>>>,
+    treasures: HashMap<String, Arc<Vec<PickerOption>>>,
 }
 
 fn cache() -> &'static Mutex<Cache> {
     static CACHE: std::sync::OnceLock<Mutex<Cache>> = std::sync::OnceLock::new();
     CACHE.get_or_init(|| Mutex::new(Cache::default()))
+}
+
+/// A poisoned cache means a builder panicked mid-write; the lists are
+/// rebuildable, so drop the stale contents and start over. Every lock site
+/// heals the same way — two different recoveries were two bugs waiting.
+fn heal(p: PoisonError<MutexGuard<'_, Cache>>) -> MutexGuard<'_, Cache> {
+    let mut c = p.into_inner();
+    *c = Cache::default();
+    c
 }
 
 /// Drops every cached list. Called after any catalog write, since a new or
@@ -87,22 +93,14 @@ pub fn invalidate() {
     }
 }
 
-/// The picker list for `kind` in `lang`, built on first use. Reads are the
-/// hot path; the async mutex is only ever held by one builder at a time.
-pub async fn options(db: &Db, lang: &str, kind: &str) -> Vec<PickerOption> {
+/// The picker list for `kind` in `lang`, built on first use. Hits hand back
+/// a shared `Arc` — the grid clones single options, never the whole list —
+/// and a build failure is an `Err`: an empty picker on a healthy page would
+/// read as "no cookies exist".
+pub async fn options(db: &Db, lang: &str, kind: &str) -> crate::db::Result<Arc<Vec<PickerOption>>> {
     let key = lang.to_string();
     let hit = {
-        // a poisoned cache means a builder panicked mid-write; the lists are
-        // rebuildable, so drop the stale contents and start over
-        let c = match cache().lock() {
-            Ok(c) => c,
-            Err(p) => {
-                // take the data out of the poisoned guard, reset, carry on
-                let mut c = p.into_inner();
-                *c = Cache::default();
-                c
-            }
-        };
+        let c = cache().lock().unwrap_or_else(heal);
         match kind {
             "cookie" => c.cookies.get(&key).cloned(),
             "pet" => c.pets.get(&key).cloned(),
@@ -110,35 +108,28 @@ pub async fn options(db: &Db, lang: &str, kind: &str) -> Vec<PickerOption> {
         }
     };
     if let Some(list) = hit {
-        return list;
+        return Ok(list);
     }
     // double-checked build: two concurrent misses build twice, last insert
     // wins, both lists are identical because they read the same snapshot
-    let built = match kind {
-        "cookie" => build_simple(db, lang, "cookie").await.unwrap_or_default(),
-        "pet" => build_simple(db, lang, "pet").await.unwrap_or_default(),
-        _ => build_treasures(db, lang).await.unwrap_or_default(),
+    let built: Vec<PickerOption> = match kind {
+        "cookie" => build_simple(db, lang, "cookie").await?,
+        "pet" => build_simple(db, lang, "pet").await?,
+        _ => build_treasures(db, lang).await?,
     };
-
-    let mut c = match cache().lock() {
-        Ok(c) => c,
-        Err(p) => p.into_inner(),
-    };
+    let list = Arc::new(built);
+    let mut c = cache().lock().unwrap_or_else(heal);
     match kind {
-        "cookie" => c.cookies.insert(key.clone(), built.clone()),
-        "pet" => c.pets.insert(key.clone(), built.clone()),
-        _ => c.treasures.insert(key.clone(), built.clone()),
+        "cookie" => c.cookies.insert(key, Arc::clone(&list)),
+        "pet" => c.pets.insert(key, Arc::clone(&list)),
+        _ => c.treasures.insert(key, Arc::clone(&list)),
     };
-    built
+    Ok(list)
 }
 
 /// Cookies and pets: newest first, matching the catalog order so the picker
 /// presents the same sequence as the list page.
-async fn build_simple(
-    db: &Db,
-    lang: &str,
-    kind: &str,
-) -> crate::db::Result<Vec<PickerOption>> {
+async fn build_simple(db: &Db, lang: &str, kind: &str) -> crate::db::Result<Vec<PickerOption>> {
     #[derive(Default, SurrealValue)]
     #[surreal(default)]
     struct Row {
@@ -239,11 +230,7 @@ async fn build_treasures(db: &Db, lang: &str) -> crate::db::Result<Vec<PickerOpt
                 ..Default::default()
             };
             for line in &r.effect_lines {
-                let text = if lang == "th" && !line.th.is_empty() {
-                    line.th.clone()
-                } else {
-                    line.en.clone()
-                };
+                let text = crate::i18n::pick_text(lang, &line.en, &line.th);
                 let option = EffectOption {
                     text,
                     values: line.values.clone(),

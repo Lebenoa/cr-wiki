@@ -81,6 +81,17 @@ pub fn t(lang: &str, key: &str) -> String {
         .unwrap_or_else(|| key.to_string())
 }
 
+/// One locale's prose beside another's: the requested language's string when
+/// it carries text, English otherwise. Every `(en, th)` column pair on a
+/// record reads through this, so a third locale adds no new call sites.
+pub fn pick_text(lang: &str, en: &str, localized: &str) -> String {
+    if lang != DEFAULT_LANG && !localized.is_empty() {
+        localized.to_string()
+    } else {
+        en.to_string()
+    }
+}
+
 /// A language bound to a translator, so templates can write `l.t("key")`
 /// instead of threading the locale through every call.
 #[derive(Clone, Debug)]
@@ -94,5 +105,19 @@ impl Loc {
     }
     pub fn t(&self, key: &str) -> String {
         t(&self.lang, key)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::pick_text;
+
+    #[test]
+    fn pick_text_picks_locale_then_english() {
+        assert_eq!(pick_text("th", "en text", "th text"), "th text");
+        // an empty translation never shows as an empty field
+        assert_eq!(pick_text("th", "en text", ""), "en text");
+        // English reads its own column, never the other locale's
+        assert_eq!(pick_text("en", "en text", "th text"), "en text");
     }
 }

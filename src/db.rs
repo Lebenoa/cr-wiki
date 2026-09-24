@@ -20,6 +20,8 @@ use surrealdb::Surreal;
 
 use crate::config::SurrealConfig;
 use crate::grade;
+use crate::section::Section;
+use crate::time::now_unix;
 
 pub type Db = Surreal<Any>;
 
@@ -29,7 +31,14 @@ pub type Result<T> = surrealdb::Result<T>;
 /// local engine exists behind this — an unreachable URL is a hard startup
 /// error.
 pub async fn connect(cfg: &SurrealConfig) -> Result<Db> {
-    connect_url(&cfg.url, &cfg.namespace, &cfg.database, &cfg.username, &cfg.password).await
+    connect_url(
+        &cfg.url,
+        &cfg.namespace,
+        &cfg.database,
+        &cfg.username,
+        &cfg.password,
+    )
+    .await
 }
 
 /// Connects to an external server (`ws://` or `http://`). No local engine
@@ -43,7 +52,11 @@ pub async fn connect_url(
 ) -> Result<Db> {
     let db = surrealdb::engine::any::connect(url).await?;
     if !username.is_empty() {
-        db.signin(Root { username: username.to_string(), password: password.to_string() }).await?;
+        db.signin(Root {
+            username: username.to_string(),
+            password: password.to_string(),
+        })
+        .await?;
     }
     db.use_ns(ns).use_db(database).await?;
     Ok(db)
@@ -72,16 +85,9 @@ pub struct Card {
     pub is_evolved: bool,
 }
 
-impl Card {
-    pub fn grade_slug(&self) -> String {
-        self.grade.map_or_else(String::new, |g| grade::slug(g).to_string())
-    }
-    /// "S+" for `s_plus`, the uppercase letter otherwise
-    pub fn grade_label(&self) -> String {
-        self.grade.map_or_else(String::new, grade::label)
-    }
-    pub const fn has_grade(&self) -> bool {
-        self.grade.is_some()
+impl grade::Graded for Card {
+    fn grade(&self) -> Option<i64> {
+        self.grade
     }
 }
 
@@ -98,7 +104,14 @@ struct CardRow {
 
 impl From<CardRow> for Card {
     fn from(r: CardRow) -> Self {
-        Self { id: r.id, name: r.name, en_name: r.en_name, image: r.image, grade: r.grade, is_evolved: r.is_evolved }
+        Self {
+            id: r.id,
+            name: r.name,
+            en_name: r.en_name,
+            image: r.image,
+            grade: r.grade,
+            is_evolved: r.is_evolved,
+        }
     }
 }
 
@@ -125,15 +138,9 @@ pub struct Detail {
     pub release_date: i64,
 }
 
-impl Detail {
-    pub fn grade_slug(&self) -> String {
-        self.grade.map_or_else(String::new, |g| grade::slug(g).to_string())
-    }
-    pub fn grade_label(&self) -> String {
-        self.grade.map_or_else(String::new, grade::label)
-    }
-    pub const fn has_grade(&self) -> bool {
-        self.grade.is_some()
+impl grade::Graded for Detail {
+    fn grade(&self) -> Option<i64> {
+        self.grade
     }
 }
 
@@ -146,19 +153,20 @@ pub struct Kind {
     pub dated: bool,
 }
 
+impl Kind {
+    /// The facts one section's queries need, read from the one place each
+    /// section's table and flags live (`Section`).
+    pub const fn of(section: Section) -> Kind {
+        Kind {
+            table: section.table(),
+            graded: section.graded(),
+            dated: section.dated(),
+        }
+    }
+}
+
 fn kind_of(section: &str) -> Option<Kind> {
-    let (table, graded, dated) = match section {
-        "cookies" => ("cookie", true, true),
-        "pets" => ("pet", true, true),
-        "treasures" => ("treasure", true, true),
-        "episodes" => ("episode", false, false),
-        "ingredients" => ("ingredient", true, false),
-        "jellies" => ("jelly", false, false),
-        "relics" => ("relic", false, false),
-        "skins" => ("skin", true, false),
-        _ => return None,
-    };
-    Some(Kind { table, graded, dated })
+    Section::parse(section).map(Kind::of)
 }
 
 /// The card projection every list shares: locale-fallback name, English name
@@ -212,7 +220,7 @@ pub async fn select_cookies(db: &Db, lang: &str, limit: i64, offset: i64) -> Res
     select_cards(
         db,
         lang,
-        &kind_of("cookies").unwrap_or(Kind { table: "cookie", graded: true, dated: true }),
+        &Kind::of(Section::Cookies),
         ", grade, release_date",
         "tr.en.name != NONE OR tr[$lang].name != NONE",
         " ORDER BY release_date DESC, id DESC",
@@ -227,7 +235,7 @@ pub async fn select_pets(db: &Db, lang: &str, limit: i64, offset: i64) -> Result
     select_cards(
         db,
         lang,
-        &kind_of("pets").unwrap_or(Kind { table: "pet", graded: true, dated: true }),
+        &Kind::of(Section::Pets),
         ", grade, release_date",
         "tr.en.name != NONE OR tr[$lang].name != NONE",
         " ORDER BY release_date DESC, id DESC",
@@ -253,13 +261,11 @@ pub async fn select_treasures(
         "evo" => " AND is_evolved = true",
         _ => "",
     };
-    let where_sql = format!(
-        "(tr.en.name != NONE OR tr[$lang].name != NONE){tab_where}"
-    );
+    let where_sql = format!("(tr.en.name != NONE OR tr[$lang].name != NONE){tab_where}");
     select_cards(
         db,
         lang,
-        &kind_of("treasures").unwrap_or(Kind { table: "treasure", graded: true, dated: true }),
+        &Kind::of(Section::Treasures),
         ", grade, is_evolved, rank, release_date",
         &where_sql,
         " ORDER BY rank DESC, release_date DESC, name ASC",
@@ -273,14 +279,12 @@ pub async fn select_treasures(
 /// The simple catalogs, which share a shape and are unpaginated in the V app.
 /// Graded grids order rarest-first by display rank, not the raw column.
 pub async fn select_simple(db: &Db, lang: &str, kind: &str) -> Result<Vec<Card>> {
-    let kind = match kind {
-        "episodes" => Kind { table: "episode", graded: false, dated: false },
-        "ingredients" => Kind { table: "ingredient", graded: true, dated: false },
-        "jellies" => Kind { table: "jelly", graded: false, dated: false },
-        "skins" => Kind { table: "skin", graded: true, dated: false },
-        "relics" => Kind { table: "relic", graded: false, dated: false },
-        _ => return Ok(Vec::new()),
+    // the paginated three list through select_cookies/pets/treasures and
+    // must not fall into this unpaginated shape
+    let Some(section) = Section::parse(kind).filter(|s| !s.paginated()) else {
+        return Ok(Vec::new());
     };
+    let kind = Kind::of(section);
     let order = if kind.graded {
         " ORDER BY rank DESC, id".to_string()
     } else {
@@ -355,7 +359,11 @@ pub async fn select_detail(db: &Db, lang: &str, section: &str, id: i64) -> Resul
         power_plus: r.power_plus,
         power_plus_requirement: r.power_plus_requirement,
         unlock_goal: r.unlock_goal,
-        release_date: if kind.dated { r.release_date.unwrap_or(0) } else { 0 },
+        release_date: if kind.dated {
+            r.release_date.unwrap_or(0)
+        } else {
+            0
+        },
     }))
 }
 
@@ -417,11 +425,7 @@ struct EffectLineRow {
 
 impl EffectLineRow {
     fn into_line(self, lang: &str) -> EffectLine {
-        let text = if lang == "th" && !self.th.is_empty() {
-            self.th.clone()
-        } else {
-            self.en.clone()
-        };
+        let text = crate::i18n::pick_text(lang, &self.en, &self.th);
         EffectLine {
             text,
             values: self.values,
@@ -445,7 +449,12 @@ pub async fn treasure_effects(db: &Db, lang: &str, id: i64) -> Result<Vec<Effect
         .take(0)?;
     Ok(rows
         .pop()
-        .map(|r| r.effect_lines.into_iter().map(|e| e.into_line(lang)).collect())
+        .map(|r| {
+            r.effect_lines
+                .into_iter()
+                .map(|e| e.into_line(lang))
+                .collect()
+        })
         .unwrap_or_default())
 }
 
@@ -483,7 +492,10 @@ pub async fn names_for(
     if ids.is_empty() {
         return Ok(map);
     }
-    let list = ids.iter().map(|i| format!("{}:{}", kind.table, i)).collect::<Vec<_>>();
+    let list = ids
+        .iter()
+        .map(|i| format!("{}:{}", kind.table, i))
+        .collect::<Vec<_>>();
     let sql = format!(
         "SELECT record::id(id) AS id, image,
                 (tr[$lang].name ?? tr.en.name ?? '') AS name
@@ -518,26 +530,32 @@ async fn combis(db: &Db, lang: &str, own: &str, id: i64) -> Result<Vec<(CombiRec
         .await?
         .take(0)?;
 
-    let partner_section = if own == "cookies" { "pets" } else { "cookies" };
-    let partner_kind = kind_of(partner_section)
-        .unwrap_or(Kind { table: "pet", graded: true, dated: true });
+    // pairings hang off cookies only (checked above), so the partner is
+    // always a pet
+    let partner_kind = Kind::of(Section::Pets);
     let ids: Vec<i64> = records
         .iter()
-        .map(|c| if own == "cookies" { c.pet_id } else { c.cookie_id })
+        .map(|c| {
+            if own == "cookies" {
+                c.pet_id
+            } else {
+                c.cookie_id
+            }
+        })
         .collect();
     let partners = names_for(db, lang, &partner_kind, &ids).await?;
 
     Ok(records
         .into_iter()
         .map(|c| {
-            let partner_id = if own == "cookies" { c.pet_id } else { c.cookie_id };
+            let partner_id = if own == "cookies" {
+                c.pet_id
+            } else {
+                c.cookie_id
+            };
             let (partner_name, partner_image) =
                 partners.get(&partner_id).cloned().unwrap_or_default();
-            let effect = if lang == "th" && !c.th.is_empty() {
-                c.th.clone()
-            } else {
-                c.en.clone()
-            };
+            let effect = crate::i18n::pick_text(lang, &c.en, &c.th);
             let row = CombiRow {
                 partner_id,
                 partner_name,
@@ -560,7 +578,12 @@ pub async fn combi_bonuses(db: &Db, lang: &str, kind: &str, id: i64) -> Result<V
 
 /// Name and sprite for a rich-text link, resolved like everywhere else:
 /// requested locale first, English behind it.
-pub async fn entity_link(db: &Db, lang: &str, kind: &str, id: i64) -> Option<(String, Option<String>)> {
+pub async fn entity_link(
+    db: &Db,
+    lang: &str,
+    kind: &str,
+    id: i64,
+) -> Option<(String, Option<String>)> {
     let section = match kind {
         "pet" => "pets",
         "treasure" => "treasures",
@@ -587,7 +610,11 @@ pub async fn entity_link(db: &Db, lang: &str, kind: &str, id: i64) -> Option<(St
         .take(0)
         .ok()?;
     let row = rows.pop()?;
-    let name = if row.name.is_empty() { row.en_name } else { row.name };
+    let name = if row.name.is_empty() {
+        row.en_name
+    } else {
+        row.name
+    };
     if name.is_empty() {
         None
     } else {
@@ -597,20 +624,15 @@ pub async fn entity_link(db: &Db, lang: &str, kind: &str, id: i64) -> Option<(St
 
 /// Every (section, id) pair the sitemap lists.
 pub async fn sitemap_entries(db: &Db) -> Result<Vec<(String, i64)>> {
+    // every section from the one list: relics and skins were missing here
+    // when this list was hand-maintained, reachable "only by luck"
     let mut out = Vec::new();
-    for (section, table) in [
-        ("cookies", "cookie"),
-        ("pets", "pet"),
-        ("treasures", "treasure"),
-        ("episodes", "episode"),
-        ("ingredients", "ingredient"),
-        ("jellies", "jelly"),
-    ] {
+    for section in Section::ALL {
         let ids: Vec<i64> = db
-            .query(format!("SELECT VALUE record::id(id) FROM {table}").as_str())
+            .query(format!("SELECT VALUE record::id(id) FROM {}", section.table()).as_str())
             .await?
             .take(0)?;
-        out.extend(ids.into_iter().map(|id| (section.to_string(), id)));
+        out.extend(ids.into_iter().map(|id| (section.as_str().to_string(), id)));
     }
     Ok(out)
 }
@@ -740,7 +762,10 @@ pub async fn cards_by_ids(db: &Db, lang: &str, kind: &str, ids: &[i64]) -> Resul
             None => return Ok(Vec::new()),
         }
     };
-    let list = ids.iter().map(|i| format!("{}:{}", k.table, i)).collect::<Vec<_>>();
+    let list = ids
+        .iter()
+        .map(|i| format!("{}:{}", k.table, i))
+        .collect::<Vec<_>>();
     let sql = format!(
         "SELECT record::id(id) AS id, image{}, (tr[$lang].name ?? tr.en.name ?? '') AS name,
                 (tr.en.name ?? '') AS en_name
@@ -774,8 +799,16 @@ pub async fn combi_partner_ids(db: &Db, kind: &str, id: i64) -> Result<Vec<i64>>
     if id <= 0 {
         return Ok(Vec::new());
     }
-    let own_col = if kind == "cookies" { "cookie_id" } else { "pet_id" };
-    let partner_col = if kind == "cookies" { "pet_id" } else { "cookie_id" };
+    let own_col = if kind == "cookies" {
+        "cookie_id"
+    } else {
+        "pet_id"
+    };
+    let partner_col = if kind == "cookies" {
+        "pet_id"
+    } else {
+        "cookie_id"
+    };
     let mut res = db
         .query(
             format!("SELECT VALUE DISTINCT {partner_col} FROM combi WHERE {own_col} = $id")
@@ -809,15 +842,6 @@ pub struct GachaEntry {
 }
 
 impl GachaEntry {
-    pub fn grade_slug(&self) -> String {
-        self.grade.map_or_else(String::new, |g| grade::slug(g).to_string())
-    }
-    pub const fn has_grade(&self) -> bool {
-        self.grade.is_some()
-    }
-    pub fn grade_label(&self) -> String {
-        self.grade.map_or_else(String::new, grade::label)
-    }
     /// The odds as the page prints them: the stored value with no padding,
     /// so 4.4 reads "4.4%" rather than "4.40%".
     pub fn odds_label(&self) -> String {
@@ -826,6 +850,12 @@ impl GachaEntry {
             s = s.trim_end_matches('0').trim_end_matches('.').to_string();
         }
         format!("{s}%")
+    }
+}
+
+impl grade::Graded for GachaEntry {
+    fn grade(&self) -> Option<i64> {
+        self.grade
     }
 }
 
@@ -857,12 +887,20 @@ struct PrizeRow {
     en_name: String,
 }
 
-async fn prizes(db: &Db, lang: &str, table: &str, ids: &[i64]) -> Result<std::collections::HashMap<i64, PrizeRow>> {
+async fn prizes(
+    db: &Db,
+    lang: &str,
+    table: &str,
+    ids: &[i64],
+) -> Result<std::collections::HashMap<i64, PrizeRow>> {
     let mut map = std::collections::HashMap::new();
     if ids.is_empty() {
         return Ok(map);
     }
-    let list = ids.iter().map(|i| format!("{table}:{i}")).collect::<Vec<_>>();
+    let list = ids
+        .iter()
+        .map(|i| format!("{table}:{i}"))
+        .collect::<Vec<_>>();
     let rows: Vec<PrizeRow> = db
         .query(
             format!(
@@ -939,19 +977,21 @@ pub async fn select_gacha(db: &Db, lang: &str) -> Result<Vec<GachaPool>> {
                 is_evolved: prize.is_evolved,
             });
         }
-        out.push(GachaPool { id: p.id, tier: p.tier, entries });
+        out.push(GachaPool {
+            id: p.id,
+            tier: p.tier,
+            entries,
+        });
     }
     Ok(out)
 }
 
 /// Table names for one catalog section.
 fn entity_table(section: &str) -> Option<&'static str> {
-    match section {
-        "cookies" => Some("cookie"),
-        "pets" => Some("pet"),
-        "treasures" => Some("treasure"),
-        _ => None,
-    }
+    // only the sections the admin editor writes
+    Section::parse(section)
+        .filter(|s| s.editable())
+        .map(Section::table)
 }
 
 /// Creates an entity and its translation in `lang`, returning the new id.
@@ -969,7 +1009,7 @@ pub async fn insert_entity(
     let image = clean_image(&form.image);
 
     let mut sets: Vec<String> = vec!["image = $image".to_string()];
-    let graded = matches!(section, "cookies" | "pets" | "treasures" | "ingredients" | "skins");
+    let graded = Section::parse(section).is_some_and(Section::graded);
     if graded {
         // display rank is maintained on write so reads can ORDER BY it:
         // the enum ordinal is not the display order (E outranks L)
@@ -978,7 +1018,7 @@ pub async fn insert_entity(
         sets.push(format!("grade = {g}"));
         sets.push(format!("release_date = {now}"));
     }
-    if section == "treasures" {
+    if Section::parse(section) == Some(Section::Treasures) {
         sets.push("is_evolved = false".to_string());
     }
     db.query(format!("CREATE {table}:{id} SET {}", sets.join(", ")).as_str())
@@ -1021,7 +1061,11 @@ pub async fn update_entity(
 
 fn clean_image(image: &str) -> Option<String> {
     let trimmed = image.trim();
-    if trimmed.is_empty() { None } else { Some(trimmed.to_string()) }
+    if trimmed.is_empty() {
+        None
+    } else {
+        Some(trimmed.to_string())
+    }
 }
 
 /// Upserts the translation for one language INSIDE the nested tr object, so
@@ -1040,17 +1084,17 @@ async fn write_translation(
     #[derive(Default, SurrealValue, serde::Serialize)]
     #[surreal(default)]
     struct Tr {
-            name: String,
-            abilities: String,
-            description: String,
-            power_plus: String,
-            power_plus_requirement: String,
-            unlock_goal: String,
+        name: String,
+        abilities: String,
+        description: String,
+        power_plus: String,
+        power_plus_requirement: String,
+        unlock_goal: String,
     }
     #[derive(Default, SurrealValue)]
     #[surreal(default)]
     struct TrWrap {
-            tr: std::collections::BTreeMap<String, Tr>,
+        tr: std::collections::BTreeMap<String, Tr>,
     }
     let mut wrap: TrWrap = db
         .query("SELECT tr FROM type::record($tb, $id)")
@@ -1067,7 +1111,9 @@ async fn write_translation(
             entry.abilities.clone_from(&form.abilities);
             entry.description.clone_from(&form.description);
             entry.power_plus.clone_from(&form.power_plus);
-            entry.power_plus_requirement.clone_from(&form.power_plus_requirement);
+            entry
+                .power_plus_requirement
+                .clone_from(&form.power_plus_requirement);
             entry.unlock_goal.clone_from(&form.unlock_goal);
         }
         "pets" => {
@@ -1083,12 +1129,6 @@ async fn write_translation(
         .await?
         .check()?;
     Ok(())
-}
-
-fn now_unix() -> i64 {
-    std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .map_or(0, |d| i64::try_from(d.as_secs()).unwrap_or(0))
 }
 
 /// What a treasure is tied to: the cookie or pet that unlocks it at max
@@ -1113,15 +1153,23 @@ impl TreasureLinks {
     }
 }
 
+/// The link columns a treasure carries. `#[surreal(rename)]` binds each
+/// field to the `*_id` column the query projects — `#[surreal(default)]`
+/// would otherwise read every row as `None` in complete silence, which is
+/// exactly how this struct once lost the treasure page's links.
+#[derive(Debug, Default, SurrealValue)]
+#[surreal(default)]
+struct TreasureLinkRow {
+    #[surreal(rename = "unlock_cookie_id")]
+    unlock_cookie: Option<i64>,
+    #[surreal(rename = "unlock_pet_id")]
+    unlock_pet: Option<i64>,
+    #[surreal(rename = "base_treasure_id")]
+    base_treasure: Option<i64>,
+}
+
 pub async fn treasure_links(db: &Db, lang: &str, id: i64) -> Result<TreasureLinks> {
-    #[derive(Default, SurrealValue)]
-    #[surreal(default)]
-    struct Row {
-        unlock_cookie: Option<i64>,
-        unlock_pet: Option<i64>,
-        base_treasure: Option<i64>,
-    }
-    let mut rows: Vec<Row> = db
+    let mut rows: Vec<TreasureLinkRow> = db
         .query("SELECT unlock_cookie_id, unlock_pet_id, base_treasure_id FROM type::record(\"treasure\", $id)")
         .bind(("id", id))
         .await?
@@ -1212,4 +1260,152 @@ pub async fn delete_combi(db: &Db, row_id: i64) -> Result<()> {
         .await?
         .check()?;
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use surrealdb::types::{Object, Value};
+
+    /// The regression a lint pass once hid: a row struct whose field names
+    /// drift from the projected columns decodes every row as `None` — no
+    /// error, no missing-field complaint, just silently absent data. These
+    /// tests build the exact objects the queries project and decode them the
+    /// way `take` does, with no database behind them.
+    #[test]
+    fn treasure_link_row_reads_the_projected_columns() {
+        let mut o = Object::new();
+        o.insert("unlock_cookie_id", 7i64);
+        o.insert("base_treasure_id", 310i64);
+        // unlock_pet_id absent, as for a treasure a cookie unlocks
+        let row = TreasureLinkRow::from_value(Value::Object(o)).expect("decodes");
+        assert_eq!(row.unlock_cookie, Some(7));
+        assert_eq!(row.base_treasure, Some(310));
+        assert_eq!(row.unlock_pet, None);
+    }
+
+    #[test]
+    fn card_row_reads_the_card_projection() {
+        let mut o = Object::new();
+        o.insert("id", 12i64);
+        o.insert("name", "Choco");
+        o.insert("en_name", "Choco");
+        o.insert("grade", 4i64);
+        o.insert("is_evolved", false);
+        let row = CardRow::from_value(Value::Object(o)).expect("decodes");
+        assert_eq!(row.id, 12);
+        assert_eq!(row.grade, Some(4));
+        assert!(row.image.is_none());
+        assert!(!row.is_evolved);
+    }
+
+    #[test]
+    fn detail_row_defaults_the_fields_a_kind_lacks() {
+        let mut o = Object::new();
+        o.insert("id", 3i64);
+        o.insert("name", "Stone");
+        o.insert("en_name", "Stone");
+        let row = DetailRow::from_value(Value::Object(o)).expect("decodes");
+        assert_eq!(row.abilities, "");
+        assert_eq!(row.grade, None);
+        assert_eq!(row.release_date, None);
+    }
+
+    #[test]
+    fn effect_line_row_carries_the_ladder_and_locale() {
+        let mut o = Object::new();
+        o.insert("state", 1i64);
+        o.insert("en", "Speed +5");
+        o.insert("th", "thai speed");
+        o.insert("values", vec!["1".to_string(), "5".to_string()]);
+        let row = EffectLineRow::from_value(Value::Object(o)).expect("decodes");
+        let line = row.into_line("th");
+        assert!(line.blessed);
+        assert_eq!(line.text, "thai speed");
+        assert_eq!(line.values, vec!["1".to_string(), "5".to_string()]);
+
+        let mut o2 = Object::new();
+        o2.insert("state", 0i64);
+        o2.insert("en", "Speed +5");
+        o2.insert("th", "");
+        let row2 = EffectLineRow::from_value(Value::Object(o2)).expect("decodes");
+        assert_eq!(row2.into_line("th").text, "Speed +5");
+    }
+
+    #[test]
+    fn combi_record_reads_its_columns() {
+        let mut o = Object::new();
+        o.insert("id", 5i64);
+        o.insert("cookie_id", 89i64);
+        o.insert("pet_id", 3i64);
+        o.insert("en", "Combo");
+        o.insert("th", "");
+        o.insert("is_hidden", false);
+        let row = CombiRecord::from_value(Value::Object(o)).expect("decodes");
+        assert_eq!(row.cookie_id, 89);
+        assert_eq!(row.pet_id, 3);
+        assert!(!row.is_hidden);
+    }
+
+    #[test]
+    fn user_row_reads_credentials_and_flag() {
+        let mut o = Object::new();
+        o.insert("id", 1i64);
+        o.insert("username", "admin");
+        o.insert("password", "$argon2id$v=19$fake");
+        o.insert("is_admin", true);
+        let row = UserRow::from_value(Value::Object(o)).expect("decodes");
+        assert!(row.is_admin);
+        assert_eq!(row.username, "admin");
+    }
+
+    #[test]
+    fn prize_row_reads_the_batched_lookup_projection() {
+        let mut o = Object::new();
+        o.insert("id", 9i64);
+        o.insert("image", "ring.png");
+        o.insert("grade", 2i64);
+        o.insert("is_evolved", false);
+        o.insert("name", "Ring");
+        o.insert("en_name", "Ring");
+        let row = PrizeRow::from_value(Value::Object(o)).expect("decodes");
+        assert_eq!(row.image.as_deref(), Some("ring.png"));
+        assert_eq!(row.grade, Some(2));
+    }
+
+    #[test]
+    fn gacha_rows_read_their_columns() {
+        let mut o = Object::new();
+        o.insert("id", 2i64);
+        o.insert("tier", "epic");
+        o.insert("entries", Vec::<i64>::new());
+        let pool = GachaPoolRow::from_value(Value::Object(o)).expect("decodes");
+        assert_eq!(pool.tier, "epic");
+        assert!(pool.entries.is_empty());
+
+        let mut e = Object::new();
+        e.insert("t", 0i64);
+        e.insert("p", 4i64);
+        e.insert("odds", 0.42f64);
+        let entry = GachaEntryRef::from_value(Value::Object(e)).expect("decodes");
+        assert_eq!(entry.p, Some(4));
+        assert!((entry.odds - 0.42).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn kind_facts_come_from_one_table() {
+        // the triplication the lint pass left behind: `Kind::of` and the old
+        // hand-written fallbacks must agree, or a fallback queries a wrong
+        // table in silence
+        let kind = Kind::of(Section::Cookies);
+        assert_eq!(kind.table, "cookie");
+        assert!(kind.graded);
+        assert!(kind.dated);
+        assert_eq!(kind_of("cookies").map(|k| k.table), Some("cookie"));
+        assert!(kind_of("no-such-section").is_none());
+        assert!(Section::parse("skins").is_some());
+        assert_eq!(Section::Skins.table(), "skin");
+        assert!(Section::Ingredients.graded());
+        assert!(!Section::Ingredients.dated());
+    }
 }

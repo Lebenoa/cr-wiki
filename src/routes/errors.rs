@@ -41,6 +41,24 @@ pub async fn fallback(ctx: Ctx) -> Response {
     not_found(ctx)
 }
 
+/// A failed database call: logged with its cause and answered with the
+/// site's own 500 page. An outage must never masquerade as an empty wiki —
+/// that reads as "no data" to visitors, crawlers and monitors alike.
+pub struct AppError(surrealdb::Error);
+
+impl From<surrealdb::Error> for AppError {
+    fn from(e: surrealdb::Error) -> Self {
+        Self(e)
+    }
+}
+
+impl IntoResponse for AppError {
+    fn into_response(self) -> Response {
+        tracing::error!("database error: {}", self.0);
+        server_error(Ctx::minimal())
+    }
+}
+
 /// The panic hook has no request to read, so the page renders in the default
 /// locale rather than the visitor's. `CatchPanicLayer` requires the box by
 /// value, so the lint's advice does not apply here.

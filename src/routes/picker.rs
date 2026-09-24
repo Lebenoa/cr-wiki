@@ -11,11 +11,12 @@ use axum::response::{Html, IntoResponse, Response};
 
 use crate::ctx::Ctx;
 use crate::db;
+use crate::grade::Graded;
 use crate::options::{self, PickerOption};
 use crate::pagination::slice_page;
 use crate::state::AppState;
 
-use super::CommonQuery;
+use super::{errors::AppError, CommonQuery};
 
 pub const PAGE_SIZE: i64 = 30;
 
@@ -76,7 +77,15 @@ fn tab_ok(opt: &PickerOption, tab: &str) -> bool {
     }
 }
 
-fn next_url(kind: &str, lang: &str, q: &str, tab: &str, sel: i64, partner: i64, page: i64) -> String {
+fn next_url(
+    kind: &str,
+    lang: &str,
+    q: &str,
+    tab: &str,
+    sel: i64,
+    partner: i64,
+    page: i64,
+) -> String {
     format!(
         "/builds/options/{kind}?lang={}&q={}&tab={}&sel={sel}&partner={partner}&page={page}",
         urlencode(lang),
@@ -144,7 +153,11 @@ pub async fn preview(
             continue;
         }
         if let Some((name, image)) = db::entity_link(&state.db, &ctx.lang, kind, id).await {
-            picks.push(PickedSlot { section, name, image });
+            picks.push(PickedSlot {
+                section,
+                name,
+                image,
+            });
         }
     }
 
@@ -160,9 +173,9 @@ pub async fn options_grid(
     ctx: Ctx,
     Path(kind): Path<String>,
     q: Query<CommonQuery>,
-) -> Response {
+) -> Result<Response, AppError> {
     if !matches!(kind.as_str(), "cookie" | "pet" | "treasure") {
-        return super::errors::not_found(ctx);
+        return Ok(super::errors::not_found(ctx));
     }
     let lang = ctx.lang.clone();
     let raw_q = q.q.clone().unwrap_or_default().trim().to_lowercase();
@@ -175,20 +188,21 @@ pub async fn options_grid(
     let sel = q.sel.unwrap_or(0);
     let partner = q.partner.unwrap_or(0);
 
-    let all = options::options(&state.db, &ctx.lang, &kind).await;
+    let all = options::options(&state.db, &ctx.lang, &kind).await?;
     // the combo partners of the other slot's pick: a combo is the main
     // reason a planner picks one pet over another, and the grid is too
     // long to hunt through
     let combi = if partner > 0 && kind != "treasure" {
         let partner_kind = if kind == "pet" { "cookies" } else { "pets" };
-        db::combi_partner_ids(&state.db, partner_kind, partner).await.unwrap_or_default()
+        db::combi_partner_ids(&state.db, partner_kind, partner).await?
     } else {
         Vec::new()
     };
 
     let mut matched: Vec<PickerOption> = all
-        .into_iter()
+        .iter()
         .filter(|o| tab_ok(o, &tab) && matches(o, &terms))
+        .cloned()
         .collect();
 
     // combo partners float above the rest, then the slot's own pick is
@@ -211,7 +225,15 @@ pub async fn options_grid(
     let (options_page, next) = match slice_page(page, PAGE_SIZE, total) {
         Some((start, end)) => {
             let next = if end < total {
-                next_url(&kind, &lang, &raw_q, &tab, sel, partner, page.saturating_add(1))
+                next_url(
+                    &kind,
+                    &lang,
+                    &raw_q,
+                    &tab,
+                    sel,
+                    partner,
+                    page.saturating_add(1),
+                )
             } else {
                 String::new()
             };
@@ -223,7 +245,7 @@ pub async fn options_grid(
         }
         None if page > 1 => {
             // scrolled past the end (a stale sentinel): nothing to append
-            return Html(String::new()).into_response();
+            return Ok(Html(String::new()).into_response());
         }
         None => (Vec::new(), String::new()),
     };
@@ -242,5 +264,9 @@ pub async fn options_grid(
         next_url: next,
         page,
     };
-    Html(grid.render().unwrap_or_else(|e| format!("template error: {e}"))).into_response()
+    Ok(Html(
+        grid.render()
+            .unwrap_or_else(|e| format!("template error: {e}")),
+    )
+    .into_response())
 }

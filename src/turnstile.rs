@@ -74,7 +74,10 @@ pub async fn verify(cfg: &Config, token: Option<&str>, expected_action: &str) ->
     };
     let res = client
         .post("https://challenges.cloudflare.com/turnstile/v0/siteverify")
-        .form(&[("secret", cfg.turnstile.secret.as_str()), ("response", token)])
+        .form(&[
+            ("secret", cfg.turnstile.secret.as_str()),
+            ("response", token),
+        ])
         .send()
         .await;
 

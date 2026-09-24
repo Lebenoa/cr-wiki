@@ -1,8 +1,8 @@
 //! Per-request context: the locale, the path, and the URL/header helpers the
 //! templates ask for. Mirrors the veb `Context` struct and `before_request`.
 
-use axum::extract::FromRequestParts;
 use axum::extract::ConnectInfo;
+use axum::extract::FromRequestParts;
 use axum::http::request::Parts;
 use axum::http::HeaderMap;
 use std::convert::Infallible;
@@ -53,7 +53,10 @@ impl<S: Send + Sync> FromRequestParts<S> for Ctx {
             .map_or_else(|| DEFAULT_LANG.to_string(), |c| c.lang.clone());
         let user = parts.extensions.get::<SessionUser>().cloned();
         let h = &parts.headers;
-        let peer = parts.extensions.get::<ConnectInfo<SocketAddr>>().map(|c| c.0);
+        let peer = parts
+            .extensions
+            .get::<ConnectInfo<SocketAddr>>()
+            .map(|c| c.0);
         Ok(Self {
             user,
             l: Loc::new(&lang),
@@ -93,7 +96,11 @@ impl Ctx {
     /// the default. Backs both the canonical tag and the hreflang alternates,
     /// so the two cannot disagree.
     pub fn lang_url(&self, lang: &str) -> String {
-        let suffix = if lang == DEFAULT_LANG { String::new() } else { format!("?lang={lang}") };
+        let suffix = if lang == DEFAULT_LANG {
+            String::new()
+        } else {
+            format!("?lang={lang}")
+        };
         format!("{}{}{}", self.site_url, self.path, suffix)
     }
 
@@ -139,7 +146,9 @@ impl Ctx {
     /// True when the current page sits under any wiki section, so the
     /// dropdown trigger can carry the active styling its entries would.
     pub fn wiki_active(&self) -> bool {
-        self.wiki_sections().iter().any(|s| self.nav_section_active(s))
+        self.wiki_sections()
+            .iter()
+            .any(|s| self.nav_section_active(s))
     }
 
     /// The Wiki dropdown trigger's classes, active or not.
@@ -207,7 +216,11 @@ impl Ctx {
     // the self parameter stays because askama calls it on the context
     #[allow(clippy::unused_self, clippy::missing_const_for_fn)]
     pub fn combi_partner_section(&self, section: &str) -> &'static str {
-        if section == "cookies" { "pets" } else { "cookies" }
+        if section == "cookies" {
+            "pets"
+        } else {
+            "cookies"
+        }
     }
 
     /// A fragment swap, as opposed to an hx-boosted navigation which still
@@ -235,14 +248,20 @@ impl Ctx {
     }
 
     pub fn username(&self) -> String {
-        self.user.as_ref().map(|u| u.username.clone()).unwrap_or_default()
+        self.user
+            .as_ref()
+            .map(|u| u.username.clone())
+            .unwrap_or_default()
     }
 
     /// "EP 5" / "Special EP 2", localized. A special tier wins over the
     /// plain one, matching the badge.
     pub fn build_ep_label(&self, ep: i64, ep_special: i64) -> String {
         if ep_special > 0 {
-            return self.l.t("build_ep_special").replace("{n}", &ep_special.to_string());
+            return self
+                .l
+                .t("build_ep_special")
+                .replace("{n}", &ep_special.to_string());
         }
         self.l.t("build_ep_tier").replace("{n}", &ep.to_string())
     }
@@ -333,7 +352,10 @@ impl Ctx {
     pub fn entity_image(&self, section: &str, image: Option<&String>) -> String {
         match image {
             Some(img) if !img.is_empty() => {
-                format!("{}/img/{section}/{img}", self.site_url.trim_end_matches('/'))
+                format!(
+                    "{}/img/{section}/{img}",
+                    self.site_url.trim_end_matches('/')
+                )
             }
             _ => self.social_image(),
         }
@@ -353,7 +375,11 @@ impl Ctx {
 
     /// The wikilang cookie as an Open Graph locale tag.
     pub fn og_locale(&self) -> &'static str {
-        if self.lang == "th" { "th_TH" } else { "en_US" }
+        if self.lang == "th" {
+            "th_TH"
+        } else {
+            "en_US"
+        }
     }
 
     pub fn default_lang_url(&self) -> String {
@@ -430,8 +456,7 @@ pub fn client_ip(
     peer: Option<std::net::SocketAddr>,
     trusted_proxies: &[String],
 ) -> String {
-    let peer_str = peer
-        .map_or_else(|| "unknown".to_string(), |a| a.ip().to_string());
+    let peer_str = peer.map_or_else(|| "unknown".to_string(), |a| a.ip().to_string());
     if trusted_proxies.iter().any(|p| p == &peer_str) {
         for name in ["CF-Connecting-IP", "X-Real-Ip"] {
             if let Some(v) = header(h, name) {
@@ -478,13 +503,22 @@ pub fn resolve_lang(query: Option<&str>, h: &HeaderMap) -> LangChoice {
             if let Some(v) = pair.strip_prefix("lang=") {
                 if i18n::is_available(v) {
                     let write = cookie(h, LANG_COOKIE).as_deref() != Some(v);
-                    return LangChoice { lang: v.to_string(), write_cookie: write };
+                    return LangChoice {
+                        lang: v.to_string(),
+                        write_cookie: write,
+                    };
                 }
             }
         }
     }
     match cookie(h, LANG_COOKIE) {
-        Some(c) if i18n::is_available(&c) => LangChoice { lang: c, write_cookie: false },
-        _ => LangChoice { lang: DEFAULT_LANG.to_string(), write_cookie: true },
+        Some(c) if i18n::is_available(&c) => LangChoice {
+            lang: c,
+            write_cookie: false,
+        },
+        _ => LangChoice {
+            lang: DEFAULT_LANG.to_string(),
+            write_cookie: true,
+        },
     }
 }

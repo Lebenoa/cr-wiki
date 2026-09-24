@@ -6,10 +6,11 @@ use axum::response::Html;
 
 use crate::ctx::Ctx;
 use crate::db::{self, Card, GachaPool};
+use crate::grade::Graded;
 use crate::i18n;
 use crate::state::AppState;
 
-use super::CommonQuery;
+use super::{errors::AppError, CommonQuery};
 
 #[derive(Template)]
 #[template(path = "index.html")]
@@ -18,7 +19,11 @@ struct IndexPage {
 }
 
 pub async fn index(ctx: Ctx) -> Html<String> {
-    Html(IndexPage { ctx }.render().unwrap_or_else(|e| format!("template error: {e}")))
+    Html(
+        IndexPage { ctx }
+            .render()
+            .unwrap_or_else(|e| format!("template error: {e}")),
+    )
 }
 
 #[derive(Template)]
@@ -43,15 +48,22 @@ pub async fn search(
     State(state): State<AppState>,
     ctx: Ctx,
     q: Query<CommonQuery>,
-) -> Html<String> {
+) -> Result<Html<String>, AppError> {
     let query = q.q.clone().unwrap_or_default();
-    let hits = db::search(&state.db, &ctx.lang, &query, 20).await.unwrap_or_default();
+    let hits = db::search(&state.db, &ctx.lang, &query, 20).await?;
     let html = if ctx.is_fragment() {
         SearchResults { ctx, hits }.render()
     } else {
-        SearchPage { ctx, q: query, hits }.render()
+        SearchPage {
+            ctx,
+            q: query,
+            hits,
+        }
+        .render()
     };
-    Html(html.unwrap_or_else(|e| format!("template error: {e}")))
+    Ok(Html(
+        html.unwrap_or_else(|e| format!("template error: {e}")),
+    ))
 }
 
 #[derive(Template)]
@@ -62,30 +74,50 @@ struct GachaPage {
 }
 
 /// The disclosed draw pools with their odds.
-pub async fn gacha(State(state): State<AppState>, ctx: Ctx) -> Html<String> {
-    let pools = db::select_gacha(&state.db, &ctx.lang).await.unwrap_or_default();
-    Html(
+pub async fn gacha(State(state): State<AppState>, ctx: Ctx) -> Result<Html<String>, AppError> {
+    let pools = db::select_gacha(&state.db, &ctx.lang).await?;
+    Ok(Html(
         GachaPage { ctx, pools }
             .render()
             .unwrap_or_else(|e| format!("template error: {e}")),
-    )
+    ))
 }
 
 /// Every list page plus every detail id, each with its locale alternates. A
 /// section missing here is one crawlers only reach by luck.
-pub async fn sitemap(State(state): State<AppState>, ctx: Ctx) -> ([(&'static str, &'static str); 1], String) {
+pub async fn sitemap(
+    State(state): State<AppState>,
+    ctx: Ctx,
+) -> ([(&'static str, &'static str); 1], String) {
     let base = ctx.site_url;
     let langs = i18n::available_langs();
     let mut paths: Vec<String> = [
-        "/", "/cookies", "/pets", "/treasures", "/builds", "/changelog", "/episodes",
-        "/ingredients", "/jellies", "/skins", "/relics", "/gacha",
+        "/",
+        "/cookies",
+        "/pets",
+        "/treasures",
+        "/builds",
+        "/changelog",
+        "/episodes",
+        "/ingredients",
+        "/jellies",
+        "/skins",
+        "/relics",
+        "/gacha",
     ]
     .into_iter()
     .map(str::to_string)
     .collect();
 
+    // deliberately lenient: a database failure shrinks the sitemap rather
+    // than failing it — robots.txt always answers, and the partial sitemap
+    // heals on the next request
     if let Ok(entries) = db::sitemap_entries(&state.db).await {
-        paths.extend(entries.into_iter().map(|(section, id)| format!("/{section}/{id}")));
+        paths.extend(
+            entries
+                .into_iter()
+                .map(|(section, id)| format!("/{section}/{id}")),
+        );
     }
 
     let mut xml = String::from(
@@ -97,7 +129,11 @@ pub async fn sitemap(State(state): State<AppState>, ctx: Ctx) -> ([(&'static str
         xml.push_str(path);
         xml.push_str("</loc>");
         for lang in &langs {
-            let suffix = if lang == i18n::DEFAULT_LANG { String::new() } else { format!("?lang={lang}") };
+            let suffix = if lang == i18n::DEFAULT_LANG {
+                String::new()
+            } else {
+                format!("?lang={lang}")
+            };
             xml.push_str("<xhtml:link rel=\"alternate\" hreflang=\"");
             xml.push_str(lang);
             xml.push_str("\" href=\"");

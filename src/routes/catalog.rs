@@ -8,9 +8,11 @@ use axum::response::{Html, IntoResponse, Response};
 
 use crate::ctx::Ctx;
 use crate::db::{self, Card};
+use crate::grade::Graded;
+use crate::section::Section;
 use crate::state::AppState;
 
-use super::CommonQuery;
+use super::{errors::AppError, CommonQuery};
 
 pub const PAGE_SIZE: i64 = 30;
 
@@ -45,19 +47,8 @@ pub async fn list(
     ctx: Ctx,
     Path(section): Path<String>,
     q: Query<CommonQuery>,
-) -> Response {
+) -> Result<Response, AppError> {
     render(state, ctx, section, q).await
-}
-
-/// The sections that have a list page. Anything else is a 404 rather than an
-/// empty grid: the path segment is user input, and every unknown word would
-/// otherwise render a page titled after itself.
-fn known(section: &str) -> bool {
-    matches!(
-        section,
-        "cookies" | "pets" | "treasures" | "episodes" | "ingredients" | "jellies" | "relics"
-            | "skins"
-    )
 }
 
 async fn render(
@@ -65,10 +56,12 @@ async fn render(
     ctx: Ctx,
     section: String,
     q: Query<CommonQuery>,
-) -> Response {
-    if !known(&section) {
-        return super::errors::not_found(ctx);
-    }
+) -> Result<Response, AppError> {
+    // the path segment is user input: anything unknown is a 404 rather than
+    // an empty grid titled after itself
+    let Some(sec) = Section::parse(&section) else {
+        return Ok(super::errors::not_found(ctx));
+    };
     let page = q.page.unwrap_or(1).max(1);
     let offset = page.saturating_sub(1).saturating_mul(PAGE_SIZE);
     let tab = match q.tab.as_deref() {
@@ -76,14 +69,15 @@ async fn render(
         _ => "all".to_string(),
     };
 
-    let paginated = matches!(section.as_str(), "cookies" | "pets" | "treasures");
-    let cards = match section.as_str() {
-        "cookies" => db::select_cookies(&state.db, &ctx.lang, PAGE_SIZE, offset).await,
-        "pets" => db::select_pets(&state.db, &ctx.lang, PAGE_SIZE, offset).await,
-        "treasures" => db::select_treasures(&state.db, &ctx.lang, &tab, PAGE_SIZE, offset).await,
-        other => db::select_simple(&state.db, &ctx.lang, other).await,
-    }
-    .unwrap_or_default();
+    let paginated = sec.paginated();
+    let cards = match sec {
+        Section::Cookies => db::select_cookies(&state.db, &ctx.lang, PAGE_SIZE, offset).await?,
+        Section::Pets => db::select_pets(&state.db, &ctx.lang, PAGE_SIZE, offset).await?,
+        Section::Treasures => {
+            db::select_treasures(&state.db, &ctx.lang, &tab, PAGE_SIZE, offset).await?
+        }
+        other => db::select_simple(&state.db, &ctx.lang, other.as_str()).await?,
+    };
 
     let next_page = if paginated && i64::try_from(cards.len()).unwrap_or(0) == PAGE_SIZE {
         page.saturating_add(1)
@@ -92,13 +86,20 @@ async fn render(
     };
 
     let html = if ctx.is_fragment() {
-        CatalogCards { ctx, section, cards, next_page, tab }.render()
+        CatalogCards {
+            ctx,
+            section,
+            cards,
+            next_page,
+            tab,
+        }
+        .render()
     } else {
         let title_key = format!("{section}_page_title");
         let desc_key = format!("{section}_page_description");
         CatalogPage {
             ctx,
-            tabbed: section == "treasures",
+            tabbed: sec == Section::Treasures,
             section,
             title_key,
             desc_key,
@@ -108,6 +109,5 @@ async fn render(
         }
         .render()
     };
-    Html(html.unwrap_or_else(|e| format!("template error: {e}"))).into_response()
+    Ok(Html(html.unwrap_or_else(|e| format!("template error: {e}"))).into_response())
 }
-

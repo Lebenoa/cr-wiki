@@ -44,7 +44,10 @@ pub async fn rate_limit(State(state): State<AppState>, req: Request, next: Next)
     // read off the extensions rather than as an extractor: ConnectInfo is not
     // an optional extractor, and a request without a peer address must still
     // be servable (it just shares the 'unknown' bucket)
-    let peer = req.extensions().get::<ConnectInfo<SocketAddr>>().map(|c| c.0);
+    let peer = req
+        .extensions()
+        .get::<ConnectInfo<SocketAddr>>()
+        .map(|c| c.0);
     let ip = ctx::client_ip(req.headers(), peer, &state.cfg.ratelimit.trusted_proxies);
     match state.limiter.check(&ip) {
         Decision::Allow => next.run(req).await,
@@ -52,7 +55,11 @@ pub async fn rate_limit(State(state): State<AppState>, req: Request, next: Next)
             tracing::warn!("rate limit hit for {ip}");
             let htmx = req.headers().get("HX-Request").is_some();
             let boosted = req.headers().get("HX-Boosted").is_some();
-            let body = if htmx && !boosted { "" } else { "too many requests" };
+            let body = if htmx && !boosted {
+                ""
+            } else {
+                "too many requests"
+            };
             let mut res = (StatusCode::TOO_MANY_REQUESTS, body).into_response();
             if let Ok(v) = HeaderValue::from_str(&retry_after.to_string()) {
                 res.headers_mut().insert(header::RETRY_AFTER, v);

@@ -10,7 +10,7 @@ use crate::db;
 use crate::i18n;
 use crate::state::AppState;
 
-use super::CommonQuery;
+use super::{errors::AppError, CommonQuery};
 
 /// The locales the site is served in.
 pub async fn available_langs() -> Json<serde_json::Value> {
@@ -23,7 +23,7 @@ pub async fn richtext_names(
     State(state): State<AppState>,
     ctx: Ctx,
     q: Query<CommonQuery>,
-) -> Json<serde_json::Value> {
+) -> Result<Json<serde_json::Value>, AppError> {
     let kind = match q.kind.as_deref() {
         Some(k @ ("pet" | "treasure")) => k.to_string(),
         _ => "cookie".to_string(),
@@ -34,11 +34,11 @@ pub async fn richtext_names(
         _ => "cookies",
     };
     let names = crate::options::options(&state.db, &ctx.lang, &kind)
-        .await
-        .into_iter()
+        .await?
+        .iter()
         .map(|o| json!({ "id": o.id, "name": o.name, "en_name": o.en_name }))
         .collect::<Vec<_>>();
-    Json(json!({ "kind": section, "names": names }))
+    Ok(Json(json!({ "kind": section, "names": names })))
 }
 
 /// Sets the language cookie and returns to where the visitor was. The value
@@ -62,9 +62,7 @@ pub async fn set_lang(q: Query<CommonQuery>) -> Response {
         "/".to_string()
     };
     let mut res = Redirect::to(&back).into_response();
-    if let Ok(v) =
-        axum::http::HeaderValue::from_str(&format!("{LANG_COOKIE}={lang}; path=/"))
-    {
+    if let Ok(v) = axum::http::HeaderValue::from_str(&format!("{LANG_COOKIE}={lang}; path=/")) {
         res.headers_mut().append(axum::http::header::SET_COOKIE, v);
     }
     res
@@ -72,14 +70,15 @@ pub async fn set_lang(q: Query<CommonQuery>) -> Response {
 
 /// Kept next to the other API handlers: the relic list, which has no page of
 /// its own yet but is already queryable.
-pub async fn relics(State(state): State<AppState>, ctx: Ctx) -> Json<serde_json::Value> {
-    let rows = db::select_simple(&state.db, &ctx.lang, "relics")
-        .await
-        .unwrap_or_default();
-    Json(json!({
+pub async fn relics(
+    State(state): State<AppState>,
+    ctx: Ctx,
+) -> Result<Json<serde_json::Value>, AppError> {
+    let rows = db::select_simple(&state.db, &ctx.lang, "relics").await?;
+    Ok(Json(json!({
         "relics": rows
             .into_iter()
             .map(|c| json!({ "id": c.id, "name": c.name, "image": c.image }))
             .collect::<Vec<_>>()
-    }))
+    })))
 }

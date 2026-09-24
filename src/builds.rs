@@ -7,7 +7,8 @@ use surrealdb::types::SurrealValue;
 use crate::db::{cards_by_ids, Card, Db};
 
 /// One build as the list and detail pages render it.
-#[derive(Debug, Clone, Default)]pub struct BuildCard {
+#[derive(Debug, Clone, Default)]
+pub struct BuildCard {
     pub id: i64,
     pub cookie: Option<Card>,
     pub cookie2: Option<Card>,
@@ -108,11 +109,7 @@ fn split_list(raw: &str) -> Vec<String> {
         .collect()
 }
 
-fn now_unix() -> i64 {
-    std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .map_or(0, |d| i64::try_from(d.as_secs()).unwrap_or(0))
-}
+use crate::time::now_unix;
 
 /// The raw build record as stored; entity slots are resolved afterwards in
 /// batched lookups rather than one query per slot per build.
@@ -166,9 +163,9 @@ impl BuildRow {
             author: self.author,
             user_id: self.user_id,
             is_anon: self.expires_at.is_some(),
-            expires_in_h: self.expires_at.map_or(0, |e| {
-                (e.saturating_sub(now) / 3600).max(0)
-            }),
+            expires_in_h: self
+                .expires_at
+                .map_or(0, |e| (e.saturating_sub(now) / 3600).max(0)),
             treasure_levels: vec![
                 self.treasure1_level,
                 self.treasure2_level,
@@ -261,7 +258,11 @@ async fn select_where(
     };
 
     // free text filters travel as bound parameters, never inline
-    let author_filter = if author.is_empty() { "" } else { " AND author = $author" };
+    let author_filter = if author.is_empty() {
+        ""
+    } else {
+        " AND author = $author"
+    };
 
     let sql = format!(
         "SELECT record::id(id) AS id, cookie_id, cookie2_id, pet_id,
@@ -325,7 +326,16 @@ fn push_id(list: &mut Vec<i64>, id: i64) {
 /// One build by id, through the same query so the expiry rule cannot drift:
 /// an expired anonymous build is simply not found.
 pub async fn select_build(db: &Db, lang: &str, id: i64) -> crate::db::Result<Option<BuildCard>> {
-    let found = select_where(db, lang, &format!(" AND record::id(id) = {id}"), "latest", "", 1, 0).await?;
+    let found = select_where(
+        db,
+        lang,
+        &format!(" AND record::id(id) = {id}"),
+        "latest",
+        "",
+        1,
+        0,
+    )
+    .await?;
     Ok(found.into_iter().next())
 }
 
@@ -389,7 +399,9 @@ fn build_sets(b: &NewBuild) -> String {
             "boxes = {bx}",
         ),
         c = b.cookie,
-        c2 = b.cookie2.map_or_else(|| "NONE".to_string(), |v| v.to_string()),
+        c2 = b
+            .cookie2
+            .map_or_else(|| "NONE".to_string(), |v| v.to_string()),
         p = b.pet,
         t1 = b.treasures[0],
         t2 = b.treasures[1],
@@ -409,7 +421,9 @@ fn build_sets(b: &NewBuild) -> String {
     )
 }
 
-/// Inserts a build and returns its id, or 0 when the write failed.
+/// Inserts a build and returns its id. A failed write is an `Err`, never a
+/// silent 0: the route logs the cause and answers 500 instead of pretending
+/// the save happened.
 pub async fn insert_build(db: &Db, b: &NewBuild) -> crate::db::Result<i64> {
     let id = next_build_id(db).await?;
     let sql = format!(
@@ -424,16 +438,14 @@ pub async fn insert_build(db: &Db, b: &NewBuild) -> crate::db::Result<i64> {
     // an explicit 0 reads back as "permanent" everywhere the expiry rule looks;
     // binding None would store NONE and read back identically
     let exp = b.expires_at.unwrap_or(0);
-    let wrote = db
-        .query(&sql)
+    db.query(&sql)
         .bind(("tags", b.tags.clone()))
         .bind(("desc", b.description.clone()))
         .bind(("yt", b.youtube_url.clone()))
         .bind(("exp", exp))
-        .await
-        .and_then(|r| r.check().map(|_| ()))
-        .is_ok();
-    if wrote { Ok(id) } else { Ok(0) }
+        .await?
+        .check()?;
+    Ok(id)
 }
 
 pub async fn delete_build(db: &Db, id: i64) -> crate::db::Result<()> {
@@ -515,4 +527,54 @@ pub async fn upsert_review(
         .await?
         .check()?;
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use surrealdb::types::{Object, Value};
+
+    /// The build projection decodes the way `take` decodes it — the same
+    /// silent-default failure mode as every other row struct, locked down
+    /// without a database.
+    #[test]
+    fn build_row_reads_its_projection() {
+        let mut o = Object::new();
+        o.insert("id", 42i64);
+        o.insert("cookie_id", 1i64);
+        o.insert("pet_id", 2i64);
+        o.insert("treasure1_id", 3i64);
+        o.insert("treasure2_id", 4i64);
+        o.insert("treasure3_id", 5i64);
+        o.insert("treasure1_blessed", true);
+        o.insert("treasure2_blessed", false);
+        o.insert("treasure3_blessed", false);
+        o.insert("treasure1_level", 9i64);
+        o.insert("treasure2_level", 8i64);
+        o.insert("treasure3_level", 7i64);
+        o.insert("ep", 5i64);
+        o.insert("ep_special", 0i64);
+        o.insert("tag", "score,coin");
+        o.insert("boosts", "");
+        o.insert("boost", "");
+        o.insert("score", 100i64);
+        o.insert("coin", 0i64);
+        o.insert("time", 61_000i64);
+        o.insert("boxes", 0i64);
+        o.insert("description", "d");
+        o.insert("youtube_url", "");
+        o.insert("author", "a");
+        o.insert("user_id", 0i64);
+        o.insert("expires_at", 7_300i64);
+        let row = BuildRow::from_value(Value::Object(o)).expect("decodes");
+        let card = row.into_card(50);
+        assert_eq!(card.id, 42);
+        assert_eq!(card.time_label(), "1:01");
+        assert_eq!(card.tags, vec!["score".to_string(), "coin".to_string()]);
+        assert!(card.is_anon);
+        assert_eq!(card.expires_in_h, 2);
+        assert_eq!(card.treasure_levels, vec![9, 8, 7]);
+        assert_eq!(card.treasure_blessed, vec![true, false, false]);
+        assert_eq!(card.ep, 5);
+    }
 }

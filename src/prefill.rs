@@ -61,7 +61,13 @@ impl Prefill {
     /// An empty form.
     pub fn blank() -> Self {
         Self {
-            treasures: vec![TreasureSlot { level: 9, ..Default::default() }; 3],
+            treasures: vec![
+                TreasureSlot {
+                    level: 9,
+                    ..Default::default()
+                };
+                3
+            ],
             ..Default::default()
         }
     }
@@ -71,7 +77,10 @@ impl Prefill {
         let mut treasures: Vec<TreasureSlot> = (0..3)
             .map(|i| {
                 b.treasures.get(i).map_or_else(
-                    || TreasureSlot { level: 9, ..Default::default() },
+                    || TreasureSlot {
+                        level: 9,
+                        ..Default::default()
+                    },
                     |t| TreasureSlot {
                         id: t.id,
                         name: t.name.clone(),

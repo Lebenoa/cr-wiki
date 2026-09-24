@@ -7,7 +7,6 @@
 
 use std::collections::HashMap;
 use std::sync::Mutex;
-use std::time::{SystemTime, UNIX_EPOCH};
 
 use crate::config::RateLimit;
 
@@ -44,7 +43,10 @@ pub enum Decision {
 
 impl Limiter {
     pub fn new(cfg: RateLimit) -> Self {
-        Self { cfg, buckets: Mutex::new(HashMap::new()) }
+        Self {
+            cfg,
+            buckets: Mutex::new(HashMap::new()),
+        }
     }
 
     /// Non-release builds skip limiting entirely, matching the old V `$if
@@ -86,9 +88,10 @@ impl Limiter {
             }
         }
 
-        let bucket = buckets
-            .entry(ip.to_string())
-            .or_insert(Bucket { tokens: self.cfg.capacity, last_fill: now });
+        let bucket = buckets.entry(ip.to_string()).or_insert(Bucket {
+            tokens: self.cfg.capacity,
+            last_fill: now,
+        });
 
         // refill by wall-clock elapsed time, capped at the burst capacity
         let elapsed = now.saturating_sub(bucket.last_fill);
@@ -111,9 +114,6 @@ impl Limiter {
     }
 }
 
-#[cfg_attr(debug_assertions, allow(dead_code))]
-fn now_unix() -> i64 {
-    SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .map_or(0, |d| i64::try_from(d.as_secs()).unwrap_or(0))
-}
+// the bucket path compiles into release binaries only
+#[cfg(not(debug_assertions))]
+use crate::time::now_unix;

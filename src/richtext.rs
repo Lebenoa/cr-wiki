@@ -52,9 +52,19 @@ fn split_ref(inner: &str) -> Option<(&'static str, i64)> {
             "treasure" => "treasure",
             _ => return None,
         };
-        return rest.trim().parse::<i64>().ok().filter(|n| *n > 0).map(|n| (kind, n));
+        return rest
+            .trim()
+            .parse::<i64>()
+            .ok()
+            .filter(|n| *n > 0)
+            .map(|n| (kind, n));
     }
-    inner.trim().parse::<i64>().ok().filter(|n| *n > 0).map(|n| ("cookie", n))
+    inner
+        .trim()
+        .parse::<i64>()
+        .ok()
+        .filter(|n| *n > 0)
+        .map(|n| ("cookie", n))
 }
 
 fn section_of(kind: &str) -> &'static str {
@@ -74,14 +84,18 @@ fn slice(chars: &[char], from: usize, to: usize) -> String {
     window.iter().collect()
 }
 
-/// Renders one prose field. Names are resolved sequentially — the memo map
-/// keeps a description linking the same entity three times to one query.
-pub async fn render(db: &Db, lang: &str, raw: &str) -> String {
+/// Resolved entity links keyed `kind:id`, shared across every prose field of
+/// one page so the same entity is looked up once.
+pub type LinkCache = HashMap<String, Option<(String, Option<String>)>>;
+
+/// Renders one prose field through the caller's cache. Names are resolved
+/// sequentially — the detail page shares one cache across its five fields,
+/// so an entity named in abilities and description costs one query.
+pub async fn render_with(db: &Db, lang: &str, raw: &str, cache: &mut LinkCache) -> String {
     // the overwhelming majority of fields carry no markup at all
     if !raw.contains("[[") && !raw.contains("{color:") {
         return escape(raw);
     }
-    let mut cache: HashMap<String, Option<(String, Option<String>)>> = HashMap::new();
     let chars: Vec<char> = raw.chars().collect();
     let mut out = String::with_capacity(raw.len().saturating_add(64));
     let mut i = 0usize;
@@ -109,7 +123,9 @@ pub async fn render(db: &Db, lang: &str, raw: &str) -> String {
                         out.push_str(dir);
                         out.push('/');
                         out.push_str(&id.to_string());
-                        out.push_str("\" class=\"font-bold hover:text-primary transition-colors\">");
+                        out.push_str(
+                            "\" class=\"font-bold hover:text-primary transition-colors\">",
+                        );
                         if let Some(img) = image.filter(|s| !s.is_empty()) {
                             out.push_str("<img src=\"/img/");
                             out.push_str(dir);
@@ -145,14 +161,19 @@ pub async fn render(db: &Db, lang: &str, raw: &str) -> String {
                 }
             }
         }
-        out.push_str(&escape(&chars.get(i).copied().map_or(String::new(), String::from)));
+        out.push_str(&escape(
+            &chars.get(i).copied().map_or(String::new(), String::from),
+        ));
         i = i.saturating_add(1);
     }
     out
 }
 
 fn starts_at(chars: &[char], at: usize, needle: &str) -> bool {
-    needle.chars().enumerate().all(|(k, c)| chars.get(at.saturating_add(k)) == Some(&c))
+    needle
+        .chars()
+        .enumerate()
+        .all(|(k, c)| chars.get(at.saturating_add(k)) == Some(&c))
 }
 
 fn find(chars: &[char], from: usize, needle: &str) -> Option<usize> {

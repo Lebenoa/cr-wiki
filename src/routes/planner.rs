@@ -11,6 +11,9 @@ use crate::builds::{self, BuildCard};
 use crate::ctx::Ctx;
 use crate::prefill::Prefill;
 use crate::state::AppState;
+use crate::time::now_unix;
+
+use super::errors::AppError;
 
 /// Anonymous submissions live 24 hours; a signed-in one is permanent.
 const ANON_TTL_SECS: i64 = 24 * 60 * 60;
@@ -81,7 +84,9 @@ fn level_field(raw: Option<&String>) -> i64 {
 }
 
 fn number(raw: Option<&String>) -> i64 {
-    raw.and_then(|s| s.trim().parse::<i64>().ok()).filter(|n| *n >= 0).unwrap_or(0)
+    raw.and_then(|s| s.trim().parse::<i64>().ok())
+        .filter(|n| *n >= 0)
+        .unwrap_or(0)
 }
 
 /// "1".."7" is a regular tier, "s1".."s3" a special one.
@@ -113,9 +118,14 @@ fn page(ctx: Ctx, build: Option<BuildCard>, error: &str) -> Response {
         .as_ref()
         .map_or_else(Prefill::blank, Prefill::from_build);
     Html(
-        PlannerPage { ctx, build, prefill, error: error.to_string() }
-            .render()
-            .unwrap_or_else(|e| format!("template error: {e}")),
+        PlannerPage {
+            ctx,
+            build,
+            prefill,
+            error: error.to_string(),
+        }
+        .render()
+        .unwrap_or_else(|e| format!("template error: {e}")),
     )
     .into_response()
 }
@@ -130,11 +140,11 @@ pub async fn edit_form(
     State(state): State<AppState>,
     ctx: Ctx,
     Path(id): Path<i64>,
-) -> Response {
-    let Some(build) = load_owned(&state, &ctx, id).await else {
-        return super::errors::not_found(ctx);
+) -> Result<Response, AppError> {
+    let Some(build) = load_owned(&state, &ctx, id).await? else {
+        return Ok(super::errors::not_found(ctx));
     };
-    page(ctx, Some(build), "")
+    Ok(page(ctx, Some(build), ""))
 }
 
 pub async fn update(
@@ -142,102 +152,143 @@ pub async fn update(
     ctx: Ctx,
     Path(id): Path<i64>,
     Form(form): Form<BuildForm>,
-) -> Response {
-    let Some(existing) = load_owned(&state, &ctx, id).await else {
-        return super::errors::not_found(ctx);
+) -> Result<Response, AppError> {
+    let Some(existing) = load_owned(&state, &ctx, id).await? else {
+        return Ok(super::errors::not_found(ctx));
     };
     let (ep, ep_special) = parse_ep(form.ep.as_deref().unwrap_or(""));
     let tags = tags_of(&form);
     if form.cookie <= 0 || form.pet <= 0 || form.t1 <= 0 || form.t2 <= 0 || form.t3 <= 0 {
-        return (StatusCode::BAD_REQUEST, page(ctx, Some(existing), "build_error_loadout"))
-            .into_response();
+        return Ok((
+            StatusCode::BAD_REQUEST,
+            page(ctx, Some(existing), "build_error_loadout"),
+        )
+            .into_response());
     }
     if (ep == 0 && ep_special == 0) || tags.is_empty() {
-        return (StatusCode::BAD_REQUEST, page(ctx, Some(existing), "build_error_ep_tag"))
-            .into_response();
+        return Ok((
+            StatusCode::BAD_REQUEST,
+            page(ctx, Some(existing), "build_error_ep_tag"),
+        )
+            .into_response());
     }
     let record = match record_from(&form, ep, ep_special, tags, String::new(), 0, None) {
         Ok(r) => r,
         Err(key) => {
-            return (StatusCode::BAD_REQUEST, page(ctx, Some(existing), key)).into_response()
+            return Ok((StatusCode::BAD_REQUEST, page(ctx, Some(existing), key)).into_response())
         }
     };
-    let _ = builds::update_build(&state.db, id, &record).await;
-    Redirect::to(&format!("/builds/{id}")).into_response()
+    builds::update_build(&state.db, id, &record).await?;
+    Ok(Redirect::to(&format!("/builds/{id}")).into_response())
 }
 
 /// Loads a build only when the caller may change it.
-async fn load_owned(state: &AppState, ctx: &Ctx, id: i64) -> Option<BuildCard> {
-    let found = builds::select_build(&state.db, &ctx.lang, id).await.ok()??;
-    can_edit(ctx, &found).then_some(found)
+async fn load_owned(state: &AppState, ctx: &Ctx, id: i64) -> Result<Option<BuildCard>, AppError> {
+    let found = builds::select_build(&state.db, &ctx.lang, id).await?;
+    let Some(found) = found else {
+        return Ok(None);
+    };
+    Ok(can_edit(ctx, &found).then_some(found))
 }
 
 pub async fn create(
     State(state): State<AppState>,
     ctx: Ctx,
     Form(form): Form<BuildForm>,
-) -> Response {
+) -> Result<Response, AppError> {
     if !crate::turnstile::verify(&state.cfg, form.turnstile.as_deref(), "build").await {
-        return (StatusCode::FORBIDDEN, page(ctx, None, "turnstile_form_failed")).into_response();
+        return Ok((
+            StatusCode::FORBIDDEN,
+            page(ctx, None, "turnstile_form_failed"),
+        )
+            .into_response());
     }
     let (ep, ep_special) = parse_ep(form.ep.as_deref().unwrap_or(""));
     let tags = tags_of(&form);
 
     if form.cookie <= 0 || form.pet <= 0 || form.t1 <= 0 || form.t2 <= 0 || form.t3 <= 0 {
-        return (StatusCode::BAD_REQUEST, page(ctx, None, "build_error_loadout")).into_response();
+        return Ok((
+            StatusCode::BAD_REQUEST,
+            page(ctx, None, "build_error_loadout"),
+        )
+            .into_response());
     }
     if (ep == 0 && ep_special == 0) || tags.is_empty() {
-        return (StatusCode::BAD_REQUEST, page(ctx, None, "build_error_ep_tag")).into_response();
+        return Ok((
+            StatusCode::BAD_REQUEST,
+            page(ctx, None, "build_error_ep_tag"),
+        )
+            .into_response());
     }
 
     let user_id = ctx.user.as_ref().map_or(0, |u| u.id);
-    let author = ctx
-        .user
-        .as_ref()
-        .map_or_else(|| form.author.clone().unwrap_or_default(), |u| u.username.clone());
+    let author = ctx.user.as_ref().map_or_else(
+        || form.author.clone().unwrap_or_default(),
+        |u| u.username.clone(),
+    );
     // an anonymous build expires; a signed-in one does not
-    let expires_at = if user_id > 0 { None } else { Some(now_unix().saturating_add(ANON_TTL_SECS)) };
+    let expires_at = if user_id > 0 {
+        None
+    } else {
+        Some(now_unix().saturating_add(ANON_TTL_SECS))
+    };
 
     let record = match record_from(&form, ep, ep_special, tags, author, user_id, expires_at) {
         Ok(r) => r,
-        Err(key) => return (StatusCode::BAD_REQUEST, page(ctx, None, key)).into_response(),
+        Err(key) => return Ok((StatusCode::BAD_REQUEST, page(ctx, None, key)).into_response()),
     };
 
-    let created = builds::insert_build(&state.db, &record).await.unwrap_or(0);
-
-    if created <= 0 {
-        return (StatusCode::INTERNAL_SERVER_ERROR, page(ctx, None, "build_error_save"))
-            .into_response();
-    }
-    Redirect::to(&format!("/builds/{created}")).into_response()
+    // a failed save keeps the filled-in form and says so; the cause itself
+    // reaches the log, which a bare Ok(0) never did
+    let created = match builds::insert_build(&state.db, &record).await {
+        Ok(0) => {
+            return Ok((
+                StatusCode::INTERNAL_SERVER_ERROR,
+                page(ctx, None, "build_error_save"),
+            )
+                .into_response())
+        }
+        Ok(id) => id,
+        Err(e) => {
+            tracing::error!("insert build failed: {e}");
+            return Ok((
+                StatusCode::INTERNAL_SERVER_ERROR,
+                page(ctx, None, "build_error_save"),
+            )
+                .into_response());
+        }
+    };
+    Ok(Redirect::to(&format!("/builds/{created}")).into_response())
 }
 
 pub async fn delete(
     State(state): State<AppState>,
     ctx: Ctx,
     Path(id): Path<i64>,
-) -> Response {
-    let found = builds::select_build(&state.db, &ctx.lang, id).await.unwrap_or(None);
+) -> Result<Response, AppError> {
+    let found = builds::select_build(&state.db, &ctx.lang, id).await?;
 
     let Some(build) = found else {
-        return super::errors::not_found(ctx);
+        return Ok(super::errors::not_found(ctx));
     };
     // 404 rather than 403 for someone else's build, matching the V routes:
     // whether a build exists is not worth revealing to a stranger
     if !can_edit(&ctx, &build) {
-        return super::errors::not_found(ctx);
+        return Ok(super::errors::not_found(ctx));
     }
-    let _ = builds::delete_build(&state.db, id).await;
-    Redirect::to("/builds").into_response()
+    builds::delete_build(&state.db, id).await?;
+    Ok(Redirect::to("/builds").into_response())
 }
 
 /// The author or an admin. An anonymous build has no owner, so only an admin
 /// can touch it.
 fn can_edit(ctx: &Ctx, build: &BuildCard) -> bool {
     ctx.is_admin()
-        || ctx.user.as_ref().is_some_and(|u| build.user_id > 0 && build.user_id == u.id)
+        || ctx
+            .user
+            .as_ref()
+            .is_some_and(|u| build.user_id > 0 && build.user_id == u.id)
 }
-
 
 /// http(s) only: the value renders as a live href on the detail page and the
 /// list cards, and HTML escaping does not neutralise a `javascript:` target
@@ -323,23 +374,17 @@ pub async fn verify(
     ctx: Ctx,
     Path(id): Path<i64>,
     Form(form): Form<VerifyForm>,
-) -> Response {
+) -> Result<Response, AppError> {
     let Some(user) = ctx.user.as_ref().map(|u| u.id) else {
-        return (StatusCode::FORBIDDEN, "sign in to verify").into_response();
+        return Ok((StatusCode::FORBIDDEN, "sign in to verify").into_response());
     };
-    let exists = builds::select_build(&state.db, &ctx.lang, id).await.unwrap_or(None);
+    let exists = builds::select_build(&state.db, &ctx.lang, id).await?;
     if exists.is_none() {
-        return super::errors::not_found(ctx);
+        return Ok(super::errors::not_found(ctx));
     }
 
     let ok = form.verified.as_deref() == Some("1");
     let reason = form.reason.clone().unwrap_or_default();
-    let _ = builds::upsert_review(&state.db, id, user, ok, &reason).await;
-    Redirect::to(&format!("/builds/{id}")).into_response()
-}
-
-fn now_unix() -> i64 {
-    std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .map_or(0, |d| i64::try_from(d.as_secs()).unwrap_or(0))
+    builds::upsert_review(&state.db, id, user, ok, &reason).await?;
+    Ok(Redirect::to(&format!("/builds/{id}")).into_response())
 }

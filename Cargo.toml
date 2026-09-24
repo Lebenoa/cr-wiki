@@ -27,3 +27,14 @@ serde_urlencoded = "0.7.1"
 name = "cookierun"
 path = "src/main.rs"
 
+# The lint bar lives here so every `cargo clippy` reproduces it — a bar only
+# one ad-hoc command knows is a bar nobody keeps. Pedantic yes; nursery no
+# (nursery lints change between toolchains, and a moving bar gets re-broken
+# on every Rust release). unwrap/expect/panic are denied in shipped code;
+# main.rs relaxes them for `cfg(test)` where they are idiomatic.
+[lints.clippy]
+pedantic = { level = "warn", priority = -1 }
+unwrap_used = "deny"
+expect_used = "deny"
+panic = "deny"
+

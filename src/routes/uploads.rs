@@ -11,11 +11,7 @@ use serde_json::json;
 use crate::ctx::Ctx;
 use crate::upload;
 
-pub async fn image(
-    ctx: Ctx,
-    Path(section): Path<String>,
-    mut form: Multipart,
-) -> Response {
+pub async fn image(ctx: Ctx, Path(section): Path<String>, mut form: Multipart) -> Response {
     // 404 rather than 403 for a non-admin, matching the other admin routes
     if !ctx.is_admin() {
         return (StatusCode::NOT_FOUND, "not found").into_response();
@@ -78,5 +74,9 @@ pub async fn image(
             .into_response();
     }
 
-    (StatusCode::BAD_REQUEST, Json(json!({ "error": "no image field" }))).into_response()
+    (
+        StatusCode::BAD_REQUEST,
+        Json(json!({ "error": "no image field" })),
+    )
+        .into_response()
 }

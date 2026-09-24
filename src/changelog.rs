@@ -32,7 +32,12 @@ pub fn entries() -> &'static Vec<ChangeEntry> {
 
 fn load() -> Vec<ChangeEntry> {
     let out = Command::new("git")
-        .args(["log", "--no-color", "--date=short", &format!("--max-count={LIMIT}")])
+        .args([
+            "log",
+            "--no-color",
+            "--date=short",
+            &format!("--max-count={LIMIT}"),
+        ])
         .output();
     let out = match out {
         Ok(o) if o.status.success() => o.stdout,

@@ -6,14 +6,12 @@
 
 use std::path::{Path, PathBuf};
 
+use crate::section::Section;
+
 /// Where the sprites for one section live, relative to the repo root.
 pub fn section_dir(section: &str) -> Option<PathBuf> {
-    let leaf = match section {
-        "cookies" | "pets" | "treasures" | "episodes" | "ingredients" | "jellies" | "skins"
-        | "relics" => section,
-        _ => return None,
-    };
-    Some(PathBuf::from("../static/img").join(leaf))
+    Section::parse(section)?;
+    Some(PathBuf::from("../static/img").join(section))
 }
 
 /// Only the image types the catalog actually uses. The extension is taken

@@ -8,7 +8,7 @@ use crate::builds::{self, BuildCard};
 use crate::ctx::Ctx;
 use crate::state::AppState;
 
-use super::CommonQuery;
+use super::{errors::AppError, CommonQuery};
 
 pub const PAGE_SIZE: i64 = 30;
 
@@ -66,7 +66,7 @@ pub async fn list(
     State(state): State<AppState>,
     ctx: Ctx,
     q: Query<CommonQuery>,
-) -> Html<String> {
+) -> Result<Html<String>, AppError> {
     let lang = ctx.lang.clone();
     let page = q.page.unwrap_or(1).max(1);
     let offset = page.saturating_sub(1).saturating_mul(PAGE_SIZE);
@@ -92,11 +92,13 @@ pub async fn list(
         PAGE_SIZE,
         offset,
     )
-    .await
-    .unwrap_or_default();
+    .await?;
 
-    let next_page =
-        if i64::try_from(rows.len()).unwrap_or(0) == PAGE_SIZE { page.saturating_add(1) } else { 0 };
+    let next_page = if i64::try_from(rows.len()).unwrap_or(0) == PAGE_SIZE {
+        page.saturating_add(1)
+    } else {
+        0
+    };
     let html = if ctx.is_fragment() {
         BuildCards {
             ctx,
@@ -124,24 +126,31 @@ pub async fn list(
         }
         .render()
     };
-    Html(html.unwrap_or_else(|e| format!("template error: {e}")))
+    Ok(Html(
+        html.unwrap_or_else(|e| format!("template error: {e}")),
+    ))
 }
 
 pub async fn show(
     State(state): State<AppState>,
     ctx: Ctx,
     Path(id): Path<i64>,
-) -> Response {
-    let found = builds::select_build(&state.db, &ctx.lang, id).await.unwrap_or(None);
+) -> Result<Response, AppError> {
+    let found = builds::select_build(&state.db, &ctx.lang, id).await?;
 
     let Some(build) = found else {
-        return super::errors::not_found(ctx);
+        return Ok(super::errors::not_found(ctx));
     };
-    let (verified, issues) = builds::review_counts(&state.db, id).await.unwrap_or((0, 0));
-    Html(
-        BuildDetail { ctx, build, verified, issues }
-            .render()
-            .unwrap_or_else(|e| format!("template error: {e}")),
+    let (verified, issues) = builds::review_counts(&state.db, id).await?;
+    Ok(Html(
+        BuildDetail {
+            ctx,
+            build,
+            verified,
+            issues,
+        }
+        .render()
+        .unwrap_or_else(|e| format!("template error: {e}")),
     )
-    .into_response()
+    .into_response())
 }

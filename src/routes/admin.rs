@@ -14,7 +14,10 @@ use serde::Deserialize;
 use crate::ctx::Ctx;
 use crate::db::{self, CombiEditRow, Detail};
 use crate::options;
+use crate::section::Section;
 use crate::state::AppState;
+
+use super::errors::AppError;
 
 #[derive(Template)]
 #[template(path = "admin_form.html")]
@@ -66,7 +69,11 @@ impl AdminForm {
     }
 
     fn save_key(&self) -> String {
-        let verb = if self.item.is_some() { "save" } else { "create" };
+        let verb = if self.item.is_some() {
+            "save"
+        } else {
+            "create"
+        };
         format!("{verb}_{}_button", self.singular())
     }
 
@@ -76,7 +83,7 @@ impl AdminForm {
 }
 
 fn known(section: &str) -> bool {
-    matches!(section, "cookies" | "pets" | "treasures")
+    Section::parse(section).is_some_and(Section::editable)
 }
 
 fn page(ctx: Ctx, section: &str, item: Option<Detail>, error: &str) -> Response {
@@ -115,21 +122,17 @@ pub async fn edit_form(
     State(state): State<AppState>,
     ctx: Ctx,
     Path((section, id)): Path<(String, i64)>,
-) -> Response {
+) -> Result<Response, AppError> {
     if !ctx.is_admin() || !known(&section) {
-        return super::errors::not_found(ctx);
+        return Ok(super::errors::not_found(ctx));
     }
-    let found = db::select_detail(&state.db, &ctx.lang, &section, id)
-        .await
-        .unwrap_or(None);
+    let found = db::select_detail(&state.db, &ctx.lang, &section, id).await?;
 
     let Some(item) = found else {
-        return super::errors::not_found(ctx);
+        return Ok(super::errors::not_found(ctx));
     };
-    let combi = db::combi_edit_rows(&state.db, &ctx.lang, &section, id)
-        .await
-        .unwrap_or_default();
-    page_with(ctx, &section, Some(item), combi, "")
+    let combi = db::combi_edit_rows(&state.db, &ctx.lang, &section, id).await?;
+    Ok(page_with(ctx, &section, Some(item), combi, ""))
 }
 
 pub async fn create(
@@ -137,28 +140,29 @@ pub async fn create(
     ctx: Ctx,
     Path(section): Path<String>,
     Form(form): Form<EntityForm>,
-) -> Response {
+) -> Result<Response, AppError> {
     if !ctx.is_admin() || !known(&section) {
-        return super::errors::not_found(ctx);
+        return Ok(super::errors::not_found(ctx));
     }
     if form.name.trim().is_empty() {
-        return (StatusCode::BAD_REQUEST, page(ctx, &section, None, "admin_error_name"))
-            .into_response();
+        return Ok((
+            StatusCode::BAD_REQUEST,
+            page(ctx, &section, None, "admin_error_name"),
+        )
+            .into_response());
     }
-    let created = db::insert_entity(&state.db, &ctx.lang, &section, &form)
-        .await
-        .unwrap_or(0);
+    let created = db::insert_entity(&state.db, &ctx.lang, &section, &form).await?;
 
     if created <= 0 {
-        return (
+        return Ok((
             StatusCode::INTERNAL_SERVER_ERROR,
             page(ctx, &section, None, "admin_error_save"),
         )
-            .into_response();
+            .into_response());
     }
     // the picker lists cache the catalog; a write has to show up next request
     options::invalidate();
-    Redirect::to(&format!("/{section}/{created}")).into_response()
+    Ok(Redirect::to(&format!("/{section}/{created}")).into_response())
 }
 
 pub async fn update(
@@ -166,27 +170,28 @@ pub async fn update(
     ctx: Ctx,
     Path((section, id)): Path<(String, i64)>,
     Form(form): Form<EntityForm>,
-) -> Response {
+) -> Result<Response, AppError> {
     if !ctx.is_admin() || !known(&section) {
-        return super::errors::not_found(ctx);
+        return Ok(super::errors::not_found(ctx));
     }
     if form.name.trim().is_empty() {
-        return (StatusCode::BAD_REQUEST, page(ctx, &section, None, "admin_error_name"))
-            .into_response();
+        return Ok((
+            StatusCode::BAD_REQUEST,
+            page(ctx, &section, None, "admin_error_name"),
+        )
+            .into_response());
     }
-    let ok = db::update_entity(&state.db, &ctx.lang, &section, id, &form)
-        .await
-        .unwrap_or(false);
+    let ok = db::update_entity(&state.db, &ctx.lang, &section, id, &form).await?;
 
     if !ok {
-        return (
+        return Ok((
             StatusCode::INTERNAL_SERVER_ERROR,
             page(ctx, &section, None, "admin_error_save"),
         )
-            .into_response();
+            .into_response());
     }
     options::invalidate();
-    Redirect::to(&format!("/{section}/{id}")).into_response()
+    Ok(Redirect::to(&format!("/{section}/{id}")).into_response())
 }
 
 /// Removes one combo pairing from the editor. Takes the row id rather than a
@@ -199,7 +204,9 @@ pub async fn delete_combi(
     if !ctx.is_admin() {
         return super::errors::not_found(ctx);
     }
-    let _ = db::delete_combi(&state.db, row_id).await;
+    if let Err(e) = db::delete_combi(&state.db, row_id).await {
+        tracing::error!("delete combi row {row_id}: {e}");
+    }
     options::invalidate();
     // back to where the editor was; the referer is the entity's own form
     Redirect::to("/cookies").into_response()
