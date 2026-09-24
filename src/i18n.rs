@@ -109,8 +109,29 @@ impl Loc {
 }
 
 #[cfg(test)]
+// tests use unwrap/expect/panic freely; production code does not (Cargo.toml [lints])
+#[cfg_attr(test, allow(clippy::unwrap_used, clippy::expect_used, clippy::panic))]
 mod tests {
-    use super::pick_text;
+    use super::*;
+
+    #[test]
+    fn translations_load_with_fallback_chain() {
+        load("translations");
+        assert!(available_langs().contains(&"en".to_string()));
+        assert!(available_langs().contains(&"th".to_string()));
+        assert_eq!(t("en", "changelog_page_header"), "Changelog");
+        assert_eq!(t("en", "changelog_unavailable"), "No changelog available.");
+        assert_ne!(t("th", "changelog_page_header"), "Changelog");
+        // a miss falls back to English, then to the key itself
+        assert_eq!(t("th", "no_such_key_at_all"), "no_such_key_at_all");
+    }
+
+    #[test]
+    fn available_langs_covers_both_catalogs() {
+        load("translations");
+        assert!(is_available("th"));
+        assert!(!is_available("zz"));
+    }
 
     #[test]
     fn pick_text_picks_locale_then_english() {

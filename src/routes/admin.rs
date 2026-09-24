@@ -13,7 +13,6 @@ use serde::Deserialize;
 
 use crate::ctx::Ctx;
 use crate::db::{self, CombiEditRow, Detail};
-use crate::options;
 use crate::section::Section;
 use crate::state::AppState;
 
@@ -54,13 +53,8 @@ impl AdminForm {
     /// The `.tr` keys are per-section (`save_cookie_button`), so the template
     /// builds none of them itself. A method because askama calls it on the
     /// context struct.
-    #[allow(clippy::unused_self)]
     fn singular(&self) -> &'static str {
-        match self.section.as_str() {
-            "pets" => "pet",
-            "treasures" => "treasure",
-            _ => "cookie",
-        }
+        Section::parse(&self.section).map_or("cookie", Section::singular)
     }
 
     fn title_key(&self) -> String {
@@ -82,17 +76,19 @@ impl AdminForm {
     }
 }
 
-fn known(section: &str) -> bool {
-    Section::parse(section).is_some_and(Section::editable)
+/// The admin editor writes exactly the editable sections; everything else is
+/// a 404 that does not confirm existence. One gate, at the typed edge.
+fn editable(section: &str) -> Option<Section> {
+    Section::parse(section).filter(|s| s.editable())
 }
 
-fn page(ctx: Ctx, section: &str, item: Option<Detail>, error: &str) -> Response {
+fn page(ctx: Ctx, section: Section, item: Option<Detail>, error: &str) -> Response {
     page_with(ctx, section, item, Vec::new(), error)
 }
 
 fn page_with(
     ctx: Ctx,
-    section: &str,
+    section: Section,
     item: Option<Detail>,
     combi: Vec<CombiEditRow>,
     error: &str,
@@ -100,7 +96,7 @@ fn page_with(
     Html(
         AdminForm {
             ctx,
-            section: section.to_string(),
+            section: section.as_str().to_string(),
             item,
             combi,
             error: error.to_string(),
@@ -112,10 +108,13 @@ fn page_with(
 }
 
 pub async fn new_form(ctx: Ctx, Path(section): Path<String>) -> Response {
-    if !ctx.is_admin() || !known(&section) {
+    let Some(section) = editable(&section) else {
+        return super::errors::not_found(ctx);
+    };
+    if !ctx.is_admin() {
         return super::errors::not_found(ctx);
     }
-    page(ctx, &section, None, "")
+    page(ctx, section, None, "")
 }
 
 pub async fn edit_form(
@@ -123,16 +122,19 @@ pub async fn edit_form(
     ctx: Ctx,
     Path((section, id)): Path<(String, i64)>,
 ) -> Result<Response, AppError> {
-    if !ctx.is_admin() || !known(&section) {
+    let Some(section) = editable(&section) else {
+        return Ok(super::errors::not_found(ctx));
+    };
+    if !ctx.is_admin() {
         return Ok(super::errors::not_found(ctx));
     }
-    let found = db::select_detail(&state.db, &ctx.lang, &section, id).await?;
+    let found = db::select_detail(&state.db, &ctx.lang, section.as_str(), id).await?;
 
     let Some(item) = found else {
         return Ok(super::errors::not_found(ctx));
     };
-    let combi = db::combi_edit_rows(&state.db, &ctx.lang, &section, id).await?;
-    Ok(page_with(ctx, &section, Some(item), combi, ""))
+    let combi = db::combi_edit_rows(&state.db, &ctx.lang, section.as_str(), id).await?;
+    Ok(page_with(ctx, section, Some(item), combi, ""))
 }
 
 pub async fn create(
@@ -141,28 +143,29 @@ pub async fn create(
     Path(section): Path<String>,
     Form(form): Form<EntityForm>,
 ) -> Result<Response, AppError> {
-    if !ctx.is_admin() || !known(&section) {
+    let Some(section) = editable(&section) else {
+        return Ok(super::errors::not_found(ctx));
+    };
+    if !ctx.is_admin() {
         return Ok(super::errors::not_found(ctx));
     }
     if form.name.trim().is_empty() {
         return Ok((
             StatusCode::BAD_REQUEST,
-            page(ctx, &section, None, "admin_error_name"),
+            page(ctx, section, None, "admin_error_name"),
         )
             .into_response());
     }
-    let created = db::insert_entity(&state.db, &ctx.lang, &section, &form).await?;
+    let created = db::insert_entity(&state.db, &ctx.lang, section, &form).await?;
 
     if created <= 0 {
         return Ok((
             StatusCode::INTERNAL_SERVER_ERROR,
-            page(ctx, &section, None, "admin_error_save"),
+            page(ctx, section, None, "admin_error_save"),
         )
             .into_response());
     }
-    // the picker lists cache the catalog; a write has to show up next request
-    options::invalidate();
-    Ok(Redirect::to(&format!("/{section}/{created}")).into_response())
+    Ok(Redirect::to(&format!("/{}/{created}", section.as_str())).into_response())
 }
 
 pub async fn update(
@@ -171,27 +174,29 @@ pub async fn update(
     Path((section, id)): Path<(String, i64)>,
     Form(form): Form<EntityForm>,
 ) -> Result<Response, AppError> {
-    if !ctx.is_admin() || !known(&section) {
+    let Some(section) = editable(&section) else {
+        return Ok(super::errors::not_found(ctx));
+    };
+    if !ctx.is_admin() {
         return Ok(super::errors::not_found(ctx));
     }
     if form.name.trim().is_empty() {
         return Ok((
             StatusCode::BAD_REQUEST,
-            page(ctx, &section, None, "admin_error_name"),
+            page(ctx, section, None, "admin_error_name"),
         )
             .into_response());
     }
-    let ok = db::update_entity(&state.db, &ctx.lang, &section, id, &form).await?;
+    let ok = db::update_entity(&state.db, &ctx.lang, section, id, &form).await?;
 
     if !ok {
         return Ok((
             StatusCode::INTERNAL_SERVER_ERROR,
-            page(ctx, &section, None, "admin_error_save"),
+            page(ctx, section, None, "admin_error_save"),
         )
             .into_response());
     }
-    options::invalidate();
-    Ok(Redirect::to(&format!("/{section}/{id}")).into_response())
+    Ok(Redirect::to(&format!("/{}/{}", section.as_str(), id)).into_response())
 }
 
 /// Removes one combo pairing from the editor. Takes the row id rather than a
@@ -207,7 +212,6 @@ pub async fn delete_combi(
     if let Err(e) = db::delete_combi(&state.db, row_id).await {
         tracing::error!("delete combi row {row_id}: {e}");
     }
-    options::invalidate();
     // back to where the editor was; the referer is the entity's own form
     Redirect::to("/cookies").into_response()
 }

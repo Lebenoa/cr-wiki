@@ -111,3 +111,86 @@ async fn render(
     };
     Ok(Html(html.unwrap_or_else(|e| format!("template error: {e}"))).into_response())
 }
+
+#[cfg(test)]
+// tests use unwrap/expect/panic freely; production code does not (Cargo.toml [lints])
+#[cfg_attr(test, allow(clippy::unwrap_used, clippy::expect_used, clippy::panic))]
+mod tests {
+    use super::*;
+
+    /// The cookie list query runs against the real database and comes back in
+    /// the catalog's order. The th page still carries the English name for
+    /// cross-language search.
+    #[tokio::test]
+    async fn cookie_query_and_render() {
+        crate::i18n::load("translations");
+        let Some(pool) = live_db().await else {
+            eprintln!("skip: CR_SURREAL_URL not set");
+            return;
+        };
+        let rows = db::select_cookies(&pool, "en", 30, 0).await.expect("query");
+        assert_eq!(rows.len(), 30);
+        assert!(rows.iter().all(|c| !c.name.is_empty()));
+
+        let th = db::select_cookies(&pool, "th", 5, 0)
+            .await
+            .expect("query th");
+        assert_eq!(th.len(), 5);
+        assert!(th.iter().all(|c| !c.en_name.is_empty()));
+    }
+
+    /// Every catalog list answers, in both locales, with the English name
+    /// kept alongside for the cross-language filter.
+    #[tokio::test]
+    async fn catalog_queries() {
+        crate::i18n::load("translations");
+        let Some(pool) = live_db().await else {
+            eprintln!("skip: CR_SURREAL_URL not set");
+            return;
+        };
+
+        let cookies = db::select_cookies(&pool, "en", 30, 0).await.unwrap();
+        assert_eq!(cookies.len(), 30);
+        let pets = db::select_pets(&pool, "th", 30, 0).await.unwrap();
+        assert_eq!(pets.len(), 30);
+        assert!(pets.iter().all(|p| !p.en_name.is_empty()));
+
+        // the tabs partition the treasures rather than overlapping
+        let all = db::select_treasures(&pool, "en", "all", 30, 0)
+            .await
+            .unwrap();
+        let normal = db::select_treasures(&pool, "en", "normal", 30, 0)
+            .await
+            .unwrap();
+        let evo = db::select_treasures(&pool, "en", "evo", 30, 0)
+            .await
+            .unwrap();
+        assert_eq!(all.len(), 30);
+        assert!(normal.iter().all(|t| !t.is_evolved));
+        assert!(evo.iter().all(|t| t.is_evolved));
+
+        for kind in ["episodes", "ingredients", "jellies", "skins", "relics"] {
+            assert!(
+                !db::select_simple(&pool, "en", kind)
+                    .await
+                    .unwrap()
+                    .is_empty(),
+                "{kind} empty"
+            );
+        }
+    }
+
+    /// The DB handle behind the gated tests: unset means they skip, so
+    /// `cargo test` stays green without a server. Points at a scratch
+    /// namespace/database — never at data you cannot lose.
+    async fn live_db() -> Option<crate::db::Db> {
+        let url = std::env::var("CR_SURREAL_URL").ok()?;
+        let ns = std::env::var("CR_SURREAL_NS").unwrap_or_else(|_| "cookierun".into());
+        let database = std::env::var("CR_SURREAL_DB").unwrap_or_else(|_| "cookierun".into());
+        let user = std::env::var("SURREAL_USER").unwrap_or_else(|_| "root".into());
+        let pass = std::env::var("SURREAL_PASS").unwrap_or_default();
+        crate::db::connect_url(&url, &ns, &database, &user, &pass)
+            .await
+            .ok()
+    }
+}

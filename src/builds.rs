@@ -530,6 +530,8 @@ pub async fn upsert_review(
 }
 
 #[cfg(test)]
+// tests use unwrap/expect/panic freely; production code does not (Cargo.toml [lints])
+#[cfg_attr(test, allow(clippy::unwrap_used, clippy::expect_used, clippy::panic))]
 mod tests {
     use super::*;
     use surrealdb::types::{Object, Value};

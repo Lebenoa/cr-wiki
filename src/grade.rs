@@ -55,3 +55,21 @@ pub trait Graded {
         self.grade().is_some()
     }
 }
+
+#[cfg(test)]
+// tests use unwrap/expect/panic freely; production code does not (Cargo.toml [lints])
+#[cfg_attr(test, allow(clippy::unwrap_used, clippy::expect_used, clippy::panic))]
+mod tests {
+    use super::*;
+
+    /// Grade ordering follows `grade_values`, where E outranks L.
+    #[test]
+    fn grade_ordering() {
+        assert_eq!(slug(5), "s_plus");
+        assert_eq!(label(5), "S+");
+        assert_eq!(label(3), "A");
+        assert!(rank(0) > rank(6), "E outranks L");
+        assert!(rank(6) > rank(5), "L outranks S+");
+        assert!(rank(1) < rank(2), "C is the lowest");
+    }
+}

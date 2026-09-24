@@ -8,10 +8,13 @@ use std::path::{Path, PathBuf};
 
 use crate::section::Section;
 
-/// Where the sprites for one section live, relative to the repo root.
-pub fn section_dir(section: &str) -> Option<PathBuf> {
-    Section::parse(section)?;
-    Some(PathBuf::from("../static/img").join(section))
+/// Where the sprites for one section live, relative to the repo root. The
+/// section arrives already typed off the path capture, so the only question
+/// left is whether the editor writes it.
+pub fn section_dir(section: Section) -> Option<PathBuf> {
+    section
+        .editable()
+        .then(|| PathBuf::from("../static/img").join(section.as_str()))
 }
 
 /// Only the image types the catalog actually uses. The extension is taken
@@ -72,3 +75,35 @@ pub fn unique_name(dir: &Path, stem: &str, ext: &str) -> String {
 /// 4MB, comfortably above a sprite and well below anything worth worrying
 /// about holding in memory.
 pub const MAX_BYTES: usize = 4 * 1024 * 1024;
+
+#[cfg(test)]
+// tests use unwrap/expect/panic freely; production code does not (Cargo.toml [lints])
+#[cfg_attr(test, allow(clippy::unwrap_used, clippy::expect_used, clippy::panic))]
+mod tests {
+    use super::*;
+
+    /// Upload names are sanitised: no separator, traversal segment or
+    /// control character survives, and the extension comes from the declared
+    /// content type rather than the submitted filename.
+    #[test]
+    fn upload_names_are_safe() {
+        assert_eq!(safe_stem("Cloud Boots.png"), "cloud_boots");
+        assert_eq!(safe_stem("../../etc/passwd"), "passwd");
+        assert_eq!(safe_stem("a/b/c.png"), "c");
+        assert_eq!(safe_stem("....."), "image");
+        assert_eq!(safe_stem(""), "image");
+        assert!(!safe_stem("sprite.png.html").contains('.'));
+        assert!(safe_stem("x".repeat(200).as_str()).len() <= 60);
+
+        assert_eq!(extension_for("image/png"), Some("png"));
+        assert_eq!(extension_for("image/jpeg"), Some("jpg"));
+        // markup and scripts are not images, whatever the filename says
+        assert_eq!(extension_for("text/html"), None);
+        assert_eq!(extension_for("application/octet-stream"), None);
+
+        assert!(section_dir(Section::Cookies).is_some());
+        assert!(section_dir(Section::Treasures).is_some());
+        assert!(section_dir(Section::Relics).is_none());
+        assert!(section_dir(Section::Skins).is_none());
+    }
+}

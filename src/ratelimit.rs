@@ -117,3 +117,43 @@ impl Limiter {
 // the bucket path compiles into release binaries only
 #[cfg(not(debug_assertions))]
 use crate::time::now_unix;
+
+#[cfg(test)]
+// tests use unwrap/expect/panic freely; production code does not (Cargo.toml [lints])
+#[cfg_attr(test, allow(clippy::unwrap_used, clippy::expect_used, clippy::panic))]
+mod tests {
+    use super::*;
+
+    /// The bucket drains, denies, and advertises a retry. Built in debug the
+    /// limiter is bypassed exactly as the V `$if !prod` gate does, so this
+    /// drives the algorithm directly.
+    #[test]
+    fn token_bucket_drains_and_refills() {
+        let cfg = RateLimit {
+            capacity: 3.0,
+            refill: 1.0,
+            idle_ttl: 300,
+            sweep_above: 2048,
+            trusted_proxies: Vec::new(),
+        };
+        let limiter = Limiter::new(cfg);
+
+        // Debug builds bypass limiting entirely (see Limiter::check); the
+        // drain/refill/deny algorithm is exercised by `cargo test --release`.
+        #[cfg(debug_assertions)]
+        assert!(matches!(limiter.check("1.1.1.1"), Decision::Allow));
+
+        #[cfg(not(debug_assertions))]
+        {
+            for _ in 0..3 {
+                assert!(matches!(limiter.check("1.1.1.1"), Decision::Allow));
+            }
+            match limiter.check("1.1.1.1") {
+                Decision::Deny(after) => assert!(after >= 1),
+                Decision::Allow => panic!("bucket should be empty"),
+            }
+            // a different IP has its own bucket
+            assert!(matches!(limiter.check("2.2.2.2"), Decision::Allow));
+        }
+    }
+}

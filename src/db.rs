@@ -163,10 +163,21 @@ impl Kind {
             dated: section.dated(),
         }
     }
+
+    /// The typed path's other half: an untyped `&str` (a path capture, a
+    /// build row's column, a caller that has not parsed yet) resolves here.
+    pub fn of_section(section: &str) -> Option<Kind> {
+        Section::parse(section).map(Kind::of)
+    }
 }
 
-fn kind_of(section: &str) -> Option<Kind> {
-    Section::parse(section).map(Kind::of)
+/// The locale fallback every translated column reads through, as a SQL
+/// fragment: the requested locale first, English behind it. Written once so
+/// the fallback rule cannot drift between queries — it used to appear 23
+/// times across two files. Pub(crate) because the picker lists read the same
+/// tables through the same rule.
+pub(crate) fn tr(field: &str) -> String {
+    format!("(tr[$lang].{field} ?? tr.en.{field} ?? '')")
 }
 
 /// The card projection every list shares: locale-fallback name, English name
@@ -186,8 +197,9 @@ async fn select_cards(
 ) -> Result<Vec<Card>> {
     let mut sql = format!(
         "SELECT record::id(id) AS id, image{extra_select},
-                (tr[$lang].name ?? tr.en.name) AS name, tr.en.name AS en_name
-           FROM type::table($tb)"
+                {} AS name, tr.en.name AS en_name
+           FROM type::table($tb)",
+        tr("name")
     );
     if !where_sql.is_empty() {
         sql.push_str(" WHERE ");
@@ -217,31 +229,27 @@ async fn select_cards(
 /// second key pages tied on `release_date` could repeat or skip between
 /// `offset=0` and `offset=30` fetches.
 pub async fn select_cookies(db: &Db, lang: &str, limit: i64, offset: i64) -> Result<Vec<Card>> {
-    select_cards(
+    cards(
         db,
         lang,
-        &Kind::of(Section::Cookies),
+        Section::Cookies,
         ", grade, release_date",
-        "tr.en.name != NONE OR tr[$lang].name != NONE",
         " ORDER BY release_date DESC, id DESC",
-        Some(limit),
-        Some(offset),
-        None,
+        Some((limit, offset)),
+        "",
     )
     .await
 }
 
 pub async fn select_pets(db: &Db, lang: &str, limit: i64, offset: i64) -> Result<Vec<Card>> {
-    select_cards(
+    cards(
         db,
         lang,
-        &Kind::of(Section::Pets),
+        Section::Pets,
         ", grade, release_date",
-        "tr.en.name != NONE OR tr[$lang].name != NONE",
         " ORDER BY release_date DESC, id DESC",
-        Some(limit),
-        Some(offset),
-        None,
+        Some((limit, offset)),
+        "",
     )
     .await
 }
@@ -256,22 +264,19 @@ pub async fn select_treasures(
     limit: i64,
     offset: i64,
 ) -> Result<Vec<Card>> {
-    let tab_where = match tab {
-        "normal" => " AND is_evolved = false",
-        "evo" => " AND is_evolved = true",
+    let tab_extra = match tab {
+        "normal" => ", is_evolved = false",
+        "evo" => ", is_evolved = true",
         _ => "",
     };
-    let where_sql = format!("(tr.en.name != NONE OR tr[$lang].name != NONE){tab_where}");
-    select_cards(
+    cards(
         db,
         lang,
-        &Kind::of(Section::Treasures),
+        Section::Treasures,
         ", grade, is_evolved, rank, release_date",
-        &where_sql,
         " ORDER BY rank DESC, release_date DESC, name ASC",
-        Some(limit),
-        Some(offset),
-        None,
+        Some((limit, offset)),
+        tab_extra,
     )
     .await
 }
@@ -284,22 +289,40 @@ pub async fn select_simple(db: &Db, lang: &str, kind: &str) -> Result<Vec<Card>>
     let Some(section) = Section::parse(kind).filter(|s| !s.paginated()) else {
         return Ok(Vec::new());
     };
+    cards(db, lang, section, "", " ORDER BY id", None, "").await
+}
+
+/// The one card-list interface the read module presents: a section, the
+/// locale, ordering, an optional page window, and an optional whitelist
+/// conjunction beyond the always-on name filter. `Kind` (table, graded,
+/// dated), the projection and the base WHERE all come from the section
+/// inside, so callers never touch per-section SQL.
+#[allow(clippy::too_many_arguments)]
+async fn cards(
+    db: &Db,
+    lang: &str,
+    section: Section,
+    extra_select: &str,
+    order: &str,
+    page: Option<(i64, i64)>,
+    extra_filter: &str,
+) -> Result<Vec<Card>> {
     let kind = Kind::of(section);
-    let order = if kind.graded {
-        " ORDER BY rank DESC, id".to_string()
-    } else {
-        " ORDER BY id".to_string()
-    };
     let extra = if kind.graded { ", grade, rank" } else { "" };
+    let filter = if extra_filter.is_empty() {
+        "tr.en.name != NONE OR tr[$lang].name != NONE".to_string()
+    } else {
+        format!("tr.en.name != NONE OR tr[$lang].name != NONE{extra_filter}")
+    };
     select_cards(
         db,
         lang,
         &kind,
-        extra,
-        "tr.en.name != NONE OR tr[$lang].name != NONE",
-        &order,
-        None,
-        None,
+        &format!("{extra}{extra_select}"),
+        &filter,
+        order,
+        page.map(|(l, _)| l),
+        page.map(|(_, s)| s),
         None,
     )
     .await
@@ -324,21 +347,27 @@ struct DetailRow {
 /// One entity's detail row. Prose falls back locale -> English inside the
 /// nested translation object; fields a kind does not have come back empty.
 pub async fn select_detail(db: &Db, lang: &str, section: &str, id: i64) -> Result<Option<Detail>> {
-    let Some(kind) = kind_of(section) else {
+    let Some(kind) = Kind::of_section(section) else {
         return Ok(None);
     };
     let sql = format!(
         "SELECT record::id(id) AS id, image{extra}, release_date,
-                (tr[$lang].name ?? tr.en.name ?? '') AS name,
+                {} AS name,
                 (tr.en.name ?? '') AS en_name,
-                (tr[$lang].abilities ?? tr.en.abilities ?? '') AS abilities,
-                (tr[$lang].description ?? tr.en.description ?? '') AS description,
-                (tr[$lang].power_plus ?? tr.en.power_plus ?? '') AS power_plus,
-                (tr[$lang].power_plus_requirement ?? tr.en.power_plus_requirement ?? '') AS ppr,
-                (tr[$lang].unlock_goal ?? tr.en.unlock_goal ?? '') AS unlock_goal
+                {} AS abilities,
+                {} AS description,
+                {} AS power_plus,
+                {} AS ppr,
+                {} AS unlock_goal
            FROM type::table($tb)
           WHERE record::id(id) = $id
           LIMIT 1",
+        tr("name"),
+        tr("abilities"),
+        tr("description"),
+        tr("power_plus"),
+        tr("power_plus_requirement"),
+        tr("unlock_goal"),
         extra = if kind.graded { ", grade" } else { "" },
     );
     let mut rows: Vec<DetailRow> = db
@@ -382,10 +411,11 @@ pub async fn unlocked_treasure(
     };
     let sql = format!(
         "SELECT record::id(id) AS id, image,
-                (tr[$lang].name ?? tr.en.name ?? '') AS name
+                {} AS name
            FROM treasure
           WHERE {col} = $id
-          LIMIT 1"
+          LIMIT 1",
+        tr("name")
     );
     let mut rows: Vec<CardRow> = db
         .query(&sql)
@@ -394,6 +424,29 @@ pub async fn unlocked_treasure(
         .await?
         .take(0)?;
     Ok(rows.pop().map(|r| (r.id, r.name, r.image)))
+}
+
+/// The effect-line row type `options` shares: same shape on the record, one
+/// decode one locale rule. Kept pub(crate) so both read paths decode it the
+/// same way.
+#[derive(Debug, Clone, Default, SurrealValue)]
+#[surreal(default)]
+pub(crate) struct EffectLineRow {
+    pub(crate) state: i64,
+    pub(crate) en: String,
+    pub(crate) th: String,
+    pub(crate) values: Vec<String>,
+}
+
+impl EffectLineRow {
+    pub(crate) fn into_line(self, lang: &str) -> EffectLine {
+        let text = crate::i18n::pick_text(lang, &self.en, &self.th);
+        EffectLine {
+            text,
+            values: self.values,
+            blessed: self.state == 1,
+        }
+    }
 }
 
 /// One effect line on a treasure, carrying the whole 0-9 ladder so the level
@@ -411,26 +464,6 @@ impl EffectLine {
     }
     pub fn top(&self) -> String {
         self.values.last().cloned().unwrap_or_default()
-    }
-}
-
-#[derive(Debug, Clone, Default, SurrealValue)]
-#[surreal(default)]
-struct EffectLineRow {
-    state: i64,
-    en: String,
-    th: String,
-    values: Vec<String>,
-}
-
-impl EffectLineRow {
-    fn into_line(self, lang: &str) -> EffectLine {
-        let text = crate::i18n::pick_text(lang, &self.en, &self.th);
-        EffectLine {
-            text,
-            values: self.values,
-            blessed: self.state == 1,
-        }
     }
 }
 
@@ -498,9 +531,10 @@ pub async fn names_for(
         .collect::<Vec<_>>();
     let sql = format!(
         "SELECT record::id(id) AS id, image,
-                (tr[$lang].name ?? tr.en.name ?? '') AS name
+                {} AS name
            FROM {}
           WHERE id IN [{}]",
+        tr("name"),
         kind.table,
         list.join(", ")
     );
@@ -589,16 +623,17 @@ pub async fn entity_link(
         "treasure" => "treasures",
         _ => "cookies",
     };
-    let k = kind_of(section)?;
+    let k = Kind::of_section(section)?;
     let mut rows: Vec<CardRow> = db
         .query(
             format!(
                 "SELECT record::id(id) AS id, image,
-                        (tr[$lang].name ?? tr.en.name ?? '') AS name,
+                        {} AS name,
                         (tr.en.name ?? '') AS en_name
                    FROM {}
                   WHERE record::id(id) = $id
                   LIMIT 1",
+                tr("name"),
                 k.table
             )
             .as_str(),
@@ -658,7 +693,7 @@ pub async fn search(db: &Db, lang: &str, q: &str, limit: i64) -> Result<Vec<(Str
         ("episodes", vec!["description"]),
         ("ingredients", vec!["description"]),
     ] {
-        let Some(kind) = kind_of(section) else {
+        let Some(kind) = Kind::of_section(section) else {
             continue; // not a catalog section; nothing to search
         };
         let mut clauses = vec![
@@ -757,7 +792,7 @@ pub async fn cards_by_ids(db: &Db, lang: &str, kind: &str, ids: &[i64]) -> Resul
     let k = if ids.is_empty() {
         return Ok(Vec::new());
     } else {
-        match kind_of(kind) {
+        match Kind::of_section(kind) {
             Some(k) => k,
             None => return Ok(Vec::new()),
         }
@@ -767,11 +802,12 @@ pub async fn cards_by_ids(db: &Db, lang: &str, kind: &str, ids: &[i64]) -> Resul
         .map(|i| format!("{}:{}", k.table, i))
         .collect::<Vec<_>>();
     let sql = format!(
-        "SELECT record::id(id) AS id, image{}, (tr[$lang].name ?? tr.en.name ?? '') AS name,
+        "SELECT record::id(id) AS id, image{}, {} AS name,
                 (tr.en.name ?? '') AS en_name
            FROM {}
           WHERE id IN [{}]",
         if k.graded { ", grade" } else { "" },
+        tr("name"),
         k.table,
         list.join(", ")
     );
@@ -905,10 +941,11 @@ async fn prizes(
         .query(
             format!(
                 "SELECT record::id(id) AS id, image, grade, (is_evolved ?? false) AS is_evolved,
-                        (tr[$lang].name ?? tr.en.name ?? '') AS name,
+                        {} AS name,
                         (tr.en.name ?? '') AS en_name
                    FROM {table}
                   WHERE id IN [{}]",
+                tr("name"),
                 list.join(", ")
             )
             .as_str(),
@@ -987,18 +1024,18 @@ pub async fn select_gacha(db: &Db, lang: &str) -> Result<Vec<GachaPool>> {
 }
 
 /// Table names for one catalog section.
-fn entity_table(section: &str) -> Option<&'static str> {
+fn entity_table(section: Section) -> Option<&'static str> {
     // only the sections the admin editor writes
-    Section::parse(section)
-        .filter(|s| s.editable())
-        .map(Section::table)
+    section.editable().then_some(section.table())
 }
 
 /// Creates an entity and its translation in `lang`, returning the new id.
+/// 0 when the section is not one the editor writes. The picker-list cache is
+/// dropped here, inside the write: callers cannot forget it.
 pub async fn insert_entity(
     db: &Db,
     lang: &str,
-    section: &str,
+    section: Section,
     form: &crate::routes::admin::EntityForm,
 ) -> Result<i64> {
     let Some(table) = entity_table(section) else {
@@ -1009,8 +1046,7 @@ pub async fn insert_entity(
     let image = clean_image(&form.image);
 
     let mut sets: Vec<String> = vec!["image = $image".to_string()];
-    let graded = Section::parse(section).is_some_and(Section::graded);
-    if graded {
+    if section.graded() {
         // display rank is maintained on write so reads can ORDER BY it:
         // the enum ordinal is not the display order (E outranks L)
         let g = form.grade.unwrap_or(1);
@@ -1018,7 +1054,7 @@ pub async fn insert_entity(
         sets.push(format!("grade = {g}"));
         sets.push(format!("release_date = {now}"));
     }
-    if Section::parse(section) == Some(Section::Treasures) {
+    if section == Section::Treasures {
         sets.push("is_evolved = false".to_string());
     }
     db.query(format!("CREATE {table}:{id} SET {}", sets.join(", ")).as_str())
@@ -1026,14 +1062,16 @@ pub async fn insert_entity(
         .await?
         .check()?;
     write_translation(db, lang, section, table, id, form).await?;
+    crate::options::invalidate();
     Ok(id)
 }
 
-/// Updates an entity and its translation in `lang`.
+/// Updates an entity and its translation in `lang`. The picker-list cache is
+/// dropped here, inside the write: callers cannot forget it.
 pub async fn update_entity(
     db: &Db,
     lang: &str,
-    section: &str,
+    section: Section,
     id: i64,
     form: &crate::routes::admin::EntityForm,
 ) -> Result<bool> {
@@ -1056,6 +1094,7 @@ pub async fn update_entity(
             .check()?;
     }
     write_translation(db, lang, section, table, id, form).await?;
+    crate::options::invalidate();
     Ok(true)
 }
 
@@ -1073,7 +1112,7 @@ fn clean_image(image: &str) -> Option<String> {
 async fn write_translation(
     db: &Db,
     lang: &str,
-    section: &str,
+    section: Section,
     table: &str,
     id: i64,
     form: &crate::routes::admin::EntityForm,
@@ -1107,7 +1146,7 @@ async fn write_translation(
     let entry = wrap.tr.entry(lang.to_string()).or_default();
     entry.name = form.name.trim().to_string();
     match section {
-        "cookies" => {
+        Section::Cookies => {
             entry.abilities.clone_from(&form.abilities);
             entry.description.clone_from(&form.description);
             entry.power_plus.clone_from(&form.power_plus);
@@ -1116,7 +1155,7 @@ async fn write_translation(
                 .clone_from(&form.power_plus_requirement);
             entry.unlock_goal.clone_from(&form.unlock_goal);
         }
-        "pets" => {
+        Section::Pets => {
             entry.abilities.clone_from(&form.abilities);
             entry.description.clone_from(&form.description);
         }
@@ -1263,6 +1302,8 @@ pub async fn delete_combi(db: &Db, row_id: i64) -> Result<()> {
 }
 
 #[cfg(test)]
+// tests use unwrap/expect/panic freely; production code does not (Cargo.toml [lints])
+#[cfg_attr(test, allow(clippy::unwrap_used, clippy::expect_used, clippy::panic))]
 mod tests {
     use super::*;
     use surrealdb::types::{Object, Value};
@@ -1401,8 +1442,8 @@ mod tests {
         assert_eq!(kind.table, "cookie");
         assert!(kind.graded);
         assert!(kind.dated);
-        assert_eq!(kind_of("cookies").map(|k| k.table), Some("cookie"));
-        assert!(kind_of("no-such-section").is_none());
+        assert_eq!(Kind::of_section("cookies").map(|k| k.table), Some("cookie"));
+        assert!(Kind::of_section("no-such-section").is_none());
         assert!(Section::parse("skins").is_some());
         assert_eq!(Section::Skins.table(), "skin");
         assert!(Section::Ingredients.graded());

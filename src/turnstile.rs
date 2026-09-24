@@ -113,3 +113,39 @@ pub async fn verify(cfg: &Config, token: Option<&str>, expected_action: &str) ->
     }
     true
 }
+
+#[cfg(test)]
+// tests use unwrap/expect/panic freely; production code does not (Cargo.toml [lints])
+#[cfg_attr(test, allow(clippy::unwrap_used, clippy::expect_used, clippy::panic))]
+mod tests {
+    use super::*;
+
+    /// Turnstile refuses rather than waves through when it is misconfigured.
+    /// A debug build bypasses the gate entirely — that bypass is the behaviour
+    /// under test there; a release build exercises the fail-closed refusals
+    /// (no network: the empty secret rejects before any request is made).
+    #[tokio::test]
+    async fn gate_fails_closed_on_misconfiguration() {
+        // only the debug branch mutates the config, so the binding is `mut`
+        // there and not in release
+        #[cfg(debug_assertions)]
+        let mut cfg = Config::default();
+        #[cfg(not(debug_assertions))]
+        let cfg = Config::default();
+
+        #[cfg(debug_assertions)]
+        {
+            // bypassed regardless, so a missing secret cannot block local
+            // development
+            assert!(verify(&cfg, Some("token"), "login").await);
+            cfg.turnstile.secret = String::new();
+            assert!(verify(&cfg, None, "login").await);
+        }
+
+        #[cfg(not(debug_assertions))]
+        {
+            assert!(!verify(&cfg, Some("token"), "login").await);
+            assert!(!verify(&cfg, None, "login").await);
+        }
+    }
+}

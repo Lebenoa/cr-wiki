@@ -1,5 +1,12 @@
 //! Per-request context: the locale, the path, and the URL/header helpers the
 //! templates ask for. Mirrors the veb `Context` struct and `before_request`.
+//!
+//! Ctx is the request-facts half of the old god-struct: what the visitor
+//! sent and who they are (lang, path, user, htmx, `is_admin`). The chrome —
+//! navigation lists, themes, EP tiers, the class strings — lives in
+//! `crate::chrome`, which knows nothing about requests; these methods
+//! delegate so askama still finds the names on the context. The doc-comment
+//! path references below are crate paths, hence the backticks.
 
 use axum::extract::ConnectInfo;
 use axum::extract::FromRequestParts;
@@ -110,117 +117,61 @@ impl Ctx {
         i18n::available_langs()
     }
 
-    /// True when the path is `/section` or sits under it, so the navbar can
-    /// mark the active entry.
-    pub fn nav_section_active(&self, section: &str) -> bool {
-        let p = self.path.trim_start_matches('/');
-        p == section || p.starts_with(&format!("{section}/"))
-    }
-
-    /// The navbar entry's classes, active or not — the same two class lists
-    /// `nav_link` builds in `app.v`.
-    pub fn nav_class(&self, section: &str) -> &'static str {
-        if self.nav_section_active(section) {
-            "font-semibold text-center text-primary border-b-2 border-primary pb-1 transition-all duration-1000"
-        } else {
-            "font-medium text-center text-foreground-muted hover:text-primary transition-all duration-1000"
-        }
-    }
-
-    /// The sections behind the Wiki dropdown, in navbar order. A method
-    /// because askama calls it on the context.
+    /// The sections behind the Wiki dropdown, in navbar order.
     #[allow(clippy::unused_self)]
     pub fn wiki_sections(&self) -> Vec<&'static str> {
-        vec![
-            "cookies",
-            "pets",
-            "treasures",
-            "episodes",
-            "ingredients",
-            "jellies",
-            "skins",
-            "gacha",
-        ]
+        crate::chrome::NAV_SECTIONS
+            .iter()
+            .map(|s| s.as_str())
+            .collect()
+    }
+
+    #[allow(dead_code)] // used through templates, invisible to rustc
+    pub fn nav_section_active(&self, section: &str) -> bool {
+        crate::chrome::nav_section_active(&self.path, section)
+    }
+
+    pub fn nav_class(&self, section: &str) -> &'static str {
+        crate::chrome::nav_class(&self.path, section)
     }
 
     /// True when the current page sits under any wiki section, so the
     /// dropdown trigger can carry the active styling its entries would.
+    #[allow(dead_code)] // used through templates, invisible to rustc
     pub fn wiki_active(&self) -> bool {
-        self.wiki_sections()
-            .iter()
-            .any(|s| self.nav_section_active(s))
+        crate::chrome::wiki_active(&self.path)
     }
 
-    /// The Wiki dropdown trigger's classes, active or not.
     pub fn wiki_class(&self) -> &'static str {
-        if self.wiki_active() {
-            "font-semibold text-center text-primary border-b-2 border-primary pb-1 transition-all duration-1000"
-        } else {
-            "font-medium text-center text-foreground-muted hover:text-primary transition-all duration-1000"
-        }
+        crate::chrome::wiki_class(&self.path)
     }
 
-    /// The theme names the picker offers. The palettes live in the `UnoCSS`
-    /// preflight; the dropdown only toggles the data-theme attribute. A
-    /// method because askama calls it on the context.
+    /// The theme names the picker offers.
     #[allow(clippy::unused_self)]
     pub fn themes(&self) -> Vec<&'static str> {
-        vec![
-            "default",
-            "light",
-            "tokyo_night",
-            "cappuccino",
-            "dracula",
-            "nord",
-            "gruvbox",
-            "rose_pine",
-        ]
+        crate::chrome::THEMES.to_vec()
     }
 
-    /// The palette tokens the custom-theme editor may override. The `--on-*`
-    /// contrast partners are derived from the chosen colour rather than
-    /// exposed, so a theme cannot end up with unreadable text on a button.
-    /// A method because askama calls it on the context.
+    /// The palette tokens the custom-theme editor may override.
     #[allow(clippy::unused_self)]
     pub fn theme_tokens(&self) -> Vec<&'static str> {
-        vec![
-            "background",
-            "surface",
-            "border",
-            "primary",
-            "secondary",
-            "accent",
-            "muted",
-            "foreground",
-            "foreground-muted",
-            "success",
-            "warning",
-            "error",
-        ]
+        crate::chrome::THEME_TOKENS.to_vec()
     }
 
-    /// `theme_token_*` keys use an underscore, since a hyphen is not valid in
-    /// a translation key.
-    #[allow(clippy::unused_self)] // askama calls it on the context
+    #[allow(clippy::unused_self)]
     pub fn theme_token_key(&self, token: &str) -> String {
-        format!("theme_token_{}", token.replace('-', "_"))
+        crate::chrome::theme_token_key(token)
     }
 
-    #[allow(clippy::unused_self)] // askama calls it on the context
+    #[allow(clippy::unused_self)]
     pub fn theme_key(&self, name: &str) -> String {
-        format!("theme_{name}")
+        crate::chrome::theme_key(name)
     }
 
     /// A combo pairs a cookie with a pet, so the partner of one is the other.
-    // str equality is not a const trait yet, so this cannot be a const fn;
-    // the self parameter stays because askama calls it on the context
     #[allow(clippy::unused_self, clippy::missing_const_for_fn)]
     pub fn combi_partner_section(&self, section: &str) -> &'static str {
-        if section == "cookies" {
-            "pets"
-        } else {
-            "cookies"
-        }
+        crate::chrome::combi_partner_section(section)
     }
 
     /// A fragment swap, as opposed to an hx-boosted navigation which still
@@ -279,37 +230,26 @@ impl Ctx {
     }
 
     /// The regular EP tiers and the special ones, for the filter combobox.
-    /// A method because askama calls it on the context.
     #[allow(clippy::unused_self)]
     pub fn ep_tiers(&self) -> Vec<i64> {
-        (1..=7).collect()
+        crate::chrome::EP_TIERS.to_vec()
     }
 
     #[allow(clippy::unused_self)]
     pub fn ep_specials(&self) -> Vec<i64> {
-        (1..=3).collect()
+        crate::chrome::EP_SPECIALS.to_vec()
     }
 
-    /// A page title with the site name appended. Older .tr values bake the
-    /// suffix in and newer ones do not, so it is added here when missing
-    /// rather than leaving half the sections unbranded.
+    /// A page title with the site name appended.
     pub fn page_title(&self, key: &str) -> String {
-        self.title_of(self.l.t(key))
+        crate::chrome::page_title(&self.l, key)
     }
 
     /// The same, for a title built from an entity name rather than a key.
     // the {name} placeholder is consumed by replace(), not a formatting macro
     #[allow(clippy::literal_string_with_formatting_args)]
     pub fn entity_title(&self, name: &str) -> String {
-        self.title_of(self.l.t("entity_detail_title").replace("{name}", name))
-    }
-
-    fn title_of(&self, title: String) -> String {
-        let suffix = self.l.t("site_title_suffix");
-        if suffix.is_empty() || title.contains(&suffix) {
-            return title;
-        }
-        format!("{title} | {suffix}")
+        crate::chrome::entity_title(&self.l, name)
     }
 
     /// The site-wide description, used when a page names no key of its own.
@@ -320,11 +260,7 @@ impl Ctx {
     /// A page's own description. A key with no string behind it falls back
     /// to the site one rather than printing the key.
     pub fn page_desc(&self, key: &str) -> String {
-        let text = self.l.t(key);
-        if text == key || text.is_empty() {
-            return self.meta_description();
-        }
-        text
+        crate::chrome::page_desc(&self.l, key)
     }
 
     /// A detail page's description. Only some kinds have a template of their
@@ -332,14 +268,7 @@ impl Ctx {
     // the {name} placeholder is consumed by replace(), not a formatting macro
     #[allow(clippy::literal_string_with_formatting_args)]
     pub fn entity_desc(&self, section: &str, name: &str) -> String {
-        let key = match section {
-            "cookies" | "pets" | "treasures" => "entity_detail_description",
-            "episodes" => "episode_detail_description",
-            "ingredients" => "ingredient_detail_description",
-            "jellies" => "jelly_detail_description",
-            _ => return self.meta_description(),
-        };
-        self.page_desc(key).replace("{name}", name)
+        crate::chrome::entity_desc(&self.l, section, name)
     }
 
     /// The wide banner, absolute, for Open Graph and Twitter cards.
@@ -520,5 +449,82 @@ pub fn resolve_lang(query: Option<&str>, h: &HeaderMap) -> LangChoice {
             lang: DEFAULT_LANG.to_string(),
             write_cookie: true,
         },
+    }
+}
+
+#[cfg(test)]
+// tests use unwrap/expect/panic freely; production code does not (Cargo.toml [lints])
+#[cfg_attr(test, allow(clippy::unwrap_used, clippy::expect_used, clippy::panic))]
+mod tests {
+    use super::*;
+    use axum::http::HeaderValue;
+
+    /// A context standing in for one resolved off a real request.
+    #[allow(dead_code)]
+    pub(crate) fn test_ctx(lang: &str) -> Ctx {
+        crate::testutil::test_ctx(lang)
+    }
+
+    /// Locale resolution: ?lang= wins over the cookie, an unknown locale is
+    /// ignored, and a bare request falls back to English while asking for the
+    /// cookie to be written.
+    #[test]
+    fn lang_resolution() {
+        crate::i18n::load("translations");
+
+        let empty = HeaderMap::new();
+        let c = resolve_lang(None, &empty);
+        assert_eq!(c.lang, "en");
+        assert!(c.write_cookie);
+
+        let c = resolve_lang(Some("lang=th"), &empty);
+        assert_eq!(c.lang, "th");
+        assert!(c.write_cookie);
+
+        // an unknown locale is ignored, not echoed back
+        let c = resolve_lang(Some("lang=zz"), &empty);
+        assert_eq!(c.lang, "en");
+
+        let mut with_cookie = HeaderMap::new();
+        with_cookie.insert("cookie", HeaderValue::from_static("wikilang=th; other=1"));
+        let c = resolve_lang(None, &with_cookie);
+        assert_eq!(c.lang, "th");
+        assert!(!c.write_cookie, "cookie already agrees, no need to rewrite");
+
+        // the param wins over a disagreeing cookie, and refreshes it
+        let c = resolve_lang(Some("page=2&lang=en"), &with_cookie);
+        assert_eq!(c.lang, "en");
+        assert!(c.write_cookie);
+    }
+
+    /// Forwarded headers count only for a trusted-proxy peer; anyone else is
+    /// keyed by their own TCP address, however many headers they send.
+    #[test]
+    fn client_ip_trusts_only_configured_proxies() {
+        let peer: std::net::SocketAddr = "10.0.0.9:1234".parse().unwrap();
+        let trusted = vec!["10.0.0.9".to_string()];
+
+        let mut h = HeaderMap::new();
+        h.insert(
+            "X-Forwarded-For",
+            HeaderValue::from_static("1.2.3.4, 5.6.7.8"),
+        );
+        // untrusted peer: the spoofable header loses
+        assert_eq!(client_ip(&h, Some(peer), &[]), "10.0.0.9");
+        assert_eq!(client_ip(&h, None, &trusted), "unknown");
+        // trusted peer: the first XFF hop stands in for the visitor
+        assert_eq!(
+            client_ip(&h, Some(peer), &trusted),
+            "1.2.3.4",
+            "first hop, not the chain"
+        );
+
+        h.insert("CF-Connecting-IP", HeaderValue::from_static("9.9.9.9"));
+        assert_eq!(
+            client_ip(&h, Some(peer), &trusted),
+            "9.9.9.9",
+            "CF wins over XFF"
+        );
+        assert_eq!(client_ip(&h, Some(peer), &[]), "10.0.0.9");
     }
 }

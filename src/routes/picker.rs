@@ -270,3 +270,87 @@ pub async fn options_grid(
     )
     .into_response())
 }
+
+#[cfg(test)]
+// tests use unwrap/expect/panic freely; production code does not (Cargo.toml [lints])
+#[cfg_attr(test, allow(clippy::unwrap_used, clippy::expect_used, clippy::panic))]
+mod tests {
+
+    /// The picker lists build, cache and carry their effect ladders.
+    #[tokio::test]
+    async fn picker_options_build() {
+        let Some(pool) = live_db().await else {
+            eprintln!("skip: CR_SURREAL_URL not set");
+            return;
+        };
+
+        let cookies = crate::options::options(&pool, "en", "cookie")
+            .await
+            .expect("cookie options");
+        assert_eq!(cookies.len(), 94);
+        let pets = crate::options::options(&pool, "en", "pet")
+            .await
+            .expect("pet options");
+        assert_eq!(pets.len(), 101, "the two phantom Sotdae pets are gone");
+
+        let treasures = crate::options::options(&pool, "en", "treasure")
+            .await
+            .expect("treasure options");
+        assert!(treasures.len() > 700);
+        // Power+ treasures are friendly-run bonuses and cannot be equipped
+        assert!(treasures.iter().any(|t| !t.effects.is_empty()));
+        let with_ladder = treasures
+            .iter()
+            .find(|t| t.effects.iter().any(|e| !e.values.is_empty()))
+            .expect("a treasure with a ladder");
+        assert_eq!(
+            with_ladder
+                .effects
+                .iter()
+                .find(|e| !e.values.is_empty())
+                .unwrap()
+                .values
+                .len(),
+            10
+        );
+
+        // the grade order puts the highest first, and E outranks L
+        let ranks: Vec<i64> = treasures
+            .iter()
+            .filter_map(|t| t.grade)
+            .map(crate::grade::rank)
+            .collect();
+        assert!(
+            ranks.windows(2).all(|w| w[0] >= w[1]),
+            "grade order is not monotonic"
+        );
+
+        // second call comes from the cache
+        let again = crate::options::options(&pool, "en", "cookie")
+            .await
+            .expect("cookie options");
+        assert_eq!(again.len(), cookies.len());
+        crate::options::invalidate();
+        assert_eq!(
+            crate::options::options(&pool, "en", "cookie")
+                .await
+                .expect("cookie options")
+                .len(),
+            cookies.len()
+        );
+    }
+
+    /// The DB handle behind the gated tests: unset means they skip, so
+    /// `cargo test` stays green without a server. Points at a scratch
+    /// namespace/database — never at data you cannot lose.
+    async fn live_db() -> Option<crate::db::Db> {
+        let url = std::env::var("CR_SURREAL_URL").ok()?;
+        let ns = std::env::var("CR_SURREAL_NS").unwrap_or_else(|_| "cookierun".into());
+        let database = std::env::var("CR_SURREAL_DB").unwrap_or_else(|_| "cookierun".into());
+        let user = std::env::var("SURREAL_USER").unwrap_or_else(|_| "root".into());
+        let pass = std::env::var("SURREAL_PASS").unwrap_or_default();
+        crate::db::connect_url(&url, &ns, &database, &user, &pass)
+            .await
+            .ok()
+    }
+}

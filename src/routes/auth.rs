@@ -235,3 +235,50 @@ fn set_session_cookie(headers: &mut HeaderMap, key: &str) {
         headers.append(header::SET_COOKIE, v);
     }
 }
+
+#[cfg(test)]
+// tests use unwrap/expect/panic freely; production code does not (Cargo.toml [lints])
+#[cfg_attr(test, allow(clippy::unwrap_used, clippy::expect_used, clippy::panic))]
+mod tests {
+    use super::*;
+
+    /// Argon2 in PHC form, through `SurrealDB`'s crypto functions: a hash
+    /// verifies, a wrong password does not, and two hashes of the same
+    /// password differ because the salt is fresh.
+    #[tokio::test]
+    async fn password_hashing() {
+        let Some(pool) = live_db().await else {
+            eprintln!("skip: CR_SURREAL_URL not set");
+            return;
+        };
+
+        let hash = session::hash_password(&pool, "correct horse")
+            .await
+            .expect("hash");
+        assert!(
+            hash.starts_with("$argon2"),
+            "PHC format, so V can read it: {hash}"
+        );
+        assert!(session::verify_password(&pool, "correct horse", &hash).await);
+        assert!(!session::verify_password(&pool, "wrong horse", &hash).await);
+        let again = session::hash_password(&pool, "correct horse")
+            .await
+            .expect("hash");
+        assert_ne!(hash, again, "salt must be fresh per hash");
+        assert!(!session::verify_password(&pool, "correct horse", "not-a-hash").await);
+    }
+
+    /// The DB handle behind the gated tests: unset means they skip, so
+    /// `cargo test` stays green without a server. Points at a scratch
+    /// namespace/database — never at data you cannot lose.
+    async fn live_db() -> Option<crate::db::Db> {
+        let url = std::env::var("CR_SURREAL_URL").ok()?;
+        let ns = std::env::var("CR_SURREAL_NS").unwrap_or_else(|_| "cookierun".into());
+        let database = std::env::var("CR_SURREAL_DB").unwrap_or_else(|_| "cookierun".into());
+        let user = std::env::var("SURREAL_USER").unwrap_or_else(|_| "root".into());
+        let pass = std::env::var("SURREAL_PASS").unwrap_or_default();
+        crate::db::connect_url(&url, &ns, &database, &user, &pass)
+            .await
+            .ok()
+    }
+}

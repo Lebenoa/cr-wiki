@@ -9,6 +9,7 @@ use axum::Json;
 use serde_json::json;
 
 use crate::ctx::Ctx;
+use crate::section::Section;
 use crate::upload;
 
 pub async fn image(ctx: Ctx, Path(section): Path<String>, mut form: Multipart) -> Response {
@@ -16,7 +17,10 @@ pub async fn image(ctx: Ctx, Path(section): Path<String>, mut form: Multipart) -
     if !ctx.is_admin() {
         return (StatusCode::NOT_FOUND, "not found").into_response();
     }
-    let Some(dir) = upload::section_dir(&section) else {
+    let Some(section) = Section::parse(&section) else {
+        return (StatusCode::NOT_FOUND, "not found").into_response();
+    };
+    let Some(dir) = upload::section_dir(section) else {
         return (StatusCode::NOT_FOUND, "not found").into_response();
     };
 
@@ -70,8 +74,11 @@ pub async fn image(ctx: Ctx, Path(section): Path<String>, mut form: Multipart) -
         }
         // the static handler already serves this directory, so the sprite is
         // reachable immediately
-        return Json(json!({ "image": name, "url": format!("/img/{section}/{name}") }))
-            .into_response();
+        return Json(json!({
+            "image": name,
+            "url": format!("/img/{}/{}", section.as_str(), name)
+        }))
+        .into_response();
     }
 
     (

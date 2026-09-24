@@ -111,3 +111,27 @@ pub async fn waste_time(db: &Db, password: &str) {
         verify_password(db, password, &h).await;
     }
 }
+
+#[cfg(test)]
+// tests use unwrap/expect/panic freely; production code does not (Cargo.toml [lints])
+#[cfg_attr(test, allow(clippy::unwrap_used, clippy::expect_used, clippy::panic))]
+mod tests {
+    use super::*;
+
+    /// A session round trip: start, read back, end.
+    #[test]
+    fn sessions_round_trip() {
+        let sessions = Sessions::new();
+        let key = sessions.start(SessionUser {
+            id: 7,
+            username: "tester".into(),
+            is_admin: true,
+        });
+        let found = sessions.get(&key).expect("session");
+        assert_eq!(found.username, "tester");
+        assert!(found.is_admin);
+        sessions.end(&key);
+        assert!(sessions.get(&key).is_none());
+        assert!(sessions.get("never-issued").is_none());
+    }
+}

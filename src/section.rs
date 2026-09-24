@@ -58,6 +58,21 @@ impl Section {
         }
     }
 
+    /// The singular slug the admin editor's .tr keys build from
+    /// (`save_cookie_button`).
+    pub const fn singular(self) -> &'static str {
+        match self {
+            Section::Cookies => "cookie",
+            Section::Pets => "pet",
+            Section::Treasures => "treasure",
+            Section::Episodes => "episode",
+            Section::Ingredients => "ingredient",
+            Section::Jellies => "jelly",
+            Section::Relics => "relic",
+            Section::Skins => "skin",
+        }
+    }
+
     /// The table the section's records live in.
     pub const fn table(self) -> &'static str {
         match self {
@@ -97,5 +112,27 @@ impl Section {
     /// The admin editor has forms for these sections.
     pub const fn editable(self) -> bool {
         matches!(self, Section::Cookies | Section::Pets | Section::Treasures)
+    }
+}
+
+#[cfg(test)]
+// tests use unwrap/expect/panic freely; production code does not (Cargo.toml [lints])
+#[cfg_attr(test, allow(clippy::unwrap_used, clippy::expect_used, clippy::panic))]
+mod tests {
+    use super::*;
+
+    /// parse/`as_str` round-trip, and the flag facts the queries lean on.
+    #[test]
+    fn section_facts_hold_for_every_variant() {
+        for section in Section::ALL {
+            assert_eq!(Section::parse(section.as_str()), Some(section));
+        }
+        assert!(Section::parse("builds").is_none());
+        assert_eq!(Section::Cookies.singular(), "cookie");
+        assert_eq!(Section::Skins.singular(), "skin");
+        assert!(Section::Cookies.editable());
+        assert!(!Section::Relics.editable());
+        assert!(Section::Treasures.dated());
+        assert!(!Section::Jellies.dated());
     }
 }

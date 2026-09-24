@@ -169,3 +169,26 @@ pub fn kind_class(kind: &str) -> &'static str {
         _ => "text-[10px] font-bold uppercase text-foreground-muted border border-secondary/40 rounded-full px-2 py-0.5",
     }
 }
+
+#[cfg(test)]
+// tests use unwrap/expect/panic freely; production code does not (Cargo.toml [lints])
+#[cfg_attr(test, allow(clippy::unwrap_used, clippy::expect_used, clippy::panic))]
+mod tests {
+    use super::*;
+
+    /// git log parses into conventional-commit parts, and the trailers the V
+    /// version drops are dropped here too.
+    #[test]
+    fn changelog_parses_history() {
+        let entries = entries();
+        assert!(!entries.is_empty(), "no history parsed");
+        assert!(entries.iter().any(|e| e.kind == "feat"));
+        assert!(entries.iter().any(|e| e.kind == "fix"));
+        for e in entries {
+            for para in &e.body {
+                assert!(!para.starts_with("Co-Authored-By:"));
+                assert!(!para.starts_with("Claude-Session:"));
+            }
+        }
+    }
+}

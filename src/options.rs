@@ -147,11 +147,12 @@ async fn build_simple(db: &Db, lang: &str, kind: &str) -> crate::db::Result<Vec<
         .query(
             format!(
                 "SELECT record::id(id) AS id, image, grade,
-                        (tr[$lang].name ?? tr.en.name ?? '') AS name,
+                        {} AS name,
                         (tr.en.name ?? '') AS en_name
                    FROM {table}
                   WHERE tr.en.name != NONE OR tr[$lang].name != NONE
-                  ORDER BY id DESC"
+                  ORDER BY id DESC",
+                crate::db::tr("name")
             )
             .as_str(),
         )
@@ -178,14 +179,6 @@ async fn build_simple(db: &Db, lang: &str, kind: &str) -> crate::db::Result<Vec<
 async fn build_treasures(db: &Db, lang: &str) -> crate::db::Result<Vec<PickerOption>> {
     #[derive(Default, SurrealValue)]
     #[surreal(default)]
-    struct EffectLineRow {
-        state: i64,
-        en: String,
-        th: String,
-        values: Vec<String>,
-    }
-    #[derive(Default, SurrealValue)]
-    #[surreal(default)]
     struct Row {
         id: i64,
         name: String,
@@ -197,19 +190,23 @@ async fn build_treasures(db: &Db, lang: &str) -> crate::db::Result<Vec<PickerOpt
         rank: i64,
         #[allow(dead_code)]
         release_date: i64,
-        effect_lines: Vec<EffectLineRow>,
+        effect_lines: Vec<crate::db::EffectLineRow>,
     }
 
     let rows: Vec<Row> = db
         .query(
-            "SELECT record::id(id) AS id, image, grade, is_evolved, rank, release_date,
-                    (tr[$lang].name ?? tr.en.name ?? '') AS name,
-                    (tr.en.name ?? '') AS en_name,
-                    effect_lines
-               FROM treasure
-              WHERE (tr.en.name != NONE OR tr[$lang].name != NONE)
-                AND (is_power_plus ?? false) = false
-              ORDER BY rank DESC, release_date DESC, name ASC",
+            format!(
+                "SELECT record::id(id) AS id, image, grade, is_evolved, rank, release_date,
+                        {} AS name,
+                        (tr.en.name ?? '') AS en_name,
+                        effect_lines
+                   FROM treasure
+                  WHERE (tr.en.name != NONE OR tr[$lang].name != NONE)
+                    AND (is_power_plus ?? false) = false
+                  ORDER BY rank DESC, release_date DESC, name ASC",
+                crate::db::tr("name")
+            )
+            .as_str(),
         )
         .bind(("lang", lang.to_string()))
         .await?
