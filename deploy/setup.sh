@@ -19,7 +19,7 @@
 #
 # Usage:  sudo ./setup.sh [options]
 # Options:
-#   --installdir DIR   install tree (default /opt/cookierun)
+#   --installdir DIR   install tree (default deploy/runtime beside this script)
 #   --host HOST        app bind host (default 0.0.0.0)
 #   --port PORT        app port (default 6785)
 #   --admin-user NAME  first admin login (default admin)
@@ -36,7 +36,10 @@
 set -Eeuo pipefail
 
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-INSTALL="${CR_INSTALL_DIR:-/opt/cookierun}"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# Default install tree sits beside the script (deploy/runtime) so the whole
+# bundle stays self-contained; override with --installdir or CR_INSTALL_DIR.
+INSTALL="${CR_INSTALL_DIR:-$SCRIPT_DIR/runtime}"
 HOST="${CR_HOST:-0.0.0.0}"
 PORT="${CR_PORT:-6785}"
 NS="${CR_NS:-cookierun}"

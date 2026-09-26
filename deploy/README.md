@@ -23,10 +23,10 @@ What it does, in order:
 1. **SurrealDB v3** — installs via `https://install.surrealdb.com` if
    `surreal` is not on `PATH`, then pins it to `/usr/local/bin/surreal`.
 2. **Binary** — uses `target/x86_64-unknown-linux-gnu/release/cookierun` from
-   this checkout, an existing `/opt/cookierun/cookierun`, or downloads the
+   this checkout, an existing `deploy/runtime/cookierun`, or downloads the
    `cookierun-x86_64-unknown-linux-gnu` asset from the GitHub release
    (`CR_RELEASE` selects the tag; default latest).
-3. **Install tree** — `/opt/cookierun/` (override `--installdir`) gets the
+3. **Install tree** — `deploy/runtime/` (override `--installdir`) gets the
    binary, `translations/`, `static/`, `scripts/seed_data.json`,
    `import_seed.py` and a generated `Config.toml`. The app talks to the
    datastore over `http://` — observed stable with SurrealDB 3.3.0-beta
@@ -55,7 +55,7 @@ What it does, in order:
 
 | Flag | Default | Meaning |
 |---|---|---|
-| `--installdir DIR` | `/opt/cookierun` | install tree |
+| `--installdir DIR` | `deploy/runtime` | install tree |
 | `--host HOST` | `0.0.0.0` | app bind address |
 | `--port PORT` | `6785` | app port |
 | `--admin-user NAME` | `admin` | first admin login |
@@ -92,7 +92,7 @@ sudo systemctl restart cookierun    # restart the site (sessions are in-memory)
 **Reseed** (wipes every seeded table, including `user`):
 
 ```sh
-sudo python3 /opt/cookierun/import_seed.py
+sudo python3 deploy/runtime/import_seed.py
 ```
 
 With `--if-empty` it is a no-op when data exists.

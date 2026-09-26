@@ -99,14 +99,14 @@ cd cr-wiki
 # download it from the GitHub release:
 #   cargo zigbuild --release --target x86_64-unknown-linux-gnu.2.43
 
-sudo ./deploy/setup.sh            # default: /opt/cookierun, systemd
+sudo ./deploy/setup.sh            # default: deploy/runtime, systemd
 ```
 
 Done — the summary prints the site URL. What ran, in order:
 
 1. **SurrealDB v3** installed via `https://install.surrealdb.com` if absent;
    data lives in `/var/lib/cookierun/surreal` (surrealkv), loopback-only.
-2. **Install tree** at `/opt/cookierun/` — binary, `translations/`,
+2. **Install tree** at `deploy/runtime/` — binary, `translations/`,
    `static/`, seed fixture, generated `Config.toml` (the app talks to the
    datastore over `http://`), owned by a `cookierun` system user. The root
    DB password is generated and kept in `/etc/cookierun/surrealdb.env`.
@@ -147,7 +147,7 @@ sudo systemctl restart cookierun                    # sessions are in-memory
 ```
 
 Reseed (wipes seeded tables, including `user`):
-`sudo python3 /opt/cookierun/import_seed.py`
+`sudo python3 deploy/runtime/import_seed.py`
 
 ### Configuration
 
