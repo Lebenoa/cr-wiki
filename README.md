@@ -82,7 +82,72 @@ The server binds per `Config.toml` (`[surreal] url/namespace/database/username/p
 
 ### Deployment
 
-A first-time installer lives in [`deploy/`](deploy/README.md): `sudo ./deploy/setup.sh` installs SurrealDB v3, seeds the catalog, bootstraps the first admin, and runs the site under systemd (or backgrounded with `--no-systemd`). See `deploy/README.md` for options, the Turnstile requirement, and ops notes.
+A first-time installer ships in [`deploy/`](deploy/README.md). `setup.sh`
+takes a fresh Linux box to a running wiki in one shot — installs SurrealDB,
+seeds the catalog, creates the first admin, and runs the site under systemd.
+
+#### Install
+
+**Requirements:** Linux x86_64 with glibc ≥ 2.39, root access, `curl` and
+`python3`. (Binary built for glibc 2.43; verified on it.)
+
+```sh
+git clone https://github.com/Lebenoa/cr-wiki.git
+cd cr-wiki
+
+# Build the release binary (cargo-zigbuild + zig 0.16.0), or let setup.sh
+# download it from the GitHub release:
+#   cargo zigbuild --release --target x86_64-unknown-linux-gnu.2.43
+
+sudo ./deploy/setup.sh            # default: /opt/cookierun, systemd
+```
+
+Done — the summary prints the site URL. What ran, in order:
+
+1. **SurrealDB v3** installed via `https://install.surrealdb.com` if absent;
+   data lives in `/var/lib/cookierun/surreal` (surrealkv), loopback-only.
+2. **Install tree** at `/opt/cookierun/` — binary, `translations/`,
+   `static/`, seed fixture, generated `Config.toml` (the app talks to the
+   datastore over `http://`), owned by a `cookierun` system user. The root
+   DB password is generated and kept in `/etc/cookierun/surrealdb.env`.
+3. **Seed + admin** — catalog data imported only when the `cookie` table is
+   empty; unique-username index created; first admin bootstrapped
+   (password in `/etc/cookierun/admin-credentials`).
+4. **Services** — `cookierun.service` + `cookierun-surrealdb.service`
+   started under systemd; without systemd use `--no-systemd` (background
+   PID files, for containers).
+
+Useful options (`sudo ./deploy/setup.sh --help`-style flags documented in
+`deploy/README.md`): `--installdir`, `--host`, `--port`, `--admin-user`,
+`--admin-pass`, `--db-pass`. Env overrides: `CR_TURNSTILE_SECRET`,
+`CR_TURNSTILE_HOSTNAMES`, `CR_TRUSTED_PROXIES`, `CR_RELEASE`, … Re-running
+is an idempotent upgrade (reuses the DB password, skips seeding).
+
+#### After install — Turnstile (required)
+
+Release builds **fail closed**: login, register and every protected POST
+return 403 until a Cloudflare Turnstile secret is configured. Set the env
+vars and re-run setup:
+
+```sh
+sudo CR_TURNSTILE_SECRET=<siteverify secret> \
+     CR_TURNSTILE_HOSTNAMES=wiki.example.com \
+     ./deploy/setup.sh
+```
+
+Behind a CDN/nginx, also set `CR_TRUSTED_PROXIES` to your proxy IPs or every
+visitor shares one rate-limit bucket.
+
+#### Verify / operate
+
+```sh
+curl -sI http://127.0.0.1:6785/ | head -1           # HTTP/1.1 200
+sudo journalctl -u cookierun -f                     # app logs
+sudo systemctl restart cookierun                    # sessions are in-memory
+```
+
+Reseed (wipes seeded tables, including `user`):
+`sudo python3 /opt/cookierun/import_seed.py`
 
 ### Configuration
 

@@ -57,6 +57,9 @@ while [ "$#" -gt 0 ]; do
         --admin-pass) ADMIN_PASS="$2"; shift 2 ;;
         --db-pass) DB_PASS="$2"; shift 2 ;;
         --no-systemd) SYSTEMD=0; shift ;;
+        -h|--help)
+            sed -n '2,30p' "$0" | sed 's/^# \{0,1\}//'
+            exit 0 ;;
         *) echo "unknown option: $1" >&2; exit 2 ;;
     esac
 done
