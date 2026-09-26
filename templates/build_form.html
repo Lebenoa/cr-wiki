@@ -32,7 +32,7 @@
                     class="w-full p-5 rounded-xl flex flex-col items-center gap-2 min-h-36 border-2 border-dotted border-primary/30 bg-surface/50 hover:bg-surface transition-colors">
                     {% if slot.filled() %}
                     {% match slot.image %}{% when Some with (img) %}
-                    <img src="/img/{{ slot.section }}/{{ img }}" alt="{{ slot.name }}" class="size-20 object-contain" />
+                    <img src="/static/img/{{ slot.section }}/{{ img }}" alt="{{ slot.name }}" class="size-20 object-contain" />
                     {% when None %}{% endmatch %}
                     <span class="text-center text-sm font-bold text-on-surface leading-tight">{{ slot.name }}</span>
                     {% else %}
@@ -48,7 +48,7 @@
                         class="w-full p-5 rounded-xl flex flex-col items-center gap-2 min-h-36 border-2 border-dotted border-primary/30 bg-surface/50 hover:bg-surface transition-colors">
                         {% if t.id > 0 %}
                         {% match t.image %}{% when Some with (img) %}
-                        <img src="/img/treasures/{{ img }}" alt="{{ t.name }}" class="size-20 object-contain" />
+                        <img src="/static/img/treasures/{{ img }}" alt="{{ t.name }}" class="size-20 object-contain" />
                         {% when None %}{% endmatch %}
                         <span class="text-center text-sm font-bold text-on-surface leading-tight">{{ t.name }}</span>
                         {% else %}
@@ -119,6 +119,6 @@
 
 <div id="build-preview" class="mt-6"></div>
 
-<script src="/js/level_slider.js"></script>
-<script src="/js/picker.js"></script>
+<script src="/static/js/level_slider.js"></script>
+<script src="/static/js/picker.js"></script>
 {% endblock %}

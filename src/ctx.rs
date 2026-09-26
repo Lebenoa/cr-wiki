@@ -274,7 +274,7 @@ impl Ctx {
     /// The wide banner, absolute, for Open Graph and Twitter cards.
     #[allow(clippy::unused_self)] // askama calls it on the context
     pub fn social_image(&self) -> String {
-        format!("{}/img/landscape.jpg", self.site_url.trim_end_matches('/'))
+        format!("{}/static/img/landscape.jpg", self.site_url.trim_end_matches('/'))
     }
 
     /// A detail page shares the entity's own sprite instead, when it has one.
@@ -282,7 +282,7 @@ impl Ctx {
         match image {
             Some(img) if !img.is_empty() => {
                 format!(
-                    "{}/img/{section}/{img}",
+                    "{}/static/img/{section}/{img}",
                     self.site_url.trim_end_matches('/')
                 )
             }
@@ -295,7 +295,7 @@ impl Ctx {
     /// askama calls it on the context.
     #[allow(clippy::unused_self)]
     pub fn social_card_type(&self, image: &str) -> &'static str {
-        if image.ends_with("/img/landscape.jpg") {
+        if image.ends_with("/static/img/landscape.jpg") {
             "summary_large_image"
         } else {
             "summary"

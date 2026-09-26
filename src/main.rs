@@ -28,6 +28,8 @@ mod upload;
 use std::net::SocketAddr;
 use std::sync::Arc;
 
+use tower_http::services::ServeDir;
+
 use state::AppState;
 
 /// Paths are relative to the repo root, so the port runs against the same
@@ -64,6 +66,12 @@ async fn main() {
     };
 
     let app = routes::router(state);
+    // Every asset URL in the templates lives under /static — styles.css,
+    // js/, img/, thirdparty/ and the favicon — so one mount serves the whole
+    // `static/` tree. The catalog's `/{section}/{id}` detail route cannot
+    // shadow these: its two-segment shape never overlaps a /static prefix,
+    // and the prefix mount wins the match anyway.
+    let app = app.nest_service("/static", ServeDir::new("static"));
 
     let addr = format!("{}:{}", cfg.host, cfg.port);
     let listener = match tokio::net::TcpListener::bind(&addr).await {

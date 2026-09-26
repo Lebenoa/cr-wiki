@@ -6,7 +6,7 @@
     <a href="/{{ section }}" class="back-link">&larr; {{ ctx.l.t("back_to_list") }}</a>
     <div class="mt-4 flex items-start gap-6 flex-wrap">
         {% match item.image %}{% when Some with (img) %}
-        <img src="/img/{{ section }}/{{ img }}" alt="{{ item.name }}" class="size-32 object-contain" />
+        <img src="/static/img/{{ section }}/{{ img }}" alt="{{ item.name }}" class="size-32 object-contain" />
         {% when None %}{% endmatch %}
         <div class="flex flex-col gap-2">
             <h1 class="text-3xl font-headline text-accent">{{ item.name }}</h1>
@@ -22,7 +22,7 @@
             </a>
             {% endif %}
             {% if item.has_grade() %}
-            <img src="/img/grades/{{ item.grade_slug() }}.png" alt="{{ item.grade_label() }}" title="{{ item.grade_label() }}" class="size-10" />
+            <img src="/static/img/grades/{{ item.grade_slug() }}.png" alt="{{ item.grade_label() }}" title="{{ item.grade_label() }}" class="size-10" />
             {% endif %}
         </div>
     </div>
@@ -94,7 +94,7 @@
         </div>
         {% endif %}
     </div>
-    <script src="/js/level_slider.js"></script>
+    <script src="/static/js/level_slider.js"></script>
     <script>
         (function () {
             var exitTimer = null;
@@ -143,7 +143,7 @@
             <a href="/{{ links.unlock_section }}/{{ links.unlock_id }}"
                 class="flex items-center gap-2 font-bold hover:text-primary">
                 {% match links.unlock_image %}{% when Some with (img) %}
-                <img src="/img/{{ links.unlock_section }}/{{ img }}" alt="" class="size-8 object-contain" />
+                <img src="/static/img/{{ links.unlock_section }}/{{ img }}" alt="" class="size-8 object-contain" />
                 {% when None %}{% endmatch %}
                 <span>{{ ctx.l.t("treasure_unlock_prefix") }} {{ links.unlock_name }} {{ ctx.l.t("treasure_unlock_suffix") }}</span>
             </a>
@@ -153,7 +153,7 @@
         <li>
             <a href="/treasures/{{ links.base_id }}" class="flex items-center gap-2 font-bold hover:text-primary">
                 {% match links.base_image %}{% when Some with (img) %}
-                <img src="/img/treasures/{{ img }}" alt="" class="size-8 object-contain" />
+                <img src="/static/img/treasures/{{ img }}" alt="" class="size-8 object-contain" />
                 {% when None %}{% endmatch %}
                 {{ links.base_name }}
             </a>
@@ -169,7 +169,7 @@
         <li class="flex items-center gap-3 text-sm">
             <a href="/{{ ctx.combi_partner_section(section.as_str()) }}/{{ c.partner_id }}" class="flex items-center gap-2 font-bold hover:text-primary">
                 {% match c.partner_image %}{% when Some with (img) %}
-                <img src="/img/{{ ctx.combi_partner_section(section.as_str()) }}/{{ img }}" alt="" class="size-8 object-contain" />
+                <img src="/static/img/{{ ctx.combi_partner_section(section.as_str()) }}/{{ img }}" alt="" class="size-8 object-contain" />
                 {% when None %}{% endmatch %}
                 {{ c.partner_name }}
             </a>
@@ -183,7 +183,7 @@
     <h2 class="section-title mt-8">{{ ctx.l.t("unlocks_treasure_title") }}</h2>
     <a href="/treasures/{{ u.0 }}" class="group flex items-center gap-2">
         {% match u.2 %}{% when Some with (img) %}
-        <img src="/img/treasures/{{ img }}" alt="" class="size-8 shrink-0 rounded object-contain" />
+        <img src="/static/img/treasures/{{ img }}" alt="" class="size-8 shrink-0 rounded object-contain" />
         {% when None %}{% endmatch %}
         <span
             class="text-on-surface font-bold underline decoration-primary decoration-2 underline-offset-4 group-hover:text-primary transition-colors">{{ u.1 }}</span>

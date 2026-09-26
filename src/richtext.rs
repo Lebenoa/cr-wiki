@@ -127,7 +127,7 @@ pub async fn render_with(db: &Db, lang: &str, raw: &str, cache: &mut LinkCache) 
                             "\" class=\"font-bold hover:text-primary transition-colors\">",
                         );
                         if let Some(img) = image.filter(|s| !s.is_empty()) {
-                            out.push_str("<img src=\"/img/");
+                            out.push_str("<img src=\"/static/img/");
                             out.push_str(dir);
                             out.push('/');
                             out.push_str(&escape(&img));

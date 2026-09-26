@@ -5,7 +5,7 @@
     {% for p in picks %}
     <span class="flex flex-col items-center gap-1">
         {% match p.image %}{% when Some with (img) %}
-        <img src="/img/{{ p.section }}/{{ img }}" alt="{{ p.name }}" class="size-16 object-contain" />
+        <img src="/static/img/{{ p.section }}/{{ img }}" alt="{{ p.name }}" class="size-16 object-contain" />
         {% when None %}{% endmatch %}
         <span class="card-title-sm">{{ p.name }}</span>
     </span>

@@ -249,7 +249,7 @@ mod tests {
         .render()
         .expect("gacha renders");
         assert!(html.contains("<html lang=\"en\">"));
-        assert!(html.contains("/js/gacha_tabs.js"));
+        assert!(html.contains("/static/js/gacha_tabs.js"));
     }
 
     /// The DB handle behind the gated tests: unset means they skip, so

@@ -7,10 +7,10 @@
     {% if o.id == sel %}data-selected="1" aria-current="true"{% endif %}
     class="pick-option relative px-4 py-2 rounded flex flex-col items-center justify-start transition-colors group gap-2 {% if o.id == sel %}border-2 border-primary ring-2 ring-primary{% else %}border border-secondary hover:border-primary{% endif %}">
     {% match o.image %}{% when Some with (img) %}
-    <img src="/img/{{ dir }}/{{ img }}" alt="{{ o.name }}" loading="lazy" class="h-36 w-full object-contain" />
+    <img src="/static/img/{{ dir }}/{{ img }}" alt="{{ o.name }}" loading="lazy" class="h-36 w-full object-contain" />
     {% when None %}{% endmatch %}
     {% if o.has_grade() %}
-    <img src="/img/grades/{{ o.grade_slug() }}.png" alt="{{ o.grade_label() }}" class="size-8 absolute top-1 left-1" />
+    <img src="/static/img/grades/{{ o.grade_slug() }}.png" alt="{{ o.grade_label() }}" class="size-8 absolute top-1 left-1" />
     {% endif %}
     <span class="text-2xl group-hover:text-primary text-secondary text-center leading-tight">{{ o.name }}</span>
     {% if self.is_combi(o.id) %}

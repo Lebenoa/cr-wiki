@@ -4,7 +4,7 @@
 {% for hit in hits %}
 <a href="/{{ hit.0 }}/{{ hit.1.id }}" class="flex items-center gap-3 rounded-lg p-2 hover:bg-surface transition-colors">
     {% match hit.1.image %}{% when Some with (img) %}
-    <img src="/img/{{ hit.0 }}/{{ img }}" alt="{{ hit.1.name }}" class="size-10 object-contain shrink-0">
+    <img src="/static/img/{{ hit.0 }}/{{ img }}" alt="{{ hit.1.name }}" class="size-10 object-contain shrink-0">
     {% when None %}{% endmatch %}
     <span class="flex flex-col min-w-0">
         <span class="card-title truncate">{{ hit.1.name }}</span>

@@ -135,7 +135,7 @@ mod tests {
         let mut memo = richtext::LinkCache::new();
         let out = richtext::render_with(&pool, "en", "see [[89]] here", &mut memo).await;
         assert!(out.contains("href=\"/cookies/89\""));
-        assert!(out.contains("<img src=\"/img/cookies/"));
+        assert!(out.contains("<img src=\"/static/img/cookies/"));
 
         // an unresolvable ref stays literal
         let miss = richtext::render_with(&pool, "en", "[[cookie:99999999]]", &mut memo).await;

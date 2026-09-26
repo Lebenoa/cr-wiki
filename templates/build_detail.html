@@ -9,7 +9,7 @@
         {% for slot in build.slots() %}
         <div class="entity-card">
             {% match slot.image %}{% when Some with (img) %}
-            <img src="/img/{{ slot.section }}/{{ img }}" alt="{{ slot.name }}" class="size-20 object-contain" />
+            <img src="/static/img/{{ slot.section }}/{{ img }}" alt="{{ slot.name }}" class="size-20 object-contain" />
             {% when None %}{% endmatch %}
             <span class="card-title">{{ slot.name }}</span>
             {% if slot.level >= 0 %}

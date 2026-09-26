@@ -11,7 +11,7 @@
             aria-controls="gacha-panel-{{ p.id }}" aria-selected="false" class="entity-card cursor-pointer">
             {% if !p.entries.is_empty() %}
             {% match p.entries[0].image %}{% when Some with (img) %}
-            <img src="/img/{{ p.entries[0].section }}/{{ img }}" alt="" class="h-20 w-full object-contain" />
+            <img src="/static/img/{{ p.entries[0].section }}/{{ img }}" alt="" class="h-20 w-full object-contain" />
             {% when None %}{% endmatch %}
             {% endif %}
             <span class="card-title">{{ ctx.gacha_tier_label(p.tier.as_str()) }}</span>
@@ -36,14 +36,14 @@
                 data-name-en="{{ e.en_name }}" data-grade="{{ e.grade_slug() }}" class="entity-card">
                 <span class="flex w-full items-start justify-between gap-2">
                     {% if e.has_grade() %}
-                    <img src="/img/grades/{{ e.grade_slug() }}.png" alt="{{ e.grade_label() }}" class="size-10" />
+                    <img src="/static/img/grades/{{ e.grade_slug() }}.png" alt="{{ e.grade_label() }}" class="size-10" />
                     {% else %}
                     <span></span>
                     {% endif %}
                     <span class="text-xs font-mono text-foreground-muted">{{ e.odds_label() }}</span>
                 </span>
                 {% match e.image %}{% when Some with (img) %}
-                <img src="/img/{{ e.section }}/{{ img }}" alt="{{ e.name }}" class="h-20 w-full object-contain" />
+                <img src="/static/img/{{ e.section }}/{{ img }}" alt="{{ e.name }}" class="h-20 w-full object-contain" />
                 {% when None %}{% endmatch %}
                 <span class="card-title">{{ e.name }}</span>
                 {% if e.is_evolved %}
@@ -56,5 +56,5 @@
     {% endfor %}
 </div>
 
-<script src="/js/gacha_tabs.js" defer></script>
+<script src="/static/js/gacha_tabs.js" defer></script>
 {% endblock %}

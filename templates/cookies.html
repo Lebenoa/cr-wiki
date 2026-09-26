@@ -7,9 +7,9 @@
     {% for c in cookies %}
     <a href="/cookies/{{ c.id }}" data-cr-card data-name="{{ c.name }}" data-name-en="{{ c.en_name }}"
         class="entity-card">
-        <img src="/img/grades/{{ c.grade }}.png" alt="" class="size-10 self-start">
+        <img src="/static/img/grades/{{ c.grade }}.png" alt="" class="size-10 self-start">
         {% match c.image %}{% when Some with (img) %}
-        <img src="/img/cookies/{{ img }}" alt="{{ c.name }}" class="h-20 w-full object-contain">
+        <img src="/static/img/cookies/{{ img }}" alt="{{ c.name }}" class="h-20 w-full object-contain">
         {% when None %}{% endmatch %}
         <span class="card-title">{{ c.name }}</span>
     </a>

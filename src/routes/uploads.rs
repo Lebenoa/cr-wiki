@@ -76,7 +76,7 @@ pub async fn image(ctx: Ctx, Path(section): Path<String>, mut form: Multipart) -
         // reachable immediately
         return Json(json!({
             "image": name,
-            "url": format!("/img/{}/{}", section.as_str(), name)
+            "url": format!("/static/img/{}/{}", section.as_str(), name)
         }))
         .into_response();
     }

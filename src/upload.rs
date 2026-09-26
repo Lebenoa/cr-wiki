@@ -8,13 +8,15 @@ use std::path::{Path, PathBuf};
 
 use crate::section::Section;
 
-/// Where the sprites for one section live, relative to the repo root. The
-/// section arrives already typed off the path capture, so the only question
-/// left is whether the editor writes it.
+/// Where the sprites for one section live, relative to the working
+/// directory — the same `static/` the ServeDir mount serves, so an uploaded
+/// sprite is reachable immediately. The section arrives already typed off
+/// the path capture, so the only question left is whether the editor
+/// writes it.
 pub fn section_dir(section: Section) -> Option<PathBuf> {
     section
         .editable()
-        .then(|| PathBuf::from("../static/img").join(section.as_str()))
+        .then(|| PathBuf::from("static/img").join(section.as_str()))
 }
 
 /// Only the image types the catalog actually uses. The extension is taken
