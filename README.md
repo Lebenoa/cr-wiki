@@ -20,7 +20,7 @@ A web platform for displaying and managing rich data about collectible assets â€
 | Language | Rust |
 | Web framework | axum + tokio |
 | Templates | askama (compile-time checked, escapes by default) |
-| Database | SurrealDB v3 (external server over ws:// or http://; schemaless documents with numeric ids) |
+| Database | SurrealDB v3 (external server over http:// (recommended) or ws://; schemaless documents with numeric ids) |
 | Styling | UnoCSS (Wind4 preset), generated `static/styles.css` |
 | Interactivity | HTMX (served from `/thirdparty/htmx.js`) |
 | Package manager | bun (never npm) |
@@ -226,7 +226,7 @@ host = "127.0.0.1"
 port = 6785
 
 [surreal]
-url = "ws://127.0.0.1:8100"
+url = "http://127.0.0.1:8100"
 namespace = "cookierun"
 database = "cookierun"
 username = "root"                     # SURREAL_USER overrides

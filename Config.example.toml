@@ -17,7 +17,7 @@ port = 6785
 # integration tests connect to the server named by CR_SURREAL_URL instead
 # (CR_SURREAL_NS / CR_SURREAL_DB override the namespace/database there).
 [surreal]
-# Endpoint of the SurrealDB server, e.g. "ws://127.0.0.1:8100".
+# Endpoint of the SurrealDB server, e.g. "http://127.0.0.1:8100" (ws:// also works; see README).
 url = ""
 # Namespace and database to sign in to.
 namespace = ""
