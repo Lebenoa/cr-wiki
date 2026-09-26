@@ -80,6 +80,10 @@ The server binds per `Config.toml` (`[surreal] url/namespace/database/username/p
 
 **Debug vs release matters.** Debug builds skip rate limiting and Turnstile verification and grant admin to headerless loopback peers (local development needs no login). Release builds (`cargo run --release`) enable rate limiting and Turnstile and compile out the loopback bypass — always deploy a release build.
 
+### Deployment
+
+A first-time installer lives in [`deploy/`](deploy/README.md): `sudo ./deploy/setup.sh` installs SurrealDB v3, seeds the catalog, bootstraps the first admin, and runs the site under systemd (or backgrounded with `--no-systemd`). See `deploy/README.md` for options, the Turnstile requirement, and ops notes.
+
 ### Configuration
 
 `Config.toml` is loaded at startup (gitignored — create your own from `Config.example.toml`). All fields are optional and fall back to defaults; non-positive `[ratelimit] values` clamp back to those defaults at load.

@@ -31,6 +31,10 @@ Run from the repo root:
   `builds`, `planner`, `picker`, `admin`, `auth`, `uploads`, `misc` (sitemap,
   robots, changelog), `api`, `errors`). List pages share one handler keyed by
   path section.
+- **`deploy/`** — first-run deployment bundle: `setup.sh` (idempotent
+  installer: SurrealDB install, systemd or PID-file services, seed import,
+  admin bootstrap), `import_seed.py` (committed ops copy of the seed
+  importer), `README.md`.
 - **`src/db.rs`** — all SurrealQL against the external SurrealDB server
   (`[surreal]` in Config.toml). Values are always bound parameters;
   tables/identifiers come from match whitelists, never from request input.
@@ -107,8 +111,12 @@ Run from the repo root:
   `.rs` files or JS is never generated — style JS-driven state from an
   attribute the markup carries. Use bun/bunx, never node/npm/npx.
 - **Package manager**: bun (see above).
-- **Static assets** are served by tower-http `ServeDir` mounts in main.rs
-  (`/static`, `/js`, `/img`, `/thirdparty`, favicons) from `../static`.
+- **Static assets** live under `static/` and every asset URL is `/static/...`
+  (styles.css, `js/`, `img/`, `thirdparty/`, favicons). main.rs mounts one
+  tower-http `ServeDir` at `/static` relative to the working directory. Do
+  not emit bare `/img/`-style URLs — the catalog's `/{section}/{id}` route
+  shadows any two-segment path, which is why everything sits under the
+  `/static` prefix.
 
 ## Testing & QA
 - `cargo test` covers unit-level behaviour (translations loading, i18n keys,
