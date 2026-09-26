@@ -32,9 +32,11 @@ Run from the repo root:
   robots, changelog), `api`, `errors`). List pages share one handler keyed by
   path section.
 - **`deploy/`** — first-run deployment bundle: `setup.sh` (idempotent
-  installer: SurrealDB install, systemd or PID-file services, seed import,
-  admin bootstrap), `import_seed.py` (committed ops copy of the seed
-  importer), `README.md`.
+  installer: SurrealDB install, systemd or PID-file services, seed import
+  via `surreal import seed.surql`, admin bootstrap; no python), `make_bundle.sh`
+  (builds the release tarball binary+static+translations+seed), `README.md`.
+  `seed.surql` at the repo root is a `surreal export` of the seeded catalog
+  (2.1 MB) — regenerate it with `surreal export` after reseeding.
 - **`src/db.rs`** — all SurrealQL against the external SurrealDB server
   (`[surreal]` in Config.toml). Values are always bound parameters;
   tables/identifiers come from match whitelists, never from request input.

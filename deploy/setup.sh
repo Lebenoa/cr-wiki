@@ -3,22 +3,27 @@
 #
 # Takes a fresh Linux box to a running wiki in one shot:
 #   1. installs SurrealDB v3 (official install script) if missing
-#   2. installs the cookierun release binary (repo build, prebuilt copy, or
-#      downloaded from the GitHub release matching CR_RELEASE / latest)
-#   3. creates the runtime user, install tree, Config.toml and a generated
-#      database password
+#   2. gets the runtime tree — the release bundle (one tarball: binary,
+#      static/ + translations/ + seed.surql) via --bundle, or a repo
+#      checkout — and installs it beside this script (deploy/runtime)
+#   3. creates the runtime user, Config.toml and a generated database
+#      password
 #   4. (systemd mode, default) installs two units — cookierun-surrealdb and
 #      cookierun — and starts them;  (--no-systemd) backgrounds both with
 #      PID files instead, for containers and non-systemd hosts
-#   5. imports scripts/seed_data.json when the cookie table is empty,
-#      creates the app's indexes, and bootstraps the first admin user
+#   5. imports seed.surql when the cookie table is empty (namespace and
+#      database are created by the import), and bootstraps the first admin
+#      user (hash generated server-side by crypto::argon2::generate, the
+#      same primitive the app uses)
 #   6. waits for the site to answer and prints the summary
 #
-# Idempotent: re-running upgrades the binary/config assets, reuses the
-# database password and skips seeding/admin creation once data exists.
+# Only root + curl are required — no python. Idempotent: re-running
+# reuses the database password and skips seeding/admin once data exists.
 #
 # Usage:  sudo ./setup.sh [options]
 # Options:
+#   --bundle PATH|URL  release bundle tarball (binary+assets+seed) instead
+#                      of a repo checkout; downloads the URL otherwise
 #   --installdir DIR   install tree (default deploy/runtime beside this script)
 #   --host HOST        app bind host (default 0.0.0.0)
 #   --port PORT        app port (default 6785)
@@ -29,10 +34,10 @@
 #                      /etc/cookierun/surrealdb.env)
 #   --no-systemd       background both processes instead of systemd units
 #
-# Environment overrides: CR_INSTALL_DIR, CR_HOST, CR_PORT, CR_NS, CR_DB,
-#   CR_ADMIN_USER, CR_ADMIN_PASS, CR_DB_PASS, CR_TURNSTILE_SECRET,
+# Environment overrides: CR_BUNDLE, CR_INSTALL_DIR, CR_HOST, CR_PORT, CR_NS,
+#   CR_DB, CR_ADMIN_USER, CR_ADMIN_PASS, CR_DB_PASS, CR_TURNSTILE_SECRET,
 #   CR_TURNSTILE_HOSTNAMES, CR_TRUSTED_PROXIES (space/comma separated),
-#   CR_RELEASE (GitHub release tag to download the binary from), CR_DB_BIND.
+#   CR_RELEASE (GitHub release tag for bundle download), CR_DB_BIND.
 set -Eeuo pipefail
 
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -40,6 +45,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # Default install tree sits beside the script (deploy/runtime) so the whole
 # bundle stays self-contained; override with --installdir or CR_INSTALL_DIR.
 INSTALL="${CR_INSTALL_DIR:-$SCRIPT_DIR/runtime}"
+BUNDLE="${CR_BUNDLE:-}"
 HOST="${CR_HOST:-0.0.0.0}"
 PORT="${CR_PORT:-6785}"
 NS="${CR_NS:-cookierun}"
@@ -53,6 +59,7 @@ SYSTEMD=1
 
 while [ "$#" -gt 0 ]; do
     case "$1" in
+        --bundle) BUNDLE="$2"; shift 2 ;;
         --installdir) INSTALL="$2"; shift 2 ;;
         --host) HOST="$2"; shift 2 ;;
         --port) PORT="$2"; shift 2 ;;
@@ -61,7 +68,7 @@ while [ "$#" -gt 0 ]; do
         --db-pass) DB_PASS="$2"; shift 2 ;;
         --no-systemd) SYSTEMD=0; shift ;;
         -h|--help)
-            sed -n '2,30p' "$0" | sed 's/^# \{0,1\}//'
+            sed -n '2,40p' "$0" | sed 's/^# \{0,1\}//'
             exit 0 ;;
         *) echo "unknown option: $1" >&2; exit 2 ;;
     esac
@@ -71,6 +78,12 @@ log() { printf '\033[1;32m[setup]\033[0m %s\n' "$*"; }
 die() { printf '\033[1;31m[setup] ERROR:\033[0m %s\n' "$*" >&2; exit 1; }
 
 [ "$(id -u)" = 0 ] || die "run as root (sudo ./setup.sh)"
+command -v curl >/dev/null 2>&1 || die "curl is required"
+command -v tar >/dev/null 2>&1 || die "tar is required"
+# admin credentials feed SurrealQL string literals; keep them literal-safe
+[[ "$ADMIN_USER" =~ ^[A-Za-z0-9_-]+$ ]] || die "admin user: letters, digits, _ and - only"
+[[ "$ADMIN_PASS" =~ ^[A-Za-z0-9_-]+$ ]] || die "admin pass: letters, digits, _ and - only"
+[[ "$DB_PASS" =~ ^[A-Za-z0-9_-]*$ ]] || die "db pass: letters, digits, _ and - only"
 
 # --- 1. SurrealDB -----------------------------------------------------------
 if ! command -v surreal >/dev/null 2>&1; then
@@ -83,30 +96,47 @@ if ! command -v surreal >/dev/null 2>&1; then
 fi
 log "SurrealDB: $(surreal version | head -1)"
 
-# --- 2. binary ---------------------------------------------------------------
-BIN_CANDIDATES=(
-    "$REPO/target/x86_64-unknown-linux-gnu/release/cookierun"
-    "$INSTALL/cookierun"
-)
-BIN=""
-for c in "${BIN_CANDIDATES[@]}"; do
-    if [ -x "$c" ]; then BIN="$c"; break; fi
-done
-if [ -z "$BIN" ]; then
-    log "no local binary; downloading cookierun $RELEASE from GitHub ..."
-    API="https://api.github.com/repos/Lebenoa/cr-wiki/releases/$RELEASE"
-    ASSET="$(curl -sSf "$API" | grep -oE 'https://[^"]*cookierun-x86_64-unknown-linux-gnu[^"]*' | head -1)"
-    [ -n "$ASSET" ] || die "no release asset found for $RELEASE (build first: cargo zigbuild --release --target x86_64-unknown-linux-gnu.2.43)"
-    curl -sSfL -o /tmp/cookierun-bundle "$ASSET" || die "binary download failed"
-    mkdir -p "$INSTALL"
-    install -m 755 /tmp/cookierun-bundle "$INSTALL/cookierun"
-    rm -f /tmp/cookierun-bundle
-    BIN="$INSTALL/cookierun"
+# --- 2. runtime tree ----------------------------------------------------------
+mkdir -p "$INSTALL"
+if [ -n "$BUNDLE" ]; then
+    case "$BUNDLE" in
+        http://*|https://*) log "downloading bundle from $BUNDLE ..."
+            curl -sSfL -o /tmp/cookierun-bundle.tar.gz "$BUNDLE" || die "bundle download failed"
+            BUNDLE=/tmp/cookierun-bundle.tar.gz ;;
+    esac
+    log "extracting bundle into $INSTALL ..."
+    tar xzf "$BUNDLE" -C "$INSTALL"
+    rm -f /tmp/cookierun-bundle.tar.gz
+    chmod 755 "$INSTALL/cookierun"
+else
+    # repo checkout sources
+    BIN="$REPO/target/x86_64-unknown-linux-gnu/release/cookierun"
+    if [ ! -x "$BIN" ]; then
+        log "no local build; downloading cookierun $RELEASE from GitHub ..."
+        API="https://api.github.com/repos/Lebenoa/cr-wiki/releases/$RELEASE"
+        ASSET="$(curl -sSf "$API" | grep -oE 'https://[^"]*cookierun-x86_64-unknown-linux-gnu[^"]*' | head -1)"
+        [ -n "$ASSET" ] || die "no release asset found for $RELEASE (build first: cargo zigbuild --release --target x86_64-unknown-linux-gnu.2.43)"
+        curl -sSfL -o /tmp/cookierun-dl "$ASSET" || die "binary download failed"
+        install -m 755 /tmp/cookierun-dl "$INSTALL/cookierun"
+        rm -f /tmp/cookierun-dl
+        [ -f "$REPO/seed.surql" ] && cp "$REPO/seed.surql" "$INSTALL/seed.surql"
+        cp -r "$REPO/static" "$INSTALL/static"
+        cp -r "$REPO/translations" "$INSTALL/translations"
+    else
+        [ "$BIN" != "$INSTALL/cookierun" ] && install -m 755 "$BIN" "$INSTALL/cookierun"
+        cp "$REPO/seed.surql" "$INSTALL/seed.surql"
+        rm -rf "$INSTALL/static"
+        cp -r "$REPO/static" "$INSTALL/static"
+        rm -rf "$INSTALL/translations"
+        cp -r "$REPO/translations" "$INSTALL/translations"
+    fi
 fi
-log "binary: $BIN"
+for f in cookierun seed.surql static translations; do
+    [ -e "$INSTALL/$f" ] || die "runtime tree incomplete: missing $INSTALL/$f (use --bundle or a repo checkout)"
+done
 
-# --- 3. install tree, credential files --------------------------------------
-mkdir -p "$INSTALL" /etc/cookierun /var/lib/cookierun/surreal
+# --- 3. credential files ------------------------------------------------------
+mkdir -p /etc/cookierun /var/lib/cookierun/surreal
 if ! id -u cookierun >/dev/null 2>&1; then
     useradd --system --home-dir "$INSTALL" --shell /usr/sbin/nologin cookierun
 fi
@@ -120,22 +150,10 @@ if [ ! -s /etc/cookierun/surrealdb.env ]; then
 fi
 chown root:cookierun /etc/cookierun/surrealdb.env
 chmod 640 /etc/cookierun/surrealdb.env
-
-# --- 4. install tree contents ------------------------------------------------
-if [ "$BIN" != "$INSTALL/cookierun" ]; then
-    install -m 755 "$BIN" "$INSTALL/cookierun"
-fi
-mkdir -p "$INSTALL/scripts"
-cp -r "$REPO/translations" "$INSTALL/translations"
-rm -rf "$INSTALL/static"
-cp -r "$REPO/static" "$INSTALL/static"
-cp "$REPO/scripts/seed_data.json" "$INSTALL/scripts/seed_data.json"
-cp "$REPO/deploy/import_seed.py" "$INSTALL/import_seed.py"
-chmod 644 "$INSTALL/import_seed.py"
+CONF_PASS="$(sed -n 's/^SURREAL_PASS=//p' /etc/cookierun/surrealdb.env)"
 
 # Config.toml: host/port, the datastore, turnstile, trusted proxies.
 CONF="$INSTALL/Config.toml"
-CONF_PASS="$(sed -n 's/^SURREAL_PASS=//p' /etc/cookierun/surrealdb.env)"
 cat > "$CONF" <<EOF
 host = "$HOST"
 port = $PORT
@@ -158,14 +176,25 @@ fi
 chown -R cookierun:cookierun "$INSTALL"
 chown -R cookierun:cookierun /var/lib/cookierun
 
-# --- 5. services --------------------------------------------------------------
-export IMPORT_URL="http://$DB_BIND" IMPORT_NS="$NS" IMPORT_DB="$DB" \
-       IMPORT_USER=root IMPORT_PASS="$(sed -n 's/^SURREAL_PASS=//p' /etc/cookierun/surrealdb.env)"
+# --- 4. services --------------------------------------------------------------
+DB_AUTH="$(printf 'root:%s' "$CONF_PASS" | base64 -w0)"
+sqlq() { # one JSON-RPC query; $1 = SurrealQL, $2 = optional JSON vars object
+    curl -sf -m 60 -X POST -H 'Content-Type: application/json' \
+        -H "Surreal-NS: $NS" -H "Surreal-DB: $DB" \
+        -H "Authorization: Basic $DB_AUTH" \
+        -d "{\"id\":\"setup\",\"method\":\"query\",\"params\":[\"$1\",${2:-{}}]}" \
+        "http://$DB_BIND/rpc"
+}
+db_count() { # row count of a table; missing table counts as 0
+    local out
+    out="$(sqlq "SELECT count() AS n FROM $1 GROUP ALL" 2>/dev/null || true)"
+    local n
+    n="$(printf '%s' "$out" | grep -oE '"n":[0-9]+' | head -1 | cut -d: -f2)"
+    echo "${n:-0}"
+}
 
 surreal_start() {
-    env SURREAL_USER=root \
-        SURREAL_PASS="$(sed -n 's/^SURREAL_PASS=//p' /etc/cookierun/surrealdb.env)" \
-        SURREAL_NO_BANNER=true \
+    env SURREAL_USER=root SURREAL_PASS="$CONF_PASS" SURREAL_NO_BANNER=true \
         /usr/local/bin/surreal start --bind "$DB_BIND" \
         "surrealkv:///var/lib/cookierun/surreal" "$@"
 }
@@ -234,8 +263,22 @@ EOF
     wait_db || { journalctl -u cookierun-surrealdb.service -n 20 --no-pager >&2; die "SurrealDB did not become healthy"; }
 
     log "seeding and bootstrapping admin ..."
-    python3 "$INSTALL/import_seed.py" --fixture "$INSTALL/scripts/seed_data.json" --if-empty --ensure-indexes \
-        --create-admin-if-empty "$ADMIN_USER" "$ADMIN_PASS"
+    if [ "$(db_count cookie)" = 0 ]; then
+        log "importing seed.surql ..."
+        surreal import -e "http://$DB_BIND" -u root -p "$CONF_PASS" \
+            --ns "$NS" --db "$DB" "$INSTALL/seed.surql" || die "seed import failed"
+    else
+        log "cookie table has data; seeding skipped"
+    fi
+    if [ "$(db_count user)" = 0 ]; then
+        printf "CREATE type::record('user', 1) SET username = '%s', password = crypto::argon2::generate('%s'), is_admin = true, created_at = time::unix();" \
+            "$ADMIN_USER" "$ADMIN_PASS" |
+            surreal sql -e "http://$DB_BIND" -u root -p "$CONF_PASS" \
+                --ns "$NS" --db "$DB" --hide-welcome >/dev/null || die "admin creation failed"
+        log "admin $ADMIN_USER created"
+    else
+        log "user table has data; admin creation skipped"
+    fi
 
     log "starting cookierun.service ..."
     systemctl enable --now cookierun.service >/dev/null 2>&1
@@ -248,8 +291,22 @@ else
     wait_db || die "SurrealDB did not become healthy (see $INSTALL/logs/surrealdb.log)"
 
     log "seeding and bootstrapping admin ..."
-    python3 "$INSTALL/import_seed.py" --fixture "$INSTALL/scripts/seed_data.json" --if-empty --ensure-indexes \
-        --create-admin-if-empty "$ADMIN_USER" "$ADMIN_PASS"
+    if [ "$(db_count cookie)" = 0 ]; then
+        log "importing seed.surql ..."
+        surreal import -e "http://$DB_BIND" -u root -p "$CONF_PASS" \
+            --ns "$NS" --db "$DB" "$INSTALL/seed.surql" || die "seed import failed"
+    else
+        log "cookie table has data; seeding skipped"
+    fi
+    if [ "$(db_count user)" = 0 ]; then
+        printf "CREATE type::record('user', 1) SET username = '%s', password = crypto::argon2::generate('%s'), is_admin = true, created_at = time::unix();" \
+            "$ADMIN_USER" "$ADMIN_PASS" |
+            surreal sql -e "http://$DB_BIND" -u root -p "$CONF_PASS" \
+                --ns "$NS" --db "$DB" --hide-welcome >/dev/null || die "admin creation failed"
+        log "admin $ADMIN_USER created"
+    else
+        log "user table has data; admin creation skipped"
+    fi
 
     log "starting cookierun (no-systemd) ..."
     cd "$INSTALL"
@@ -259,7 +316,7 @@ else
     wait_site || die "site did not answer on :$PORT (see $INSTALL/logs/cookierun.log)"
 fi
 
-# --- 6. admin credentials + summary -------------------------------------------
+# --- 5. admin credentials + summary -------------------------------------------
 if [ -z "$ADMIN_PASS" ] && [ ! -s /etc/cookierun/admin-credentials ]; then
     ADMIN_PASS="$(openssl rand -hex 12 2>/dev/null || od -An -N12 -tx1 /dev/urandom | tr -d ' \n')"
     {
@@ -281,5 +338,6 @@ if [ -z "${CR_TURNSTILE_SECRET:-}" ]; then
     echo "           CR_TURNSTILE_SECRET (Cloudflare dashboard) and rerun."
 fi
 echo "  Logs:  journalctl -u cookierun -f"
-echo "  Reseed (destructive):  sudo python3 $INSTALL/import_seed.py"
+echo "  Reseed (destructive):  sudo surreal import -e http://$DB_BIND -u root"
+echo "           -p \$CONF_PASS --ns $NS --db $DB $INSTALL/seed.surql"
 echo "------------------------------------------------------------"

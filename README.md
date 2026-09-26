@@ -88,40 +88,43 @@ seeds the catalog, creates the first admin, and runs the site under systemd.
 
 #### Install
 
-**Requirements:** Linux x86_64 with glibc ≥ 2.39, root access, `curl` and
-`python3`. (Binary built for glibc 2.43; verified on it.)
+**Requirements:** Linux x86_64 with glibc ≥ 2.39, root access, `curl`.
+(Binary built for glibc 2.43; verified on it.)
 
 ```sh
 git clone https://github.com/Lebenoa/cr-wiki.git
 cd cr-wiki
 
-# Build the release binary (cargo-zigbuild + zig 0.16.0), or let setup.sh
-# download it from the GitHub release:
-#   cargo zigbuild --release --target x86_64-unknown-linux-gnu.2.43
-
-sudo ./deploy/setup.sh            # default: deploy/runtime, systemd
+sudo ./deploy/setup.sh              # from this checkout, or from the release
+sudo ./deploy/setup.sh --bundle cookierun-bundle.tar.gz   # bundle: any machine
 ```
+
+The `cookierun-bundle.tar.gz` from the GitHub release — binary, `static/`,
+`translations/` and the seed — is the only artifact a server needs;
+`./deploy/make_bundle.sh` rebuilds it. `setup.sh` downloads the bundle
+automatically when `--bundle` is a URL.
 
 Done — the summary prints the site URL. What ran, in order:
 
 1. **SurrealDB v3** installed via `https://install.surrealdb.com` if absent;
    data lives in `/var/lib/cookierun/surreal` (surrealkv), loopback-only.
-2. **Install tree** at `deploy/runtime/` — binary, `translations/`,
-   `static/`, seed fixture, generated `Config.toml` (the app talks to the
-   datastore over `http://`), owned by a `cookierun` system user. The root
-   DB password is generated and kept in `/etc/cookierun/surrealdb.env`.
-3. **Seed + admin** — catalog data imported only when the `cookie` table is
-   empty; unique-username index created; first admin bootstrapped
+2. **Install tree** at `deploy/runtime/` beside the script (override
+   `--installdir`) — binary, `static/`, `translations/`, `seed.surql` and a
+   generated `Config.toml` (app talks to the datastore over `http://`),
+   owned by a `cookierun` system user. The root DB password is generated
+   and kept in `/etc/cookierun/surrealdb.env`.
+3. **Seed + admin** — `seed.surql` (a `surreal export` of the catalog)
+   imported only when the `cookie` table is empty; first admin bootstrapped
    (password in `/etc/cookierun/admin-credentials`).
 4. **Services** — `cookierun.service` + `cookierun-surrealdb.service`
    started under systemd; without systemd use `--no-systemd` (background
    PID files, for containers).
 
-Useful options (`sudo ./deploy/setup.sh --help`-style flags documented in
-`deploy/README.md`): `--installdir`, `--host`, `--port`, `--admin-user`,
-`--admin-pass`, `--db-pass`. Env overrides: `CR_TURNSTILE_SECRET`,
-`CR_TURNSTILE_HOSTNAMES`, `CR_TRUSTED_PROXIES`, `CR_RELEASE`, … Re-running
-is an idempotent upgrade (reuses the DB password, skips seeding).
+Useful options (full list in `deploy/README.md`): `--bundle`, `--installdir`,
+`--host`, `--port`, `--admin-user`, `--admin-pass`, `--db-pass`. Env
+overrides: `CR_TURNSTILE_SECRET`, `CR_TURNSTILE_HOSTNAMES`,
+`CR_TRUSTED_PROXIES`, `CR_RELEASE`, … Re-running is an idempotent upgrade
+(reuses the DB password, skips seeding).
 
 #### After install — Turnstile (required)
 
@@ -147,7 +150,7 @@ sudo systemctl restart cookierun                    # sessions are in-memory
 ```
 
 Reseed (wipes seeded tables, including `user`):
-`sudo python3 deploy/runtime/import_seed.py`
+`sudo surreal import -e http://127.0.0.1:8100 -u root -p <db-pass> --ns cookierun --db cookierun deploy/runtime/seed.surql`
 
 ### Configuration
 
