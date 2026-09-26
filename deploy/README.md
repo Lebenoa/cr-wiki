@@ -87,6 +87,94 @@ Environment overrides: `CR_BUNDLE`, `CR_HOST`, `CR_PORT`, `CR_NS`, `CR_DB`,
 - Data lives in `/var/lib/cookierun/surreal` — back it up. Restart the
   service after restoring.
 
+## Manual install (no script)
+
+Same end state as `setup.sh`, by hand — equivalent commands (root shell):
+
+```sh
+curl -sSf https://install.surrealdb.com | sh          # once, if surreal absent
+mkdir -p /opt/cookierun
+curl -sSfL https://github.com/Lebenoa/cr-wiki/releases/download/v0.1.2/cookierun-bundle.tar.gz \
+  | tar xz -C /opt/cookierun
+useradd --system --home-dir /opt/cookierun --shell /usr/sbin/nologin cookierun
+mkdir -p /var/lib/cookierun/surreal /etc/cookierun
+DB_PASS="$(openssl rand -hex 24)"
+printf 'SURREAL_USER=root\nSURREAL_PASS=%s\nSURREAL_NO_BANNER=true\n' "$DB_PASS" \
+  > /etc/cookierun/surrealdb.env && chmod 640 /etc/cookierun/surrealdb.env
+chown -R cookierun:cookierun /opt/cookierun /var/lib/cookierun
+# write /opt/cookierun/Config.toml (host/port/[surreal] incl. password/[turnstile])
+sudo -u cookierun env SURREAL_USER=root SURREAL_PASS="$DB_PASS" \
+  surreal start --bind 127.0.0.1:8100 surrealkv:///var/lib/cookierun/surreal
+surreal import -e http://127.0.0.1:8100 -u root -p "$DB_PASS" \
+  --ns cookierun --db cookierun /opt/cookierun/seed.surql
+ADMIN_PASS="$(openssl rand -hex 12)"
+printf "CREATE type::record('user', 1) SET username = 'admin', \
+password = crypto::argon2::generate('%s'), is_admin = true, \
+created_at = time::unix();" "$ADMIN_PASS" \
+  | surreal sql -e http://127.0.0.1:8100 -u root -p "$DB_PASS" \
+      --ns cookierun --db cookierun --hide-welcome
+cd /opt/cookierun && sudo -u cookierun ./cookierun
+```
+
+`setup.sh` generates the `Config.toml`; manually, write it yourself (see the
+root README for the full annotated version; `[turnstile]` empty = fail
+closed). For production, replace the last line with the two units below.
+
+## systemd units (manual install)
+
+`/etc/systemd/system/cookierun-surrealdb.service`:
+
+```ini
+[Unit]
+Description=CookieRun wiki SurrealDB v3 datastore
+After=network.target
+
+[Service]
+Type=simple
+User=cookierun
+Group=cookierun
+EnvironmentFile=/etc/cookierun/surrealdb.env
+ExecStart=/usr/local/bin/surreal start --bind 127.0.0.1:8100 --log info surrealkv:///var/lib/cookierun/surreal
+Restart=on-failure
+RestartSec=3
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ReadWritePaths=/var/lib/cookierun/surreal
+
+[Install]
+WantedBy=multi-user.target
+```
+
+`/etc/systemd/system/cookierun.service`:
+
+```ini
+[Unit]
+Description=CookieRun wiki web server
+After=network.target cookierun-surrealdb.service
+Requires=cookierun-surrealdb.service
+
+[Service]
+Type=simple
+User=cookierun
+Group=cookierun
+WorkingDirectory=/opt/cookierun
+ExecStart=/opt/cookierun/cookierun
+Restart=on-failure
+RestartSec=3
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=true
+
+[Install]
+WantedBy=multi-user.target
+```
+
+```sh
+sudo systemctl daemon-reload && sudo systemctl enable --now cookierun-surrealdb.service cookierun.service
+```
+
 ## Ops
 
 ```sh

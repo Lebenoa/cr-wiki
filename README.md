@@ -126,6 +126,71 @@ overrides: `CR_TURNSTILE_SECRET`, `CR_TURNSTILE_HOSTNAMES`,
 `CR_TRUSTED_PROXIES`, `CR_RELEASE`, … Re-running is an idempotent upgrade
 (reuses the DB password, skips seeding).
 
+#### Manual install (no script)
+
+Every step `setup.sh` automates, by hand. Verified against the v0.1.2
+bundle.
+
+```sh
+# 1. install SurrealDB v3 (once)
+curl -sSf https://install.surrealdb.com | sh
+sudo cp "$HOME/.surrealdb/surreal" /usr/local/bin/surreal
+
+# 2. fetch and extract the release bundle
+curl -sSfL -o cookierun-bundle.tar.gz \
+  https://github.com/Lebenoa/cr-wiki/releases/download/v0.1.2/cookierun-bundle.tar.gz
+sudo mkdir -p /opt/cookierun
+sudo tar xzf cookierun-bundle.tar.gz -C /opt/cookierun
+
+# 3. runtime user + generated credentials
+sudo useradd --system --home-dir /opt/cookierun --shell /usr/sbin/nologin cookierun
+sudo mkdir -p /var/lib/cookierun/surreal /etc/cookierun
+DB_PASS="$(openssl rand -hex 24)"
+printf 'SURREAL_USER=root\nSURREAL_PASS=%s\nSURREAL_NO_BANNER=true\n' "$DB_PASS" \
+  | sudo tee /etc/cookierun/surrealdb.env > /dev/null
+sudo chmod 640 /etc/cookierun/surrealdb.env
+sudo chown -R cookierun:cookierun /opt/cookierun /var/lib/cookierun
+
+# 4. Config.toml (the app reads it from its working directory)
+sudo tee /opt/cookierun/Config.toml > /dev/null <<EOF
+host = "0.0.0.0"
+port = 6785
+
+[surreal]
+url = "http://127.0.0.1:8100"
+namespace = "cookierun"
+database = "cookierun"
+username = "root"
+password = "$DB_PASS"
+
+[turnstile]
+secret = ""          # release builds fail closed until this is set
+EOF
+
+# 5. start the datastore, then wait for /health
+sudo -u cookierun env SURREAL_USER=root SURREAL_PASS="$DB_PASS" \
+  surreal start --bind 127.0.0.1:8100 surrealkv:///var/lib/cookierun/surreal
+until curl -sf -o /dev/null http://127.0.0.1:8100/health; do sleep 1; done
+
+# 6. seed the catalog (creates namespace/db, tables, index, rows)
+sudo surreal import -e http://127.0.0.1:8100 -u root -p "$DB_PASS" \
+  --ns cookierun --db cookierun /opt/cookierun/seed.surql
+
+# 7. bootstrap the first admin (server-side argon2id hash)
+ADMIN_PASS="$(openssl rand -hex 12)"
+printf "CREATE type::record('user', 1) SET username = 'admin', \
+password = crypto::argon2::generate('%s'), is_admin = true, \
+created_at = time::unix();" "$ADMIN_PASS" \
+  | sudo surreal sql -e http://127.0.0.1:8100 -u root -p "$DB_PASS" \
+      --ns cookierun --db cookierun --hide-welcome
+
+# 8. run the site (production: use the systemd units in deploy/README.md)
+cd /opt/cookierun && sudo -u cookierun ./cookierun
+```
+
+Admin password: `$ADMIN_PASS` (print/keep it — it is not stored). The
+Turnstile step below still applies.
+
 #### After install — Turnstile (required)
 
 Release builds **fail closed**: login, register and every protected POST
