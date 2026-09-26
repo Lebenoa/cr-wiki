@@ -49,3 +49,5 @@ static/google*
 # build output
 /target/
 
+__pycache__/
+*.pyc
