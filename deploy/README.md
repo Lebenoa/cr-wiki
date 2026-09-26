@@ -40,8 +40,11 @@ What it does, in order:
    all. The SurrealDB root password is generated and kept in
    `/etc/cookierun/surrealdb.env` (mode 640, `root:cookierun`).
    `Config.toml` is generated on the spot (app talks to the datastore over
-   `http://` — observed stable with 3.3.0-beta servers, where websocket
-   sessions go stale after idle gaps).
+   `http://` — over ws, intermittent server-side session failures were
+   observed in testing: a request after an idle gap intermittently 500s
+   with `Session not found` / `Specify a namespace to use`. http carries
+   auth + namespace per request and showed zero failures; the SDK supports
+   both).
 3. **Seed** — `surreal import seed.surql` only when the `cookie` table is
    empty; the import creates the namespace/database itself.
 4. **Admin** — first `is_admin` user created only when the `user` table is
