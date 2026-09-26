@@ -32,20 +32,11 @@ logs/
 !static/thirdparty/htmx.js
 !static/js/*.js
 
-# Ignore installed modules through `v install --local`:
-modules/
-
 node_modules/
-
 
 Config.toml
 *.db-shm
 *.db-wal
-*.def
-
-# Python tooling
-__pycache__/
-*.py
 
 # Scraper/seed helper scripts stay local; the build scripts are project
 # tooling and stay tracked
@@ -58,5 +49,3 @@ static/google*
 # build output
 /target/
 
-# zed flycheck artifacts
-/rust/target/
