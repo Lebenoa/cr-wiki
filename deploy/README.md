@@ -92,36 +92,69 @@ Environment overrides: `CR_BUNDLE`, `CR_HOST`, `CR_PORT`, `CR_NS`, `CR_DB`,
 
 ## Manual install (no script)
 
-Same end state as `setup.sh`, by hand — equivalent commands (root shell):
+The same end state as `setup.sh`, by hand. Root shell required; the root
+README's annotated version explains each step. Constant: `DB_PASS` is a
+generated SurrealDB root password you keep for yourself.
 
-```sh
-curl -sSf https://install.surrealdb.com | sh          # once, if surreal absent
-mkdir -p /opt/cookierun
-curl -sSfL https://github.com/Lebenoa/cr-wiki/releases/download/v0.1.2/cookierun-bundle.tar.gz \
-  | tar xz -C /opt/cookierun
-useradd --system --home-dir /opt/cookierun --shell /usr/sbin/nologin cookierun
-mkdir -p /var/lib/cookierun/surreal /etc/cookierun
-DB_PASS="$(openssl rand -hex 24)"
-printf 'SURREAL_USER=root\nSURREAL_PASS=%s\nSURREAL_NO_BANNER=true\n' "$DB_PASS" \
-  > /etc/cookierun/surrealdb.env && chmod 640 /etc/cookierun/surrealdb.env
-chown -R cookierun:cookierun /opt/cookierun /var/lib/cookierun
-# write /opt/cookierun/Config.toml (host/port/[surreal] incl. password/[turnstile])
-sudo -u cookierun env SURREAL_USER=root SURREAL_PASS="$DB_PASS" \
-  surreal start --bind 127.0.0.1:8100 surrealkv:///var/lib/cookierun/surreal
-surreal import -e http://127.0.0.1:8100 -u root -p "$DB_PASS" \
-  --ns cookierun --db cookierun /opt/cookierun/seed.surql
-ADMIN_PASS="$(openssl rand -hex 12)"
-printf "CREATE type::record('user', 1) SET username = 'admin', \
-password = crypto::argon2::generate('%s'), is_admin = true, \
-created_at = time::unix();" "$ADMIN_PASS" \
-  | surreal sql -e http://127.0.0.1:8100 -u root -p "$DB_PASS" \
-      --ns cookierun --db cookierun --hide-welcome
-cd /opt/cookierun && sudo -u cookierun ./cookierun
-```
+1. **SurrealDB v3** (once): `curl -sSf https://install.surrealdb.com | sh`
 
-`setup.sh` generates the `Config.toml`; manually, write it yourself (see the
-root README for the full annotated version; `[turnstile]` empty = fail
-closed). For production, replace the last line with the two units below.
+2. **Bundle**: fetch and unpack next to where the site will live:
+
+   ```sh
+   curl -sSfL https://github.com/Lebenoa/cr-wiki/releases/download/v0.1.2/cookierun-bundle.tar.gz \
+     | tar xz -C /opt/cookierun   # mkdir -p /opt/cookierun first
+   ```
+
+3. **User + credentials**:
+
+   ```sh
+   useradd --system --home-dir /opt/cookierun --shell /usr/sbin/nologin cookierun
+   mkdir -p /var/lib/cookierun/surreal /etc/cookierun
+   DB_PASS="$(openssl rand -hex 24)"
+   printf 'SURREAL_USER=root\nSURREAL_PASS=%s\nSURREAL_NO_BANNER=true\n' "$DB_PASS" \
+     > /etc/cookierun/surrealdb.env && chmod 640 /etc/cookierun/surrealdb.env
+   chown -R cookierun:cookierun /opt/cookierun /var/lib/cookierun
+   ```
+
+4. **Config.toml** in `/opt/cookierun/` — `host`/`port`, `[surreal]`
+   (`url = "http://127.0.0.1:8100"`, ns/db `cookierun`, `username = "root"`,
+   `password = "$DB_PASS"`), `[turnstile] secret` (empty = fail closed).
+   `setup.sh` writes this file; manually, model it on `Config.example.toml`.
+
+5. **Datastore**:
+
+   ```sh
+   sudo -u cookierun env SURREAL_USER=root SURREAL_PASS="$DB_PASS" \
+     surreal start --bind 127.0.0.1:8100 surrealkv:///var/lib/cookierun/surreal
+   until curl -sf -o /dev/null http://127.0.0.1:8100/health; do sleep 1; done
+   ```
+
+6. **Seed**:
+
+   ```sh
+   surreal import -e http://127.0.0.1:8100 -u root -p "$DB_PASS" \
+     --ns cookierun --db cookierun /opt/cookierun/seed.surql
+   ```
+
+7. **Admin** — password hashed server-side by `crypto::argon2::generate`:
+
+   ```sh
+   ADMIN_PASS="$(openssl rand -hex 12)"
+   printf "CREATE type::record('user', 1) SET username = 'admin', \
+   password = crypto::argon2::generate('%s'), is_admin = true, \
+   created_at = time::unix();" "$ADMIN_PASS" \
+     | surreal sql -e http://127.0.0.1:8100 -u root -p "$DB_PASS" \
+         --ns cookierun --db cookierun --hide-welcome
+   ```
+
+   `$ADMIN_PASS` is your login — not stored anywhere.
+
+8. **Run**: `cd /opt/cookierun && sudo -u cookierun ./cookierun`, or the two
+   systemd units below.
+
+TURNSTILE reminder applies: without a secret in `Config.toml` (or the
+`TURNSTILE_SECRET` / `TURNSTILE_HOSTNAMES` env vars), release builds fail
+closed on login/register/admin forms.
 
 ## systemd units (manual install)
 

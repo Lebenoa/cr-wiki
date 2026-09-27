@@ -128,21 +128,35 @@ overrides: `CR_TURNSTILE_SECRET`, `CR_TURNSTILE_HOSTNAMES`,
 
 #### Manual install (no script)
 
-Every step `setup.sh` automates, by hand. Verified against the v0.1.2
-bundle.
+The same end state as `setup.sh`, step by step. Verified against the
+v0.1.2 bundle. All commands run as root; the app user is a dedicated
+`cookierun` system account, and the generated credentials live in
+`/etc/cookierun/`.
+
+**1. Install SurrealDB v3** — once, if `surreal` is not already on the
+machine. The official installer puts the binary in `~/.surrealdb/`:
 
 ```sh
-# 1. install SurrealDB v3 (once)
 curl -sSf https://install.surrealdb.com | sh
 sudo cp "$HOME/.surrealdb/surreal" /usr/local/bin/surreal
+```
 
-# 2. fetch and extract the release bundle
+**2. Fetch and extract the release bundle** — one tarball containing the
+binary, `static/`, `translations/` and `seed.surql`:
+
+```sh
 curl -sSfL -o cookierun-bundle.tar.gz \
   https://github.com/Lebenoa/cr-wiki/releases/download/v0.1.2/cookierun-bundle.tar.gz
 sudo mkdir -p /opt/cookierun
 sudo tar xzf cookierun-bundle.tar.gz -C /opt/cookierun
+```
 
-# 3. runtime user + generated credentials
+**3. Runtime user and generated credentials** — a `cookierun` system user
+owns the install tree and the datastore directory. The SurrealDB root
+password is generated once and stored in `/etc/cookierun/surrealdb.env`
+(mode 640, readable by the service user):
+
+```sh
 sudo useradd --system --home-dir /opt/cookierun --shell /usr/sbin/nologin cookierun
 sudo mkdir -p /var/lib/cookierun/surreal /etc/cookierun
 DB_PASS="$(openssl rand -hex 24)"
@@ -150,8 +164,15 @@ printf 'SURREAL_USER=root\nSURREAL_PASS=%s\nSURREAL_NO_BANNER=true\n' "$DB_PASS"
   | sudo tee /etc/cookierun/surrealdb.env > /dev/null
 sudo chmod 640 /etc/cookierun/surrealdb.env
 sudo chown -R cookierun:cookierun /opt/cookierun /var/lib/cookierun
+```
 
-# 4. Config.toml (the app reads it from its working directory)
+**4. `Config.toml`** — the app reads it from its working directory, so it
+lives next to the binary. The `password` field echoes `$DB_PASS`; leave
+`[turnstile] secret` empty only until you have a Cloudflare secret —
+release builds fail closed (ignore that line and set it via the env
+overrides `TURNSTILE_SECRET` / `TURNSTILE_HOSTNAMES` if you prefer):
+
+```sh
 sudo tee /opt/cookierun/Config.toml > /dev/null <<EOF
 host = "0.0.0.0"
 port = 6785
@@ -164,32 +185,61 @@ username = "root"
 password = "$DB_PASS"
 
 [turnstile]
-secret = ""          # release builds fail closed until this is set
+secret = ""
 EOF
+```
 
-# 5. start the datastore, then wait for /health
+**5. Start the datastore** — SurrealDB v3 on the loopback, persistent
+`surrealkv` storage under `/var/lib/cookierun/surreal`. Run as the
+`cookierun` user; auth comes from the password you generated:
+
+```sh
 sudo -u cookierun env SURREAL_USER=root SURREAL_PASS="$DB_PASS" \
   surreal start --bind 127.0.0.1:8100 surrealkv:///var/lib/cookierun/surreal
-until curl -sf -o /dev/null http://127.0.0.1:8100/health; do sleep 1; done
+```
 
-# 6. seed the catalog (creates namespace/db, tables, index, rows)
+Wait until it answers its health endpoint before the next step:
+
+```sh
+until curl -sf -o /dev/null http://127.0.0.1:8100/health; do sleep 1; done
+```
+
+**6. Seed the catalog** — the single `seed.surql` was exported from a
+seeded database (`surreal export`); the import creates the namespace,
+database, all tables, the unique username index and every row:
+
+```sh
 sudo surreal import -e http://127.0.0.1:8100 -u root -p "$DB_PASS" \
   --ns cookierun --db cookierun /opt/cookierun/seed.surql
+```
 
-# 7. bootstrap the first admin (server-side argon2id hash)
+**7. Bootstrap the first admin** — a `user` record with `is_admin = true`.
+The password is hashed server-side by SurrealDB's
+`crypto::argon2::generate`, the same primitive the app uses for login:
+
+```sh
 ADMIN_PASS="$(openssl rand -hex 12)"
 printf "CREATE type::record('user', 1) SET username = 'admin', \
 password = crypto::argon2::generate('%s'), is_admin = true, \
 created_at = time::unix();" "$ADMIN_PASS" \
   | sudo surreal sql -e http://127.0.0.1:8100 -u root -p "$DB_PASS" \
       --ns cookierun --db cookierun --hide-welcome
+```
 
-# 8. run the site (production: use the systemd units in deploy/README.md)
+`$ADMIN_PASS` is your login — write it down now; nothing stores it.
+
+**8. Run the site** — from the install tree, as the `cookierun` user:
+
+```sh
 cd /opt/cookierun && sudo -u cookierun ./cookierun
 ```
 
-Admin password: `$ADMIN_PASS` (print/keep it — it is not stored). The
-Turnstile step below still applies.
+For a long-running service, replace the last step with the two systemd
+units shown in [`deploy/README.md`](deploy/README.md).
+
+The Turnstile step below applies to this install path too: set the secret
+and restart the app (or set `TURNSTILE_SECRET` / `TURNSTILE_HOSTNAMES` in
+the unit's environment).
 
 #### After install — Turnstile (required)
 
