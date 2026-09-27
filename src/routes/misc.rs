@@ -166,10 +166,9 @@ pub async fn robots(ctx: Ctx) -> ([(&'static str, &'static str); 1], String) {
 mod tests {
     use super::*;
 
-    /// Search matches the localized and the English name, and a wildcard in
-    /// the query is a literal.
+    /// Full-text search matches localized and English names and searches prose.
     #[tokio::test]
-    async fn search_matches_both_languages() {
+    async fn search_matches_localized_english_and_prose() {
         let Some(pool) = live_db().await else {
             eprintln!("skip: CR_SURREAL_URL not set");
             return;
@@ -180,18 +179,13 @@ mod tests {
             .iter()
             .any(|(section, c)| section == "cookies" && c.name.contains("Kaymak")));
 
-        // a th page still finds an entity by its English name
         let th = db::search(&pool, "th", "wizard", 20).await.unwrap();
         assert!(!th.is_empty());
 
-        // the escape makes % a literal: it finds the rows whose text actually
-        // contains one, rather than matching the whole catalog. The search
-        // covers the prose columns too, so a hit can come from a description
-        // rather than the name — what matters is that it is not everything.
-        let pct = db::search(&pool, "en", "%", 20).await.unwrap();
-        assert!(!pct.is_empty());
-        let everything = db::search(&pool, "en", "e", 500).await.unwrap();
-        assert!(pct.len() < everything.len(), "% matched as a wildcard");
+        let th_partial = db::search(&pool, "th", "กล้า", 20).await.unwrap();
+        assert!(th_partial.iter().any(|(section, c)| section == "cookies" && c.id == 1));
+        let prose = db::search(&pool, "en", "abilities", 20).await.unwrap();
+        assert!(prose.iter().any(|(section, _)| section == "cookies"));
         assert!(db::search(&pool, "en", "   ", 20).await.unwrap().is_empty());
     }
 

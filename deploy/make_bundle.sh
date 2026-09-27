@@ -34,7 +34,6 @@ cp -r "$REPO/static" "$STAGE/static"
 cp -r "$REPO/translations" "$STAGE/translations"
 cp "$SEED" "$STAGE/seed.surql"
 chmod 755 "$STAGE/cookierun"
-
 tar czf "$OUT" -C "$STAGE" cookierun static translations seed.surql
 echo "bundle: $OUT ($(du -h "$OUT" | cut -f1))"
 tar tzf "$OUT" | head -4 || true

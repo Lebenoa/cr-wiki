@@ -109,7 +109,6 @@ if [ -n "$BUNDLE" ]; then
     rm -f /tmp/cookierun-bundle.tar.gz
     chmod 755 "$INSTALL/cookierun"
 else
-    # repo checkout sources
     BIN="$REPO/target/x86_64-unknown-linux-gnu/release/cookierun"
     if [ ! -x "$BIN" ]; then
         log "no local build; downloading cookierun $RELEASE from GitHub ..."

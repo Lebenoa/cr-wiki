@@ -17,10 +17,13 @@ Only `root` + `curl` are required — no python, no build tools.
   surreal export -e http://127.0.0.1:8100 -u root -p "$PASS" \
       --ns cookierun --db cookierun seed.surql
   ```
-
   The import recreates the namespace/database, every table, the
   `user.user_username` unique index, and all rows — byte-for-byte what the
   seeded dev DB holds.
+
+Catalog full-text analyzers and indexes are created idempotently at application startup by `db::connect_url` before serving requests.
+
+
 
 ## Quick start
 

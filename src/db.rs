@@ -59,6 +59,7 @@ pub async fn connect_url(
         .await?;
     }
     db.use_ns(ns).use_db(database).await?;
+    ensure_search_schema(&db).await?;
     Ok(db)
 }
 
@@ -72,6 +73,38 @@ pub async fn warm_pool(db: &Db) -> Result<()> {
     Ok(())
 }
 
+/// Ensures the indexes needed by search exist for seeded and upgraded databases.
+/// The application authenticates with the deployment's configured root user.
+async fn ensure_search_schema(db: &Db) -> Result<()> {
+    db.query("DEFINE ANALYZER IF NOT EXISTS cookie_search_en TOKENIZERS class, punct FILTERS lowercase;")
+        .await?
+        .check()?;
+    db.query("DEFINE ANALYZER IF NOT EXISTS cookie_search_th TOKENIZERS class FILTERS lowercase, ngram(1,3);")
+        .await?
+        .check()?;
+    let indexes = [
+        ("cookie", ["tr.en.name", "tr.th.name", "tr.en.abilities", "tr.th.abilities", "tr.en.description", "tr.th.description"].as_slice()),
+        ("pet", ["tr.en.name", "tr.th.name", "tr.en.description", "tr.th.description"].as_slice()),
+        ("treasure", ["tr.en.name", "tr.th.name", "tr.en.description", "tr.th.description"].as_slice()),
+        ("relic", ["tr.en.name", "tr.th.name", "tr.en.description", "tr.th.description"].as_slice()),
+        ("episode", ["tr.en.name", "tr.th.name", "tr.en.description", "tr.th.description"].as_slice()),
+        ("ingredient", ["tr.en.name", "tr.th.name", "tr.en.description", "tr.th.description"].as_slice()),
+    ];
+    for (table, fields) in indexes {
+        for (index, field) in fields.iter().enumerate() {
+            let analyzer = if field.contains(".th.") {
+                "cookie_search_th"
+            } else {
+                "cookie_search_en"
+            };
+            let sql = format!(
+                "DEFINE INDEX IF NOT EXISTS {table}_search_{index} ON TABLE {table} FIELDS {field} FULLTEXT ANALYZER {analyzer};"
+            );
+            db.query(sql).await?.check()?;
+        }
+    }
+    Ok(())
+}
 /// The largest numeric id in a table, 0 when empty. New records take max+1;
 /// writes are admin-only and rare, so the unguarded read-modify-write is fine.
 async fn next_id(db: &Db, table: &str) -> Result<i64> {
@@ -110,6 +143,7 @@ struct CardRow {
     image: Option<String>,
     grade: Option<i64>,
     is_evolved: bool,
+    score: Option<f64>,
 }
 
 impl From<CardRow> for Card {
@@ -1377,56 +1411,46 @@ pub async fn sitemap_entries(db: &Db) -> Result<Vec<(String, i64)>> {
     Ok(out)
 }
 
-/// Cross-entity search over the localized and English names. Substring
-/// matching rather than a full-text index for the same reason the V app kept
-/// LIKE: Thai has no word breaks, so a tokenizer misses terms a substring
-/// finds. Both sides are lowercased because `~` is case-sensitive.
+/// Cross-entity full-text search over localized and English catalog prose.
 pub async fn search(db: &Db, lang: &str, q: &str, limit: i64) -> Result<Vec<(String, Card)>> {
-    let q = q.trim();
-    if q.is_empty() {
+    let query = q.trim();
+    if query.is_empty() || limit <= 0 {
         return Ok(Vec::new());
     }
-    let needle = q.to_lowercase();
     let mut out = Vec::new();
-    // the columns searched mirror the old FTS tables: a cookie is findable by
-    // its abilities text, not just its name
-    for (section, prose) in [
-        ("cookies", vec!["abilities", "description"]),
-        ("pets", vec!["description"]),
-        ("treasures", vec!["description"]),
-        ("relics", vec!["description"]),
-        ("episodes", vec!["description"]),
-        ("ingredients", vec!["description"]),
+    for (section, table, extra, prose) in [
+        ("cookies", "cookie", ", grade", "abilities"),
+        ("pets", "pet", ", grade", "description"),
+        ("treasures", "treasure", ", grade", "description"),
+        ("relics", "relic", "", "description"),
+        ("episodes", "episode", "", "description"),
+        ("ingredients", "ingredient", ", grade", "description"),
     ] {
-        let Some(kind) = Kind::of_section(section) else {
-            continue; // not a catalog section; nothing to search
-        };
-        let mut clauses = vec![
-            "string::lowercase(tr.en.name) CONTAINS $needle".to_string(),
-            "string::lowercase(tr[$lang].name ?? '') CONTAINS $needle".to_string(),
-        ];
-        for col in prose {
-            clauses.push(format!(
-                "string::lowercase(tr.en.{col} ?? '') CONTAINS $needle"
-            ));
-            clauses.push(format!(
-                "string::lowercase(tr[$lang].{col} ?? '') CONTAINS $needle"
-            ));
+        let mut clauses = Vec::with_capacity(if prose == "abilities" { 6 } else { 4 });
+        for locale in ["en", lang] {
+            clauses.push(format!("tr.{locale}.name @1@ $q"));
+            clauses.push(format!("tr.{locale}.description @1@ $q"));
+            if prose == "abilities" {
+                clauses.push(format!("tr.{locale}.abilities @1@ $q"));
+            }
         }
-        let extra = if kind.graded { ", grade" } else { "" };
-        let cards = select_cards(
-            db,
-            lang,
-            &kind,
-            extra,
-            &clauses.join(" OR "),
-            " ORDER BY name ASC",
-            Some(limit),
-            None,
-            Some(needle.clone()),
-        )
-        .await?;
-        out.extend(cards.into_iter().map(|card| (section.to_string(), card)));
+        let sql = format!(
+            "SELECT record::id(id) AS id, image{extra}, {} AS name,
+                    (tr.en.name ?? '') AS en_name, search::score(1) AS score
+               FROM {table}
+              WHERE {}
+              ORDER BY score DESC, name ASC
+              LIMIT {limit}",
+            tr("name"),
+            clauses.join(" OR "),
+        );
+        let rows: Vec<CardRow> = db
+            .query(sql)
+            .bind(("lang", lang.to_string()))
+            .bind(("q", query.to_string()))
+            .await?
+            .take(0)?;
+        out.extend(rows.into_iter().map(|r| (section.to_string(), Card::from(r))));
     }
     Ok(out)
 }
@@ -1524,9 +1548,13 @@ pub async fn cards_by_ids(db: &Db, lang: &str, kind: &str, ids: &[i64]) -> Resul
         .into_iter()
         .map(Card::from)
         .collect();
-    let mut ordered = Vec::with_capacity(found.len());
+    let mut cards_by_id = std::collections::HashMap::with_capacity(found.len());
+    for card in found {
+        cards_by_id.insert(card.id, card);
+    }
+    let mut ordered = Vec::with_capacity(ids.len());
     for id in ids {
-        if let Some(card) = found.iter().find(|c| c.id == *id) {
+        if let Some(card) = cards_by_id.get(id) {
             ordered.push(card.clone());
         }
     }
