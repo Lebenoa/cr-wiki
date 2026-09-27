@@ -218,7 +218,16 @@
             var li = document.createElement('div');
             li.className = 'px-4 py-2 cursor-pointer hover:bg-primary/10 text-foreground flex items-center gap-2';
             li.setAttribute('role', 'option');
-            li.textContent = opt.name;
+            // the entity sprite ahead of the name, mirroring the preview and
+            // the server's rendered links; alt is empty because the name
+            // beside it already names the entity
+            var thumb = thumbHtml(cur.kind, opt);
+            if (thumb) {
+                var span = document.createElement('span');
+                span.innerHTML = thumb;
+                li.appendChild(span.firstChild);
+            }
+            li.appendChild(document.createTextNode(opt.name));
             li.addEventListener('mousedown', function (e) {
                 e.preventDefault(); // keep the textarea focused
                 insert(ta, cur, opt);
