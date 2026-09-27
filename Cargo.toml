@@ -11,7 +11,7 @@ tower-http = { version = "0.7", features = ["fs", "trace", "catch-panic"] }
 askama = "0.16"
 # SurrealDB client: the app never embeds a storage engine — it always talks
 # to an external server (ws:// or http://) over the wire.
-surrealdb = { version = "3", default-features = false, features = ["protocol-ws", "protocol-http"] }
+surrealdb = { version = "3.3.0", default-features = false, features = ["protocol-ws", "protocol-http"] }
 serde = { version = "1", features = ["derive"] }
 toml = "1"
 tracing = "0.1"

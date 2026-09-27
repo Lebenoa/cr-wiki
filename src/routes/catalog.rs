@@ -114,7 +114,7 @@ async fn render(
     let html = if ctx.is_fragment() {
         CatalogCards {
             ctx,
-            section,
+            section: section.clone(),
             cards,
             next_page,
             tab,

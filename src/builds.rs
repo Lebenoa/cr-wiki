@@ -240,21 +240,12 @@ async fn select_where(
 ) -> crate::db::Result<Vec<BuildCard>> {
     let now = now_unix();
 
-    // the id is the tie-break on every sort, so paging cannot repeat a row.
-    // The verified count rides the projection as an alias because SurrealDB v3
-    // refuses an ORDER BY term that the projection does not name.
-    let (order, ok_select) = match sort {
-        "score" => ("score DESC, id DESC", ""),
-        "coin" => ("coin DESC, id DESC", ""),
-        "time" => ("time ASC, id DESC", ""),
-        "verified" => (
-            "verified_ok DESC, id DESC",
-            ",
-                array::len((SELECT id FROM review
-                             WHERE build_id = record::id($parent.id)
-                               AND verified = true)) AS verified_ok",
-        ),
-        _ => ("created_at DESC, id DESC", ""),
+    // The tie-break on every sort is the id, so paging cannot repeat a row.
+    let order = match sort {
+        "score" => "score DESC, id DESC",
+        "coin" => "coin DESC, id DESC",
+        "time" => "time ASC, id DESC",
+        _ => "created_at DESC, id DESC",
     };
 
     // free text filters travel as bound parameters, never inline
@@ -270,7 +261,7 @@ async fn select_where(
                 treasure1_blessed, treasure2_blessed, treasure3_blessed,
                 treasure1_level, treasure2_level, treasure3_level,
                 ep, ep_special, tag, boosts, boost, score, coin, time, boxes,
-                description, youtube_url, author, user_id, expires_at, created_at{ok_select}
+                description, youtube_url, author, user_id, expires_at, created_at
            FROM build
           WHERE (expires_at IS NONE OR expires_at = 0 OR expires_at > $now){author_filter}{filter_sql}
           ORDER BY {order}
@@ -280,7 +271,41 @@ async fn select_where(
     if !author.is_empty() {
         q = q.bind(("author", author.to_string()));
     }
-    let rows: Vec<BuildRow> = q.await?.take(0)?;
+    let mut rows: Vec<BuildRow> = q.await?.take(0)?;
+
+    // sort=verified: counts come from their own grouped query and are joined +
+    // re-sorted in Rust. The per-build correlated subquery this replaces is
+    // re-planned per row on v3, and the `record::id(id) AS id` projection
+    // shadows `id` before it resolves, so `record::id($parent.id)` received
+    // the plain integer and silently counted zero for every build. The
+    // projection normalizes both storage shapes the table holds: the record
+    // id older rows may carry and the plain integer `upsert_review` writes.
+    if sort == "verified" {
+        #[derive(Default, SurrealValue)]
+        #[surreal(default)]
+        struct CountRow {
+            bid: i64,
+            c: i64,
+        }
+        let counts: Vec<CountRow> = db
+            .query(
+                "SELECT (IF type::is_record(build_id) THEN record::id(build_id) ELSE build_id END)
+                        AS bid, count() AS c
+                   FROM review
+                  WHERE verified = true
+                  GROUP BY bid",
+            )
+            .await?
+            .take(0)?;
+        let by_build: std::collections::HashMap<i64, i64> =
+            counts.into_iter().map(|c| (c.bid, c.c)).collect();
+        rows.sort_by(|a, b| {
+            let av = by_build.get(&a.id).copied().unwrap_or(0);
+            let bv = by_build.get(&b.id).copied().unwrap_or(0);
+            bv.cmp(&av).then(b.id.cmp(&a.id))
+        });
+    }
+
 
     // the entities come back in three batched queries rather than one per
     // slot per build, which is what the V lookups do

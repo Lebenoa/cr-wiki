@@ -59,11 +59,23 @@ async fn main() {
     };
 
     let state = AppState {
-        db: pool,
+        db: Arc::new(pool),
         limiter: Arc::new(ratelimit::Limiter::new(cfg.ratelimit.clone())),
         sessions: Arc::new(session::Sessions::new()),
         cfg: Arc::new(cfg.clone()),
     };
+
+    // Warm the wire pool before serving: the SDK establishes its WebSocket
+    // lazily, so without this the first visitor paid the whole handshake
+    // (~11 s observed) while their request was in flight.
+    let warm = tokio::time::timeout(
+        std::time::Duration::from_secs(30),
+        db::warm_pool(&state.db),
+    )
+    .await;
+    if let Err(e) = warm {
+        tracing::warn!("database warmup timed out: {e}");
+    }
 
     let app = routes::router(state);
     // Every asset URL in the templates lives under /static — styles.css,

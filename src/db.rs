@@ -62,6 +62,16 @@ pub async fn connect_url(
     Ok(db)
 }
 
+/// One throwaway round trip so the wire pool's first connection is already
+/// established and authenticated before real traffic arrives. The SDK builds
+/// its WebSocket lazily; without this the first request in a fresh process
+/// pays the whole setup while its caller waits.
+pub async fn warm_pool(db: &Db) -> Result<()> {
+    let mut res = db.query("RETURN 1;").await?;
+    let _: Option<i64> = res.take(0)?;
+    Ok(())
+}
+
 /// The largest numeric id in a table, 0 when empty. New records take max+1;
 /// writes are admin-only and rare, so the unguarded read-modify-write is fine.
 async fn next_id(db: &Db, table: &str) -> Result<i64> {
@@ -339,25 +349,33 @@ struct EpisodeListRow {
 /// 1-7, then special 501+, then event 601+ (the id ranges encode it — same
 /// invariant `episode_short` reads its abbreviation from).
 pub async fn select_episode_list(db: &Db, lang: &str) -> Result<Vec<EpisodeList>> {
+    // The child counts ride along as pre-grouped maps instead of correlated
+    // subqueries. On SurrealDB v3 a subquery whose right-hand side mentions
+    // `$parent` is re-planned per outer row and never touches an index, so the
+    // old shape cost a full child-table scan per episode per child kind
+    // (~92 ms against a 13-row episode table with ~3k quests). One grouped
+    // scan per child table plus an in-memory array lookup is ~1 ms total.
+    // `record::id(id)` inside the closures reads the row's id before the
+    // `record::id(id) AS id` projection shadows it with the plain integer.
     let sql = format!(
-        "SELECT record::id(id) AS id, image, kind, (stars ?? 0) AS stars,
+        "LET $stages = (SELECT episode_id, count() AS c FROM episode_stage GROUP BY episode_id);
+         LET $quests = (SELECT episode_id, count() AS c FROM quest GROUP BY episode_id);
+         LET $relics = (SELECT episode_id, count() AS c FROM episode_relic GROUP BY episode_id);
+         SELECT record::id(id) AS id, image, kind, (stars ?? 0) AS stars,
                 (league_ranked ?? false) AS league_ranked, (entry_cost ?? '') AS entry_cost,
-                {} AS name, (tr.en.name ?? '') AS en_name,
-                array::len((SELECT id FROM episode_stage WHERE episode_id = record::id(type::record(\"episode\", $parent.id))))
-                    AS stage_count,
-                array::len((SELECT id FROM quest WHERE episode_id = record::id(type::record(\"episode\", $parent.id))))
-                    AS quest_count,
-                array::len((SELECT id FROM episode_relic WHERE episode_id = record::id(type::record(\"episode\", $parent.id))))
-                    AS relic_count
+                {name} AS name, (tr.en.name ?? '') AS en_name,
+                array::find($stages, |$x| $x.episode_id = record::id(id)).c ?? 0 AS stage_count,
+                array::find($quests, |$x| $x.episode_id = record::id(id)).c ?? 0 AS quest_count,
+                array::find($relics, |$x| $x.episode_id = record::id(id)).c ?? 0 AS relic_count
            FROM episode
           ORDER BY id",
-        tr("name")
+        name = tr("name")
     );
     let rows: Vec<EpisodeListRow> = db
         .query(&sql)
         .bind(("lang", lang.to_string()))
         .await?
-        .take(0)?;
+        .take(3)?;
     Ok(rows
         .into_iter()
         .map(|r| EpisodeList {
@@ -398,30 +416,49 @@ struct IngredientListRow {
     image: Option<String>,
     grade: Option<i64>,
     drop_episode_id: Option<i64>,
-    recipe_count: i64,
+    recipe_count: Option<i64>,
 }
 
 /// Grade first (rarest down to commonest, ungraded last), then drop episode
 /// in play order (the id ranges ascend story -> special -> event), then id.
 /// The ingredients that drop everywhere carry no episode id and sort after
 /// the ones that name an episode, which needs the explicit NONE check.
+///
+/// Recipe counts arrive as their own grouped query and are joined in Rust:
+/// a `$parent`-correlated subquery re-plans per row on v3 (~0.4 s for 242
+/// ingredients), and an in-SQL `array::find` join costs ~130 ms because the
+/// closure scan is linear per row. Two scans + a HashMap join stay in single
+/// digits.
 pub async fn select_ingredient_list(db: &Db, lang: &str) -> Result<Vec<IngredientList>> {
     let sql = format!(
         "SELECT record::id(id) AS id, image, grade, drop_episode_id,
                 (drop_episode_id IS NONE) AS no_episode,
                 (IF grade IS NONE THEN -1 ELSE rank END) AS display_rank,
-                {} AS name, (tr.en.name ?? '') AS en_name,
-                array::len((SELECT id FROM ingredient_recipe
-                           WHERE ingredient_id = record::id(type::record(\"ingredient\", $parent.id)))) AS recipe_count
+                {name} AS name, (tr.en.name ?? '') AS en_name
            FROM ingredient
           ORDER BY display_rank DESC, no_episode, drop_episode_id, id",
-        tr("name")
+        name = tr("name")
     );
-    let rows: Vec<IngredientListRow> = db
+    let mut rows: Vec<IngredientListRow> = db
         .query(&sql)
         .bind(("lang", lang.to_string()))
         .await?
         .take(0)?;
+    #[derive(Default, SurrealValue)]
+    #[surreal(default)]
+    struct CountRow {
+        ingredient_id: i64,
+        c: i64,
+    }
+    let counts: Vec<CountRow> = db
+        .query("SELECT ingredient_id, count() AS c FROM ingredient_recipe GROUP BY ingredient_id")
+        .await?
+        .take(0)?;
+    let by_ingredient: std::collections::HashMap<i64, i64> =
+        counts.into_iter().map(|c| (c.ingredient_id, c.c)).collect();
+    for row in &mut rows {
+        row.recipe_count = Some(by_ingredient.get(&row.id).copied().unwrap_or(0));
+    }
     Ok(rows
         .into_iter()
         .map(|r| IngredientList {
@@ -431,7 +468,7 @@ pub async fn select_ingredient_list(db: &Db, lang: &str) -> Result<Vec<Ingredien
             image: r.image,
             grade: r.grade,
             drop_episode_id: r.drop_episode_id,
-            recipe_count: r.recipe_count,
+            recipe_count: r.recipe_count.unwrap_or(0),
         })
         .collect())
 }
@@ -513,27 +550,30 @@ struct SkinListRow {
 }
 
 /// Skins in id order; the owner (a cookie or a pet) resolves its own name.
+/// The owner names come from pre-built maps rather than per-row correlated
+/// subqueries — see `select_relic_groups` for why: v3 re-plans a `$parent`
+/// subquery per row, costing a full cookie/pet scan per skin.
 pub async fn select_skin_list(db: &Db, lang: &str) -> Result<Vec<SkinList>> {
     let sql = format!(
-        "SELECT record::id(id) AS id, image, grade, (collab ?? false) AS collab,
+        "LET $cn = (SELECT record::id(id) AS cid, {cname} AS name FROM cookie);
+         LET $pn = (SELECT record::id(id) AS pid, {pname} AS name FROM pet);
+         SELECT record::id(id) AS id, image, grade, (collab ?? false) AS collab,
                 (subtitle ?? '') AS subtitle,
-                {} AS name, (tr.en.name ?? '') AS en_name,
+                {name} AS name, (tr.en.name ?? '') AS en_name,
                 cookie_id, pet_id,
-                ((SELECT VALUE {} FROM cookie
-                  WHERE record::id(id) = $parent.cookie_id LIMIT 1)[0] ?? '') AS cookie_name,
-                ((SELECT VALUE {} FROM pet
-                  WHERE record::id(id) = $parent.pet_id LIMIT 1)[0] ?? '') AS pet_name
+                (array::find($cn, |$x| $x.cid = cookie_id).name ?? '') AS cookie_name,
+                (array::find($pn, |$x| $x.pid = pet_id).name ?? '') AS pet_name
            FROM skin
           ORDER BY id",
-        tr("name"),
-        tr("name"),
-        tr("name")
+        name = tr("name"),
+        cname = tr("name"),
+        pname = tr("name")
     );
     let rows: Vec<SkinListRow> = db
         .query(&sql)
         .bind(("lang", lang.to_string()))
         .await?
-        .take(0)?;
+        .take(2)?;
     Ok(rows
         .into_iter()
         .map(|r| SkinList {
@@ -595,25 +635,30 @@ pub struct RelicGroup {
 }
 
 pub async fn select_relic_groups(db: &Db, lang: &str) -> Result<Vec<RelicGroup>> {
+    // The unlocking cookie's name resolves through one pre-built map (id ->
+    // name) instead of a per-relic correlated subquery: v3 re-plans a
+    // `$parent` subquery per row and never uses an index, so 85 relics cost
+    // ~45 ms of repeated cookie-table scans. The map lookup keeps it <20 ms
+    // (94-row map scanned 85 times) without a second round trip.
     let sql = format!(
-        "SELECT record::id(id) AS id, image, (episode_id ?? 0) AS episode_id,
+        "LET $cookie_names = (SELECT record::id(id) AS cid, {cname} AS name FROM cookie);
+         SELECT record::id(id) AS id, image, (episode_id ?? 0) AS episode_id,
                 (unlock_cookie_id ?? 0) AS unlock_cookie_id,
-                {} AS name, (tr.en.name ?? '') AS en_name,
-                {} AS description,
-                ((SELECT VALUE {} FROM cookie
-                  WHERE record::id(id) = $parent.unlock_cookie_id LIMIT 1)[0] ?? '')
+                {name} AS name, (tr.en.name ?? '') AS en_name,
+                {description} AS description,
+                (array::find($cookie_names, |$x| $x.cid = unlock_cookie_id).name ?? '')
                     AS unlock_cookie_name
            FROM relic
           ORDER BY id",
-        tr("name"),
-        tr("description"),
-        tr("name")
+        name = tr("name"),
+        cname = tr("name"),
+        description = tr("description"),
     );
     let rows: Vec<RelicListRow> = db
         .query(&sql)
         .bind(("lang", lang.to_string()))
         .await?
-        .take(0)?;
+        .take(1)?;
     #[derive(Default, SurrealValue)]
     #[surreal(default)]
     struct EpisodeName {
@@ -736,22 +781,20 @@ pub async fn select_detail(db: &Db, lang: &str, section: &str, id: i64) -> Resul
     };
     let sql = format!(
         "SELECT record::id(id) AS id, image{extra}, release_date,
-                {} AS name,
+                {name} AS name,
                 (tr.en.name ?? '') AS en_name,
-                {} AS abilities,
-                {} AS description,
-                {} AS power_plus,
-                {} AS ppr,
-                {} AS unlock_goal
-           FROM type::table($tb)
-          WHERE record::id(id) = $id
-          LIMIT 1",
-        tr("name"),
-        tr("abilities"),
-        tr("description"),
-        tr("power_plus"),
-        tr("power_plus_requirement"),
-        tr("unlock_goal"),
+                {abilities} AS abilities,
+                {description} AS description,
+                {power_plus} AS power_plus,
+                {ppr} AS ppr,
+                {unlock_goal} AS unlock_goal
+           FROM type::record($tb, $id)",
+        name = tr("name"),
+        abilities = tr("abilities"),
+        description = tr("description"),
+        power_plus = tr("power_plus"),
+        ppr = tr("power_plus_requirement"),
+        unlock_goal = tr("unlock_goal"),
         extra = if kind.graded {
             ", grade, (is_evolved ?? false) AS is_evolved"
         } else {
@@ -825,11 +868,12 @@ pub async fn ingredient_facts(db: &Db, lang: &str, id: i64) -> Result<Ingredient
                 (breaks_into_powder ?? 0) AS breaks_into_powder,
                 (craft_from_powder ?? 0) AS craft_from_powder,
                 (obtained_from ?? '') AS obtained_from,
-                ((SELECT VALUE {} FROM episode
-                  WHERE record::id(id) = $parent.drop_episode_id LIMIT 1)[0] ?? '')
+                ((SELECT VALUE {ename} FROM episode
+                  WHERE id = type::record(\"episode\", $parent.drop_episode_id)
+                  LIMIT 1)[0] ?? '')
                     AS drop_episode_name
            FROM type::record(\"ingredient\", $id)",
-        tr("name")
+        ename = tr("name")
     );
     let mut rows: Vec<IngredientFactsRow> = db
         .query(&sql)
@@ -872,22 +916,21 @@ pub async fn ingredient_recipes(db: &Db, lang: &str, id: i64) -> Result<Vec<Craf
         image: Option<String>,
     }
     let sql = format!(
-        "SELECT treasure_id,
-                ((SELECT VALUE {} FROM treasure
-                  WHERE record::id(id) = $parent.treasure_id LIMIT 1)[0] ?? '') AS name,
-                (SELECT VALUE image FROM treasure
-                  WHERE record::id(id) = $parent.treasure_id LIMIT 1)[0] AS image
+        "LET $tn = (SELECT record::id(id) AS tid, {tname} AS name, image FROM treasure);
+         SELECT treasure_id,
+                (array::find($tn, |$x| $x.tid = treasure_id).name ?? '') AS name,
+                array::find($tn, |$x| $x.tid = treasure_id).image AS image
            FROM ingredient_recipe
           WHERE ingredient_id = $id
           ORDER BY treasure_id",
-        tr("name")
+        tname = tr("name")
     );
     let rows: Vec<Row> = db
         .query(&sql)
         .bind(("id", id))
         .bind(("lang", lang.to_string()))
         .await?
-        .take(0)?;
+        .take(1)?;
     Ok(rows
         .into_iter()
         .map(|r| CraftRecipe {
@@ -924,26 +967,26 @@ pub async fn treasure_craft_ingredients(
         drop_episode_id: Option<i64>,
     }
     let sql = format!(
-        "SELECT ingredient_id,
-                ((SELECT VALUE {} FROM ingredient
-                  WHERE record::id(id) = $parent.ingredient_id LIMIT 1)[0] ?? '') AS name,
-                (SELECT VALUE image FROM ingredient
-                  WHERE record::id(id) = $parent.ingredient_id LIMIT 1)[0] AS image,
-                (SELECT VALUE grade FROM ingredient
-                  WHERE record::id(id) = $parent.ingredient_id LIMIT 1)[0] AS grade,
-                (SELECT VALUE drop_episode_id FROM ingredient
-                  WHERE record::id(id) = $parent.ingredient_id LIMIT 1)[0] AS drop_episode_id
+        "LET $ing = (SELECT record::id(id) AS iid, {iname} AS name, image, grade,
+                            drop_episode_id
+                       FROM ingredient);
+         SELECT ingredient_id,
+                (array::find($ing, |$x| $x.iid = ingredient_id).name ?? '') AS name,
+                array::find($ing, |$x| $x.iid = ingredient_id).image AS image,
+                array::find($ing, |$x| $x.iid = ingredient_id).grade AS grade,
+                array::find($ing, |$x| $x.iid = ingredient_id).drop_episode_id
+                    AS drop_episode_id
            FROM ingredient_recipe
           WHERE treasure_id = $id
           ORDER BY ingredient_id",
-        tr("name")
+        iname = tr("name")
     );
     let rows: Vec<Row> = db
         .query(&sql)
         .bind(("id", id))
         .bind(("lang", lang.to_string()))
         .await?
-        .take(0)?;
+        .take(1)?;
     Ok(rows
         .into_iter()
         .map(|r| CraftIngredient {
@@ -1235,17 +1278,15 @@ pub async fn entity_link(
         .query(
             format!(
                 "SELECT record::id(id) AS id, image,
-                        {} AS name,
+                        {name} AS name,
                         (tr.en.name ?? '') AS en_name
-                   FROM {}
-                  WHERE record::id(id) = $id
-                  LIMIT 1",
-                tr("name"),
-                k.table
+                   FROM type::record($tb, $id)",
+                name = tr("name"),
             )
             .as_str(),
         )
         .bind(("lang", lang.to_string()))
+        .bind(("tb", k.table))
         .bind(("id", id))
         .await
         .ok()?

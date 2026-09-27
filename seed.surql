@@ -446,3 +446,20 @@ DEFINE INDEX user_username ON user FIELDS username UNIQUE;
 -- ------------------------------
 
 
+-- ------------------------------
+-- INDEXES: join keys
+-- ------------------------------
+-- Point lookups by foreign-key id. The grouped-count queries in db.rs /
+-- builds.rs scan these tables whole, so these mainly matter to the direct
+-- `WHERE fk = $id` reads (combi bonuses, craft ingredients, review tallies)
+-- and to any future per-row lookup; building them at import time keeps the
+-- first startup cheap instead of paying index backfill on a live server.
+DEFINE INDEX combi_cookie_id ON combi FIELDS cookie_id;
+DEFINE INDEX ingredient_recipe_ingredient_id ON ingredient_recipe FIELDS ingredient_id;
+DEFINE INDEX ingredient_recipe_treasure_id ON ingredient_recipe FIELDS treasure_id;
+DEFINE INDEX episode_stage_episode_id ON episode_stage FIELDS episode_id;
+DEFINE INDEX quest_episode_id ON quest FIELDS episode_id;
+DEFINE INDEX episode_relic_episode_id ON episode_relic FIELDS episode_id;
+DEFINE INDEX cookie_release_date ON cookie FIELDS release_date;
+DEFINE INDEX pet_release_date ON pet FIELDS release_date;
+DEFINE INDEX treasure_rank_release_date ON treasure FIELDS rank, release_date;

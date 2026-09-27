@@ -167,7 +167,7 @@ mod tests {
     fn state() -> AppState {
         crate::i18n::load("translations");
         AppState {
-            db: surrealdb::Surreal::init(),
+            db: Arc::new(surrealdb::Surreal::init()),
             limiter: Arc::new(Limiter::new(crate::config::RateLimit::default())),
             sessions: Arc::new(Sessions::new()),
             cfg: Arc::new(crate::config::Config::default()),
