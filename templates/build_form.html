@@ -97,7 +97,9 @@
 
         <label class="mt-6 flex flex-col gap-1 text-xs font-label uppercase text-foreground-muted">
             {{ ctx.l.t("build_description_label") }}
-            <textarea name="description" rows="3" class="filter-input w-full">{{ prefill.description }}</textarea>
+            <textarea name="description" rows="3" class="filter-input w-full" data-richtext>{{ prefill.description }}</textarea>
+            {% include "richtext_preview.html" %}
+            <p class="text-xs text-foreground-muted normal-case">{{ ctx.l.t("rich_text_hint") }}</p>
         </label>
         {% if !ctx.signed_in() %}
         <label class="mt-4 flex flex-col gap-1 text-xs font-label uppercase text-foreground-muted">
@@ -119,6 +121,7 @@
 
 <div id="build-preview" class="mt-6"></div>
 
+<script src="/static/js/richtext.js"></script>
 <script src="/static/js/level_slider.js"></script>
 <script src="/static/js/picker.js"></script>
 {% endblock %}

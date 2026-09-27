@@ -48,6 +48,10 @@ struct BuildDetail {
     build: BuildCard,
     verified: i64,
     issues: i64,
+    /// the description through the rich-text renderer: [[kind:id]] become
+    /// entity links and {color:...} spans, everything else stays escaped —
+    /// the same markup the form's autocomplete and preview produce
+    description_html: String,
 }
 
 /// The EP combobox value: `"1".."7"` for a regular tier, `"s1".."s3"` for a
@@ -141,12 +145,16 @@ pub async fn show(
         return Ok(super::errors::not_found(ctx));
     };
     let (verified, issues) = builds::review_counts(&state.db, id).await?;
+    let mut memo = crate::richtext::LinkCache::new();
+    let description_html =
+        crate::richtext::render_with(&state.db, &ctx.lang, &build.description, &mut memo).await;
     Ok(Html(
         BuildDetail {
             ctx,
             build,
             verified,
             issues,
+            description_html,
         }
         .render()
         .unwrap_or_else(|e| format!("template error: {e}")),

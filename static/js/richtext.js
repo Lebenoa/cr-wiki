@@ -10,11 +10,15 @@
 //      to the entity pages with the localized display name, {color:...}
 //      becomes colored text, everything else is escaped.
 //
-// Both use /api/richtext-names?lang=<page lang>&kind=... which returns
-// [{id, name}] for the language render_rich_text resolves (that language plus
-// the en fallback); the preview resolves [[kind:id]] through this list to get
-// the localized name and a real href. The lists are re-fetched when the
-// form's language <select id="lang"> changes.
+// Both use /api/richtext-names?lang=<editing locale>&kind=... which returns
+// { kind, names: [{id, name, en_name}] } for the language render_rich_text
+// resolves (that language plus the en fallback); the preview resolves
+// [[kind:id]] through this list to get the localized name and a real href.
+//
+// The editing locale is the admin form's own <select id="lang"> (which
+// navigates with ?lang= on change, so the lists arrive for the right
+// locale on every load); everywhere else — the build form — it is the
+// page's locale.
 //
 // The dropdown is position:fixed and placed from getBoundingClientRect()
 // (viewport coordinates); an absolutely-positioned body child would be offset
@@ -30,10 +34,19 @@
 
     // ---- name lists -------------------------------------------------------
 
+    // the locale the name lists and preview resolve in: the admin form's
+    // language select when present (the locale being edited), else the page
+    // locale — an admin editing th with an en UI must see th names
     function langOf() {
-        var el = document.getElementById('lang');
-        if (el && el.value) return el.value;
-        return document.documentElement.lang || 'en';
+        var el = document.querySelector('form select#lang');
+        if (el && el.value && i18nAvailable(el.value)) return el.value;
+        var page = document.documentElement.lang;
+        return page || 'en';
+    }
+
+    // mirrors i18n::is_available: only locales with a loaded .tr are real
+    function i18nAvailable(lang) {
+        return /^[a-z]{2}(-[a-z]{2})?$/i.test(lang);
     }
 
     function loadNames(cb) {
@@ -44,7 +57,7 @@
                 .then(function (r) { return r.json(); })
                 .then(function (a) {
                     if (mySeq !== fetchSeq) return; // a newer lang request superseded this one
-                    NAMES[kind] = Array.isArray(a) ? a : [];
+                    NAMES[kind] = a && Array.isArray(a.names) ? a.names : [];
                     if (--remaining === 0 && cb) cb();
                 })
                 .catch(function () {
@@ -316,11 +329,9 @@
         })(tas[i]);
         updateAllPreviews();
 
-        var langSel = document.getElementById('lang');
-        if (langSel) langSel.addEventListener('change', function () {
-            closeBox();
-            loadNames(function () { updateAllPreviews(); });
-        });
+        // the form's language select navigates with ?lang= on change, so a
+        // full page load refetches the lists for the new locale; nothing to
+        // listen for here
 
         // the field's page-scroll position can change under an open dropdown;
         // close it then (textarea-internal scroll does not bubble to window)

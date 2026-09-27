@@ -828,6 +828,63 @@ pub async fn select_detail(db: &Db, lang: &str, section: &str, id: i64) -> Resul
     }))
 }
 
+/// The editor's row loader: strictly the requested locale's translation, no
+/// English fallback. An admin opening the form for `th` must see what is
+/// actually stored for `th` — silently showing the English text would make
+/// the first save overwrite a locale with a translation that only looked
+/// already-translated. Fields the locale has never saved come back empty.
+pub async fn select_detail_strict(
+    db: &Db,
+    lang: &str,
+    section: &str,
+    id: i64,
+) -> Result<Option<Detail>> {
+    let Some(kind) = Kind::of_section(section) else {
+        return Ok(None);
+    };
+    let sql = format!(
+        "SELECT record::id(id) AS id, image{extra}, release_date,
+                (tr[$lang].name ?? '') AS name,
+                (tr.en.name ?? '') AS en_name,
+                (tr[$lang].abilities ?? '') AS abilities,
+                (tr[$lang].description ?? '') AS description,
+                (tr[$lang].power_plus ?? '') AS power_plus,
+                (tr[$lang].power_plus_requirement ?? '') AS power_plus_requirement,
+                (tr[$lang].unlock_goal ?? '') AS unlock_goal
+           FROM type::record($tb, $id)",
+        extra = if kind.graded {
+            ", grade, (is_evolved ?? false) AS is_evolved"
+        } else {
+            ""
+        },
+    );
+    let mut rows: Vec<DetailRow> = db
+        .query(&sql)
+        .bind(("lang", lang.to_string()))
+        .bind(("tb", kind.table.to_string()))
+        .bind(("id", id))
+        .await?
+        .take(0)?;
+    Ok(rows.pop().map(|r| Detail {
+        id: r.id,
+        name: r.name,
+        en_name: r.en_name,
+        image: r.image,
+        grade: if kind.graded { r.grade } else { None },
+        is_evolved: r.is_evolved.unwrap_or(false),
+        abilities: r.abilities,
+        description: r.description,
+        power_plus: r.power_plus,
+        power_plus_requirement: r.power_plus_requirement,
+        unlock_goal: r.unlock_goal,
+        release_date: if kind.dated {
+            r.release_date.unwrap_or(0)
+        } else {
+            0
+        },
+    }))
+}
+
 // --- the kinds' own detail collections ------------------------------------
 //
 // One detail page is one `Detail` plus whichever collections its kind

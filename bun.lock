@@ -4,6 +4,7 @@
   "workspaces": {
     "": {
       "devDependencies": {
+        "@unocss/cli": "^66.10.5",
         "unocss": "^66.10.5",
       },
     },

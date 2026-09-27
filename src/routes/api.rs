@@ -27,12 +27,19 @@ pub async fn richtext_names(
         Some(k @ ("pet" | "treasure")) => k.to_string(),
         _ => "cookie".to_string(),
     };
+    // The editor fetches the lists for the page's own language (falling back
+    // to en server-side); an explicit ?lang= overrides it, validated against
+    // the loaded locales so an unknown value is ignored rather than stored.
+    let lang = match q.lang.as_deref().filter(|l| i18n::is_available(l)) {
+        Some(l) => l.to_string(),
+        None => ctx.lang.clone(),
+    };
     let section = match kind.as_str() {
         "pet" => "pets",
         "treasure" => "treasures",
         _ => "cookies",
     };
-    let names = crate::options::options(&state.db, &ctx.lang, &kind)
+    let names = crate::options::options(&state.db, &lang, &kind)
         .await?
         .iter()
         .map(|o| json!({ "id": o.id, "name": o.name, "en_name": o.en_name }))

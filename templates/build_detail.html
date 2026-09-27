@@ -28,7 +28,7 @@
     </ul>
     {% endif %}
     {% if !build.description.is_empty() %}
-    <p class="mt-6 text-foreground-muted">{{ build.description }}</p>
+    <p class="mt-6 text-foreground-muted leading-relaxed">{{ description_html|safe }}</p>
     {% endif %}
     {% if !build.boost.is_empty() || !build.boosts.is_empty() %}
     <ul class="mt-4 flex flex-wrap gap-2">

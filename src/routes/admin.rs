@@ -16,6 +16,7 @@ use crate::db::{self, CombiEditRow, Detail};
 use crate::section::Section;
 
 use super::errors::AppError;
+use super::CommonQuery;
 
 #[derive(Template)]
 #[template(path = "admin_form.html")]
@@ -28,6 +29,12 @@ struct AdminForm {
     /// the combo pairings this entity takes part in; empty for a treasure
     combi: Vec<CombiEditRow>,
     error: String,
+    /// which locale's translation the form shows and saves; the old V
+    /// editor's language select, restored
+    edit_lang: String,
+    /// the description rendered for the editing locale, the initial content
+    /// of the preview box
+    preview_html: String,
 }
 
 #[derive(Debug, Default, Deserialize)]
@@ -46,6 +53,10 @@ pub struct EntityForm {
     #[serde(default)]
     pub image: String,
     pub grade: Option<i64>,
+    /// which locale's translation this submission writes; empty falls back
+    /// to the viewer's language
+    #[serde(default)]
+    pub lang: String,
 }
 
 impl AdminForm {
@@ -81,16 +92,36 @@ fn editable(section: &str) -> Option<Section> {
     Section::parse(section).filter(|s| s.editable())
 }
 
-fn page(ctx: Ctx, section: Section, item: Option<Detail>, error: &str) -> Response {
-    page_with(ctx, section, item, Vec::new(), error)
+/// The locale the submitted form edits: the form's own `lang` field when it
+/// is a loaded locale (the select the template renders), else the viewer's
+/// language. Validated so an unknown value cannot create a rogue `tr.xx`.
+fn form_lang(form: &EntityForm, ctx: &Ctx) -> String {
+    crate::i18n::is_available(&form.lang)
+        .then(|| form.lang.clone())
+        .unwrap_or_else(|| ctx.lang.clone())
 }
 
+fn page(ctx: Ctx, section: Section, item: Option<Detail>, error: &str) -> Response {
+    page_with(
+        ctx.clone(),
+        section,
+        item,
+        Vec::new(),
+        error,
+        ctx.lang.clone(),
+        String::new(),
+    )
+}
+
+#[allow(clippy::too_many_arguments)]
 fn page_with(
     ctx: Ctx,
     section: Section,
     item: Option<Detail>,
     combi: Vec<CombiEditRow>,
     error: &str,
+    edit_lang: String,
+    preview_html: String,
 ) -> Response {
     Html(
         AdminForm {
@@ -98,6 +129,8 @@ fn page_with(
             section: section.as_str().to_string(),
             item,
             combi,
+            edit_lang,
+            preview_html,
             error: error.to_string(),
         }
         .render()
@@ -120,6 +153,15 @@ pub async fn edit_form(
     ctx: Ctx,
     Path((section, id)): Path<(String, i64)>,
 ) -> Result<Response, AppError> {
+    edit_form_lang(ctx, axum::extract::Query::<CommonQuery>::default(), Path((section, id)))
+        .await
+}
+
+pub async fn edit_form_lang(
+    ctx: Ctx,
+    q: axum::extract::Query<CommonQuery>,
+    Path((section, id)): Path<(String, i64)>,
+) -> Result<Response, AppError> {
     let state = crate::state::state();
     let Some(section) = editable(&section) else {
         return Ok(super::errors::not_found(ctx));
@@ -127,13 +169,28 @@ pub async fn edit_form(
     if !ctx.is_admin() {
         return Ok(super::errors::not_found(ctx));
     }
-    let found = db::select_detail(&state.db, &ctx.lang, section.as_str(), id).await?;
+    // which translation the form edits: ?lang= when it is a loaded locale,
+    // otherwise the viewer's resolved language
+    let edit_lang = q
+        .lang
+        .as_deref()
+        .filter(|l| crate::i18n::is_available(l))
+        .unwrap_or(&ctx.lang)
+        .to_string();
+    // strict: no English fallback, or the first save would silently
+    // overwrite an untranslated locale with the English text
+    let found = db::select_detail_strict(&state.db, &edit_lang, section.as_str(), id).await?;
 
     let Some(item) = found else {
         return Ok(super::errors::not_found(ctx));
     };
+    // the preview box resolves [[kind:id]] names in the locale being edited
+    // (the name lists carry the en fallback), not the viewer's UI locale
+    let mut memo = crate::richtext::LinkCache::new();
+    let preview_html =
+        crate::richtext::render_with(&state.db, &edit_lang, &item.description, &mut memo).await;
     let combi = db::combi_edit_rows(&state.db, &ctx.lang, section.as_str(), id).await?;
-    Ok(page_with(ctx, section, Some(item), combi, ""))
+    Ok(page_with(ctx, section, Some(item), combi, "", edit_lang, preview_html))
 }
 
 pub async fn create(
@@ -155,7 +212,7 @@ pub async fn create(
         )
             .into_response());
     }
-    let created = db::insert_entity(&state.db, &ctx.lang, section, &form).await?;
+    let created = db::insert_entity(&state.db, &form_lang(&form, &ctx), section, &form).await?;
 
     if created <= 0 {
         return Ok((
@@ -186,7 +243,7 @@ pub async fn update(
         )
             .into_response());
     }
-    let ok = db::update_entity(&state.db, &ctx.lang, section, id, &form).await?;
+    let ok = db::update_entity(&state.db, &form_lang(&form, &ctx), section, id, &form).await?;
 
     if !ok {
         return Ok((

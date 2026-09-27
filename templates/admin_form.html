@@ -10,7 +10,17 @@
     <p class="text-error text-center">{{ ctx.l.t(error.as_str()) }}</p>
     {% endif %}
     {% match item %}{% when Some with (it) %}
-    <form method="post" action="/{{ section }}/{{ it.id }}/edit" class="flex flex-col gap-4 mt-6">
+    <form method="post" action="/{{ section }}/{{ it.id }}/edit" class="flex flex-col gap-4 mt-6"
+        data-edit-lang="{{ edit_lang }}">
+        <label class="flex flex-col gap-1 text-xs font-label uppercase text-foreground-muted">
+            {{ ctx.l.t("language") }}
+            <select id="lang" name="lang" class="filter-input"
+                onchange="var u=new URL(location); u.searchParams.set('lang',this.value); location=u">
+                {% for l in ctx.langs() %}
+                <option value="{{ l }}" {% if l == edit_lang %}selected{% endif %}>{{ l }}</option>
+                {% endfor %}
+            </select>
+        </label>
         <input type="text" name="name" value="{{ it.name }}" class="filter-input w-full" required />
         <div class="flex items-center gap-3">
             <input type="text" name="image" value="{{ it.image.as_deref().unwrap_or("") }}"
@@ -18,16 +28,42 @@
             <input type="file" accept="image/*" data-upload="/{{ section }}/upload" class="text-xs" />
         </div>
         <textarea name="abilities" rows="2" class="filter-input w-full">{{ it.abilities }}</textarea>
-        <textarea name="description" rows="4" class="filter-input w-full">{{ it.description }}</textarea>
+        <div class="flex flex-col gap-1">
+            <textarea name="description" rows="4" class="filter-input w-full" data-richtext>{{ it.description }}</textarea>
+            {% include "richtext_preview_body.html" %}
+            <p class="text-xs text-foreground-muted">{{ ctx.l.t("rich_text_hint") }}</p>
+        </div>
         {% if section == "cookies" %}
-        <textarea name="power_plus" rows="2" class="filter-input w-full">{{ it.power_plus }}</textarea>
-        <textarea name="power_plus_requirement" rows="2" class="filter-input w-full">{{ it.power_plus_requirement }}</textarea>
-        <textarea name="unlock_goal" rows="2" class="filter-input w-full">{{ it.unlock_goal }}</textarea>
+        <div class="flex flex-col gap-1">
+            <textarea name="power_plus" rows="2" class="filter-input w-full" data-richtext>{{ it.power_plus }}</textarea>
+            {% include "richtext_preview_body.html" %}
+            <p class="text-xs text-foreground-muted">{{ ctx.l.t("rich_text_hint") }}</p>
+        </div>
+        <div class="flex flex-col gap-1">
+            <textarea name="power_plus_requirement" rows="2" class="filter-input w-full" data-richtext>{{ it.power_plus_requirement }}</textarea>
+            {% include "richtext_preview_body.html" %}
+            <p class="text-xs text-foreground-muted">{{ ctx.l.t("rich_text_hint") }}</p>
+        </div>
+        <div class="flex flex-col gap-1">
+            <textarea name="unlock_goal" rows="2" class="filter-input w-full" data-richtext>{{ it.unlock_goal }}</textarea>
+            {% include "richtext_preview_body.html" %}
+            <p class="text-xs text-foreground-muted">{{ ctx.l.t("rich_text_hint") }}</p>
+        </div>
         {% endif %}
         <button type="submit" class="btn-primary">{{ ctx.l.t(self.save_key().as_str()) }}</button>
     </form>
     {% when None %}
-    <form method="post" action="/{{ section }}/new" class="flex flex-col gap-4 mt-6">
+    <form method="post" action="/{{ section }}/new" class="flex flex-col gap-4 mt-6"
+        data-edit-lang="{{ edit_lang }}">
+        <label class="flex flex-col gap-1 text-xs font-label uppercase text-foreground-muted">
+            {{ ctx.l.t("language") }}
+            <select id="lang" name="lang" class="filter-input"
+                onchange="var u=new URL(location); u.searchParams.set('lang',this.value); location=u">
+                {% for l in ctx.langs() %}
+                <option value="{{ l }}" {% if l == edit_lang %}selected{% endif %}>{{ l }}</option>
+                {% endfor %}
+            </select>
+        </label>
         <input type="text" name="name" class="filter-input w-full" placeholder="{{ ctx.l.t(self.name_key().as_str()) }}"
             required />
         <div class="flex items-center gap-3">
@@ -35,11 +71,27 @@
             <input type="file" accept="image/*" data-upload="/{{ section }}/upload" class="text-xs" />
         </div>
         <textarea name="abilities" rows="2" class="filter-input w-full"></textarea>
-        <textarea name="description" rows="4" class="filter-input w-full"></textarea>
+        <div class="flex flex-col gap-1">
+            <textarea name="description" rows="4" class="filter-input w-full" data-richtext></textarea>
+            {% include "richtext_preview_body.html" %}
+            <p class="text-xs text-foreground-muted">{{ ctx.l.t("rich_text_hint") }}</p>
+        </div>
         {% if section == "cookies" %}
-        <textarea name="power_plus" rows="2" class="filter-input w-full"></textarea>
-        <textarea name="power_plus_requirement" rows="2" class="filter-input w-full"></textarea>
-        <textarea name="unlock_goal" rows="2" class="filter-input w-full"></textarea>
+        <div class="flex flex-col gap-1">
+            <textarea name="power_plus" rows="2" class="filter-input w-full" data-richtext></textarea>
+            {% include "richtext_preview_body.html" %}
+            <p class="text-xs text-foreground-muted">{{ ctx.l.t("rich_text_hint") }}</p>
+        </div>
+        <div class="flex flex-col gap-1">
+            <textarea name="power_plus_requirement" rows="2" class="filter-input w-full" data-richtext></textarea>
+            {% include "richtext_preview_body.html" %}
+            <p class="text-xs text-foreground-muted">{{ ctx.l.t("rich_text_hint") }}</p>
+        </div>
+        <div class="flex flex-col gap-1">
+            <textarea name="unlock_goal" rows="2" class="filter-input w-full" data-richtext></textarea>
+            {% include "richtext_preview_body.html" %}
+            <p class="text-xs text-foreground-muted">{{ ctx.l.t("rich_text_hint") }}</p>
+        </div>
         {% endif %}
         <button type="submit" class="btn-primary">{{ ctx.l.t(self.save_key().as_str()) }}</button>
     </form>
@@ -62,5 +114,6 @@
     </ul>
     {% endif %}
 </section>
+<script src="/static/js/richtext.js" defer></script>
 <script src="/static/js/admin_upload.js" defer></script>
 {% endblock %}
