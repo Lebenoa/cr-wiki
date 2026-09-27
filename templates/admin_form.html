@@ -17,7 +17,7 @@
             <select id="lang" name="lang" class="filter-input"
                 onchange="var u=new URL(location); u.searchParams.set('lang',this.value); location=u">
                 {% for l in ctx.langs() %}
-                <option value="{{ l }}" {% if l == edit_lang %}selected{% endif %}>{{ l }}</option>
+                <option value="{{ l }}" {% if l == edit_lang %}selected{% endif %}>{{ ctx.lang_display(&l) }}</option>
                 {% endfor %}
             </select>
         </label>
@@ -71,7 +71,7 @@
             <select id="lang" name="lang" class="filter-input"
                 onchange="var u=new URL(location); u.searchParams.set('lang',this.value); location=u">
                 {% for l in ctx.langs() %}
-                <option value="{{ l }}" {% if l == edit_lang %}selected{% endif %}>{{ l }}</option>
+                <option value="{{ l }}" {% if l == edit_lang %}selected{% endif %}>{{ ctx.lang_display(&l) }}</option>
                 {% endfor %}
             </select>
         </label>

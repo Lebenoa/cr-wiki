@@ -6,7 +6,7 @@
 //! not take a page down.
 
 use std::collections::HashMap;
-use std::sync::OnceLock;
+use std::sync::{LazyLock, OnceLock};
 
 pub const DEFAULT_LANG: &str = "en";
 
@@ -66,6 +66,16 @@ pub fn available_langs() -> Vec<String> {
     let mut out: Vec<String> = catalog().keys().cloned().collect();
     out.sort();
     out
+}
+
+/// `lang_map.tr`'s locale → display name (en → English, th → ไทย); the code
+/// itself when unmapped, so a new locale renders even before it is added.
+pub fn lang_display(lang: &str) -> String {
+    static MAP: LazyLock<HashMap<String, String>> =
+        LazyLock::new(|| parse(&std::fs::read_to_string("translations/lang_map.tr").unwrap_or_default()));
+    MAP.get(lang)
+        .cloned()
+        .unwrap_or_else(|| lang.to_string())
 }
 
 pub fn is_available(lang: &str) -> bool {
@@ -131,6 +141,14 @@ mod tests {
         load("translations");
         assert!(is_available("th"));
         assert!(!is_available("zz"));
+    }
+
+    #[test]
+    fn lang_display_reads_map_and_falls_back_to_code() {
+        assert_eq!(lang_display("en"), "English");
+        assert_eq!(lang_display("th"), "ไทย");
+        // an unmapped locale renders as the code, never empty
+        assert_eq!(lang_display("zz"), "zz");
     }
 
     #[test]

@@ -118,6 +118,13 @@ impl Ctx {
         i18n::available_langs()
     }
 
+    /// The locale's `lang_map.tr` display name; a method so templates can
+    /// render options as "English"/"ไทย" instead of bare codes.
+    #[allow(clippy::unused_self)]
+    pub fn lang_display(&self, lang: &str) -> String {
+        i18n::lang_display(lang)
+    }
+
     /// The sections behind the Wiki dropdown, in navbar order.
     #[allow(clippy::unused_self)]
     pub fn wiki_sections(&self) -> Vec<&'static str> {
