@@ -187,6 +187,9 @@ Error
 missing_description
 No description available.
 -----
+image_missing_hint
+No image yet — the sprite shows here once the field names an existing file.
+-----
 formatting
 Formatting...
 -----

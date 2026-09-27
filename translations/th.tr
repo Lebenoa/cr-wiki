@@ -187,6 +187,9 @@ theme_token_error
 missing_description
 ไม่มีคำอธิบาย
 -----
+image_missing_hint
+ยังไม่มีรูปภาพ — ภาพจะแสดงที่นี่เมื่อช่องนี้ระบุไฟล์ที่มีอยู่จริง
+-----
 formatting
 กำลังจัดรูปแบบ...
 -----

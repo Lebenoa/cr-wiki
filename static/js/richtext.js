@@ -323,6 +323,8 @@
         if (!body) return;
         var html = renderPreview(ta);
         body.innerHTML = html;
+        // the <details> is collapsible: hidden only tracks whether there is
+        // anything to preview, open/closed stays the user's choice
         pre.classList.toggle('hidden', html === '');
     }
 

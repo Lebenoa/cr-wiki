@@ -3,20 +3,36 @@
 // still submits a plain name and the page never reloads mid-edit.
 // The #imagePreview thumbnail mirrors the field: live FileReader preview as
 // soon as a file is chosen, swapped to the stored sprite once the upload
-// lands, and updated again when the filename is typed or cleared.
+// lands, and updated again when the filename is typed or cleared. A filename
+// that does not resolve to a file flips the tile to the #imageMissing
+// placeholder instead of a broken image.
 (function () {
   'use strict';
 
   function showPreview(src) {
     var img = document.getElementById('imagePreview');
-    if (!img) return;
-    if (src) {
-      img.src = src;
-      img.classList.remove('hidden');
-    } else {
+    var missing = document.getElementById('imageMissing');
+    if (!img || !missing) return;
+    if (!src) {
       img.removeAttribute('src');
       img.classList.add('hidden');
+      missing.classList.remove('hidden');
+      return;
     }
+    // a src that fails to load (typed a name with no file behind it) must
+    // land on the placeholder, not the browser's broken-image glyph
+    img.onerror = function () {
+      img.onerror = null;
+      img.removeAttribute('src');
+      img.classList.add('hidden');
+      missing.classList.remove('hidden');
+    };
+    img.onload = function () {
+      img.onload = null;
+      img.classList.remove('hidden');
+      missing.classList.add('hidden');
+    };
+    img.src = src;
   }
 
   function showStored(section, name) {

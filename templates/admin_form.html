@@ -23,11 +23,17 @@
         </label>
         <input type="text" name="name" value="{{ it.name }}" class="filter-input w-full" required />
         <div class="flex items-center gap-3">
-            <img id="imagePreview" alt="{{ ctx.l.t("image") }}"
-                class="size-24 rounded-xl object-contain border-2 border-dashed border-primary/40 bg-surface"
-                src="/static/img/{{ section }}/{{ it.image.as_deref().unwrap_or("") }}" />
+            {% let image = it.image.as_deref().unwrap_or("") %}
+            <div id="imagePreviewBox" class="relative size-24 shrink-0 rounded-xl overflow-hidden border-2 border-dashed border-primary/40 bg-surface">
+                <img id="imagePreview" alt="{{ ctx.l.t("image") }}"
+                    class="size-24 object-contain {% if image.is_empty() %}hidden{% endif %}"
+                    src="{% if !image.is_empty() %}/static/img/{{ section }}/{{ image }}{% endif %}" />
+                <div id="imageMissing" class="absolute inset-0 flex items-center justify-center p-2 text-center text-[10px] leading-tight text-foreground-muted {% if !image.is_empty() %}hidden{% endif %}">
+                    {{ ctx.l.t("image_missing_hint") }}
+                </div>
+            </div>
             <div class="flex flex-col gap-1 flex-1">
-                <input type="text" name="image" value="{{ it.image.as_deref().unwrap_or("") }}"
+                <input type="text" name="image" value="{{ image }}"
                     class="filter-input w-full" placeholder="image.png" />
                 <input type="file" accept="image/*" data-upload="/{{ section }}/upload" class="text-xs" />
             </div>
@@ -72,9 +78,13 @@
         <input type="text" name="name" class="filter-input w-full" placeholder="{{ ctx.l.t(self.name_key().as_str()) }}"
             required />
         <div class="flex items-center gap-3">
-            <img id="imagePreview" alt="{{ ctx.l.t("image") }}"
-                class="size-24 rounded-xl object-contain border-2 border-dashed border-primary/40 bg-surface hidden"
-                src="" />
+            <div id="imagePreviewBox" class="relative size-24 shrink-0 rounded-xl overflow-hidden border-2 border-dashed border-primary/40 bg-surface">
+                <img id="imagePreview" alt="{{ ctx.l.t("image") }}"
+                    class="size-24 object-contain hidden" src="" />
+                <div id="imageMissing" class="absolute inset-0 flex items-center justify-center p-2 text-center text-[10px] leading-tight text-foreground-muted">
+                    {{ ctx.l.t("image_missing_hint") }}
+                </div>
+            </div>
             <div class="flex flex-col gap-1 flex-1">
                 <input type="text" name="image" class="filter-input w-full" placeholder="image.png" />
                 <input type="file" accept="image/*" data-upload="/{{ section }}/upload" class="text-xs" />
