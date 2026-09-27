@@ -26,7 +26,6 @@ mod turnstile;
 mod upload;
 
 use std::net::SocketAddr;
-use std::sync::Arc;
 
 use tower_http::services::ServeDir;
 
@@ -59,10 +58,10 @@ async fn main() {
     };
 
     let state = AppState {
-        db: Arc::new(pool),
-        limiter: Arc::new(ratelimit::Limiter::new(cfg.ratelimit.clone())),
-        sessions: Arc::new(session::Sessions::new()),
-        cfg: Arc::new(cfg.clone()),
+        db: pool,
+        limiter: ratelimit::Limiter::new(cfg.ratelimit.clone()),
+        sessions: session::Sessions::new(),
+        cfg: cfg.clone(),
     };
 
     // Warm the wire pool before serving: the SDK establishes its WebSocket
@@ -76,8 +75,9 @@ async fn main() {
     if let Err(e) = warm {
         tracing::warn!("database warmup timed out: {e}");
     }
+    state::init(state);
 
-    let app = routes::router(state);
+    let app = routes::router();
     // Every asset URL in the templates lives under /static — styles.css,
     // js/, img/, thirdparty/ and the favicon — so one mount serves the whole
     // `static/` tree. The catalog's `/{section}/{id}` detail route cannot

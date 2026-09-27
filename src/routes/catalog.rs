@@ -3,7 +3,7 @@
 //! the V app.
 
 use askama::Template;
-use axum::extract::{Path, Query, State};
+use axum::extract::{Path, Query};
 use axum::response::{Html, IntoResponse, Response};
 
 use crate::ctx::Ctx;
@@ -55,16 +55,16 @@ struct CatalogCards {
 /// One handler for every list: the section comes off the path, which keeps
 /// the eight pages from being eight near-identical functions.
 pub async fn list(
-    State(state): State<AppState>,
     ctx: Ctx,
     Path(section): Path<String>,
     q: Query<CommonQuery>,
 ) -> Result<Response, AppError> {
+    let state = crate::state::state();
     render(state, ctx, section, q).await
 }
 
 async fn render(
-    state: AppState,
+    state: &'static AppState,
     ctx: Ctx,
     section: String,
     q: Query<CommonQuery>,

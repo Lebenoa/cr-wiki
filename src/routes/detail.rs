@@ -3,7 +3,7 @@
 //! the template decides from the section.
 
 use askama::Template;
-use axum::extract::{Path, State};
+use axum::extract::Path;
 use axum::response::{Html, IntoResponse, Response};
 
 use crate::ctx::Ctx;
@@ -11,7 +11,6 @@ use crate::db::{self, CombiRow, Detail, EffectLine, TreasureLinks};
 use crate::grade::Graded;
 use crate::richtext;
 use crate::section::Section;
-use crate::state::AppState;
 
 use super::errors::AppError;
 
@@ -54,10 +53,10 @@ impl DetailPage {
 }
 
 pub async fn show(
-    State(state): State<AppState>,
     ctx: Ctx,
     Path((section, id)): Path<(String, i64)>,
 ) -> Result<Response, AppError> {
+    let state = crate::state::state();
     let Some(sec) = Section::parse(&section) else {
         return Ok(super::errors::not_found(ctx));
     };

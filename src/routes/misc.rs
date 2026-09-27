@@ -1,14 +1,13 @@
 //! Search, the landing page and the SEO endpoints.
 
 use askama::Template;
-use axum::extract::{Query, State};
+use axum::extract::Query;
 use axum::response::Html;
 
 use crate::ctx::Ctx;
 use crate::db::{self, Card, GachaPool};
 use crate::grade::Graded;
 use crate::i18n;
-use crate::state::AppState;
 
 use super::{errors::AppError, CommonQuery};
 
@@ -45,10 +44,10 @@ struct SearchResults {
 }
 
 pub async fn search(
-    State(state): State<AppState>,
     ctx: Ctx,
     q: Query<CommonQuery>,
 ) -> Result<Html<String>, AppError> {
+    let state = crate::state::state();
     let query = q.q.clone().unwrap_or_default();
     let hits = db::search(&state.db, &ctx.lang, &query, 20).await?;
     let html = if ctx.is_fragment() {
@@ -74,7 +73,8 @@ struct GachaPage {
 }
 
 /// The disclosed draw pools with their odds.
-pub async fn gacha(State(state): State<AppState>, ctx: Ctx) -> Result<Html<String>, AppError> {
+pub async fn gacha(ctx: Ctx) -> Result<Html<String>, AppError> {
+    let state = crate::state::state();
     let pools = db::select_gacha(&state.db, &ctx.lang).await?;
     Ok(Html(
         GachaPage { ctx, pools }
@@ -86,9 +86,9 @@ pub async fn gacha(State(state): State<AppState>, ctx: Ctx) -> Result<Html<Strin
 /// Every list page plus every detail id, each with its locale alternates. A
 /// section missing here is one crawlers only reach by luck.
 pub async fn sitemap(
-    State(state): State<AppState>,
     ctx: Ctx,
 ) -> ([(&'static str, &'static str); 1], String) {
+    let state = crate::state::state();
     let base = ctx.site_url;
     let langs = i18n::available_langs();
     let mut paths: Vec<String> = [

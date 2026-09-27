@@ -6,7 +6,7 @@
 //! a keystroke costs a filter over a slice and a template render, no queries.
 
 use askama::Template;
-use axum::extract::{Path, Query, State};
+use axum::extract::{Path, Query};
 use axum::response::{Html, IntoResponse, Response};
 
 use crate::ctx::Ctx;
@@ -14,7 +14,6 @@ use crate::db;
 use crate::grade::Graded;
 use crate::options::{self, PickerOption};
 use crate::pagination::slice_page;
-use crate::state::AppState;
 
 use super::{errors::AppError, CommonQuery};
 
@@ -135,10 +134,10 @@ pub struct PickedSlot {
 /// `/builds/preview` — the planner re-renders the loadout after each pick by
 /// fetching this with the current selection in the query string.
 pub async fn preview(
-    State(state): State<AppState>,
     ctx: Ctx,
     q: Query<CommonQuery>,
 ) -> Html<String> {
+    let state = crate::state::state();
     let wanted: Vec<(&'static str, &'static str, i64)> = vec![
         ("cookie", "cookies", q.cookie.unwrap_or(0)),
         ("cookie", "cookies", q.c2.unwrap_or(0)),
@@ -169,11 +168,11 @@ pub async fn preview(
 }
 
 pub async fn options_grid(
-    State(state): State<AppState>,
     ctx: Ctx,
     Path(kind): Path<String>,
     q: Query<CommonQuery>,
 ) -> Result<Response, AppError> {
+    let state = crate::state::state();
     if !matches!(kind.as_str(), "cookie" | "pet" | "treasure") {
         return Ok(super::errors::not_found(ctx));
     }

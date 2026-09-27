@@ -1,7 +1,7 @@
 //! The build planner's write side: submit, edit, delete and verify.
 
 use askama::Template;
-use axum::extract::{Path, State};
+use axum::extract::Path;
 use axum::http::StatusCode;
 use axum::response::{Html, IntoResponse, Redirect, Response};
 use axum::Form;
@@ -137,23 +137,23 @@ pub async fn new_form(ctx: Ctx) -> Response {
 /// The prefilled edit form. 404 rather than 403 for someone else's build,
 /// matching the V routes: whether a build exists is not worth revealing.
 pub async fn edit_form(
-    State(state): State<AppState>,
     ctx: Ctx,
     Path(id): Path<i64>,
 ) -> Result<Response, AppError> {
-    let Some(build) = load_owned(&state, &ctx, id).await? else {
+    let state = crate::state::state();
+    let Some(build) = load_owned(state, &ctx, id).await? else {
         return Ok(super::errors::not_found(ctx));
     };
     Ok(page(ctx, Some(build), ""))
 }
 
 pub async fn update(
-    State(state): State<AppState>,
     ctx: Ctx,
     Path(id): Path<i64>,
     Form(form): Form<BuildForm>,
 ) -> Result<Response, AppError> {
-    let Some(existing) = load_owned(&state, &ctx, id).await? else {
+    let state = crate::state::state();
+    let Some(existing) = load_owned(state, &ctx, id).await? else {
         return Ok(super::errors::not_found(ctx));
     };
     let (ep, ep_special) = parse_ep(form.ep.as_deref().unwrap_or(""));
@@ -192,10 +192,10 @@ async fn load_owned(state: &AppState, ctx: &Ctx, id: i64) -> Result<Option<Build
 }
 
 pub async fn create(
-    State(state): State<AppState>,
     ctx: Ctx,
     Form(form): Form<BuildForm>,
 ) -> Result<Response, AppError> {
+    let state = crate::state::state();
     if !crate::turnstile::verify(&state.cfg, form.turnstile.as_deref(), "build").await {
         return Ok((
             StatusCode::FORBIDDEN,
@@ -262,10 +262,10 @@ pub async fn create(
 }
 
 pub async fn delete(
-    State(state): State<AppState>,
     ctx: Ctx,
     Path(id): Path<i64>,
 ) -> Result<Response, AppError> {
+    let state = crate::state::state();
     let found = builds::select_build(&state.db, &ctx.lang, id).await?;
 
     let Some(build) = found else {
@@ -370,11 +370,11 @@ pub struct VerifyForm {
 /// A signed-in visitor's verdict on someone's build. Anonymous visitors
 /// cannot vote, so there is nothing to rate-limit per identity.
 pub async fn verify(
-    State(state): State<AppState>,
     ctx: Ctx,
     Path(id): Path<i64>,
     Form(form): Form<VerifyForm>,
 ) -> Result<Response, AppError> {
+    let state = crate::state::state();
     let Some(user) = ctx.user.as_ref().map(|u| u.id) else {
         return Ok((StatusCode::FORBIDDEN, "sign in to verify").into_response());
     };

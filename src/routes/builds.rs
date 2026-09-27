@@ -1,12 +1,11 @@
 //! The community build list and one build's detail page.
 
 use askama::Template;
-use axum::extract::{Path, Query, State};
+use axum::extract::{Path, Query};
 use axum::response::{Html, IntoResponse, Response};
 
 use crate::builds::{self, BuildCard};
 use crate::ctx::Ctx;
-use crate::state::AppState;
 
 use super::{errors::AppError, CommonQuery};
 
@@ -63,10 +62,10 @@ fn parse_ep(raw: &str) -> (i64, i64) {
 }
 
 pub async fn list(
-    State(state): State<AppState>,
     ctx: Ctx,
     q: Query<CommonQuery>,
 ) -> Result<Html<String>, AppError> {
+    let state = crate::state::state();
     let lang = ctx.lang.clone();
     let page = q.page.unwrap_or(1).max(1);
     let offset = page.saturating_sub(1).saturating_mul(PAGE_SIZE);
@@ -132,10 +131,10 @@ pub async fn list(
 }
 
 pub async fn show(
-    State(state): State<AppState>,
     ctx: Ctx,
     Path(id): Path<i64>,
 ) -> Result<Response, AppError> {
+    let state = crate::state::state();
     let found = builds::select_build(&state.db, &ctx.lang, id).await?;
 
     let Some(build) = found else {

@@ -11,8 +11,7 @@ use axum::Router;
 use serde::{Deserialize, Deserializer};
 use tower_http::catch_panic::CatchPanicLayer;
 
-use crate::state::AppState;
-
+use crate::middleware;
 pub mod admin;
 pub mod api;
 pub mod auth;
@@ -26,12 +25,10 @@ pub mod picker;
 pub mod planner;
 pub mod uploads;
 
-use crate::middleware;
-
 /// Router assembly in one function: the layer order (rate limit, then
 /// locale, then routes) is the thing worth seeing whole.
 #[allow(clippy::too_many_lines)] // splitting it would hide the middleware order
-pub fn router(state: AppState) -> Router {
+pub fn router() -> Router {
     Router::new()
         .route("/", get(misc::index))
         .route("/search", get(misc::search))
@@ -70,20 +67,13 @@ pub fn router(state: AppState) -> Router {
         // path capture, so eight lists share a function
         .route("/{section}", get(catalog::list))
         .route("/{section}/{id}", get(detail::show))
-        .layer(axum::middleware::from_fn_with_state(
-            state.clone(),
-            middleware::context,
-        ))
-        .layer(axum::middleware::from_fn_with_state(
-            state.clone(),
-            middleware::rate_limit,
-        ))
+        .layer(axum::middleware::from_fn(middleware::context))
+        .layer(axum::middleware::from_fn(middleware::rate_limit))
         // a path no route claims gets the site's own 404, not a bare line
         .fallback(errors::fallback)
         // a panic in a handler would otherwise drop the connection with no
         // response at all; the client sees the 500 page instead
         .layer(CatchPanicLayer::custom(errors::panic_response))
-        .with_state(state)
 }
 
 /// Treats an empty parameter as absent.
@@ -152,10 +142,10 @@ pub struct CommonQuery {
 #[cfg_attr(test, allow(clippy::unwrap_used, clippy::expect_used, clippy::panic))]
 mod tests {
     use super::*;
-    use std::sync::Arc;
 
     use crate::ratelimit::Limiter;
     use crate::session::Sessions;
+    use crate::state::AppState;
     use axum::body::Body;
     use axum::http::{Request, StatusCode};
     use tower::ServiceExt;
@@ -164,18 +154,19 @@ mod tests {
     /// dereference it, the DB-outage test counts on its error, and the real
     /// reads are covered by the CR_SURREAL_URL-gated tests in the modules
     /// they belong to. This build carries no embedded engine by design.
-    fn state() -> AppState {
+    fn state() -> &'static AppState {
         crate::i18n::load("translations");
-        AppState {
-            db: Arc::new(surrealdb::Surreal::init()),
-            limiter: Arc::new(Limiter::new(crate::config::RateLimit::default())),
-            sessions: Arc::new(Sessions::new()),
-            cfg: Arc::new(crate::config::Config::default()),
-        }
+        crate::state::init(AppState {
+            db: surrealdb::Surreal::init(),
+            limiter: Limiter::new(crate::config::RateLimit::default()),
+            sessions: Sessions::new(),
+            cfg: crate::config::Config::default(),
+        });
+        crate::state::state()
     }
 
-    async fn get(state: AppState, uri: &str) -> axum::response::Response {
-        router(state)
+    async fn get(uri: &str) -> axum::response::Response {
+        router()
             .oneshot(Request::get(uri).body(Body::empty()).expect("request"))
             .await
             .expect("infallible")
@@ -187,12 +178,12 @@ mod tests {
     /// (doc-backtick note: `Section::ALL` drives the catalog list loop)
     #[tokio::test]
     async fn non_db_routes_answer_through_the_middleware_order() {
-        let st = state();
+        state();
         for uri in ["/robots.txt", "/changelog", "/login", "/register"] {
-            let res = get(st.clone(), uri).await;
+            let res = get(uri).await;
             assert_eq!(res.status(), StatusCode::OK, "{uri}");
         }
-        let miss = get(st, "/no-such-section").await;
+        let miss = get("/no-such-section").await;
         assert_eq!(miss.status(), StatusCode::NOT_FOUND);
     }
 
@@ -201,7 +192,8 @@ mod tests {
     /// unconnected, which is exactly the outage an unreachable server causes.
     #[tokio::test]
     async fn db_failure_is_the_sites_500() {
-        let res = get(state(), "/cookies").await;
+        state();
+        let res = get("/cookies").await;
         assert_eq!(res.status(), StatusCode::INTERNAL_SERVER_ERROR);
     }
 
@@ -213,6 +205,7 @@ mod tests {
     #[tokio::test]
     async fn admin_form_reachable_only_from_a_loopback_peer() {
         use axum::extract::ConnectInfo;
+        state();
         let req = Request::get("/cookies/new")
             .extension(ConnectInfo(std::net::SocketAddr::from((
                 [127, 0, 0, 1],
@@ -220,13 +213,13 @@ mod tests {
             ))))
             .body(Body::empty())
             .expect("request");
-        let res = router(state()).oneshot(req).await.expect("infallible");
+        let res = router().oneshot(req).await.expect("infallible");
         assert_eq!(res.status(), StatusCode::OK);
 
         let req = Request::get("/cookies/new")
             .body(Body::empty())
             .expect("request");
-        let res = router(state()).oneshot(req).await.expect("infallible");
+        let res = router().oneshot(req).await.expect("infallible");
         assert_eq!(res.status(), StatusCode::NOT_FOUND);
     }
 
@@ -235,7 +228,8 @@ mod tests {
     /// so they cannot disagree.
     #[tokio::test]
     async fn changelog_page_is_branded_and_localized() {
-        let res = get(state(), "/changelog").await;
+        state();
+        let res = get("/changelog").await;
         assert_eq!(res.status(), StatusCode::OK);
         let body = axum::body::to_bytes(res.into_body(), usize::MAX)
             .await

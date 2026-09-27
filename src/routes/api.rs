@@ -1,6 +1,6 @@
 //! The small JSON endpoints the front end calls.
 
-use axum::extract::{Query, State};
+use axum::extract::Query;
 use axum::response::{IntoResponse, Redirect, Response};
 use axum::Json;
 use serde_json::json;
@@ -8,7 +8,6 @@ use serde_json::json;
 use crate::ctx::{Ctx, LANG_COOKIE};
 use crate::db;
 use crate::i18n;
-use crate::state::AppState;
 
 use super::{errors::AppError, CommonQuery};
 
@@ -20,10 +19,10 @@ pub async fn available_langs() -> Json<serde_json::Value> {
 /// Name and id pairs for the rich-text editor's entity picker, in the
 /// requested language. `kind` is cookie, pet or treasure.
 pub async fn richtext_names(
-    State(state): State<AppState>,
     ctx: Ctx,
     q: Query<CommonQuery>,
 ) -> Result<Json<serde_json::Value>, AppError> {
+    let state = crate::state::state();
     let kind = match q.kind.as_deref() {
         Some(k @ ("pet" | "treasure")) => k.to_string(),
         _ => "cookie".to_string(),
@@ -71,9 +70,9 @@ pub async fn set_lang(q: Query<CommonQuery>) -> Response {
 /// Kept next to the other API handlers: the relic list, which has no page of
 /// its own yet but is already queryable.
 pub async fn relics(
-    State(state): State<AppState>,
     ctx: Ctx,
 ) -> Result<Json<serde_json::Value>, AppError> {
+    let state = crate::state::state();
     let rows = db::select_simple(&state.db, &ctx.lang, "relics").await?;
     Ok(Json(json!({
         "relics": rows

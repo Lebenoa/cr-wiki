@@ -1,7 +1,6 @@
 //! Login, register and logout.
 
 use askama::Template;
-use axum::extract::State;
 use axum::http::{header, HeaderMap, HeaderValue, StatusCode};
 use axum::response::{Html, IntoResponse, Redirect, Response};
 use axum::Form;
@@ -10,7 +9,6 @@ use serde::Deserialize;
 use crate::ctx::Ctx;
 use crate::db;
 use crate::session::{self, SessionUser, SESSION_COOKIE};
-use crate::state::AppState;
 
 use super::errors::AppError;
 
@@ -109,10 +107,10 @@ pub async fn register_form(ctx: Ctx) -> Response {
 }
 
 pub async fn login(
-    State(state): State<AppState>,
     ctx: Ctx,
     Form(form): Form<LoginForm>,
 ) -> Result<Response, AppError> {
+    let state = crate::state::state();
     if !crate::turnstile::verify(&state.cfg, form.turnstile.as_deref(), "login").await {
         return Ok((
             StatusCode::FORBIDDEN,
@@ -158,10 +156,10 @@ pub async fn login(
 }
 
 pub async fn register(
-    State(state): State<AppState>,
     ctx: Ctx,
     Form(form): Form<RegisterForm>,
 ) -> Result<Response, AppError> {
+    let state = crate::state::state();
     if !crate::turnstile::verify(&state.cfg, form.turnstile.as_deref(), "register").await {
         return Ok((
             StatusCode::FORBIDDEN,
@@ -214,7 +212,8 @@ pub async fn register(
     Ok(res)
 }
 
-pub async fn logout(State(state): State<AppState>, headers: HeaderMap) -> Response {
+pub async fn logout(headers: HeaderMap) -> Response {
+    let state = crate::state::state();
     if let Some(key) = crate::ctx::cookie(&headers, SESSION_COOKIE) {
         state.sessions.end(&key);
     }

@@ -5,7 +5,7 @@
 //! confirming to a stranger.
 
 use askama::Template;
-use axum::extract::{Path, State};
+use axum::extract::Path;
 use axum::http::StatusCode;
 use axum::response::{Html, IntoResponse, Redirect, Response};
 use axum::Form;
@@ -14,7 +14,6 @@ use serde::Deserialize;
 use crate::ctx::Ctx;
 use crate::db::{self, CombiEditRow, Detail};
 use crate::section::Section;
-use crate::state::AppState;
 
 use super::errors::AppError;
 
@@ -118,10 +117,10 @@ pub async fn new_form(ctx: Ctx, Path(section): Path<String>) -> Response {
 }
 
 pub async fn edit_form(
-    State(state): State<AppState>,
     ctx: Ctx,
     Path((section, id)): Path<(String, i64)>,
 ) -> Result<Response, AppError> {
+    let state = crate::state::state();
     let Some(section) = editable(&section) else {
         return Ok(super::errors::not_found(ctx));
     };
@@ -138,11 +137,11 @@ pub async fn edit_form(
 }
 
 pub async fn create(
-    State(state): State<AppState>,
     ctx: Ctx,
     Path(section): Path<String>,
     Form(form): Form<EntityForm>,
 ) -> Result<Response, AppError> {
+    let state = crate::state::state();
     let Some(section) = editable(&section) else {
         return Ok(super::errors::not_found(ctx));
     };
@@ -169,11 +168,11 @@ pub async fn create(
 }
 
 pub async fn update(
-    State(state): State<AppState>,
     ctx: Ctx,
     Path((section, id)): Path<(String, i64)>,
     Form(form): Form<EntityForm>,
 ) -> Result<Response, AppError> {
+    let state = crate::state::state();
     let Some(section) = editable(&section) else {
         return Ok(super::errors::not_found(ctx));
     };
@@ -202,10 +201,10 @@ pub async fn update(
 /// Removes one combo pairing from the editor. Takes the row id rather than a
 /// pair of entity ids: deleting by pair would take every duplicate with it.
 pub async fn delete_combi(
-    State(state): State<AppState>,
     ctx: Ctx,
     Path(row_id): Path<i64>,
 ) -> Response {
+    let state = crate::state::state();
     if !ctx.is_admin() {
         return super::errors::not_found(ctx);
     }
