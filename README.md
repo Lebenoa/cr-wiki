@@ -5,7 +5,7 @@ A web platform for displaying and managing rich data about collectible assets �
 ## Features
 
 - **Cookie, pet & treasure databases** — List and detail views with localized names, abilities, and descriptions; grades, release dates, and unlock relationships
-- **Episodes, ingredients, jellies, skins, relics & gacha** — `/episodes` (stages, quests, relic sets, draw odds), `/ingredients` (crafting materials by grade and drop episode, with the treasures they craft), `/jellies`, `/skins`, `/relics`, and `/gacha` (disclosed pool odds as tab cards)
+- **Episodes, ingredients, jellies, skins, relics & gacha** — Dedicated catalog cards show episode stage/quest/relic counts, ingredient grades/drop episodes/recipe counts, jelly scores, skin owners, and relic groups. Ingredient detail pages link to crafted treasures; treasure pages show their recipe ingredients and base/evolved variant. `/gacha` discloses pool odds in tab cards.
 - **Treasure effects** — Normal/blessed effect panels with per-column value diffs and word-level text diffs for evolved treasures; every treasure carries its +0..+9 per-level values, rendered at the equipped level
 - **Community builds** — `/builds` list (EP/tag filters, infinite scroll, per-level effect values on cards) and `/builds/new` planner with modal pickers, a themed 0-9 level slider, per-card steppers, relay cookie, EP tiers, tags, anonymous 24-hour expiry, and a live combo-bonus preview; detail pages render each slot's per-level values and accept verify/issue reports
 - **Full-text search** — Navbar search over cookies/pets/treasures, case-insensitive `CONTAINS` matching with a Thai-aware fallback (substring match works where word tokenizers can't segment Thai)

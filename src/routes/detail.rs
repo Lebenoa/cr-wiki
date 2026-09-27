@@ -35,6 +35,15 @@ struct DetailPage {
     links: TreasureLinks,
     /// the treasure this cookie or pet unlocks: id, name, image
     unlocks: Option<(i64, String, Option<String>)>,
+    /// an ingredient's drop/economy tile fields
+    ingredient: db::IngredientFacts,
+    /// the treasures this ingredient crafts
+    recipes: Vec<db::CraftRecipe>,
+    /// the ingredients this treasure is crafted from
+    craft: Vec<db::CraftIngredient>,
+    /// the linked variant: the base for an evolved row, the evolved form for
+    /// a normal one
+    variant: Option<(i64, String, Option<String>)>,
 }
 
 impl DetailPage {
@@ -74,6 +83,28 @@ pub async fn show(
         }
         _ => None,
     };
+    // the kinds' own collections; each fills only what its page shows
+    let ingredient = if sec == Section::Ingredients {
+        db::ingredient_facts(&state.db, &ctx.lang, id).await?
+    } else {
+        db::IngredientFacts::default()
+    };
+    let recipes = if sec == Section::Ingredients {
+        db::ingredient_recipes(&state.db, &ctx.lang, id).await?
+    } else {
+        Vec::new()
+    };
+    let craft = if sec == Section::Treasures {
+        db::treasure_craft_ingredients(&state.db, &ctx.lang, id).await?
+    } else {
+        Vec::new()
+    };
+    // the linked variant: base of an evolved row, evolved form of a normal one
+    let variant = if sec == Section::Treasures {
+        db::treasure_variant(&state.db, &ctx.lang, id, item.is_evolved).await?
+    } else {
+        None
+    };
     // one link cache across all five prose fields: an entity named twice on
     // one page costs one lookup
     let mut memo = richtext::LinkCache::new();
@@ -108,6 +139,10 @@ pub async fn show(
         combi,
         links,
         unlocks,
+        ingredient,
+        recipes,
+        craft,
+        variant,
     };
     Ok(Html(
         page.render()
@@ -222,6 +257,37 @@ mod tests {
             .await
             .unwrap()
             .is_none());
+    }
+
+    #[tokio::test]
+    async fn ingredient_crafting_and_treasure_variants() {
+        let Some(pool) = live_db().await else {
+            eprintln!("skip: CR_SURREAL_URL not set");
+            return;
+        };
+        let recipes = db::ingredient_recipes(&pool, "en", 1).await.unwrap();
+        assert_eq!(recipes.len(), 3);
+        assert!(recipes
+            .iter()
+            .any(|r| r.treasure_id == 56 && r.name == "Mocking Carnival Mask"));
+
+        let ingredients = db::treasure_craft_ingredients(&pool, "en", 56)
+            .await
+            .unwrap();
+        assert!(ingredients
+            .iter()
+            .any(|i| i.ingredient_id == 1 && i.name == "Timber Board"));
+
+        let base = db::treasure_variant(&pool, "en", 3, true)
+            .await
+            .unwrap()
+            .expect("base");
+        assert_eq!(base.0, 8);
+        let evolved = db::treasure_variant(&pool, "en", 8, false)
+            .await
+            .unwrap()
+            .expect("evolved");
+        assert_eq!(evolved.0, 3);
     }
 
     /// The blessed toggle appears only when the blessed set actually differs

@@ -1,6 +1,6 @@
-<nav class="sticky top-0 z-50 flex items-center justify-between gap-6 px-8 py-4 bg-background max-md:px-4">
-    <div class="flex items-center gap-8">
-        <a href="/" class="flex items-center gap-2 font-headline text-2xl text-primary">
+<nav class="sticky top-0 z-50 flex items-center justify-between gap-6 px-8 py-4 bg-background max-md:gap-2 max-md:px-4">
+    <div class="flex min-w-0 items-center gap-8">
+        <a href="/" class="flex min-w-0 items-center gap-2 font-headline text-2xl text-primary max-md:text-base">
             <img src="/static/img/logo.png" alt="" class="size-8 rounded" onerror="this.remove()" />
             COOKIE//ARCHIVE
         </a>
@@ -25,7 +25,7 @@
         </div>
     </div>
 
-    <div class="flex items-center gap-6 max-md:gap-3">
+    <div class="flex shrink-0 items-center gap-6 max-md:gap-3">
         <button id="search-toggle" type="button" class="btn-secondary size-12 md:hidden"
             aria-label="{{ ctx.l.t("navbar_search_toggle") }}" aria-expanded="false">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"

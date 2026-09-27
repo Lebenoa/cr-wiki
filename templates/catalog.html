@@ -3,11 +3,23 @@
 {% block title %}{{ t::tags(ctx.page_title(title_key.as_str()), ctx.page_desc(desc_key.as_str()), ctx.social_image()) }}{% endblock %}
 {% block content %}
 <h1 class="page-title">{{ ctx.l.t(title_key.as_str()) }}</h1>
-{% if ctx.is_admin() %}
+{% if ctx.is_admin() && ctx.section_editable(section.as_str()) %}
 <div class="admin-actions">
-    <a href="/{{ section }}/new" class="btn-primary">{{ ctx.l.t("new_treasure_button") }}</a>
+    <a href="/{{ section }}/new" class="btn-primary">{{ ctx.l.t(new_button_key.as_str()) }}</a>
 </div>
 {% endif %}
+<div class="filter-bar">
+    <input id="filter-name" type="text" placeholder="{{ ctx.l.t(filter_placeholder_key) }}" class="filter-input" />
+    {% if tabbed %}
+    <div id="filter-grade" class="flex flex-wrap gap-2 items-center">
+        {% for g in ctx.grade_options() %}
+        <button type="button" class="grade-filter" data-grade="{{ g.0 }}" title="{{ g.1 }}">
+            <img src="/static/img/grades/{{ g.0 }}.png" alt="{{ g.1 }}" class="size-9 rounded-lg border-2 border-transparent transition-all" />
+        </button>
+        {% endfor %}
+    </div>
+    {% endif %}
+</div>
 {% if tabbed %}
 <div class="filter-bar">
     <a href="/{{ section }}" class="rounded-full px-4 py-2 font-bold transition-colors {% if tab == "all" %}bg-primary text-foreground{% else %}border-2 border-secondary/50 text-secondary{% endif %}">{{ ctx.l.t("treasure_tab_all") }}</a>
@@ -15,10 +27,138 @@
     <a href="/{{ section }}?tab=evo" class="rounded-full px-4 py-2 font-bold transition-colors {% if tab == "evo" %}bg-primary text-foreground{% else %}border-2 border-secondary/50 text-secondary{% endif %}">{{ ctx.l.t("treasure_tab_evolved") }}</a>
 </div>
 {% endif %}
-<div class="filter-bar">
-    <input id="filter-name" type="text" placeholder="{{ ctx.l.t("navbar_search_placeholder") }}" class="filter-input" />
+
+{% if section == "episodes" %}
+<div class="catalog-grid-wide">
+    {% for e in episodes %}
+    <a href="/episodes/{{ e.id }}" hx-boost="true" data-cr-card data-name="{{ e.name }}" data-name-en="{{ e.en_name }}"
+        class="entity-card">
+        <span class="flex items-center gap-2">
+            <span class="card-meta">{{ ctx.episode_kind_label(e.kind.as_str()) }}</span>
+            {% if e.league_ranked %}
+            <span class="pill-accent">{{ ctx.l.t("league_ranked_badge") }}</span>
+            {% endif %}
+        </span>
+        {% match e.image %}{% when Some with (img) %}
+        <img src="/static/img/episodes/{{ img }}" alt="{{ e.name }}" class="h-24 w-full object-contain" />
+        {% when None %}{% endmatch %}
+        <span class="card-title">{{ e.name }}</span>
+        {% if e.stars > 0 %}
+        <span class="text-xs text-primary">{{ ctx.stars_label(e.stars) }}</span>
+        {% endif %}
+        <span class="card-meta">
+            {{ e.stage_count }} {{ ctx.l.t("stages_label") }} &middot; {{ e.quest_count }} {{ ctx.l.t("quests_label") }} &middot; {{ e.relic_count }} {{ ctx.l.t("relics_label") }}
+        </span>
+        {% if !e.entry_cost.is_empty() %}
+        <span class="card-meta">{{ ctx.l.t("entry_cost_label") }}: {{ e.entry_cost }}</span>
+        {% endif %}
+    </a>
+    {% endfor %}
 </div>
+
+{% else if section == "ingredients" %}
+<div class="catalog-grid">
+    {% for i in ingredients %}
+    <a href="/ingredients/{{ i.id }}" hx-boost="true" data-cr-card data-name="{{ i.name }}" data-name-en="{{ i.en_name }}"
+        class="entity-card">
+        {% match i.image %}{% when Some with (img) %}
+        <img src="/static/img/ingredients/{{ img }}" alt="{{ i.name }}" class="h-20 w-full object-contain" />
+        {% when None %}{% endmatch %}
+        {% if i.grade.is_some() || !ctx.episode_short(i.drop_episode_id).is_empty() %}
+        <div class="flex items-center gap-2">
+            {% if i.grade.is_some() %}
+            <span class="{{ ctx.grade_badge_cls(i.grade) }}">{{ ctx.grade_label_int(i.grade) }}</span>
+            {% endif %}
+            {% if !ctx.episode_short(i.drop_episode_id).is_empty() %}
+            <span class="{{ ctx.episode_badge_cls(i.drop_episode_id) }}">{{ ctx.episode_short(i.drop_episode_id) }}</span>
+            {% endif %}
+        </div>
+        {% endif %}
+        <span class="card-title">{{ i.name }}</span>
+        {% if i.recipe_count > 0 %}
+        <span class="card-meta">{{ i.recipe_count }} {{ ctx.l.t("ingredient_recipes_label") }}</span>
+        {% endif %}
+    </a>
+    {% endfor %}
+</div>
+
+{% else if section == "jellies" %}
+<div class="catalog-grid">
+    {% for j in jellies %}
+    <a href="/jellies/{{ j.id }}" hx-boost="true" data-cr-card data-name="{{ j.name }}" data-name-en="{{ j.en_name }}"
+        class="entity-card">
+        {% match j.image %}{% when Some with (img) %}
+        <img src="/static/img/jellies/{{ img }}" alt="{{ j.name }}" class="h-20 w-full object-contain" />
+        {% when None %}{% endmatch %}
+        <span class="card-title">{{ j.name }}</span>
+        <span class="card-meta">{{ ctx.score_label(j.score) }} {{ ctx.l.t("score") }}</span>
+    </a>
+    {% endfor %}
+</div>
+
+{% else if section == "skins" %}
+<div class="catalog-grid">
+    {% for s in skins %}
+    <div data-cr-card data-name="{{ s.name }}" data-name-en="{{ s.en_name }}" class="entity-card">
+        <div class="relative w-full flex justify-center">
+            {% match s.image %}{% when Some with (img) %}
+            <img src="/static/img/skins/{{ img }}" alt="{{ s.name }}" class="h-24 object-contain" />
+            {% when None %}{% endmatch %}
+            {% if s.collab %}
+            <span class="absolute top-0 right-0 text-[10px] font-bold uppercase bg-accent text-on-accent rounded-full px-2 py-0.5">
+                {{ ctx.l.t("collab_label") }}</span>
+            {% endif %}
+        </div>
+        <a href="/skins/{{ s.id }}" hx-boost="true" class="card-title">{{ s.name }}</a>
+        {% if !s.subtitle.is_empty() %}
+        <span class="card-note">{{ s.subtitle }}</span>
+        {% endif %}
+        {% if let Some(g) = s.grade %}
+        <span class="text-[10px] font-bold text-accent uppercase">{{ ctx.grade_label_int(s.grade) }}</span>
+        {% endif %}
+        {% if !s.owner_name.is_empty() %}
+        {% if s.owner_id > 0 %}<a href="/{{ s.owner_section }}/{{ s.owner_id }}" hx-boost="true"
+            class="pill-primary">{{ ctx.l.t("skin_for_label") }} {{ s.owner_name }}</a>
+        {% else %}<span class="pill-primary">{{ ctx.l.t("skin_for_label") }} {{ s.owner_name }}</span>{% endif %}
+        {% endif %}
+    </div>
+    {% endfor %}
+</div>
+
+{% else if section == "relics" %}
+{% for g in relic_groups %}
+<section class="max-w-screen-2xl mx-auto px-8 mt-10">
+    {% if !g.episode_name.is_empty() %}
+    <h2 class="section-title"><a href="/episodes/{{ g.episode_id }}" hx-boost="true" class="hover:text-primary">{{ ctx.l.t("relic_set_label") }} &middot; {{ g.episode_name }}</a></h2>
+    {% else %}
+    <h2 class="text-xl font-headline font-bold text-accent mb-4">{{ ctx.l.t("event_relics_label") }}</h2>
+    {% endif %}
+    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+        {% for r in g.relics %}
+        <div data-cr-card data-name="{{ r.name }}" data-name-en="{{ r.en_name }}" class="entity-card">
+            {% match r.image %}{% when Some with (img) %}
+            <img src="/static/img/relics/{{ img }}" alt="{{ r.name }}" class="h-20 w-full object-contain" />
+            {% when None %}
+            <span class="h-20 w-full flex items-center justify-center text-[10px] font-label uppercase text-foreground-muted">
+                {{ ctx.l.t("relics_label") }}</span>
+            {% endmatch %}
+            <a href="/relics/{{ r.id }}" hx-boost="true" class="card-title">{{ r.name }}</a>
+            {% if !r.description.is_empty() %}
+            <span class="card-note">{{ r.description }}</span>
+            {% endif %}
+            {% if r.unlock_cookie_id > 0 && !r.unlock_cookie_name.is_empty() %}
+            <a href="/cookies/{{ r.unlock_cookie_id }}" hx-boost="true" class="pill-accent">
+                {{ ctx.l.t("unlock_cookie_label") }} {{ r.unlock_cookie_name }}</a>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+</section>
+{% endfor %}
+
+{% else %}
 <div class="catalog-grid">
     {% include "catalog_cards.html" %}
 </div>
+{% endif %}
 {% endblock %}

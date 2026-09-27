@@ -3,7 +3,7 @@ import { defineConfig, presetAttributify, presetWind4 } from "unocss";
 export default defineConfig({
     cli: {
         entry: {
-            patterns: ["./**/*.html"],
+            patterns: ["./**/*.html", "./src/**/*.rs"],
             outFile: "./static/styles.css",
             rewrite: true,
         },
@@ -529,8 +529,8 @@ export default defineConfig({
             "rounded-2xl border-2 border-primary/20 bg-surface/50 p-4 flex flex-col items-center gap-2 hover:border-primary transition-colors",
         "entity-card-sm":
             "rounded-2xl border-2 border-primary/20 bg-surface/50 p-3 flex flex-col items-center gap-1 hover:border-primary transition-colors",
-        "card-title": "text-center text-sm font-bold text-on-surface leading-tight",
-        "card-title-sm": "text-center text-xs font-bold text-on-surface leading-tight",
+        "card-title": "text-center text-sm font-bold text-on-surface leading-tight break-words max-w-full",
+        "card-title-sm": "text-center text-xs font-bold text-on-surface leading-tight break-words max-w-full",
         "card-note": "text-center text-xs text-foreground-muted leading-snug",
         "card-meta": "text-[10px] font-label uppercase text-foreground-muted",
         "pill-accent":
@@ -590,6 +590,24 @@ export default defineConfig({
             "on-error": "oklch(var(--on-error, 0.96 0 0))",
             "on-surface": "oklch(var(--on-surface, 0.96 0 0))",
             "on-muted": "oklch(var(--on-muted, 0.96 0 0))",
+
+            // The V app's episode badge palette: each drop episode reads as its
+            // own hue on ingredient cards and the drop-location tile. The
+            // semantic block above replaces Wind4's default palette wholesale,
+            // so these are added explicitly.
+            emerald: { 400: "oklch(0.76 0.15 163)" },
+            lime: { 400: "oklch(0.84 0.21 130)" },
+            orange: { 400: "oklch(0.79 0.17 70)" },
+            sky: { 400: "oklch(0.79 0.13 235)" },
+            pink: { 400: "oklch(0.75 0.20 350)" },
+            fuchsia: { 400: "oklch(0.74 0.21 320)" },
+            amber: { 400: "oklch(0.83 0.16 85)" },
+            yellow: { 400: "oklch(0.86 0.18 95)" },
+            cyan: { 400: "oklch(0.80 0.14 210)" },
+            violet: { 400: "oklch(0.70 0.20 300)" },
+            teal: { 400: "oklch(0.78 0.14 190)" },
+            indigo: { 400: "oklch(0.67 0.19 275)" },
+            red: { 400: "oklch(0.66 0.22 25)" },
         },
         radius: {
             none: "0",

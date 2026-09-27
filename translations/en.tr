@@ -1069,3 +1069,54 @@ Video link must be an http(s) URL of at most 200 characters
 build_error_description
 Description is limited to 5000 characters
 -----
+index_hero_title
+Classic Wiki
+-----
+index_card_cookies
+Profiles of all the unique cookies, from common GingerBrave to Legendary Ancients.
+-----
+index_card_pets
+The history of Earthbread and the epic tales of the Soul Jam.
+-----
+index_card_treasures
+Optimization guides for builds, toppings, and treasure combinations.
+-----
+index_card_builds
+Guides for production, layout planning, and managing your Cookie Kingdom.
+-----
+index_fresh_title
+Fresh from the Oven
+-----
+index_fresh_item1_date
+DEC 20, 2024
+-----
+index_fresh_item1_title
+The Crème Republic Update
+-----
+index_fresh_item1_desc
+New story chapter released! Discover the secrets of the coastal civilization.
+-----
+index_fresh_item2_date
+DEC 18, 2024
+-----
+index_fresh_item2_title
+New Cookie: Strawberry Crepe
+-----
+index_fresh_item2_desc
+Mechanics breakdown for the latest defense-class addition to Earthbread.
+-----
+index_fresh_archive_link
+View Archive Logs
+-----
+index_featured_label
+Featured Recipe
+-----
+index_featured_title
+The Pure Vanilla Chronicles
+-----
+index_featured_desc
+An exhaustive deep-dive into the history of the First King of the Vanilla Kingdom and his role in the Dark Flour War.
+-----
+index_featured_cta
+Start Reading
+-----

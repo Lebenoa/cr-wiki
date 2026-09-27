@@ -127,6 +127,9 @@ pub struct Detail {
     pub en_name: String,
     pub image: Option<String>,
     pub grade: Option<i64>,
+    /// treasures only: the evolved row links to its base, the base row to
+    /// its evolution
+    pub is_evolved: bool,
     pub abilities: String,
     pub description: String,
     pub power_plus: String,
@@ -265,8 +268,8 @@ pub async fn select_treasures(
     offset: i64,
 ) -> Result<Vec<Card>> {
     let tab_extra = match tab {
-        "normal" => ", is_evolved = false",
-        "evo" => ", is_evolved = true",
+        "normal" => " AND is_evolved = false",
+        "evo" => " AND is_evolved = true",
         _ => "",
     };
     cards(
@@ -292,6 +295,383 @@ pub async fn select_simple(db: &Db, lang: &str, kind: &str) -> Result<Vec<Card>>
     cards(db, lang, section, "", " ORDER BY id", None, "").await
 }
 
+// --- the five simple catalogs' own views ----------------------------------
+//
+// The shared `Card` projection carries what a cookie card needs. Episodes,
+// ingredients, jellies, skins and relics each show more, so each has one
+// view struct and one query here — same locale-fallback rule (`tr`), same
+// "unknown field is NONE" reading the rest of the module uses.
+
+/// One episode as the /episodes browser lists it: the display fields plus
+/// the three collection counts the V page shows.
+#[derive(Debug, Clone, Default)]
+pub struct EpisodeList {
+    pub id: i64,
+    pub name: String,
+    pub en_name: String,
+    pub image: Option<String>,
+    pub kind: String,
+    pub stars: i64,
+    pub league_ranked: bool,
+    pub entry_cost: String,
+    pub stage_count: i64,
+    pub quest_count: i64,
+    pub relic_count: i64,
+}
+
+#[derive(Debug, Default, SurrealValue)]
+#[surreal(default)]
+struct EpisodeListRow {
+    id: i64,
+    name: String,
+    en_name: String,
+    image: Option<String>,
+    kind: String,
+    stars: i64,
+    league_ranked: bool,
+    entry_cost: String,
+    stage_count: i64,
+    quest_count: i64,
+    relic_count: i64,
+}
+
+/// Episodes in id order, which is the kind order the browser wants: story
+/// 1-7, then special 501+, then event 601+ (the id ranges encode it — same
+/// invariant `episode_short` reads its abbreviation from).
+pub async fn select_episode_list(db: &Db, lang: &str) -> Result<Vec<EpisodeList>> {
+    let sql = format!(
+        "SELECT record::id(id) AS id, image, kind, (stars ?? 0) AS stars,
+                (league_ranked ?? false) AS league_ranked, (entry_cost ?? '') AS entry_cost,
+                {} AS name, (tr.en.name ?? '') AS en_name,
+                array::len((SELECT id FROM episode_stage WHERE episode_id = record::id(type::record(\"episode\", $parent.id))))
+                    AS stage_count,
+                array::len((SELECT id FROM quest WHERE episode_id = record::id(type::record(\"episode\", $parent.id))))
+                    AS quest_count,
+                array::len((SELECT id FROM episode_relic WHERE episode_id = record::id(type::record(\"episode\", $parent.id))))
+                    AS relic_count
+           FROM episode
+          ORDER BY id",
+        tr("name")
+    );
+    let rows: Vec<EpisodeListRow> = db
+        .query(&sql)
+        .bind(("lang", lang.to_string()))
+        .await?
+        .take(0)?;
+    Ok(rows
+        .into_iter()
+        .map(|r| EpisodeList {
+            id: r.id,
+            name: r.name,
+            en_name: r.en_name,
+            image: r.image,
+            kind: r.kind,
+            stars: r.stars,
+            league_ranked: r.league_ranked,
+            entry_cost: r.entry_cost,
+            stage_count: r.stage_count,
+            quest_count: r.quest_count,
+            relic_count: r.relic_count,
+        })
+        .collect())
+}
+
+/// One ingredient as the /ingredients grid lists it: the catalog row's facts
+/// plus the episode's short badge and the number of treasures it crafts.
+#[derive(Debug, Clone, Default)]
+pub struct IngredientList {
+    pub id: i64,
+    pub name: String,
+    pub en_name: String,
+    pub image: Option<String>,
+    pub grade: Option<i64>,
+    pub drop_episode_id: Option<i64>,
+    pub recipe_count: i64,
+}
+
+#[derive(Debug, Default, SurrealValue)]
+#[surreal(default)]
+struct IngredientListRow {
+    id: i64,
+    name: String,
+    en_name: String,
+    image: Option<String>,
+    grade: Option<i64>,
+    drop_episode_id: Option<i64>,
+    recipe_count: i64,
+}
+
+/// Grade first (rarest down to commonest, ungraded last), then drop episode
+/// in play order (the id ranges ascend story -> special -> event), then id.
+/// The ingredients that drop everywhere carry no episode id and sort after
+/// the ones that name an episode, which needs the explicit NONE check.
+pub async fn select_ingredient_list(db: &Db, lang: &str) -> Result<Vec<IngredientList>> {
+    let sql = format!(
+        "SELECT record::id(id) AS id, image, grade, drop_episode_id,
+                (drop_episode_id IS NONE) AS no_episode,
+                (IF grade IS NONE THEN -1 ELSE rank END) AS display_rank,
+                {} AS name, (tr.en.name ?? '') AS en_name,
+                array::len((SELECT id FROM ingredient_recipe
+                           WHERE ingredient_id = record::id(type::record(\"ingredient\", $parent.id)))) AS recipe_count
+           FROM ingredient
+          ORDER BY display_rank DESC, no_episode, drop_episode_id, id",
+        tr("name")
+    );
+    let rows: Vec<IngredientListRow> = db
+        .query(&sql)
+        .bind(("lang", lang.to_string()))
+        .await?
+        .take(0)?;
+    Ok(rows
+        .into_iter()
+        .map(|r| IngredientList {
+            id: r.id,
+            name: r.name,
+            en_name: r.en_name,
+            image: r.image,
+            grade: r.grade,
+            drop_episode_id: r.drop_episode_id,
+            recipe_count: r.recipe_count,
+        })
+        .collect())
+}
+
+/// One jelly as the /jellies grid lists it.
+#[derive(Debug, Clone, Default)]
+pub struct JellyList {
+    pub id: i64,
+    pub name: String,
+    pub en_name: String,
+    pub image: Option<String>,
+    pub score: f64,
+}
+
+#[derive(Debug, Default, SurrealValue)]
+#[surreal(default)]
+struct JellyListRow {
+    id: i64,
+    name: String,
+    en_name: String,
+    image: Option<String>,
+    score: f64,
+}
+
+pub async fn select_jelly_list(db: &Db, lang: &str) -> Result<Vec<JellyList>> {
+    let sql = format!(
+        "SELECT record::id(id) AS id, image, (score ?? 0) AS score,
+                {} AS name, (tr.en.name ?? '') AS en_name
+           FROM jelly
+          ORDER BY score DESC, id",
+        tr("name")
+    );
+    let rows: Vec<JellyListRow> = db
+        .query(&sql)
+        .bind(("lang", lang.to_string()))
+        .await?
+        .take(0)?;
+    Ok(rows
+        .into_iter()
+        .map(|r| JellyList {
+            id: r.id,
+            name: r.name,
+            en_name: r.en_name,
+            image: r.image,
+            score: r.score,
+        })
+        .collect())
+}
+
+/// One skin as the /skins grid lists it.
+#[derive(Debug, Clone, Default)]
+pub struct SkinList {
+    pub id: i64,
+    pub name: String,
+    pub en_name: String,
+    pub image: Option<String>,
+    pub grade: Option<i64>,
+    pub collab: bool,
+    pub subtitle: String,
+    pub owner_id: i64,
+    pub owner_section: &'static str,
+    pub owner_name: String,
+}
+
+#[derive(Debug, Default, SurrealValue)]
+#[surreal(default)]
+struct SkinListRow {
+    id: i64,
+    name: String,
+    en_name: String,
+    image: Option<String>,
+    grade: Option<i64>,
+    collab: bool,
+    subtitle: String,
+    cookie_id: Option<i64>,
+    pet_id: Option<i64>,
+    cookie_name: String,
+    pet_name: String,
+}
+
+/// Skins in id order; the owner (a cookie or a pet) resolves its own name.
+pub async fn select_skin_list(db: &Db, lang: &str) -> Result<Vec<SkinList>> {
+    let sql = format!(
+        "SELECT record::id(id) AS id, image, grade, (collab ?? false) AS collab,
+                (subtitle ?? '') AS subtitle,
+                {} AS name, (tr.en.name ?? '') AS en_name,
+                cookie_id, pet_id,
+                ((SELECT VALUE {} FROM cookie
+                  WHERE record::id(id) = $parent.cookie_id LIMIT 1)[0] ?? '') AS cookie_name,
+                ((SELECT VALUE {} FROM pet
+                  WHERE record::id(id) = $parent.pet_id LIMIT 1)[0] ?? '') AS pet_name
+           FROM skin
+          ORDER BY id",
+        tr("name"),
+        tr("name"),
+        tr("name")
+    );
+    let rows: Vec<SkinListRow> = db
+        .query(&sql)
+        .bind(("lang", lang.to_string()))
+        .await?
+        .take(0)?;
+    Ok(rows
+        .into_iter()
+        .map(|r| SkinList {
+            id: r.id,
+            name: r.name,
+            en_name: r.en_name,
+            image: r.image,
+            grade: r.grade,
+            collab: r.collab,
+            subtitle: r.subtitle,
+            owner_id: r.cookie_id.unwrap_or(0).max(r.pet_id.unwrap_or(0)),
+            owner_section: if r.cookie_id.unwrap_or(0) > 0 {
+                "cookies"
+            } else {
+                "pets"
+            },
+            owner_name: if r.cookie_id.unwrap_or(0) > 0 {
+                r.cookie_name
+            } else {
+                r.pet_name
+            },
+        })
+        .collect())
+}
+
+/// One relic as the /relics catalog lists it: the display row plus, for
+/// event relics, the cookie whose pass unlocked it.
+#[derive(Debug, Clone, Default)]
+pub struct RelicList {
+    pub id: i64,
+    pub name: String,
+    pub en_name: String,
+    pub image: Option<String>,
+    pub description: String,
+    pub unlock_cookie_id: i64,
+    pub unlock_cookie_name: String,
+}
+
+#[derive(Debug, Default, SurrealValue)]
+#[surreal(default)]
+struct RelicListRow {
+    id: i64,
+    name: String,
+    en_name: String,
+    image: Option<String>,
+    description: String,
+    episode_id: i64,
+    unlock_cookie_id: i64,
+    unlock_cookie_name: String,
+}
+
+/// Relics grouped under their owning episode, in episode order (which is the
+/// kind order), event relics last under an empty episode name.
+#[derive(Debug, Clone, Default)]
+pub struct RelicGroup {
+    pub episode_id: i64,
+    pub episode_name: String,
+    pub relics: Vec<RelicList>,
+}
+
+pub async fn select_relic_groups(db: &Db, lang: &str) -> Result<Vec<RelicGroup>> {
+    let sql = format!(
+        "SELECT record::id(id) AS id, image, (episode_id ?? 0) AS episode_id,
+                (unlock_cookie_id ?? 0) AS unlock_cookie_id,
+                {} AS name, (tr.en.name ?? '') AS en_name,
+                {} AS description,
+                ((SELECT VALUE {} FROM cookie
+                  WHERE record::id(id) = $parent.unlock_cookie_id LIMIT 1)[0] ?? '')
+                    AS unlock_cookie_name
+           FROM relic
+          ORDER BY id",
+        tr("name"),
+        tr("description"),
+        tr("name")
+    );
+    let rows: Vec<RelicListRow> = db
+        .query(&sql)
+        .bind(("lang", lang.to_string()))
+        .await?
+        .take(0)?;
+    #[derive(Default, SurrealValue)]
+    #[surreal(default)]
+    struct EpisodeName {
+        id: i64,
+        name: String,
+    }
+    let ep_sql = format!(
+        "SELECT record::id(id) AS id, {} AS name FROM episode ORDER BY id",
+        tr("name")
+    );
+    let ep_rows: Vec<EpisodeName> = db
+        .query(&ep_sql)
+        .bind(("lang", lang.to_string()))
+        .await?
+        .take(0)?;
+    let ep_names: std::collections::HashMap<i64, String> =
+        ep_rows.into_iter().map(|e| (e.id, e.name)).collect();
+
+    let mut groups: Vec<RelicGroup> = Vec::new();
+    let mut by_ep: std::collections::HashMap<i64, Vec<RelicList>> =
+        std::collections::HashMap::new();
+    let mut event: Vec<RelicList> = Vec::new();
+    for r in rows {
+        let relic = RelicList {
+            id: r.id,
+            name: r.name,
+            en_name: r.en_name,
+            image: r.image,
+            description: r.description,
+            unlock_cookie_id: r.unlock_cookie_id,
+            unlock_cookie_name: r.unlock_cookie_name,
+        };
+        if r.episode_id > 0 {
+            by_ep.entry(r.episode_id).or_default().push(relic);
+        } else {
+            event.push(relic);
+        }
+    }
+    let mut eps: Vec<i64> = by_ep.keys().copied().collect();
+    eps.sort_unstable();
+    for eid in eps {
+        let relics = by_ep.remove(&eid).unwrap_or_default();
+        groups.push(RelicGroup {
+            episode_id: eid,
+            episode_name: ep_names.get(&eid).cloned().unwrap_or_default(),
+            relics,
+        });
+    }
+    if !event.is_empty() {
+        groups.push(RelicGroup {
+            episode_id: 0,
+            episode_name: String::new(),
+            relics: event,
+        });
+    }
+    Ok(groups)
+}
+
 /// The one card-list interface the read module presents: a section, the
 /// locale, ordering, an optional page window, and an optional whitelist
 /// conjunction beyond the always-on name filter. `Kind` (table, graded,
@@ -309,10 +689,13 @@ async fn cards(
 ) -> Result<Vec<Card>> {
     let kind = Kind::of(section);
     let extra = if kind.graded { ", grade, rank" } else { "" };
+    // the base filter is parenthesized: SurrealQL binds AND tighter than OR,
+    // so `A OR B AND tab` would read `A OR (B AND tab)` and leak every named
+    // row into a tabbed query
     let filter = if extra_filter.is_empty() {
-        "tr.en.name != NONE OR tr[$lang].name != NONE".to_string()
+        "(tr.en.name != NONE OR tr[$lang].name != NONE)".to_string()
     } else {
-        format!("tr.en.name != NONE OR tr[$lang].name != NONE{extra_filter}")
+        format!("(tr.en.name != NONE OR tr[$lang].name != NONE){extra_filter}")
     };
     select_cards(
         db,
@@ -336,6 +719,7 @@ struct DetailRow {
     en_name: String,
     image: Option<String>,
     grade: Option<i64>,
+    is_evolved: Option<bool>,
     abilities: String,
     description: String,
     power_plus: String,
@@ -368,7 +752,11 @@ pub async fn select_detail(db: &Db, lang: &str, section: &str, id: i64) -> Resul
         tr("power_plus"),
         tr("power_plus_requirement"),
         tr("unlock_goal"),
-        extra = if kind.graded { ", grade" } else { "" },
+        extra = if kind.graded {
+            ", grade, (is_evolved ?? false) AS is_evolved"
+        } else {
+            ""
+        },
     );
     let mut rows: Vec<DetailRow> = db
         .query(&sql)
@@ -383,6 +771,7 @@ pub async fn select_detail(db: &Db, lang: &str, section: &str, id: i64) -> Resul
         en_name: r.en_name,
         image: r.image,
         grade: if kind.graded { r.grade } else { None },
+        is_evolved: r.is_evolved.unwrap_or(false),
         abilities: r.abilities,
         description: r.description,
         power_plus: r.power_plus,
@@ -393,6 +782,224 @@ pub async fn select_detail(db: &Db, lang: &str, section: &str, id: i64) -> Resul
         } else {
             0
         },
+    }))
+}
+
+// --- the kinds' own detail collections ------------------------------------
+//
+// One detail page is one `Detail` plus whichever collections its kind
+// shows. These queries fill them; the route gathers whichever its section
+// needs and the template decides where they render.
+
+/// The facts an ingredient's detail page shows beyond the shared prose:
+/// the drop tile fields and the powder economy numbers.
+#[derive(Debug, Clone, Default)]
+pub struct IngredientFacts {
+    pub drop_episode_id: Option<i64>,
+    pub drop_location: String,
+    pub coin_value: i64,
+    pub breaks_into_powder: i64,
+    pub craft_from_powder: i64,
+    pub obtained_from: String,
+}
+
+#[derive(Debug, Default, SurrealValue)]
+#[surreal(default)]
+struct IngredientFactsRow {
+    drop_episode_id: Option<i64>,
+    drop_location: String,
+    coin_value: i64,
+    breaks_into_powder: i64,
+    craft_from_powder: i64,
+    obtained_from: String,
+    drop_episode_name: String,
+}
+
+/// The drop-location text prefers the episode's localized name over the
+/// catalog's English drop text, so a Thai page reads the episode title in
+/// Thai; the raw text covers the ingredients that drop in every episode.
+pub async fn ingredient_facts(db: &Db, lang: &str, id: i64) -> Result<IngredientFacts> {
+    let sql = format!(
+        "SELECT drop_episode_id, (drop_location ?? '') AS drop_location,
+                (coin_value ?? 0) AS coin_value,
+                (breaks_into_powder ?? 0) AS breaks_into_powder,
+                (craft_from_powder ?? 0) AS craft_from_powder,
+                (obtained_from ?? '') AS obtained_from,
+                ((SELECT VALUE {} FROM episode
+                  WHERE record::id(id) = $parent.drop_episode_id LIMIT 1)[0] ?? '')
+                    AS drop_episode_name
+           FROM type::record(\"ingredient\", $id)",
+        tr("name")
+    );
+    let mut rows: Vec<IngredientFactsRow> = db
+        .query(&sql)
+        .bind(("id", id))
+        .bind(("lang", lang.to_string()))
+        .await?
+        .take(0)?;
+    let Some(row) = rows.pop() else {
+        return Ok(IngredientFacts::default());
+    };
+    Ok(IngredientFacts {
+        drop_episode_id: row.drop_episode_id,
+        drop_location: if row.drop_episode_name.is_empty() {
+            row.drop_location
+        } else {
+            row.drop_episode_name
+        },
+        coin_value: row.coin_value,
+        breaks_into_powder: row.breaks_into_powder,
+        craft_from_powder: row.craft_from_powder,
+        obtained_from: row.obtained_from,
+    })
+}
+
+/// One treasure an ingredient crafts (from ingredient_recipe), with its
+/// localized name.
+#[derive(Debug, Clone, Default)]
+pub struct CraftRecipe {
+    pub treasure_id: i64,
+    pub name: String,
+    pub image: Option<String>,
+}
+
+pub async fn ingredient_recipes(db: &Db, lang: &str, id: i64) -> Result<Vec<CraftRecipe>> {
+    #[derive(Default, SurrealValue)]
+    #[surreal(default)]
+    struct Row {
+        treasure_id: i64,
+        name: String,
+        image: Option<String>,
+    }
+    let sql = format!(
+        "SELECT treasure_id,
+                ((SELECT VALUE {} FROM treasure
+                  WHERE record::id(id) = $parent.treasure_id LIMIT 1)[0] ?? '') AS name,
+                (SELECT VALUE image FROM treasure
+                  WHERE record::id(id) = $parent.treasure_id LIMIT 1)[0] AS image
+           FROM ingredient_recipe
+          WHERE ingredient_id = $id
+          ORDER BY treasure_id",
+        tr("name")
+    );
+    let rows: Vec<Row> = db
+        .query(&sql)
+        .bind(("id", id))
+        .bind(("lang", lang.to_string()))
+        .await?
+        .take(0)?;
+    Ok(rows
+        .into_iter()
+        .map(|r| CraftRecipe {
+            treasure_id: r.treasure_id,
+            name: r.name,
+            image: r.image,
+        })
+        .collect())
+}
+
+/// One ingredient a treasure is crafted from: the catalog row plus its grade
+/// and drop episode, as the craft panel shows.
+#[derive(Debug, Clone, Default)]
+pub struct CraftIngredient {
+    pub ingredient_id: i64,
+    pub name: String,
+    pub image: Option<String>,
+    pub grade: Option<i64>,
+    pub drop_episode_id: Option<i64>,
+}
+
+pub async fn treasure_craft_ingredients(
+    db: &Db,
+    lang: &str,
+    id: i64,
+) -> Result<Vec<CraftIngredient>> {
+    #[derive(Default, SurrealValue)]
+    #[surreal(default)]
+    struct Row {
+        ingredient_id: i64,
+        name: String,
+        image: Option<String>,
+        grade: Option<i64>,
+        drop_episode_id: Option<i64>,
+    }
+    let sql = format!(
+        "SELECT ingredient_id,
+                ((SELECT VALUE {} FROM ingredient
+                  WHERE record::id(id) = $parent.ingredient_id LIMIT 1)[0] ?? '') AS name,
+                (SELECT VALUE image FROM ingredient
+                  WHERE record::id(id) = $parent.ingredient_id LIMIT 1)[0] AS image,
+                (SELECT VALUE grade FROM ingredient
+                  WHERE record::id(id) = $parent.ingredient_id LIMIT 1)[0] AS grade,
+                (SELECT VALUE drop_episode_id FROM ingredient
+                  WHERE record::id(id) = $parent.ingredient_id LIMIT 1)[0] AS drop_episode_id
+           FROM ingredient_recipe
+          WHERE treasure_id = $id
+          ORDER BY ingredient_id",
+        tr("name")
+    );
+    let rows: Vec<Row> = db
+        .query(&sql)
+        .bind(("id", id))
+        .bind(("lang", lang.to_string()))
+        .await?
+        .take(0)?;
+    Ok(rows
+        .into_iter()
+        .map(|r| CraftIngredient {
+            ingredient_id: r.ingredient_id,
+            name: r.name,
+            image: r.image,
+            grade: r.grade,
+            drop_episode_id: r.drop_episode_id,
+        })
+        .collect())
+}
+
+/// The linked variant of a treasure: the base for an evolved row, the
+/// evolved form for a base row. Only evolved rows carry `base_treasure_id`,
+/// so a base row's variant is the evolved row pointing back at it. The two
+/// are mutually exclusive, so one optional suffices; the template labels
+/// the panel from `is_evolved`.
+pub async fn treasure_variant(
+    db: &Db,
+    lang: &str,
+    id: i64,
+    is_evolved: bool,
+) -> Result<Option<(i64, String, Option<String>)>> {
+    let variant_id = if is_evolved {
+        let mut rows: Vec<i64> = db
+            .query("SELECT VALUE base_treasure_id FROM type::record(\"treasure\", $id)")
+            .bind(("id", id))
+            .await?
+            .take(0)?;
+        rows.pop()
+    } else {
+        None
+    };
+    let where_clause = if is_evolved {
+        "WHERE record::id(id) = $variant_id"
+    } else {
+        "WHERE base_treasure_id = $id"
+    };
+    let sql = format!(
+        "SELECT record::id(id) AS id, image, {tr_name} AS name,
+                (tr.en.name ?? '') AS en_name
+           FROM treasure
+          {where_clause}
+          LIMIT 1",
+        tr_name = tr("name"),
+    );
+    let mut rows: Vec<CardRow> = db
+        .query(&sql)
+        .bind(("lang", lang.to_string()))
+        .bind(("id", id))
+        .bind(("variant_id", variant_id.unwrap_or(0)))
+        .await?
+        .take(0)?;
+    Ok(rows.pop().map(|r| {
+        let name = if r.name.is_empty() { r.en_name } else { r.name };
+        (r.id, name, r.image)
     }))
 }
 
@@ -1170,32 +1777,22 @@ async fn write_translation(
     Ok(())
 }
 
-/// What a treasure is tied to: the cookie or pet that unlocks it at max
-/// level, and the base it evolved from. Empty for a treasure with neither.
+/// The cookie or pet that unlocks a treasure at max level.
 #[derive(Debug, Clone, Default)]
 pub struct TreasureLinks {
     pub unlock_section: &'static str,
     pub unlock_id: i64,
     pub unlock_name: String,
     pub unlock_image: Option<String>,
-    pub base_id: i64,
-    pub base_name: String,
-    pub base_image: Option<String>,
 }
 
 impl TreasureLinks {
     pub const fn has_unlock(&self) -> bool {
         self.unlock_id > 0 && !self.unlock_name.is_empty()
     }
-    pub const fn has_base(&self) -> bool {
-        self.base_id > 0 && !self.base_name.is_empty()
-    }
 }
 
-/// The link columns a treasure carries. `#[surreal(rename)]` binds each
-/// field to the `*_id` column the query projects — `#[surreal(default)]`
-/// would otherwise read every row as `None` in complete silence, which is
-/// exactly how this struct once lost the treasure page's links.
+/// The unlock link columns a treasure carries.
 #[derive(Debug, Default, SurrealValue)]
 #[surreal(default)]
 struct TreasureLinkRow {
@@ -1203,13 +1800,11 @@ struct TreasureLinkRow {
     unlock_cookie: Option<i64>,
     #[surreal(rename = "unlock_pet_id")]
     unlock_pet: Option<i64>,
-    #[surreal(rename = "base_treasure_id")]
-    base_treasure: Option<i64>,
 }
 
 pub async fn treasure_links(db: &Db, lang: &str, id: i64) -> Result<TreasureLinks> {
     let mut rows: Vec<TreasureLinkRow> = db
-        .query("SELECT unlock_cookie_id, unlock_pet_id, base_treasure_id FROM type::record(\"treasure\", $id)")
+        .query("SELECT unlock_cookie_id, unlock_pet_id FROM type::record(\"treasure\", $id)")
         .bind(("id", id))
         .await?
         .take(0)?;
@@ -1231,13 +1826,6 @@ pub async fn treasure_links(db: &Db, lang: &str, id: i64) -> Result<TreasureLink
             out.unlock_id = pid;
             out.unlock_name = name;
             out.unlock_image = image;
-        }
-    }
-    if let Some(bid) = row.base_treasure.filter(|v| *v > 0) {
-        if let Some((name, image)) = entity_link(db, lang, "treasure", bid).await {
-            out.base_id = bid;
-            out.base_name = name;
-            out.base_image = image;
         }
     }
     Ok(out)
@@ -1317,11 +1905,9 @@ mod tests {
     fn treasure_link_row_reads_the_projected_columns() {
         let mut o = Object::new();
         o.insert("unlock_cookie_id", 7i64);
-        o.insert("base_treasure_id", 310i64);
         // unlock_pet_id absent, as for a treasure a cookie unlocks
         let row = TreasureLinkRow::from_value(Value::Object(o)).expect("decodes");
         assert_eq!(row.unlock_cookie, Some(7));
-        assert_eq!(row.base_treasure, Some(310));
         assert_eq!(row.unlock_pet, None);
     }
 
