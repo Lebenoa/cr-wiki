@@ -99,6 +99,14 @@
         return kind === 'pet' ? 'pets' : kind === 'treasure' ? 'treasures' : 'cookies';
     }
 
+    // the entity's sprite as a small inline thumbnail, mirroring the
+    // server's render_with (same size-5 sprite ahead of the name)
+    function thumbHtml(kind, opt) {
+        if (!opt || !opt.image) return '';
+        return '<img src="/static/img/' + kindPath(kind) + '/' + escapeHtml(opt.image) +
+            '" alt="" loading="lazy" class="inline-block size-5 mr-1 object-contain align-text-bottom" />';
+    }
+
     function escapeHtml(s) {
         return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
             .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
@@ -270,6 +278,7 @@
                         if (found) {
                             out += '<a href="/' + kindPath(parsed.kind) + '/' + found.id +
                                 '" class="font-bold underline decoration-primary decoration-2 underline-offset-4 hover:text-primary transition-colors">' +
+                                thumbHtml(parsed.kind, found) +
                                 escapeHtml(found.name) + '</a>';
                             i = end + 2;
                             continue;

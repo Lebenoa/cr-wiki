@@ -42,7 +42,9 @@ pub async fn richtext_names(
     let names = crate::options::options(&state.db, &lang, &kind)
         .await?
         .iter()
-        .map(|o| json!({ "id": o.id, "name": o.name, "en_name": o.en_name }))
+        .map(|o| {
+            json!({ "id": o.id, "name": o.name, "en_name": o.en_name, "image": o.image })
+        })
         .collect::<Vec<_>>();
     Ok(Json(json!({ "kind": section, "names": names })))
 }

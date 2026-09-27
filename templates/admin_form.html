@@ -23,9 +23,14 @@
         </label>
         <input type="text" name="name" value="{{ it.name }}" class="filter-input w-full" required />
         <div class="flex items-center gap-3">
-            <input type="text" name="image" value="{{ it.image.as_deref().unwrap_or("") }}"
-                class="filter-input w-full" placeholder="image.png" />
-            <input type="file" accept="image/*" data-upload="/{{ section }}/upload" class="text-xs" />
+            <img id="imagePreview" alt="{{ ctx.l.t("image") }}"
+                class="size-24 rounded-xl object-contain border-2 border-dashed border-primary/40 bg-surface"
+                src="/static/img/{{ section }}/{{ it.image.as_deref().unwrap_or("") }}" />
+            <div class="flex flex-col gap-1 flex-1">
+                <input type="text" name="image" value="{{ it.image.as_deref().unwrap_or("") }}"
+                    class="filter-input w-full" placeholder="image.png" />
+                <input type="file" accept="image/*" data-upload="/{{ section }}/upload" class="text-xs" />
+            </div>
         </div>
         <textarea name="abilities" rows="2" class="filter-input w-full">{{ it.abilities }}</textarea>
         <div class="flex flex-col gap-1">
@@ -67,8 +72,13 @@
         <input type="text" name="name" class="filter-input w-full" placeholder="{{ ctx.l.t(self.name_key().as_str()) }}"
             required />
         <div class="flex items-center gap-3">
-            <input type="text" name="image" class="filter-input w-full" placeholder="image.png" />
-            <input type="file" accept="image/*" data-upload="/{{ section }}/upload" class="text-xs" />
+            <img id="imagePreview" alt="{{ ctx.l.t("image") }}"
+                class="size-24 rounded-xl object-contain border-2 border-dashed border-primary/40 bg-surface hidden"
+                src="" />
+            <div class="flex flex-col gap-1 flex-1">
+                <input type="text" name="image" class="filter-input w-full" placeholder="image.png" />
+                <input type="file" accept="image/*" data-upload="/{{ section }}/upload" class="text-xs" />
+            </div>
         </div>
         <textarea name="abilities" rows="2" class="filter-input w-full"></textarea>
         <div class="flex flex-col gap-1">
