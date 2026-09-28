@@ -3197,7 +3197,7 @@
   {
    "pet_id": 94,
    "image": "sotdae_flock.png",
-   "grade": 3,
+   "grade": 4,
    "release_date": "2026-01-15T00:00:00Z"
   },
   {
@@ -6160,6 +6160,9 @@
   },
   {
    "effect_id": 433
+  },
+  {
+   "effect_id": 434
   }
  ],
  "effect_translation": [
@@ -12159,68 +12162,82 @@
    "effect_translation_id": 857,
    "effect_id": 429,
    "lang": "en",
-   "name": "Riding: -HP drain, Jelly Bonus",
-   "description": "Riding: -HP drain, Jelly Bonus"
+   "name": "-13% HP drain, Evasion Points",
+   "description": "-13% HP drain, Evasion Points"
   },
   {
    "effect_translation_id": 858,
    "effect_id": 429,
    "lang": "th",
-   "name": "Riding: -HP drain, Jelly Bonus",
-   "description": "Riding: -HP drain, Jelly Bonus"
+   "name": "-13% HP drain, Evasion Points",
+   "description": "-13% HP drain, Evasion Points"
   },
   {
    "effect_translation_id": 859,
    "effect_id": 430,
    "lang": "en",
-   "name": "Dandelion Seed Points, -7% HP drain",
-   "description": "Dandelion Seed Points, -7% HP drain"
+   "name": "Riding: -HP drain, Jelly Bonus",
+   "description": "Riding: -HP drain, Jelly Bonus"
   },
   {
    "effect_translation_id": 860,
    "effect_id": 430,
    "lang": "th",
-   "name": "Dandelion Seed Points, -7% HP drain",
-   "description": "Dandelion Seed Points, -7% HP drain"
+   "name": "Riding: -HP drain, Jelly Bonus",
+   "description": "Riding: -HP drain, Jelly Bonus"
   },
   {
    "effect_translation_id": 861,
    "effect_id": 431,
    "lang": "en",
-   "name": "Crush Points, -12% HP drain",
-   "description": "Crush Points, -12% HP drain"
+   "name": "Dandelion Seed Points, -7% HP drain",
+   "description": "Dandelion Seed Points, -7% HP drain"
   },
   {
    "effect_translation_id": 862,
    "effect_id": 431,
    "lang": "th",
-   "name": "Crush Points, -12% HP drain",
-   "description": "Crush Points, -12% HP drain"
+   "name": "Dandelion Seed Points, -7% HP drain",
+   "description": "Dandelion Seed Points, -7% HP drain"
   },
   {
    "effect_translation_id": 863,
    "effect_id": 432,
    "lang": "en",
-   "name": "Pine Leaf Jelly Bonus",
-   "description": "Pine Leaf Jelly Bonus"
+   "name": "Crush Points, -12% HP drain",
+   "description": "Crush Points, -12% HP drain"
   },
   {
    "effect_translation_id": 864,
    "effect_id": 432,
    "lang": "th",
-   "name": "Pine Leaf Jelly Bonus",
-   "description": "Pine Leaf Jelly Bonus"
+   "name": "Crush Points, -12% HP drain",
+   "description": "Crush Points, -12% HP drain"
   },
   {
    "effect_translation_id": 865,
    "effect_id": 433,
    "lang": "en",
-   "name": "Skull Lotus Jelly Bonus, -12% HP drain",
-   "description": "Skull Lotus Jelly Bonus, -12% HP drain"
+   "name": "Pine Leaf Jelly Bonus",
+   "description": "Pine Leaf Jelly Bonus"
   },
   {
    "effect_translation_id": 866,
    "effect_id": 433,
+   "lang": "th",
+   "name": "Pine Leaf Jelly Bonus",
+   "description": "Pine Leaf Jelly Bonus"
+  },
+  {
+   "effect_translation_id": 867,
+   "effect_id": 434,
+   "lang": "en",
+   "name": "Skull Lotus Jelly Bonus, -12% HP drain",
+   "description": "Skull Lotus Jelly Bonus, -12% HP drain"
+  },
+  {
+   "effect_translation_id": 868,
+   "effect_id": 434,
    "lang": "th",
    "name": "Skull Lotus Jelly Bonus, -12% HP drain",
    "description": "Skull Lotus Jelly Bonus, -12% HP drain"
@@ -35246,48 +35263,55 @@
   },
   {
    "id": 100,
-   "cookie_id": 87,
-   "pet_id": 95,
+   "cookie_id": 86,
+   "pet_id": 94,
    "effect_id": 429,
    "is_hidden": false
   },
   {
    "id": 101,
-   "cookie_id": 88,
-   "pet_id": 96,
+   "cookie_id": 87,
+   "pet_id": 95,
    "effect_id": 430,
    "is_hidden": false
   },
   {
    "id": 102,
-   "cookie_id": 89,
-   "pet_id": 97,
+   "cookie_id": 88,
+   "pet_id": 96,
    "effect_id": 431,
    "is_hidden": false
   },
   {
    "id": 103,
-   "cookie_id": 90,
-   "pet_id": 98,
+   "cookie_id": 89,
+   "pet_id": 97,
    "effect_id": 432,
    "is_hidden": false
   },
   {
    "id": 104,
-   "cookie_id": 91,
-   "pet_id": 99,
+   "cookie_id": 90,
+   "pet_id": 98,
    "effect_id": 433,
    "is_hidden": false
   },
   {
    "id": 105,
+   "cookie_id": 91,
+   "pet_id": 99,
+   "effect_id": 434,
+   "is_hidden": false
+  },
+  {
+   "id": 106,
    "cookie_id": 93,
    "pet_id": 100,
    "effect_id": 348,
    "is_hidden": false
   },
   {
-   "id": 106,
+   "id": 107,
    "cookie_id": 94,
    "pet_id": 101,
    "effect_id": 348,
@@ -36477,7 +36501,7 @@
    "grade": 4,
    "base_treasure_id": null,
    "unlock_cookie_id": null,
-   "unlock_pet_id": null,
+   "unlock_pet_id": 94,
    "is_evolved": false,
    "is_power_plus": false,
    "family": "pet",
