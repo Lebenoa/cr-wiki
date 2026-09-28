@@ -78,6 +78,39 @@ pub fn lang_display(lang: &str) -> String {
         .unwrap_or_else(|| lang.to_string())
 }
 
+/// One locale's data as the language modal needs it: code, display name from
+/// `lang_map.tr`, and a small flag so the choice reads at a glance.
+pub struct LangOption {
+    pub code: String,
+    pub display: String,
+    pub flag: &'static str,
+}
+
+/// Per-locale flag art as an inline SVG snippet (rounded badge, sized by the
+/// template's utility classes). Currently en → UK, th → Thailand; a locale
+/// without an entry falls back to a neutral globe so a newly added language
+/// never renders without an icon.
+pub fn lang_flag(lang: &str) -> &'static str {
+    match lang {
+        "en" => r##"<svg viewBox="0 0 24 24" aria-hidden="true"><defs><clipPath id="flagclip-en"><circle cx="12" cy="12" r="12"/></clipPath></defs><g clip-path="url(#flagclip-en)"><rect width="24" height="24" fill="#012169"/><path d="M0 0 24 24M24 0 0 24" stroke="#fff" stroke-width="4.8"/><path d="M0 0 24 24M24 0 0 24" stroke="#C8102E" stroke-width="2.4"/><path d="M12 0v24M0 12h24" stroke="#fff" stroke-width="8"/><path d="M12 0v24M0 12h24" stroke="#C8102E" stroke-width="4.4"/></g></svg>"##,
+        "th" => r##"<svg viewBox="0 0 24 24" aria-hidden="true"><defs><clipPath id="flagclip-th"><circle cx="12" cy="12" r="12"/></clipPath></defs><g clip-path="url(#flagclip-th)"><rect width="24" height="24" fill="#A51931"/><rect y="4" width="24" height="16" fill="#F4F5F8"/><rect y="8" width="24" height="8" fill="#2D2A4A"/></g></svg>"##,
+        _ => r##"<svg viewBox="0 0 24 24" aria-hidden="true"><defs><clipPath id="flagclip-globe"><circle cx="12" cy="12" r="12"/></clipPath></defs><g clip-path="url(#flagclip-globe)" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.5 3.8 5.6 3.8 9s-1.3 6.5-3.8 9c-2.5-2.5-3.8-5.6-3.8-9S9.5 5.5 12 3Z"/></g></svg>"##,
+    }
+}
+
+/// Every available locale as a `LangOption`, sorted by code (the same order
+/// `available_langs` gives the dialog).
+pub fn lang_options() -> Vec<LangOption> {
+    available_langs()
+        .into_iter()
+        .map(|code| LangOption {
+            display: lang_display(&code),
+            flag: lang_flag(&code),
+            code,
+        })
+        .collect()
+}
+
 pub fn is_available(lang: &str) -> bool {
     catalog().contains_key(lang)
 }
@@ -149,6 +182,18 @@ mod tests {
         assert_eq!(lang_display("th"), "ไทย");
         // an unmapped locale renders as the code, never empty
         assert_eq!(lang_display("zz"), "zz");
+    }
+
+    #[test]
+    fn lang_options_carry_flag_and_display() {
+        load("translations");
+        let opts = lang_options();
+        let en = opts.iter().find(|o| o.code == "en").expect("en option");
+        assert_eq!(en.display, "English");
+        assert!(en.flag.contains("<svg"));
+        let th = opts.iter().find(|o| o.code == "th").expect("th option");
+        assert_eq!(th.display, "ไทย");
+        assert!(th.flag.contains("<svg"));
     }
 
     #[test]

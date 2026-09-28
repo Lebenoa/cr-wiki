@@ -8,6 +8,13 @@
         <input type="search" name="q" value="{{ q }}" class="filter-input"
             placeholder="{{ ctx.l.t("navbar_search_placeholder") }}" />
     </form>
+    {% if q.is_empty() %}
+    <p class="text-center text-foreground-muted my-12">{{ ctx.l.t("search_hint") }}</p>
+    {% else %}
+    <p class="text-center text-foreground-muted mb-2">
+        {{ ctx.l.t("search_results_for") }} <span class="text-primary">{{ q }}</span>
+    </p>
     {% include "search_results.html" %}
+    {% endif %}
 </section>
 {% endblock %}

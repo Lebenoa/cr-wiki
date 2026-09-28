@@ -174,6 +174,8 @@ pub struct Detail {
     /// treasures only: the evolved row links to its base, the base row to
     /// its evolution
     pub is_evolved: bool,
+    /// treasures only: the row describes the Power+ variant
+    pub is_power_plus: bool,
     pub abilities: String,
     pub description: String,
     pub power_plus: String,
@@ -188,6 +190,29 @@ pub struct Detail {
 impl grade::Graded for Detail {
     fn grade(&self) -> Option<i64> {
         self.grade
+    }
+}
+
+impl Detail {
+    /// The release date as the edit form's `<input type=date>` wants it:
+    /// YYYY-MM-DD, or empty when the row never got a date.
+    pub fn release_date_input(&self) -> String {
+        if self.release_date <= 0 {
+            return String::new();
+        }
+        let days = self.release_date.div_euclid(86400);
+        // inverse days-from-civil (Howard Hinnant's algorithm)
+        let z = days + 719468;
+        let era = if z >= 0 { z } else { z - 146096 } / 146097;
+        let doe = z - era * 146097;
+        let yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365;
+        let y = yoe + era * 400;
+        let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);
+        let mp = (5 * doy + 2) / 153;
+        let d = doy - (153 * mp + 2) / 5 + 1;
+        let m = if mp < 10 { mp + 3 } else { mp - 9 };
+        let y = if m <= 2 { y + 1 } else { y };
+        format!("{y:04}-{m:02}-{d:02}")
     }
 }
 
@@ -428,8 +453,343 @@ pub async fn select_episode_list(db: &Db, lang: &str) -> Result<Vec<EpisodeList>
         .collect())
 }
 
-/// One ingredient as the /ingredients grid lists it: the catalog row's facts
-/// plus the episode's short badge and the number of treasures it crafts.
+/// One stage pill on the episode detail page.
+#[derive(Debug, Clone, Default)]
+pub struct EpisodeStage {
+    pub stage_no: i64,
+    pub name: String,
+}
+
+/// One relic of the episode's completion set.
+#[derive(Debug, Clone, Default)]
+pub struct EpisodeRelicCard {
+    pub name: String,
+    pub image: Option<String>,
+}
+
+/// One quest row, grouped by its chain (`group`).
+#[derive(Debug, Clone, Default)]
+pub struct EpisodeQuest {
+    pub name: String,
+    pub reward: String,
+}
+
+/// A quest chain in source order, preserving the seed's group order.
+#[derive(Debug, Clone, Default)]
+pub struct EpisodeQuestGroup {
+    pub group: String,
+    pub quests: Vec<EpisodeQuest>,
+}
+
+/// One relic-draw reward with its disclosed odds.
+#[derive(Debug, Clone, Default)]
+pub struct DrawReward {
+    pub rank: i64,
+    pub reward: String,
+    pub odds: f64,
+}
+
+impl DrawReward {
+    /// The odds as the page prints them: no padding, so 7.69 reads "7.69%".
+    pub fn odds_label(&self) -> String {
+        odds_pct(self.odds)
+    }
+}
+
+/// One mystery-box grade row with the three disclosed box columns.
+#[derive(Debug, Clone, Default)]
+pub struct BoxGrade {
+    pub box_grade: String,
+    pub first: f64,
+    pub second: f64,
+    pub third: f64,
+}
+
+impl BoxGrade {
+    pub fn first_label(&self) -> String {
+        odds_pct(self.first)
+    }
+    pub fn second_label(&self) -> String {
+        odds_pct(self.second)
+    }
+    pub fn third_label(&self) -> String {
+        odds_pct(self.third)
+    }
+}
+
+/// Row projections for the episode detail child queries.
+#[derive(Debug, Default, SurrealValue)]
+#[surreal(default)]
+struct StageRow {
+    stage_no: i64,
+    name: String,
+}
+
+#[derive(Debug, Default, SurrealValue)]
+#[surreal(default)]
+struct RelicCardRow {
+    rid: i64,
+    name: String,
+    image: Option<String>,
+}
+
+#[derive(Debug, Default, SurrealValue)]
+#[surreal(default)]
+struct QuestRow {
+    grp: String,
+    name: String,
+    reward: String,
+}
+
+#[derive(Debug, Default, SurrealValue)]
+#[surreal(default)]
+struct DrawRow {
+    rank: i64,
+    reward: String,
+    odds: f64,
+}
+
+#[derive(Debug, Default, SurrealValue)]
+#[surreal(default)]
+struct BoxRow {
+    box_grade: String,
+    box_no: i64,
+    odds: f64,
+}
+
+#[derive(Debug, Default, SurrealValue)]
+#[surreal(default)]
+struct IngRow {
+    id: i64,
+    name: String,
+    image: Option<String>,
+    grade: Option<i64>,
+    coin_value: i64,
+}
+
+/// Odds as "4.4%" — the stored value with trailing zeros trimmed.
+fn odds_pct(v: f64) -> String {
+    let mut s = format!("{}", v);
+    if s.contains('.') {
+        s = s.trim_end_matches('0').trim_end_matches('.').to_string();
+    }
+    format!("{s}%")
+}
+
+/// One ingredient that drops in this episode.
+#[derive(Debug, Clone, Default)]
+pub struct EpisodeIngredient {
+    pub name: String,
+    pub image: Option<String>,
+    pub grade: Option<i64>,
+    pub coin_value: i64,
+}
+
+/// One episode's full detail page data: the row itself plus its six child
+/// sections (stages, relic set, quest chains, draw rewards, box odds,
+/// ingredient drops), as `templates/detail.html`'s episode branch renders
+/// them. Mirrors the old `select_episode` shape.
+#[derive(Debug, Clone, Default)]
+pub struct EpisodeDetail {
+    pub kind: String,
+    pub stars: i64,
+    pub league_ranked: bool,
+    pub entry_cost: String,
+    pub stages: Vec<EpisodeStage>,
+    pub relics: Vec<EpisodeRelicCard>,
+    pub quest_groups: Vec<EpisodeQuestGroup>,
+    pub quest_count: i64,
+    pub draw_rewards: Vec<DrawReward>,
+    pub box_grades: Vec<BoxGrade>,
+    pub ingredients: Vec<EpisodeIngredient>,
+}
+
+/// Everything the episode detail page shows besides name/description/image
+/// (which `select_detail` already carries). Child tables are read with one
+/// grouped query each; names resolve locale -> English.
+pub async fn episode_extras(db: &Db, lang: &str, id: i64) -> Result<EpisodeDetail> {
+    let mut out = EpisodeDetail::default();
+
+    let mut parents: Vec<EpisodeListRow> = db
+        .query(
+            "SELECT (kind ?? '') AS kind, (stars ?? 0) AS stars,
+                    (league_ranked ?? false) AS league_ranked, (entry_cost ?? '') AS entry_cost
+               FROM type::record('episode', $id)",
+        )
+        .bind(("id", id))
+        .await?
+        .take(0)?;
+    if let Some(p) = parents.pop() {
+        out.kind = p.kind;
+        out.stars = p.stars;
+        out.league_ranked = p.league_ranked;
+        out.entry_cost = p.entry_cost;
+    }
+
+    let mut stages: Vec<StageRow> = db
+        .query(
+            "SELECT stage_no, (name ?? '') AS name FROM episode_stage
+              WHERE episode_id = $id ORDER BY stage_no",
+        )
+        .bind(("id", id))
+        .await?
+        .take(0)?;
+    out.stages = stages
+        .drain(..)
+        .map(|s| EpisodeStage {
+            stage_no: s.stage_no,
+            name: s.name,
+        })
+        .collect();
+
+    // the completion relic set: the junction's plain-int relic_ids point at
+    // relic records whose record id IS that number (relic:500101), so the
+    // names resolve with one query over the id list
+    let relic_ids: Vec<i64> = db
+        .query("SELECT VALUE relic_id FROM episode_relic WHERE episode_id = $id ORDER BY relic_id")
+        .bind(("id", id))
+        .await?
+        .take(0)?;
+    if !relic_ids.is_empty() {
+        let mut relic_rows: Vec<RelicCardRow> = db
+            .query(
+                format!(
+                    "SELECT record::id(id) AS rid, image,
+                            {name} AS name
+                       FROM relic WHERE record::id(id) IN $ids",
+                    name = tr("name"),
+                )
+                .as_str(),
+            )
+            .bind(("lang", lang.to_string()))
+            .bind(("ids", relic_ids))
+            .await?
+            .take(0)?;
+        // junction order (relic_id ascending), not the query's return order
+        relic_rows.sort_by_key(|r| r.rid);
+        out.relics = relic_rows
+            .into_iter()
+            .map(|r| EpisodeRelicCard {
+                name: r.name,
+                image: r.image,
+            })
+            .collect();
+    }
+
+    // quest chains in source order, grouped by their `group` field
+    let mut quests: Vec<QuestRow> = db
+        .query(
+            "SELECT (group ?? '') AS grp, (name ?? '') AS name, (reward ?? '') AS reward
+               FROM quest WHERE episode_id = $id ORDER BY id",
+        )
+        .bind(("id", id))
+        .await?
+        .take(0)?;
+    out.quest_count = quests.len() as i64;
+    let mut order: Vec<String> = Vec::new();
+    let mut groups: std::collections::HashMap<String, Vec<EpisodeQuest>> =
+        std::collections::HashMap::new();
+    for q in quests.drain(..) {
+        if !groups.contains_key(&q.grp) {
+            order.push(q.grp.clone());
+        }
+        groups.entry(q.grp).or_default().push(EpisodeQuest {
+            name: q.name,
+            reward: q.reward,
+        });
+    }
+    out.quest_groups = order
+        .into_iter()
+        .map(|g| EpisodeQuestGroup {
+            quests: groups.remove(&g).unwrap_or_default(),
+            group: g,
+        })
+        .collect();
+
+    let mut draws: Vec<DrawRow> = db
+        .query(
+            "SELECT rank, (reward ?? '') AS reward, (odds ?? 0) AS odds
+               FROM episode_draw_reward WHERE episode_id = $id ORDER BY rank",
+        )
+        .bind(("id", id))
+        .await?
+        .take(0)?;
+    out.draw_rewards = draws
+        .drain(..)
+        .map(|d| DrawReward {
+            rank: d.rank,
+            reward: d.reward,
+            odds: d.odds,
+        })
+        .collect();
+
+    // one row per box grade with the three disclosed box columns; a grade
+    // missing a box keeps 0 for it, which prints as "0%"
+    let mut boxes: Vec<BoxRow> = db
+        .query(
+            "SELECT (box_grade ?? '') AS box_grade, box_no, (odds ?? 0) AS odds
+               FROM episode_box_odds WHERE episode_id = $id ORDER BY box_no",
+        )
+        .bind(("id", id))
+        .await?
+        .take(0)?;
+    let mut grade_order: Vec<String> = Vec::new();
+    let mut by_grade: std::collections::HashMap<String, BoxGrade> =
+        std::collections::HashMap::new();
+    for b in boxes.drain(..) {
+        if !by_grade.contains_key(&b.box_grade) {
+            grade_order.push(b.box_grade.clone());
+            by_grade.insert(
+                b.box_grade.clone(),
+                BoxGrade {
+                    box_grade: b.box_grade.clone(),
+                    first: 0.0,
+                    second: 0.0,
+                    third: 0.0,
+                },
+            );
+        }
+        let g = by_grade.get_mut(&b.box_grade).expect("just inserted");
+        match b.box_no {
+            1 => g.first = b.odds,
+            2 => g.second = b.odds,
+            _ => g.third = b.odds,
+        }
+    }
+    out.box_grades = grade_order
+        .into_iter()
+        .filter_map(|g| by_grade.remove(&g))
+        .collect();
+
+    // the ingredients that drop in this episode, id order like the old page
+    let mut ings: Vec<IngRow> = db
+        .query(
+            format!(
+                "SELECT record::id(id) AS id, image, (grade ?? NONE) AS grade,
+                        (coin_value ?? 0) AS coin_value,
+                        {name} AS name
+                   FROM ingredient WHERE drop_episode_id = $id ORDER BY id",
+                name = tr("name"),
+            )
+            .as_str(),
+        )
+        .bind(("lang", lang.to_string()))
+        .bind(("id", id))
+        .await?
+        .take(0)?;
+    ings.sort_by_key(|i| i.id);
+    out.ingredients = ings
+        .into_iter()
+        .map(|i| EpisodeIngredient {
+            name: i.name,
+            image: i.image,
+            grade: i.grade,
+            coin_value: i.coin_value,
+        })
+        .collect();
+
+    Ok(out)
+}
 #[derive(Debug, Clone, Default)]
 pub struct IngredientList {
     pub id: i64,
@@ -799,6 +1159,7 @@ struct DetailRow {
     image: Option<String>,
     grade: Option<i64>,
     is_evolved: Option<bool>,
+    is_power_plus: Option<bool>,
     abilities: String,
     description: String,
     power_plus: String,
@@ -830,7 +1191,7 @@ pub async fn select_detail(db: &Db, lang: &str, section: &str, id: i64) -> Resul
         ppr = tr("power_plus_requirement"),
         unlock_goal = tr("unlock_goal"),
         extra = if kind.graded {
-            ", grade, (is_evolved ?? false) AS is_evolved"
+            ", grade, (is_evolved ?? false) AS is_evolved, (is_power_plus ?? false) AS is_power_plus"
         } else {
             ""
         },
@@ -849,6 +1210,7 @@ pub async fn select_detail(db: &Db, lang: &str, section: &str, id: i64) -> Resul
         image: r.image,
         grade: if kind.graded { r.grade } else { None },
         is_evolved: r.is_evolved.unwrap_or(false),
+        is_power_plus: r.is_power_plus.unwrap_or(false),
         abilities: r.abilities,
         description: r.description,
         power_plus: r.power_plus,
@@ -860,6 +1222,99 @@ pub async fn select_detail(db: &Db, lang: &str, section: &str, id: i64) -> Resul
             0
         },
     }))
+}
+
+#[derive(Debug, Default, SurrealValue)]
+#[surreal(default)]
+struct MakerRow {
+    entity_kind: String,
+    entity_id: i64,
+}
+
+/// One entity that produces a jelly: kind plus resolved name/image, as the
+/// jelly detail's Makers grid links it.
+#[derive(Debug, Clone, Default)]
+pub struct JellyMaker {
+    /// "cookie" | "pet" | "treasure" — the sprite dir is kind + "s"
+    pub kind: String,
+    pub id: i64,
+    pub name: String,
+    pub image: Option<String>,
+}
+
+/// The entities that produce one jelly, in seed order. Names resolve
+/// locale -> English through each table's translation object.
+pub async fn jelly_makers(db: &Db, lang: &str, jelly_id: i64) -> Result<Vec<JellyMaker>> {
+    let mut rows: Vec<MakerRow> = db
+        .query(
+            "SELECT entity_kind, entity_id FROM jelly_maker
+              WHERE jelly_id = $id ORDER BY id",
+        )
+        .bind(("id", jelly_id))
+        .await?
+        .take(0)?;
+    if rows.is_empty() {
+        return Ok(Vec::new());
+    }
+    let mut out = Vec::with_capacity(rows.len());
+    for row in rows.drain(..) {
+        let kind = row.entity_kind;
+        let id = row.entity_id;
+        let section = match kind.as_str() {
+            "pet" => "pets",
+            "treasure" => "treasures",
+            _ => "cookies",
+        };
+        let Some((name, image)) = entity_link(db, lang, &kind, id).await else {
+            continue;
+        };
+        out.push(JellyMaker {
+            kind: section.to_string(),
+            id,
+            name,
+            image,
+        });
+    }
+    Ok(out)
+}
+
+/// A treasure row's evolution/unlock link ids, as the edit form preselects
+/// them. Zeros mean "no link" — the form renders those selects with a None
+/// option first.
+#[derive(Debug, Clone, Copy, Default)]
+pub struct TreasureEditLinks {
+    pub base_treasure_id: i64,
+    pub unlock_cookie_id: i64,
+    pub unlock_pet_id: i64,
+}
+
+/// Reads the three link ids for the treasure editor in one query.
+pub async fn treasure_edit_links(db: &Db, id: i64) -> Result<TreasureEditLinks> {
+    #[derive(Default, SurrealValue)]
+    #[surreal(default)]
+    struct Row {
+        base_treasure_id: i64,
+        unlock_cookie_id: i64,
+        unlock_pet_id: i64,
+    }
+    let mut rows: Vec<Row> = db
+        .query(
+            "SELECT (base_treasure_id ?? 0) AS base_treasure_id,
+                    (unlock_cookie_id ?? 0) AS unlock_cookie_id,
+                    (unlock_pet_id ?? 0) AS unlock_pet_id
+               FROM type::record('treasure', $id)",
+        )
+        .bind(("id", id))
+        .await?
+        .take(0)?;
+    Ok(rows
+        .pop()
+        .map(|r| TreasureEditLinks {
+            base_treasure_id: r.base_treasure_id,
+            unlock_cookie_id: r.unlock_cookie_id,
+            unlock_pet_id: r.unlock_pet_id,
+        })
+        .unwrap_or_default())
 }
 
 /// The editor's row loader: strictly the requested locale's translation, no
@@ -887,7 +1342,7 @@ pub async fn select_detail_strict(
                 (tr[$lang].unlock_goal ?? '') AS unlock_goal
            FROM type::record($tb, $id)",
         extra = if kind.graded {
-            ", grade, (is_evolved ?? false) AS is_evolved"
+            ", grade, (is_evolved ?? false) AS is_evolved, (is_power_plus ?? false) AS is_power_plus"
         } else {
             ""
         },
@@ -906,6 +1361,7 @@ pub async fn select_detail_strict(
         image: r.image,
         grade: if kind.graded { r.grade } else { None },
         is_evolved: r.is_evolved.unwrap_or(false),
+        is_power_plus: r.is_power_plus.unwrap_or(false),
         abilities: r.abilities,
         description: r.description,
         power_plus: r.power_plus,
@@ -1785,10 +2241,27 @@ pub async fn insert_entity(
         let g = form.grade.unwrap_or(1);
         sets.push(format!("rank = {}", grade::rank(g)));
         sets.push(format!("grade = {g}"));
-        sets.push(format!("release_date = {now}"));
+        let ts = parse_release_date(&form.release_date).unwrap_or(now);
+        sets.push(format!("release_date = {ts}"));
     }
     if section == Section::Treasures {
-        sets.push("is_evolved = false".to_string());
+        sets.push(format!(
+            "is_evolved = {}",
+            form.is_evolved.as_deref() == Some("true")
+        ));
+        sets.push(format!(
+            "is_power_plus = {}",
+            form.is_power_plus.as_deref() == Some("true")
+        ));
+        if let Some(b) = form.base_treasure_id.filter(|v| *v > 0) {
+            sets.push(format!("base_treasure_id = {b}"));
+        }
+        if let Some(c) = form.unlock_cookie_id.filter(|v| *v > 0) {
+            sets.push(format!("unlock_cookie_id = {c}"));
+        }
+        if let Some(p) = form.unlock_pet_id.filter(|v| *v > 0) {
+            sets.push(format!("unlock_pet_id = {p}"));
+        }
     }
     db.query(format!("CREATE {table}:{id} SET {}", sets.join(", ")).as_str())
         .bind(("image", image))
@@ -1817,6 +2290,31 @@ pub async fn update_entity(
         sets.push(format!("rank = {}", grade::rank(g)));
         sets.push(format!("grade = {g}"));
     }
+    // an empty date field means "no change"; the create path defaults to now
+    if let Some(ts) = parse_release_date(&form.release_date) {
+        sets.push(format!("release_date = {ts}"));
+    }
+    if section == Section::Treasures {
+        if let Some(v) = form.is_evolved.as_deref() {
+            sets.push(format!("is_evolved = {}", v == "true"));
+        }
+        if let Some(v) = form.is_power_plus.as_deref() {
+            sets.push(format!("is_power_plus = {}", v == "true"));
+        }
+        // 0 / absent clears the link, matching the "None" option the form
+        // renders for every select
+        let clear_or_set = |name: &str, v: Option<i64>, sets: &mut Vec<String>| {
+            let v = v.unwrap_or(0);
+            if v > 0 {
+                sets.push(format!("{name} = {v}"));
+            } else {
+                sets.push(format!("{name} = NONE"));
+            }
+        };
+        clear_or_set("base_treasure_id", form.base_treasure_id, &mut sets);
+        clear_or_set("unlock_cookie_id", form.unlock_cookie_id, &mut sets);
+        clear_or_set("unlock_pet_id", form.unlock_pet_id, &mut sets);
+    }
     if image.is_some() {
         sets.push("image = $image".to_string());
     }
@@ -1838,6 +2336,34 @@ fn clean_image(image: &str) -> Option<String> {
     } else {
         Some(trimmed.to_string())
     }
+}
+
+/// YYYY-MM-DD -> unix seconds, like the old `parse_release_date`. `None`
+/// when the field is empty (update keeps the stored value) or malformed.
+fn parse_release_date(raw: &str) -> Option<i64> {
+    let raw = raw.trim();
+    if raw.is_empty() {
+        return None;
+    }
+    // a date input always sends YYYY-MM-DD; reject anything else
+    let mut parts = raw.split('-');
+    let (y, m, d) = (parts.next()?, parts.next()?, parts.next()?);
+    if parts.next().is_some() || y.len() != 4 || m.len() != 2 || d.len() != 2 {
+        return None;
+    }
+    let (y, m, d) = (y.parse::<i64>().ok()?, m.parse::<i64>().ok()?, d.parse::<i64>().ok()?);
+    if !(1..=12).contains(&m) || !(1..=31).contains(&d) {
+        return None;
+    }
+    // days-from-civil (Howard Hinnant's algorithm), then to unix seconds
+    let y = if m <= 2 { y - 1 } else { y };
+    let era = if y >= 0 { y } else { y - 399 } / 400;
+    let yoe = y - era * 400;
+    let mp = (m + 9) % 12;
+    let doy = (153 * mp + 2) / 5 + d - 1;
+    let doe = yoe * 365 + yoe / 4 - yoe / 100 + doy;
+    let days = era * 146097 + doe - 719468;
+    Some(days * 86400)
 }
 
 /// Upserts the translation for one language INSIDE the nested tr object, so

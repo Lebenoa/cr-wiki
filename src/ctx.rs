@@ -118,11 +118,25 @@ impl Ctx {
         i18n::available_langs()
     }
 
+    /// Each locale with its `lang_map.tr` display name and flag, as the
+    /// language modal renders them.
+    #[allow(clippy::unused_self)]
+    pub fn lang_options(&self) -> Vec<i18n::LangOption> {
+        i18n::lang_options()
+    }
+
     /// The locale's `lang_map.tr` display name; a method so templates can
     /// render options as "English"/"ไทย" instead of bare codes.
     #[allow(clippy::unused_self)]
     pub fn lang_display(&self, lang: &str) -> String {
         i18n::lang_display(lang)
+    }
+
+    /// The locale's flag SVG, as the navbar's Language button and the modal
+    /// render it.
+    #[allow(clippy::unused_self)]
+    pub fn lang_flag(&self, lang: &str) -> &'static str {
+        i18n::lang_flag(lang)
     }
 
     /// The sections behind the Wiki dropdown, in navbar order.

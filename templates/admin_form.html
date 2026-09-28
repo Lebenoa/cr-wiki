@@ -38,6 +38,67 @@
                 <input type="file" accept="image/*" data-upload="/{{ section }}/upload" class="text-xs" />
             </div>
         </div>
+        {% if self.graded() %}
+        <div class="flex flex-col gap-2">
+            <label class="font-label text-secondary uppercase">{{ ctx.l.t("grade") }}</label>
+            <div class="flex flex-wrap gap-3">
+                {% for g in self.grade_values() %}
+                <label class="cursor-pointer transition-all hover:scale-105" title="{{ self.grade_name(&g) }}">
+                    <input class="peer sr-only" type="radio" name="grade" value="{{ g }}"
+                        {% if let Some(gv) = it.grade %}{% if gv as i64 == g %}checked{% endif %}{% endif %} />
+                    <img src="/static/img/grades/{{ self.grade_slug(g) }}.png" alt="{{ self.grade_name(g) }}"
+                        class="size-14 rounded-xl border-2 border-transparent bg-surface peer-checked:border-primary peer-checked:ring-2 peer-checked:ring-primary transition-all" />
+                </label>
+                {% endfor %}
+            </div>
+        </div>
+        <label class="flex flex-col gap-1 font-label text-secondary uppercase">
+            {{ ctx.l.t("release_date") }}
+            <input type="date" name="release_date" value="{{ it.release_date_input() }}" class="filter-input" />
+        </label>
+        {% endif %}
+        {% if self.is_treasure() %}
+        <label class="flex items-center gap-2 cursor-pointer min-h-6">
+            <input type="checkbox" name="is_evolved" value="true" class="size-5"
+                {% if it.is_evolved %}checked{% endif %} />
+            <span class="font-label text-secondary uppercase">{{ ctx.l.t("evolved") }}</span>
+        </label>
+        <label class="flex items-center gap-2 cursor-pointer min-h-6">
+            <input type="checkbox" name="is_power_plus" value="true" class="size-5"
+                {% if it.is_power_plus %}checked{% endif %} />
+            <span class="font-label text-secondary uppercase">{{ ctx.l.t("is_power_plus") }}</span>
+        </label>
+        <label class="flex flex-col gap-1 font-label text-secondary uppercase">
+            {{ ctx.l.t("base") }}
+            <select name="base_treasure_id" class="filter-input">
+                <option value="">{{ ctx.l.t("none_option") }}</option>
+                {% for o in treasure_opts %}
+                <option value="{{ o.id }}" {% if o.id == self.base_treasure_id() %}selected{% endif %}>{{ o.name }}</option>
+                {% endfor %}
+            </select>
+            <span class="text-xs font-body normal-case text-foreground-muted">{{ ctx.l.t("base_treasure_hint") }}</span>
+        </label>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <label class="flex flex-col gap-1 font-label text-secondary uppercase">
+                {{ ctx.l.t("unlock_cookie_label") }}
+                <select name="unlock_cookie_id" class="filter-input">
+                    <option value="">{{ ctx.l.t("none_option") }}</option>
+                    {% for o in cookie_opts %}
+                    <option value="{{ o.id }}" {% if o.id == self.unlock_cookie_id() %}selected{% endif %}>{{ o.name }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+            <label class="flex flex-col gap-1 font-label text-secondary uppercase">
+                {{ ctx.l.t("unlock_pet_label") }}
+                <select name="unlock_pet_id" class="filter-input">
+                    <option value="">{{ ctx.l.t("none_option") }}</option>
+                    {% for o in pet_opts %}
+                    <option value="{{ o.id }}" {% if o.id == self.unlock_pet_id() %}selected{% endif %}>{{ o.name }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+        </div>
+        {% endif %}
         <textarea name="abilities" rows="2" class="filter-input w-full">{{ it.abilities }}</textarea>
         <div class="flex flex-col gap-1">
             <textarea name="description" rows="4" class="filter-input w-full" data-richtext>{{ it.description }}</textarea>
@@ -90,6 +151,64 @@
                 <input type="file" accept="image/*" data-upload="/{{ section }}/upload" class="text-xs" />
             </div>
         </div>
+        {% if self.graded() %}
+        <div class="flex flex-col gap-2">
+            <label class="font-label text-secondary uppercase">{{ ctx.l.t("grade") }}</label>
+            <div class="flex flex-wrap gap-3">
+                {% for g in self.grade_values() %}
+                <label class="cursor-pointer transition-all hover:scale-105" title="{{ self.grade_name(g) }}">
+                    <input class="peer sr-only" type="radio" name="grade" value="{{ g }}" required />
+                    <img src="/static/img/grades/{{ self.grade_slug(g) }}.png" alt="{{ self.grade_name(g) }}"
+                        class="size-14 rounded-xl border-2 border-transparent bg-surface peer-checked:border-primary peer-checked:ring-2 peer-checked:ring-primary transition-all" />
+                </label>
+                {% endfor %}
+            </div>
+        </div>
+        <label class="flex flex-col gap-1 font-label text-secondary uppercase">
+            {{ ctx.l.t("release_date") }}
+            <input type="date" name="release_date" class="filter-input" />
+        </label>
+        {% endif %}
+        {% if self.is_treasure() %}
+        <label class="flex items-center gap-2 cursor-pointer min-h-6">
+            <input type="checkbox" name="is_evolved" value="true" class="size-5" />
+            <span class="font-label text-secondary uppercase">{{ ctx.l.t("evolved") }}</span>
+        </label>
+        <label class="flex items-center gap-2 cursor-pointer min-h-6">
+            <input type="checkbox" name="is_power_plus" value="true" class="size-5" />
+            <span class="font-label text-secondary uppercase">{{ ctx.l.t("is_power_plus") }}</span>
+        </label>
+        <label class="flex flex-col gap-1 font-label text-secondary uppercase">
+            {{ ctx.l.t("base") }}
+            <select name="base_treasure_id" class="filter-input">
+                <option value="">{{ ctx.l.t("none_option") }}</option>
+                {% for o in treasure_opts %}
+                <option value="{{ o.id }}" {% if o.id == self.base_treasure_id() %}selected{% endif %}>{{ o.name }}</option>
+                {% endfor %}
+            </select>
+            <span class="text-xs font-body normal-case text-foreground-muted">{{ ctx.l.t("base_treasure_hint") }}</span>
+        </label>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <label class="flex flex-col gap-1 font-label text-secondary uppercase">
+                {{ ctx.l.t("unlock_cookie_label") }}
+                <select name="unlock_cookie_id" class="filter-input">
+                    <option value="">{{ ctx.l.t("none_option") }}</option>
+                    {% for o in cookie_opts %}
+                    <option value="{{ o.id }}" {% if o.id == self.unlock_cookie_id() %}selected{% endif %}>{{ o.name }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+            <label class="flex flex-col gap-1 font-label text-secondary uppercase">
+                {{ ctx.l.t("unlock_pet_label") }}
+                <select name="unlock_pet_id" class="filter-input">
+                    <option value="">{{ ctx.l.t("none_option") }}</option>
+                    {% for o in pet_opts %}
+                    <option value="{{ o.id }}" {% if o.id == self.unlock_pet_id() %}selected{% endif %}>{{ o.name }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+        </div>
+        {% endif %}
         <textarea name="abilities" rows="2" class="filter-input w-full"></textarea>
         <div class="flex flex-col gap-1">
             <textarea name="description" rows="4" class="filter-input w-full" data-richtext></textarea>

@@ -88,8 +88,10 @@
             </div>
             {% endif %}
 
-            <button class="btn hover:bg-secondary/20" popovertarget="language-dropdown">
+            <button type="button" data-lang-open class="btn hover:bg-secondary/20">
                 {{ ctx.l.t("language") }}:
+                <span class="inline-block size-5 rounded-full overflow-hidden shrink-0 ml-2"
+                    aria-hidden="true">{{ ctx.lang_flag(ctx.lang)|safe }}</span>
                 <span class="font-bold uppercase ml-2">{{ ctx.lang }}</span>
             </button>
 
@@ -126,11 +128,19 @@
         </div>
 
         <dialog id="language-dropdown"
-            class="hidden open:flex flex-col gap-3 m-auto p-6 rounded-xl border border-accent/30 bg-surface text-foreground shadow-2xl backdrop:bg-black backdrop:opacity-40">
-            <h2 class="font-headline text-accent text-xl">{{ ctx.l.t("language") }}</h2>
-            {% for alt in ctx.langs() %}
-            <a href="{{ ctx.lang_url(alt) }}" class="btn-secondary uppercase">{{ alt }}</a>
-            {% endfor %}
+            class="hidden open:flex flex-col gap-4 m-auto p-6 rounded-xl border border-accent/30 bg-surface text-foreground shadow-2xl backdrop:bg-black backdrop:opacity-40">
+            <h2 class="font-bold text-center text-xl">{{ ctx.l.t("choose_language") }}</h2>
+            <div class="flex items-center gap-2 w-full justify-center flex-row flex-wrap">
+                {% for opt in ctx.lang_options() %}
+                <a hreflang="{{ opt.code }}" href="{{ ctx.lang_url(opt.code) }}"
+                    class="flex items-center gap-2 px-4 py-2 rounded {% if opt.code == ctx.lang %}bg-primary{% else %}bg-secondary/30 hover:bg-secondary/50{% endif %} text-foreground transition-colors"
+                    {% if opt.code == ctx.lang %}aria-current="true"{% endif %}>
+                    <span class="inline-block size-5 rounded-full overflow-hidden shrink-0"
+                        aria-hidden="true">{{ opt.flag|safe }}</span>
+                    {{ opt.display }}
+                </a>
+                {% endfor %}
+            </div>
             <button type="button" onclick="this.closest('dialog').close()" class="btn-primary">
                 {{ ctx.l.t("theme_done") }}
             </button>
@@ -176,6 +186,19 @@
         </dialog>
     </div>
     <script>
+        (function () {
+            // the old app opened this dialog through command=show-modal; the
+            // ported markup had popovertarget, which only targets popover
+            // elements and never fired on a <dialog>. Open it here, and hide
+            // the account popover first so the two never stack.
+            const account = document.getElementById('account-dropdown');
+            document.querySelectorAll('[data-lang-open]').forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    account?.hidePopover();
+                    document.getElementById('language-dropdown')?.showModal();
+                });
+            });
+        })();
         (function () {
             const btn = document.getElementById('search-toggle');
             const box = document.getElementById('search-box');

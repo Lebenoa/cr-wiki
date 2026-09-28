@@ -23,6 +23,8 @@ pub struct Prefill {
     pub coin: i64,
     pub time_ms: i64,
     pub description: String,
+    /// the stored video link, prefilled on edit; empty on create
+    pub youtube_url: String,
 }
 
 #[derive(Debug, Default, Clone)]
@@ -111,6 +113,7 @@ impl Prefill {
             coin: b.coin,
             time_ms: b.time_ms,
             description: b.description.clone(),
+            youtube_url: b.youtube_url.clone(),
         }
     }
 

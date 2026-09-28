@@ -35,6 +35,32 @@ struct AdminForm {
     /// the description rendered for the editing locale, the initial content
     /// of the preview box
     preview_html: String,
+    /// id+name options for the treasure form's link selects
+    cookie_opts: Vec<IdName>,
+    pet_opts: Vec<IdName>,
+    treasure_opts: Vec<IdName>,
+    /// the edited treasure's stored link ids (zeros when none / not a
+    /// treasure) so the selects preselect them
+    links: db::TreasureEditLinks,
+}
+
+impl AdminForm {
+    /// The stored base-treasure id, for the select's `selected` mark.
+    pub fn base_treasure_id(&self) -> i64 {
+        self.links.base_treasure_id
+    }
+    pub fn unlock_cookie_id(&self) -> i64 {
+        self.links.unlock_cookie_id
+    }
+    pub fn unlock_pet_id(&self) -> i64 {
+        self.links.unlock_pet_id
+    }
+}
+
+/// One option row for the treasure form's link selects.
+pub struct IdName {
+    pub id: i64,
+    pub name: String,
 }
 
 #[derive(Debug, Default, Deserialize)]
@@ -53,6 +79,20 @@ pub struct EntityForm {
     #[serde(default)]
     pub image: String,
     pub grade: Option<i64>,
+    /// YYYY-MM-DD as the date input sends it; empty means "keep/now"
+    #[serde(default)]
+    pub release_date: String,
+    /// treasures only
+    #[serde(default)]
+    pub is_evolved: Option<String>,
+    #[serde(default)]
+    pub is_power_plus: Option<String>,
+    #[serde(default)]
+    pub base_treasure_id: Option<i64>,
+    #[serde(default)]
+    pub unlock_cookie_id: Option<i64>,
+    #[serde(default)]
+    pub unlock_pet_id: Option<i64>,
     /// which locale's translation this submission writes; empty falls back
     /// to the viewer's language
     #[serde(default)]
@@ -65,6 +105,36 @@ impl AdminForm {
     /// context struct.
     fn singular(&self) -> &'static str {
         Section::parse(&self.section).map_or("cookie", Section::singular)
+    }
+
+    /// True when the section's rows carry a wiki grade, so the form renders
+    /// the grade strip and date input.
+    fn graded(&self) -> bool {
+        Section::parse(&self.section).is_some_and(|s| s.graded())
+    }
+
+    /// True when this is the treasure form, with its evolution/link fields.
+    fn is_treasure(&self) -> bool {
+        self.section == "treasures"
+    }
+
+    /// The grade ordinals the radio strip offers, lowest to highest with the
+    /// Extra grade last, exactly the old form's order.
+    #[allow(clippy::unused_self)]
+    fn grade_values(&self) -> Vec<i64> {
+        vec![1, 2, 3, 4, 5, 6, 0]
+    }
+
+    /// A grade ordinal's display label ("S+" for s_plus).
+    #[allow(clippy::unused_self)]
+    fn grade_name(&self, g: &i64) -> String {
+        crate::grade::label(*g)
+    }
+
+    /// A grade ordinal's image slug for the radio strip.
+    #[allow(clippy::unused_self)]
+    fn grade_slug(&self, g: &i64) -> String {
+        crate::grade::slug(*g).to_string()
     }
 
     fn title_key(&self) -> String {
@@ -101,7 +171,7 @@ fn form_lang(form: &EntityForm, ctx: &Ctx) -> String {
         .unwrap_or_else(|| ctx.lang.clone())
 }
 
-fn page(ctx: Ctx, section: Section, item: Option<Detail>, error: &str) -> Response {
+async fn page(ctx: Ctx, section: Section, item: Option<Detail>, error: &str) -> Response {
     page_with(
         ctx.clone(),
         section,
@@ -111,10 +181,33 @@ fn page(ctx: Ctx, section: Section, item: Option<Detail>, error: &str) -> Respon
         ctx.lang.clone(),
         String::new(),
     )
+    .await
+}
+
+/// The link-select option lists the treasure form needs. Cached like the
+/// picker lists, so an edit page costs no extra queries.
+async fn link_opts(db: &crate::db::Db, lang: &str) -> (Vec<IdName>, Vec<IdName>, Vec<IdName>) {
+    async fn simple(db: &crate::db::Db, lang: &str, kind: &str) -> Vec<IdName> {
+        let list = crate::options::options(db, lang, kind).await.unwrap_or_default();
+        list.iter()
+            .map(|o| IdName {
+                id: o.id,
+                name: if o.name.is_empty() {
+                    o.en_name.clone()
+                } else {
+                    o.name.clone()
+                },
+            })
+            .collect()
+    }
+    let c = simple(db, lang, "cookie").await;
+    let p = simple(db, lang, "pet").await;
+    let t = simple(db, lang, "treasure").await;
+    (c, p, t)
 }
 
 #[allow(clippy::too_many_arguments)]
-fn page_with(
+async fn page_with(
     ctx: Ctx,
     section: Section,
     item: Option<Detail>,
@@ -123,6 +216,17 @@ fn page_with(
     edit_lang: String,
     preview_html: String,
 ) -> Response {
+    let state = crate::state::state();
+    let (cookie_opts, pet_opts, treasure_opts, links) = if section == Section::Treasures {
+        let (c, p, t) = link_opts(&state.db, &edit_lang).await;
+        let links = match item.as_ref() {
+            Some(i) => db::treasure_edit_links(&state.db, i.id).await.unwrap_or_default(),
+            None => db::TreasureEditLinks::default(),
+        };
+        (c, p, t, links)
+    } else {
+        (Vec::new(), Vec::new(), Vec::new(), db::TreasureEditLinks::default())
+    };
     Html(
         AdminForm {
             ctx,
@@ -132,6 +236,10 @@ fn page_with(
             edit_lang,
             preview_html,
             error: error.to_string(),
+            cookie_opts,
+            pet_opts,
+            treasure_opts,
+            links,
         }
         .render()
         .unwrap_or_else(|e| format!("template error: {e}")),
@@ -146,7 +254,7 @@ pub async fn new_form(ctx: Ctx, Path(section): Path<String>) -> Response {
     if !ctx.is_admin() {
         return super::errors::not_found(ctx);
     }
-    page(ctx, section, None, "")
+    page(ctx, section, None, "").await
 }
 
 pub async fn edit_form(
@@ -190,7 +298,7 @@ pub async fn edit_form_lang(
     let preview_html =
         crate::richtext::render_with(&state.db, &edit_lang, &item.description, &mut memo).await;
     let combi = db::combi_edit_rows(&state.db, &ctx.lang, section.as_str(), id).await?;
-    Ok(page_with(ctx, section, Some(item), combi, "", edit_lang, preview_html))
+    Ok(page_with(ctx, section, Some(item), combi, "", edit_lang, preview_html).await)
 }
 
 pub async fn create(
@@ -206,20 +314,14 @@ pub async fn create(
         return Ok(super::errors::not_found(ctx));
     }
     if form.name.trim().is_empty() {
-        return Ok((
-            StatusCode::BAD_REQUEST,
-            page(ctx, section, None, "admin_error_name"),
-        )
-            .into_response());
+        let body = page(ctx, section, None, "admin_error_name").await;
+        return Ok((StatusCode::BAD_REQUEST, body).into_response());
     }
     let created = db::insert_entity(&state.db, &form_lang(&form, &ctx), section, &form).await?;
 
     if created <= 0 {
-        return Ok((
-            StatusCode::INTERNAL_SERVER_ERROR,
-            page(ctx, section, None, "admin_error_save"),
-        )
-            .into_response());
+        let body = page(ctx, section, None, "admin_error_save").await;
+        return Ok((StatusCode::INTERNAL_SERVER_ERROR, body).into_response());
     }
     Ok(Redirect::to(&format!("/{}/{created}", section.as_str())).into_response())
 }
@@ -237,20 +339,14 @@ pub async fn update(
         return Ok(super::errors::not_found(ctx));
     }
     if form.name.trim().is_empty() {
-        return Ok((
-            StatusCode::BAD_REQUEST,
-            page(ctx, section, None, "admin_error_name"),
-        )
-            .into_response());
+        let body = page(ctx, section, None, "admin_error_name").await;
+        return Ok((StatusCode::BAD_REQUEST, body).into_response());
     }
     let ok = db::update_entity(&state.db, &form_lang(&form, &ctx), section, id, &form).await?;
 
     if !ok {
-        return Ok((
-            StatusCode::INTERNAL_SERVER_ERROR,
-            page(ctx, section, None, "admin_error_save"),
-        )
-            .into_response());
+        let body = page(ctx, section, None, "admin_error_save").await;
+        return Ok((StatusCode::INTERNAL_SERVER_ERROR, body).into_response());
     }
     Ok(Redirect::to(&format!("/{}/{}", section.as_str(), id)).into_response())
 }

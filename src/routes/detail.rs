@@ -43,6 +43,10 @@ struct DetailPage {
     /// the linked variant: the base for an evolved row, the evolved form for
     /// a normal one
     variant: Option<(i64, String, Option<String>)>,
+    /// an episode's child sections; empty for every other kind
+    episode: db::EpisodeDetail,
+    /// a jelly's producers; empty for every other kind
+    makers: Vec<db::JellyMaker>,
 }
 
 impl DetailPage {
@@ -124,6 +128,16 @@ pub async fn show(
         richtext::render_with(&state.db, &ctx.lang, &item.unlock_goal, &mut memo).await;
 
     let blessed_differs = db::blessed_differs(&effects);
+    let episode = if sec == Section::Episodes {
+        db::episode_extras(&state.db, &ctx.lang, id).await?
+    } else {
+        db::EpisodeDetail::default()
+    };
+    let makers = if sec == Section::Jellies {
+        db::jelly_makers(&state.db, &ctx.lang, id).await?
+    } else {
+        Vec::new()
+    };
     let page = DetailPage {
         ctx,
         section,
@@ -142,6 +156,8 @@ pub async fn show(
         recipes,
         craft,
         variant,
+        episode,
+        makers,
     };
     Ok(Html(
         page.render()
