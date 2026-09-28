@@ -60,6 +60,7 @@ pub async fn connect_url(
     }
     db.use_ns(ns).use_db(database).await?;
     ensure_search_schema(&db).await?;
+    seed_auto_increment(&db).await?;
     Ok(db)
 }
 
@@ -105,15 +106,42 @@ async fn ensure_search_schema(db: &Db) -> Result<()> {
     }
     Ok(())
 }
-/// The largest numeric id in a table, 0 when empty. New records take max+1;
-/// writes are admin-only and rare, so the unguarded read-modify-write is fine.
-async fn next_id(db: &Db, table: &str) -> Result<i64> {
+/// The next id for `table` from the `auto_increment` counter, one atomic
+/// statement per allocation. The old scheme read the table's max id and
+/// added 1, which is a full scan per write and races two concurrent writes
+/// onto one id. Counters are instead seeded at startup (see
+/// `seed_auto_increment`) and bumped transactionally here.
+pub async fn next_id(db: &Db, table: &str) -> Result<i64> {
     let mut res = db
-        .query("LET $ids = (SELECT VALUE record::id(id) FROM type::table($tb)); RETURN array::max($ids) ?? 0;")
+        .query("UPSERT type::record('auto_increment', $tb) SET value = (value ?? 0) + 1 RETURN VALUE value;")
         .bind(("tb", table.to_string()))
         .await?;
-    let max = res.take::<Option<i64>>(1)?;
-    Ok(max.unwrap_or(0))
+    let value = res.take::<Option<i64>>(0)?;
+    value.ok_or_else(|| surrealdb::Error::internal(format!("auto_increment for {table} returned no value")))
+}
+
+/// Lifts every `auto_increment` counter to its table's current max id at
+/// startup, so a database seeded directly from `seed.surql` (which carries
+/// no counters) starts allocating past its rows. The floor can only raise a
+/// counter, never lower it: `math::max([(value ?? 0), $max])`, so re-running
+/// the seeding on every boot is idempotent and a fresh seed import heals on
+/// the next startup without a migration step. One statement per table, two
+/// scans each — startup-only, off the request path.
+async fn seed_auto_increment(db: &Db) -> Result<()> {
+    let tables: Vec<String> = Section::ALL
+        .iter()
+        .filter(|s| s.editable())
+        .map(|s| s.table().to_string())
+        .chain(["user".to_string(), "build".to_string()])
+        .collect();
+    let mut query = String::from("DEFINE TABLE IF NOT EXISTS auto_increment SCHEMALESS PERMISSIONS FULL;\n");
+    for (i, tb) in tables.iter().enumerate() {
+        query.push_str(&format!(
+            "LET $m{i} = (SELECT VALUE record::id(id) FROM type::table('{tb}')); UPSERT type::record('auto_increment', '{tb}') SET value = math::max([(value ?? 0), (array::max($m{i}) ?? 0)]);\n"
+        ));
+    }
+    db.query(query).await?.check()?;
+    Ok(())
 }
 
 /// One catalog card: what the grid needs, with the English name alongside so
@@ -1946,7 +1974,7 @@ pub async fn find_user(db: &Db, username: &str) -> Result<Option<User>> {
 /// Creates a user with an already-hashed password. `None` when the username
 /// is taken, which the unique index enforces rather than a prior SELECT.
 pub async fn create_user(db: &Db, username: &str, password_hash: &str) -> Result<Option<User>> {
-    let id = next_id(db, "user").await?.saturating_add(1);
+    let id = next_id(db, "user").await?;
     let res = db
         .query("CREATE type::record(\"user\", $id) SET username = $u, password = $p, is_admin = false, created_at = time::unix();")
         .bind(("id", id))
@@ -2230,7 +2258,7 @@ pub async fn insert_entity(
     let Some(table) = entity_table(section) else {
         return Ok(0);
     };
-    let id = next_id(db, table).await?.saturating_add(1);
+    let id = next_id(db, table).await?;
     let now = now_unix();
     let image = clean_image(&form.image);
 

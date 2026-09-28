@@ -392,13 +392,10 @@ pub struct NewBuild {
     pub expires_at: Option<i64>,
 }
 
-/// Builds take max+1 like everything else.
+/// Builds allocate from the shared `auto_increment` counter like every other
+/// table.
 async fn next_build_id(db: &Db) -> crate::db::Result<i64> {
-    let mut res = db
-        .query("LET $ids = (SELECT VALUE record::id(id) FROM build); RETURN array::max($ids) ?? 0;")
-        .await?;
-    let max = res.take::<Option<i64>>(1)?;
-    Ok(max.unwrap_or(0).saturating_add(1))
+    crate::db::next_id(db, "build").await
 }
 
 fn build_sets(b: &NewBuild) -> String {
