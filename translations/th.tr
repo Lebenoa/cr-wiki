@@ -1072,6 +1072,12 @@ back_to_list
 logout
 ออกจากระบบ
 -----
+revoke_all_sessions
+ยกเลิกการเข้าสู่ระบบทุกเครื่อง
+-----
+revoke_sessions_hint
+ออกจากระบบทุกอุปกรณ์ รวมถึงเครื่องนี้
+-----
 build_error_video_link
 ลิงก์วิดีโอต้องเป็น URL แบบ http(s) ไม่เกิน 200 อักขระ
 -----

@@ -9,8 +9,6 @@ use crate::ctx::Ctx;
 
 use super::{errors::AppError, CommonQuery};
 
-pub const PAGE_SIZE: i64 = 30;
-
 #[derive(Template)]
 #[template(path = "builds.html")]
 struct BuildsPage {
@@ -71,8 +69,8 @@ pub async fn list(
 ) -> Result<Html<String>, AppError> {
     let state = crate::state::state();
     let lang = ctx.lang.clone();
-    let page = q.page.unwrap_or(1).max(1);
-    let offset = page.saturating_sub(1).saturating_mul(PAGE_SIZE);
+    let page = q.page.unwrap_or(1).clamp(1, 10_000);
+    let offset = page.saturating_sub(1).saturating_mul(crate::section::PAGE_SIZE);
     let sort = match q.sort.as_deref() {
         Some(s @ ("score" | "coin" | "time" | "verified")) => s.to_string(),
         _ => "latest".to_string(),
@@ -92,12 +90,12 @@ pub async fn list(
         (filter_cookie, filter_pet, filter_treasure, ep, ep_special),
         &sort,
         &author,
-        PAGE_SIZE,
+        crate::section::PAGE_SIZE,
         offset,
     )
     .await?;
 
-    let next_page = if i64::try_from(rows.len()).unwrap_or(0) == PAGE_SIZE {
+    let next_page = if i64::try_from(rows.len()).unwrap_or(0) == crate::section::PAGE_SIZE {
         page.saturating_add(1)
     } else {
         0

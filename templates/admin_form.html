@@ -253,7 +253,7 @@
             {% if row.is_hidden %}
             <span class="pill-primary">{{ ctx.l.t("combi_hidden_badge") }}</span>
             {% endif %}
-            <form method="post" action="/combi/{{ row.id }}/delete" class="ml-auto">
+            <form method="post" action="/{{ section }}/{% match item %}{% when Some with (x) %}{{ x.id }}{% when None %}0{% endmatch %}/combi/{{ row.id }}/delete" class="ml-auto">
                 <button type="submit" class="btn-secondary text-xs">{{ ctx.l.t("combi_remove_button") }}</button>
             </form>
         </li>

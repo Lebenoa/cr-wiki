@@ -41,6 +41,12 @@
       trimmed.split('/').map(encodeURIComponent).join('/') : null);
   }
 
+  // One upload in flight at a time; each selection gets a token and only
+  // the response of the LATEST selection may touch the form. A slower
+  // earlier upload completing after a newer selection is discarded —
+  // otherwise the stale filename/thumbnail overwrites the newer choice.
+  var uploadToken = 0;
+
   document.addEventListener('change', async function (e) {
     var input = e.target;
     if (!input || !input.dataset || !input.dataset.upload) {
@@ -53,10 +59,14 @@
     }
     if (!input.files || !input.files[0]) return;
     var field = input.closest('div').querySelector('input[name="image"]');
+    var token = ++uploadToken;
 
     // instant local preview while the upload runs
     var reader = new FileReader();
-    reader.onload = function (ev) { showPreview(ev.target.result); };
+    reader.onload = function (ev) {
+      if (token !== uploadToken) return;
+      showPreview(ev.target.result);
+    };
     reader.readAsDataURL(input.files[0]);
 
     var body = new FormData();
@@ -64,6 +74,8 @@
     try {
       var res = await fetch(input.dataset.upload, { method: 'POST', body: body });
       var data = await res.json();
+      // a newer selection superseded this upload: discard, touch nothing
+      if (token !== uploadToken) return;
       if (!res.ok || !data.image) {
         // leave the typed name alone: a failed upload must not clear it
         console.warn('upload failed', data.error || res.status);

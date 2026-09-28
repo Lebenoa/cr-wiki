@@ -54,6 +54,16 @@ pub async fn image(ctx: Ctx, Path(section): Path<String>, mut form: Multipart) -
             )
                 .into_response();
         }
+        // the declared Content-Type is client input: verify the bytes are
+        // actually the image format they claim before storing them
+        let sniffed = upload::sniff_image(&bytes);
+        if sniffed != Some(ext) {
+            return (
+                StatusCode::UNSUPPORTED_MEDIA_TYPE,
+                Json(json!({ "error": "file content does not match its type" })),
+            )
+                .into_response();
+        }
 
         if let Err(e) = std::fs::create_dir_all(&dir) {
             tracing::warn!("upload: cannot create {}: {e}", dir.display());

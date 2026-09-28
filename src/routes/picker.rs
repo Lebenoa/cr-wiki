@@ -17,8 +17,6 @@ use crate::pagination::slice_page;
 
 use super::{errors::AppError, CommonQuery};
 
-pub const PAGE_SIZE: i64 = 30;
-
 #[derive(Template)]
 #[template(path = "picker_options.html")]
 struct PickerGrid {
@@ -183,7 +181,7 @@ pub async fn options_grid(
         Some(t @ ("normal" | "evo")) => t.to_string(),
         _ => "all".to_string(),
     };
-    let page = q.page.unwrap_or(1).max(1);
+    let page = q.page.unwrap_or(1).clamp(1, 10_000);
     let sel = q.sel.unwrap_or(0);
     let partner = q.partner.unwrap_or(0);
 
@@ -221,7 +219,7 @@ pub async fn options_grid(
     }
 
     let total = matched.len();
-    let (options_page, next) = match slice_page(page, PAGE_SIZE, total) {
+    let (options_page, next) = match slice_page(page, crate::section::PAGE_SIZE, total) {
         Some((start, end)) => {
             let next = if end < total {
                 next_url(

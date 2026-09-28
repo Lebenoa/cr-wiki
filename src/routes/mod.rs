@@ -54,10 +54,11 @@ pub fn router() -> Router {
         .route("/login", get(auth::login_form).post(auth::login))
         .route("/register", get(auth::register_form).post(auth::register))
         .route("/logout", get(auth::logout))
+        .route("/revoke-sessions", post(auth::revoke_sessions))
         // the admin routes are registered before the catalog captures, so
         // /cookies/new is a form rather than a detail page for id "new"
         .route("/{section}/new", get(admin::new_form).post(admin::create))
-        .route("/combi/{id}/delete", post(admin::delete_combi))
+        .route("/{section}/{id}/combi/{row_id}/delete", post(admin::delete_combi))
         .route("/{section}/upload", post(uploads::image))
         .route(
             "/{section}/{id}/edit",

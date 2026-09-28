@@ -81,6 +81,10 @@
             {% if ctx.signed_in() %}
             <p class="btn">{{ ctx.username() }}</p>
             <a href="/logout" class="btn-secondary">{{ ctx.l.t("logout") }}</a>
+            <form method="post" action="/revoke-sessions" class="mt-1">
+                <button type="submit" class="btn-secondary text-xs w-full"
+                    title="{{ ctx.l.t("revoke_sessions_hint") }}">{{ ctx.l.t("revoke_all_sessions") }}</button>
+            </form>
             {% else %}
             <div class="flex flex-col gap-2">
                 <a href="/login" class="btn-primary">{{ ctx.l.t("login") }}</a>

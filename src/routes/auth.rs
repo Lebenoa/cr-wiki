@@ -225,11 +225,31 @@ pub async fn logout(headers: HeaderMap) -> Response {
     res
 }
 
-/// `HttpOnly` so script cannot read the session, `SameSite=Lax` so it survives
-/// a normal navigation but not a cross-site form post.
+/// POST /revoke-sessions — the account menu's "revoke all" action: ends
+/// every session for the signed-in user, this one included, then clears
+/// the cookie. Login does NOT revoke; multi-device sign-in stays valid
+/// until the user explicitly revokes here.
+pub async fn revoke_sessions(headers: HeaderMap) -> Response {
+    let state = crate::state::state();
+    if let Some(key) = crate::ctx::cookie(&headers, SESSION_COOKIE) {
+        if let Some(user) = state.sessions.get(&key) {
+            state.sessions.end_all_for(user.id);
+        }
+    }
+    let mut res = Redirect::to("/").into_response();
+    if let Ok(v) = HeaderValue::from_str(&format!("{SESSION_COOKIE}=; path=/; Max-Age=0")) {
+        res.headers_mut().append(header::SET_COOKIE, v);
+    }
+    res
+}
+
+/// `HttpOnly` so script cannot read the session, `SameSite=Lax` so it
+/// survives a normal navigation but not a cross-site form post. `Secure`
+/// keeps it off cleartext HTTP; localhost is exempt by browser fiat, so
+/// development is unaffected.
 fn set_session_cookie(headers: &mut HeaderMap, key: &str) {
     if let Ok(v) = HeaderValue::from_str(&format!(
-        "{SESSION_COOKIE}={key}; path=/; HttpOnly; SameSite=Lax"
+        "{SESSION_COOKIE}={key}; path=/; HttpOnly; Secure; SameSite=Lax"
     )) {
         headers.append(header::SET_COOKIE, v);
     }

@@ -19,6 +19,25 @@ pub fn section_dir(section: Section) -> Option<PathBuf> {
         .then(|| PathBuf::from("static/img").join(section.as_str()))
 }
 
+/// Content the catalog actually serves, verified by magic bytes rather than
+/// the client's declared Content-Type, which an attacker controls. Each
+/// signature is the file-format anchor; anything else is rejected.
+pub fn sniff_image(bytes: &[u8]) -> Option<&'static str> {
+    if bytes.starts_with(b"\x89PNG\r\n\x1a\n") {
+        return Some("png");
+    }
+    if bytes.starts_with(b"\xff\xd8\xff") {
+        return Some("jpg");
+    }
+    if bytes.len() >= 12 && &bytes[0..4] == b"RIFF" && &bytes[8..12] == b"WEBP" {
+        return Some("webp");
+    }
+    if bytes.starts_with(b"GIF87a") || bytes.starts_with(b"GIF89a") {
+        return Some("gif");
+    }
+    None
+}
+
 /// Only the image types the catalog actually uses. The extension is taken
 /// from this table rather than from the upload's filename, so a name like
 /// `sprite.png.html` cannot end up served as markup.

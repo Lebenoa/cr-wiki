@@ -255,32 +255,47 @@ async fn select_where(
         " AND author = $author"
     };
 
-    let sql = format!(
-        "SELECT record::id(id) AS id, cookie_id, cookie2_id, pet_id,
-                treasure1_id, treasure2_id, treasure3_id,
-                treasure1_blessed, treasure2_blessed, treasure3_blessed,
-                treasure1_level, treasure2_level, treasure3_level,
-                ep, ep_special, tag, boosts, boost, score, coin, time, boxes,
-                description, youtube_url, author, user_id, expires_at, created_at
-           FROM build
-          WHERE (expires_at IS NONE OR expires_at = 0 OR expires_at > $now){author_filter}{filter_sql}
-          ORDER BY {order}
-          LIMIT {limit} START {offset}"
-    );
+    // sort=verified: global ordering needs every matching build's verified
+    // count, so for this one sort the page is cut in Rust, not SQL: fetch
+    // ALL matching rows (community builds are bounded; the default sort
+    // keeps the LIMIT window), sort against counts, slice the window. The
+    // per-build correlated subquery this replaces is re-planned per row on
+    // v3; the `record::id(id)` projection normalizes both storage shapes
+    // the table holds — the record id older rows may carry and the plain
+    // integer `upsert_review` writes.
+    let verified_sort = sort == "verified";
+    let sql = if verified_sort {
+        format!(
+            "SELECT record::id(id) AS id, cookie_id, cookie2_id, pet_id,
+                    treasure1_id, treasure2_id, treasure3_id,
+                    treasure1_blessed, treasure2_blessed, treasure3_blessed,
+                    treasure1_level, treasure2_level, treasure3_level,
+                    ep, ep_special, tag, boosts, boost, score, coin, time, boxes,
+                    description, youtube_url, author, user_id, expires_at, created_at
+               FROM build
+              WHERE (expires_at IS NONE OR expires_at = 0 OR expires_at > $now){author_filter}{filter_sql}"
+        )
+    } else {
+        format!(
+            "SELECT record::id(id) AS id, cookie_id, cookie2_id, pet_id,
+                    treasure1_id, treasure2_id, treasure3_id,
+                    treasure1_blessed, treasure2_blessed, treasure3_blessed,
+                    treasure1_level, treasure2_level, treasure3_level,
+                    ep, ep_special, tag, boosts, boost, score, coin, time, boxes,
+                    description, youtube_url, author, user_id, expires_at, created_at
+               FROM build
+              WHERE (expires_at IS NONE OR expires_at = 0 OR expires_at > $now){author_filter}{filter_sql}
+              ORDER BY {order}
+              LIMIT {limit} START {offset}"
+        )
+    };
     let mut q = db.query(&sql).bind(("now", now));
     if !author.is_empty() {
         q = q.bind(("author", author.to_string()));
     }
     let mut rows: Vec<BuildRow> = q.await?.take(0)?;
 
-    // sort=verified: counts come from their own grouped query and are joined +
-    // re-sorted in Rust. The per-build correlated subquery this replaces is
-    // re-planned per row on v3, and the `record::id(id) AS id` projection
-    // shadows `id` before it resolves, so `record::id($parent.id)` received
-    // the plain integer and silently counted zero for every build. The
-    // projection normalizes both storage shapes the table holds: the record
-    // id older rows may carry and the plain integer `upsert_review` writes.
-    if sort == "verified" {
+    if verified_sort {
         #[derive(Default, SurrealValue)]
         #[surreal(default)]
         struct CountRow {
@@ -304,6 +319,9 @@ async fn select_where(
             let bv = by_build.get(&b.id).copied().unwrap_or(0);
             bv.cmp(&av).then(b.id.cmp(&a.id))
         });
+        let start = (offset.max(0) as usize).min(rows.len());
+        let end = (start + limit.max(0) as usize).min(rows.len());
+        rows = rows[start..end].to_vec();
     }
 
 

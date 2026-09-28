@@ -71,6 +71,15 @@ impl Sessions {
             map.remove(key);
         }
     }
+
+    /// Revokes every session belonging to one user id. Called on logout so
+    /// a stolen session token does not survive its owner logging out; login
+    /// deliberately does NOT call this — multiple devices stay signed in.
+    pub fn end_all_for(&self, user_id: i64) {
+        if let Ok(mut map) = self.inner.lock() {
+            map.retain(|_, e| e.user.id != user_id);
+        }
+    }
 }
 
 use crate::time::now_unix;

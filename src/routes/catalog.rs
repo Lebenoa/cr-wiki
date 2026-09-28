@@ -14,8 +14,6 @@ use crate::state::AppState;
 
 use super::{errors::AppError, CommonQuery};
 
-pub const PAGE_SIZE: i64 = 30;
-
 #[derive(Template)]
 #[template(path = "catalog.html")]
 struct CatalogPage {
@@ -74,8 +72,11 @@ async fn render(
     let Some(sec) = Section::parse(&section) else {
         return Ok(super::errors::not_found(ctx));
     };
-    let page = q.page.unwrap_or(1).max(1);
-    let offset = page.saturating_sub(1).saturating_mul(PAGE_SIZE);
+    // page 1..=10_000 keeps the deep-offset abuse away: beyond the last
+    // real page the grid is empty anyway, and 10k * 30 rows already dwarfs
+    // the catalog
+    let page = q.page.unwrap_or(1).clamp(1, 10_000);
+    let offset = page.saturating_sub(1).saturating_mul(crate::section::PAGE_SIZE);
     let tab = match q.tab.as_deref() {
         Some(t @ ("normal" | "evo")) => t.to_string(),
         _ => "all".to_string(),
@@ -83,10 +84,10 @@ async fn render(
 
     let paginated = sec.paginated();
     let cards = match sec {
-        Section::Cookies => db::select_cookies(&state.db, &ctx.lang, PAGE_SIZE, offset).await?,
-        Section::Pets => db::select_pets(&state.db, &ctx.lang, PAGE_SIZE, offset).await?,
+        Section::Cookies => db::select_cookies(&state.db, &ctx.lang, crate::section::PAGE_SIZE, offset).await?,
+        Section::Pets => db::select_pets(&state.db, &ctx.lang, crate::section::PAGE_SIZE, offset).await?,
         Section::Treasures => {
-            db::select_treasures(&state.db, &ctx.lang, &tab, PAGE_SIZE, offset).await?
+            db::select_treasures(&state.db, &ctx.lang, &tab, crate::section::PAGE_SIZE, offset).await?
         }
         _ => Vec::new(),
     };
@@ -105,7 +106,7 @@ async fn render(
         _ => {}
     }
 
-    let next_page = if paginated && i64::try_from(cards.len()).unwrap_or(0) == PAGE_SIZE {
+    let next_page = if paginated && i64::try_from(cards.len()).unwrap_or(0) == crate::section::PAGE_SIZE {
         page.saturating_add(1)
     } else {
         0

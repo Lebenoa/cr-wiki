@@ -8,8 +8,6 @@ use crate::pagination::slice_page;
 
 use super::CommonQuery;
 
-pub const PAGE_SIZE: i64 = 30;
-
 #[derive(Template)]
 #[template(path = "changelog_entries.html")]
 struct ChangelogEntries {
@@ -29,10 +27,10 @@ struct ChangelogPage {
 }
 
 pub async fn page(ctx: Ctx, q: Query<CommonQuery>) -> Html<String> {
-    let page = q.page.unwrap_or(1).max(1);
+    let page = q.page.unwrap_or(1).clamp(1, 10_000);
     let all = changelog::entries();
 
-    let (entries, next_url) = match slice_page(page, PAGE_SIZE, all.len()) {
+    let (entries, next_url) = match slice_page(page, crate::section::PAGE_SIZE, all.len()) {
         Some((start, end)) => {
             let next = if end < all.len() {
                 format!("/changelog?page={}", page.saturating_add(1))

@@ -1761,22 +1761,22 @@ pub async fn names_for(
     if ids.is_empty() {
         return Ok(map);
     }
-    let list = ids
-        .iter()
-        .map(|i| format!("{}:{}", kind.table, i))
-        .collect::<Vec<_>>();
     let sql = format!(
         "SELECT record::id(id) AS id, image,
                 {} AS name
            FROM {}
-          WHERE id IN [{}]",
+          WHERE id IN $ids",
         tr("name"),
         kind.table,
-        list.join(", ")
     );
+    let list: Vec<String> = ids
+        .iter()
+        .map(|i| format!("{}:{}", kind.table, i))
+        .collect();
     let rows: Vec<CardRow> = db
         .query(&sql)
         .bind(("lang", lang.to_string()))
+        .bind(("ids", list))
         .await?
         .take(0)?;
     for r in rows {
@@ -1924,7 +1924,10 @@ pub async fn sitemap_entries(db: &Db) -> Result<Vec<(String, i64)>> {
 /// hits keep their order and the later passes fill the tail, deduped by id.
 pub async fn search(db: &Db, lang: &str, q: &str, limit: i64) -> Result<Vec<(String, Card)>> {
     let query = q.trim();
-    if query.is_empty() || limit <= 0 {
+    // one bound at the edge: the three passes below interpolate the limit,
+    // so a caller cannot widen the result work with a huge value
+    let limit = limit.clamp(1, 100);
+    if query.is_empty() {
         return Ok(Vec::new());
     }
     let needle = query.to_lowercase();
@@ -2138,23 +2141,23 @@ pub async fn cards_by_ids(db: &Db, lang: &str, kind: &str, ids: &[i64]) -> Resul
             None => return Ok(Vec::new()),
         }
     };
-    let list = ids
-        .iter()
-        .map(|i| format!("{}:{}", k.table, i))
-        .collect::<Vec<_>>();
     let sql = format!(
         "SELECT record::id(id) AS id, image{}, {} AS name,
                 (tr.en.name ?? '') AS en_name
            FROM {}
-          WHERE id IN [{}]",
+          WHERE id IN $ids",
         if k.graded { ", grade" } else { "" },
         tr("name"),
         k.table,
-        list.join(", ")
     );
+    let list: Vec<String> = ids
+        .iter()
+        .map(|i| format!("{}:{}", k.table, i))
+        .collect();
     let found: Vec<Card> = db
         .query(&sql)
         .bind(("lang", lang.to_string()))
+        .bind(("ids", list))
         .await?
         .take::<Vec<CardRow>>(0)?
         .into_iter()
@@ -2278,24 +2281,28 @@ async fn prizes(
     if ids.is_empty() {
         return Ok(map);
     }
-    let list = ids
+    // the table lands in query text, so it is whitelisted here rather than
+    // trusted from the caller
+    let table = match table {
+        "treasure" | "pet" => table,
+        _ => return Ok(map),
+    };
+    let sql = format!(
+        "SELECT record::id(id) AS id, image, grade, (is_evolved ?? false) AS is_evolved,
+                {} AS name,
+                (tr.en.name ?? '') AS en_name
+           FROM {table}
+          WHERE id IN $ids",
+        tr("name"),
+    );
+    let list: Vec<String> = ids
         .iter()
         .map(|i| format!("{table}:{i}"))
-        .collect::<Vec<_>>();
+        .collect();
     let rows: Vec<PrizeRow> = db
-        .query(
-            format!(
-                "SELECT record::id(id) AS id, image, grade, (is_evolved ?? false) AS is_evolved,
-                        {} AS name,
-                        (tr.en.name ?? '') AS en_name
-                   FROM {table}
-                  WHERE id IN [{}]",
-                tr("name"),
-                list.join(", ")
-            )
-            .as_str(),
-        )
+        .query(sql.as_str())
         .bind(("lang", lang.to_string()))
+        .bind(("ids", list))
         .await?
         .take(0)?;
     for r in rows {
@@ -2670,9 +2677,10 @@ pub fn blessed_differs(effects: &[EffectLine]) -> bool {
 #[derive(Debug, Clone)]
 pub struct CombiEditRow {
     pub id: i64,
-    /// the entity on the other side; the editor links to it once the row
-    /// gains an edit form of its own
-    #[allow(dead_code)]
+    /// the cookie/pet ids the pairing hangs between: the delete route
+    /// verifies the row actually belongs to this pair before removing it
+    pub cookie_id: i64,
+    pub pet_id: i64,
     pub partner_id: i64,
     pub partner_name: String,
     pub partner_image: Option<String>,
@@ -2691,6 +2699,8 @@ pub async fn combi_edit_rows(
         .into_iter()
         .map(|(record, row)| CombiEditRow {
             id: record.id,
+            cookie_id: record.cookie_id,
+            pet_id: record.pet_id,
             partner_id: row.partner_id,
             partner_name: row.partner_name,
             partner_image: row.partner_image,
@@ -2700,13 +2710,18 @@ pub async fn combi_edit_rows(
         .collect())
 }
 
-/// Removes one combo pairing by record id.
-pub async fn delete_combi(db: &Db, row_id: i64) -> Result<()> {
-    db.query("DELETE type::record(\"combi\", $id)")
+/// Removes one combo pairing by record id, only when it hangs off the given
+/// cookie: the route passes the id from the editor's path, so a guessed row
+/// id cannot delete a pairing another editor displays.
+pub async fn delete_combi(db: &Db, row_id: i64, cookie_id: i64) -> Result<bool> {
+    let mut res = db
+        .query("DELETE type::record(\"combi\", $id) WHERE cookie_id = $cookie RETURN AFTER")
         .bind(("id", row_id))
+        .bind(("cookie", cookie_id))
         .await?
         .check()?;
-    Ok(())
+    let removed: Vec<CombiRecord> = res.take(0)?;
+    Ok(!removed.is_empty())
 }
 
 #[cfg(test)]

@@ -1072,6 +1072,12 @@ Back to list
 logout
 Log out
 -----
+revoke_all_sessions
+Revoke all sessions
+-----
+revoke_sessions_hint
+Signs out every device, including this one
+-----
 build_error_video_link
 Video link must be an http(s) URL of at most 200 characters
 -----

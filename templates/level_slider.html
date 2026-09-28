@@ -1,7 +1,7 @@
 <div class="level-slider-control flex items-center gap-3 rounded-xl bg-secondary/10 px-4 py-2">
     <span class="text-xs font-label text-foreground-muted uppercase shrink-0">{{ ctx.l.t("level") }}</span>
     <div class="flex-1 min-w-0">
-        <input type="range" class="level-slider w-full h-4 appearance-none bg-transparent cursor-pointer outline-none"
+        <input type="range" class="level-slider w-full h-4 appearance-none bg-transparent cursor-pointer focus:ring-2 focus:ring-primary rounded-full transition-all"
             min="0" max="9" step="1" value="9" />
         <div class="level-slider-ticks mt-1 flex justify-between px-1">
             {% for tick in [0, 1, 2, 3, 4, 5, 6, 7, 8, 9] %}

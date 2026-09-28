@@ -3,6 +3,10 @@
 //! Every list, detail, upload and admin gate agrees on what exists because
 //! they all read this one table instead of restating their own match arms.
 
+/// Rows per page for every paginated grid — catalog lists, builds,
+/// changelog, picker. One constant so the grids cannot drift apart.
+pub const PAGE_SIZE: i64 = 30;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Section {
     Cookies,
