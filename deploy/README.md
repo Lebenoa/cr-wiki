@@ -236,5 +236,7 @@ cargo zigbuild --release --target x86_64-unknown-linux-gnu.2.43
 ./deploy/make_bundle.sh            # -> cookierun-bundle.tar.gz
 ```
 
-glibc ≥ 2.39 at runtime; zig 0.16.0 as the linker. The bundle is the
+glibc ≥ 2.43 at runtime — the target suffix pins the glibc zig links
+against, do not build with a plain `x86_64-unknown-linux-gnu` target.
+zig 0.16.0 as the linker. The bundle is the
 install artifact — `setup.sh --bundle` needs nothing else.

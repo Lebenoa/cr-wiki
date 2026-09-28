@@ -58,7 +58,8 @@ cookierun/
 
 ### Production (Linux)
 
-Requirements: Linux x86_64, glibc ≥ 2.39, root access, `curl`.
+Requirements: Linux x86_64, glibc ≥ 2.43 (the release binary is built
+against `x86_64-unknown-linux-gnu.2.43`), root access, `curl`.
 
 ```sh
 git clone https://github.com/Lebenoa/cr-wiki.git
