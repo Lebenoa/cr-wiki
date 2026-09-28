@@ -2,11 +2,14 @@
 <a href="/{{ section }}/{{ c.id }}" data-cr-card data-name="{{ c.name }}" data-name-en="{{ c.en_name }}"
     data-grade="{{ c.grade_slug() }}" class="entity-card">
     {% if c.has_grade() %}
-    <img src="/static/img/grades/{{ c.grade_slug() }}.png" alt="{{ c.grade_label() }}" title="{{ c.grade_label() }}" class="size-10 self-start">
+    <img src="/static/img/grades/{{ c.grade_slug() }}.png" alt="{{ c.grade_label() }}" title="{{ c.grade_label() }}" loading="lazy" decoding="async" class="size-10 self-start">
     {% endif %}
     {% match c.image %}{% when Some with (img) %}
-    <img src="/static/img/{{ section }}/{{ img }}" alt="{{ c.name }}" class="h-20 w-full object-contain">
-    {% when None %}{% endmatch %}
+    <img src="/static/img/{{ section }}/{{ img }}" alt="{{ c.name }}" loading="lazy" decoding="async" class="h-20 w-full object-contain">
+    {% when None %}
+    <span class="h-20 w-full flex items-center justify-center text-[10px] font-label uppercase text-foreground-muted">
+        {{ ctx.l.t(section) }}</span>
+    {% endmatch %}
     <span class="card-title">{{ c.name }}</span>
     {% if c.is_evolved %}<span class="pill-primary">{{ ctx.l.t("evolved") }}</span>{% endif %}
 </a>

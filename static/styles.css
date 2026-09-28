@@ -624,6 +624,7 @@
 .text-xl{font-size:var(--text-xl-fontSize);line-height:var(--un-leading, var(--text-xl-lineHeight));}
 .text-xs{font-size:var(--text-xs-fontSize);line-height:var(--un-leading, var(--text-xs-lineHeight));}
 .text-\[10px\]{font-size:10px;}
+.text-\[9px\]{font-size:9px;}
 .text-accent{color:color-mix(in srgb, oklch(var(--accent, 0.70 0.18 330)) var(--un-text-opacity), transparent);}
 .text-amber-400{color:color-mix(in srgb, var(--colors-amber-400) var(--un-text-opacity), transparent);}
 .text-black{color:color-mix(in srgb, var(--colors-black) var(--un-text-opacity), transparent);}
@@ -711,7 +712,6 @@
 .p-5{padding:calc(var(--spacing) * 5);}
 .p-6{padding:calc(var(--spacing) * 6);}
 .p-8{padding:calc(var(--spacing) * 8);}
-[p~="a"]{padding:auto;}
 .px-1{padding-inline:calc(var(--spacing) * 1);}
 .px-10{padding-inline:calc(var(--spacing) * 10);}
 .px-2{padding-inline:calc(var(--spacing) * 2);}
@@ -928,9 +928,10 @@
 .normal-case{text-transform:none;}
 .ring-2,
 .peer:checked~.peer-checked\:ring-2{--un-ring-shadow:var(--un-ring-inset,) 0 0 0 calc(2px + var(--un-ring-offset-width)) var(--un-ring-color, currentColor);box-shadow:var(--un-inset-shadow), var(--un-inset-ring-shadow), var(--un-ring-offset-shadow), var(--un-ring-shadow), var(--un-shadow);}
-.focus\:ring-0:focus{--un-ring-shadow:var(--un-ring-inset,) 0 0 0 calc(0px + var(--un-ring-offset-width)) var(--un-ring-color, currentColor);box-shadow:var(--un-inset-shadow), var(--un-inset-ring-shadow), var(--un-ring-offset-shadow), var(--un-ring-shadow), var(--un-shadow);}
+.focus\:ring-2:focus{--un-ring-shadow:var(--un-ring-inset,) 0 0 0 calc(2px + var(--un-ring-offset-width)) var(--un-ring-color, currentColor);box-shadow:var(--un-inset-shadow), var(--un-inset-ring-shadow), var(--un-ring-offset-shadow), var(--un-ring-shadow), var(--un-shadow);}
 .ring-primary,
 .peer:checked~.peer-checked\:ring-primary{--un-ring-color:color-mix(in srgb, oklch(var(--primary, 0.62 0.22 260)) var(--un-ring-opacity), transparent);}
+.focus\:ring-primary:focus{--un-ring-color:color-mix(in srgb, oklch(var(--primary, 0.62 0.22 260)) var(--un-ring-opacity), transparent);}
 .shadow{--un-shadow:0 1px 3px 0 var(--un-shadow-color, rgb(0 0 0 / 0.1)),0 1px 2px -1px var(--un-shadow-color, rgb(0 0 0 / 0.1));box-shadow:var(--un-inset-shadow), var(--un-inset-ring-shadow), var(--un-ring-offset-shadow), var(--un-ring-shadow), var(--un-shadow);}
 .shadow-2xl{--un-shadow:0 25px 50px -12px var(--un-shadow-color, rgb(0 0 0 / 0.25));box-shadow:var(--un-inset-shadow), var(--un-inset-ring-shadow), var(--un-ring-offset-shadow), var(--un-ring-shadow), var(--un-shadow);}
 .shadow-lg{--un-shadow:0 10px 15px -3px var(--un-shadow-color, rgb(0 0 0 / 0.1)),0 4px 6px -4px var(--un-shadow-color, rgb(0 0 0 / 0.1));box-shadow:var(--un-inset-shadow), var(--un-inset-ring-shadow), var(--un-ring-offset-shadow), var(--un-ring-shadow), var(--un-shadow);}
@@ -1012,7 +1013,8 @@
 .line-clamp-2{overflow:hidden;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;}
 .table,
 [table=""]{display:table;}
-.ordinal{--un-ordinal:ordinal;font-variant-numeric:var(--un-ordinal,) var(--un-slashed-zero,) var(--un-numeric-figure,) var(--un-numeric-spacing,) var(--un-numeric-fraction,);}
+.ordinal,
+[ordinal=""]{--un-ordinal:ordinal;font-variant-numeric:var(--un-ordinal,) var(--un-slashed-zero,) var(--un-numeric-figure,) var(--un-numeric-spacing,) var(--un-numeric-fraction,);}
 .divide-secondary\/30{
 :where(&>:not(:last-child)){border-color:color-mix(in srgb, oklch(var(--secondary, 0.72 0.12 220)) 30%, transparent);}
 }

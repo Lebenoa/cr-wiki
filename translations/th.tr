@@ -214,6 +214,12 @@ unlock_goal
 login
 เข้าสู่ระบบ
 -----
+navbar_account_menu
+เมนูบัญชี
+-----
+navbar_open_menu
+เปิดเมนู
+-----
 register
 สมัครสมาชิก
 -----

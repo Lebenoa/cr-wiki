@@ -41,8 +41,11 @@
             {% endif %}
         </span>
         {% match e.image %}{% when Some with (img) %}
-        <img src="/static/img/episodes/{{ img }}" alt="{{ e.name }}" class="h-24 w-full object-contain" />
-        {% when None %}{% endmatch %}
+        <img src="/static/img/episodes/{{ img }}" alt="{{ e.name }}" loading="lazy" decoding="async" class="h-24 w-full object-contain" />
+        {% when None %}
+        <span class="h-24 w-full flex items-center justify-center text-[10px] font-label uppercase text-foreground-muted">
+            {{ ctx.l.t("episodes") }}</span>
+        {% endmatch %}
         <span class="card-title">{{ e.name }}</span>
         {% if e.stars > 0 %}
         <span class="text-xs text-primary">{{ ctx.stars_label(e.stars) }}</span>
@@ -63,8 +66,11 @@
     <a href="/ingredients/{{ i.id }}" hx-boost="true" data-cr-card data-name="{{ i.name }}" data-name-en="{{ i.en_name }}"
         class="entity-card">
         {% match i.image %}{% when Some with (img) %}
-        <img src="/static/img/ingredients/{{ img }}" alt="{{ i.name }}" class="h-20 w-full object-contain" />
-        {% when None %}{% endmatch %}
+        <img src="/static/img/ingredients/{{ img }}" alt="{{ i.name }}" loading="lazy" decoding="async" class="h-20 w-full object-contain" />
+        {% when None %}
+        <span class="h-20 w-full flex items-center justify-center text-[10px] font-label uppercase text-foreground-muted">
+            {{ ctx.l.t("ingredients") }}</span>
+        {% endmatch %}
         {% if i.grade.is_some() || !ctx.episode_short(i.drop_episode_id).is_empty() %}
         <div class="flex items-center gap-2">
             {% if i.grade.is_some() %}
@@ -89,8 +95,11 @@
     <a href="/jellies/{{ j.id }}" hx-boost="true" data-cr-card data-name="{{ j.name }}" data-name-en="{{ j.en_name }}"
         class="entity-card">
         {% match j.image %}{% when Some with (img) %}
-        <img src="/static/img/jellies/{{ img }}" alt="{{ j.name }}" class="h-20 w-full object-contain" />
-        {% when None %}{% endmatch %}
+        <img src="/static/img/jellies/{{ img }}" alt="{{ j.name }}" loading="lazy" decoding="async" class="h-20 w-full object-contain" />
+        {% when None %}
+        <span class="h-20 w-full flex items-center justify-center text-[10px] font-label uppercase text-foreground-muted">
+            {{ ctx.l.t("jellies") }}</span>
+        {% endmatch %}
         <span class="card-title">{{ j.name }}</span>
         <span class="card-meta">{{ ctx.score_label(j.score) }} {{ ctx.l.t("score") }}</span>
     </a>
@@ -103,8 +112,11 @@
     <div data-cr-card data-name="{{ s.name }}" data-name-en="{{ s.en_name }}" class="entity-card">
         <div class="relative w-full flex justify-center">
             {% match s.image %}{% when Some with (img) %}
-            <img src="/static/img/skins/{{ img }}" alt="{{ s.name }}" class="h-24 object-contain" />
-            {% when None %}{% endmatch %}
+            <img src="/static/img/skins/{{ img }}" alt="{{ s.name }}" loading="lazy" decoding="async" class="h-24 object-contain" />
+            {% when None %}
+            <span class="h-24 w-full flex items-center justify-center text-[10px] font-label uppercase text-foreground-muted">
+                {{ ctx.l.t("skins") }}</span>
+            {% endmatch %}
             {% if s.collab %}
             <span class="absolute top-0 right-0 text-[10px] font-bold uppercase bg-accent text-on-accent rounded-full px-2 py-0.5">
                 {{ ctx.l.t("collab_label") }}</span>
@@ -138,7 +150,7 @@
         {% for r in g.relics %}
         <div data-cr-card data-name="{{ r.name }}" data-name-en="{{ r.en_name }}" class="entity-card">
             {% match r.image %}{% when Some with (img) %}
-            <img src="/static/img/relics/{{ img }}" alt="{{ r.name }}" class="h-20 w-full object-contain" />
+            <img src="/static/img/relics/{{ img }}" alt="{{ r.name }}" loading="lazy" decoding="async" class="h-20 w-full object-contain" />
             {% when None %}
             <span class="h-20 w-full flex items-center justify-center text-[10px] font-label uppercase text-foreground-muted">
                 {{ ctx.l.t("relics_label") }}</span>
