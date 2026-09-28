@@ -466,6 +466,43 @@ DEFINE INDEX treasure_rank_release_date ON treasure FIELDS rank, release_date;
 
 
 -- ------------------------------
+-- FULL TEXT SEARCH
+-- ------------------------------
+-- The search page matches localized and English names, abilities and
+-- descriptions (see db::ensure_search_schema, which re-asserts these at
+-- startup for pre-index databases). Defining them at import time builds the
+-- postings for the seeded rows immediately instead of backfilling on the
+-- first boot after a fresh install.
+DEFINE ANALYZER cookie_search_en TOKENIZERS class, punct FILTERS lowercase;
+DEFINE ANALYZER cookie_search_th TOKENIZERS class FILTERS lowercase, ngram(1,3);
+DEFINE INDEX cookie_search_0 ON TABLE cookie FIELDS tr.en.name FULLTEXT ANALYZER cookie_search_en;
+DEFINE INDEX cookie_search_1 ON TABLE cookie FIELDS tr.th.name FULLTEXT ANALYZER cookie_search_th;
+DEFINE INDEX cookie_search_2 ON TABLE cookie FIELDS tr.en.abilities FULLTEXT ANALYZER cookie_search_en;
+DEFINE INDEX cookie_search_3 ON TABLE cookie FIELDS tr.th.abilities FULLTEXT ANALYZER cookie_search_th;
+DEFINE INDEX cookie_search_4 ON TABLE cookie FIELDS tr.en.description FULLTEXT ANALYZER cookie_search_en;
+DEFINE INDEX cookie_search_5 ON TABLE cookie FIELDS tr.th.description FULLTEXT ANALYZER cookie_search_th;
+DEFINE INDEX pet_search_0 ON TABLE pet FIELDS tr.en.name FULLTEXT ANALYZER cookie_search_en;
+DEFINE INDEX pet_search_1 ON TABLE pet FIELDS tr.th.name FULLTEXT ANALYZER cookie_search_th;
+DEFINE INDEX pet_search_2 ON TABLE pet FIELDS tr.en.description FULLTEXT ANALYZER cookie_search_en;
+DEFINE INDEX pet_search_3 ON TABLE pet FIELDS tr.th.description FULLTEXT ANALYZER cookie_search_th;
+DEFINE INDEX treasure_search_0 ON TABLE treasure FIELDS tr.en.name FULLTEXT ANALYZER cookie_search_en;
+DEFINE INDEX treasure_search_1 ON TABLE treasure FIELDS tr.th.name FULLTEXT ANALYZER cookie_search_th;
+DEFINE INDEX treasure_search_2 ON TABLE treasure FIELDS tr.en.description FULLTEXT ANALYZER cookie_search_en;
+DEFINE INDEX treasure_search_3 ON TABLE treasure FIELDS tr.th.description FULLTEXT ANALYZER cookie_search_th;
+DEFINE INDEX relic_search_0 ON TABLE relic FIELDS tr.en.name FULLTEXT ANALYZER cookie_search_en;
+DEFINE INDEX relic_search_1 ON TABLE relic FIELDS tr.th.name FULLTEXT ANALYZER cookie_search_th;
+DEFINE INDEX relic_search_2 ON TABLE relic FIELDS tr.en.description FULLTEXT ANALYZER cookie_search_en;
+DEFINE INDEX relic_search_3 ON TABLE relic FIELDS tr.th.description FULLTEXT ANALYZER cookie_search_th;
+DEFINE INDEX episode_search_0 ON TABLE episode FIELDS tr.en.name FULLTEXT ANALYZER cookie_search_en;
+DEFINE INDEX episode_search_1 ON TABLE episode FIELDS tr.th.name FULLTEXT ANALYZER cookie_search_th;
+DEFINE INDEX episode_search_2 ON TABLE episode FIELDS tr.en.description FULLTEXT ANALYZER cookie_search_en;
+DEFINE INDEX episode_search_3 ON TABLE episode FIELDS tr.th.description FULLTEXT ANALYZER cookie_search_th;
+DEFINE INDEX ingredient_search_0 ON TABLE ingredient FIELDS tr.en.name FULLTEXT ANALYZER cookie_search_en;
+DEFINE INDEX ingredient_search_1 ON TABLE ingredient FIELDS tr.th.name FULLTEXT ANALYZER cookie_search_th;
+DEFINE INDEX ingredient_search_2 ON TABLE ingredient FIELDS tr.en.description FULLTEXT ANALYZER cookie_search_en;
+DEFINE INDEX ingredient_search_3 ON TABLE ingredient FIELDS tr.th.description FULLTEXT ANALYZER cookie_search_th;
+
+-- ------------------------------
 -- SEQUENCES
 -- ------------------------------
 -- The app allocates numeric ids with `sequence::nextval` (see src/db.rs
