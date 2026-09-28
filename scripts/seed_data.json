@@ -64,7 +64,7 @@
    "cookie_id": 11,
    "grade": 3,
    "image": "skater_cookie.png",
-   "release_date": "1970-01-01T00:00:00Z"
+   "release_date": "2016-09-27T00:00:00Z"
   },
   {
    "cookie_id": 12,
@@ -274,7 +274,7 @@
    "cookie_id": 46,
    "grade": 4,
    "image": "red_pepper_cookie.png",
-   "release_date": "1970-01-01T00:00:00Z"
+   "release_date": "2018-06-12T00:00:00Z"
   },
   {
    "cookie_id": 47,
@@ -562,7 +562,7 @@
    "cookie_id": 94,
    "grade": 4,
    "image": null,
-   "release_date": "1970-01-01T00:00:00Z"
+   "release_date": "2026-08-27T00:00:00Z"
   }
  ],
  "cookie_translation": [
