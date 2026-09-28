@@ -1026,7 +1026,7 @@
    "description": "ลงจอดทันทีเมื่อกดสไลด์หลังการกระโดดหลายชั้น 3-10 ครั้ง\n\nคุกกี้ออร์แกนิกทำจากข้าว ที่ทำให้รู้สึกสุขภาพดีเพียงแค่มอง เขาศึกษาเวทมนตร์ด้วยตัวเองและกระโดดได้สูงสุด 10 ชั้น เขาเป็นที่นิยมในหมู่คุกกี้เพราะขโมยของของแม่มดมาแบ่งปันให้คนอื่น",
    "power_plus": "",
    "power_plus_requirement": "",
-   "unlock_goal": "ปลดล็อก [[pet:28]] (Line)\nมีเพื่อน 120 คน (Kakao)"
+   "unlock_goal": "ปลดล็อก  (Line)\nมีเพื่อน 120 คน (Kakao)"
   },
   {
    "cookie_translation_id": 43,
@@ -2599,7 +2599,7 @@
    "description": "No one tops Braised Pork Cookie when it comes to plowing the field! Braised Pork Cookie's limbs are strong from working the fields. So famous she became for her reliability in handling all the village's tasks that [[cookie:90]] recruited her into his traveling party. Her biggest strengths are her fiery temperament that causes her to charge straight into any problem, and her hearty nature that allows her to shake off any hardship and bounce right back at the sight of a delicious meal.",
    "power_plus": "Summons XP Party when Kaymak, Pine Monk, Lotus Root Phantom, and Braised Pork Cookie are gathered",
    "power_plus_requirement": "when [[cookie:89]], [[cookie:90]], [[cookie:91]], and Braised Pork Cookie are gathered",
-   "unlock_goal": "Have [[cookie:89]]Kaymak / [[cookie:90]]Pine Monk / [[cookie:91]]Lotus Root Cookie"
+   "unlock_goal": "Have [[cookie:89]]Kaymak Cookie / [[cookie:90]]Pine Monk Cookie / [[cookie:91]]Lotus Root Phantom Cookie"
   },
   {
    "cookie_translation_id": 186,
@@ -2610,7 +2610,7 @@
    "description": "เกจสีน้ำเงินเล็กชาร์จตามเวลา เมื่อเต็ม คุกกี้หมูตุ๋นพรวนดินเพื่อเก็บเกี่ยวหมูตุ๋นเยลลี่ แต่ละการเก็บเกี่ยวเติมเกจสีเขียวเล็กน้อย เมื่อเกจสีเขียวเต็ม คุกกี้หมุนคราดหมูตุ๋นเพื่อดูดเยลลี่และอุปสรรคเข้ามา เยลลี่ที่ถูกดูดมานี้ให้คะแนนโบนัส สุดท้าย คุกกี้หมูตุ๋นขว้างคราดเพื่อดูดเยลลี่ด้านหน้า (สกิลทำงานเร็วขึ้นเมื่อพลังชีวิตที่เหลือต่ำลง)\r\n\r\nไม่มีใครเทียบคุกกี้หมูตุ๋นได้เมื่อพูดถึงการไถนา! แขนขาของคุกกี้หมูตุ๋นแข็งแรงจากการทำงานในทุ่งนา เธอโด่งดังมากในเรื่องความน่าเชื่อถือในการจัดการงานทั้งหมดของหมู่บ้าน จน รับเธอเข้าร่วมคณะเดินทางของเขา จุดแข็งที่ใหญ่ที่สุดของเธอคือนิสัยไฟแรงที่ทำให้เธอพุ่งเข้าหาปัญหาโดยตรง และนิสัยใจกว้างที่ทำให้เธอสะบัดความยากลำบากและเด้งกลับมาได้ทันทีเมื่อเห็นอาหารอร่อย",
    "power_plus": "Summons XP Party when Kaymak, Pine Monk, Lotus Root Phantom, and Braised Pork Cookie are gathered",
    "power_plus_requirement": "when [[cookie:89]], [[cookie:90]], [[cookie:91]], and Braised Pork Cookie are gathered",
-   "unlock_goal": "มี [[cookie:89]]Kaymak / [[cookie:90]]Pine Monk / [[cookie:91]]Lotus Root Cookie"
+   "unlock_goal": "มี [[cookie:89]]Kaymak Cookie / [[cookie:90]]Pine Monk Cookie / [[cookie:91]]Lotus Root Phantom Cookie"
   },
   {
    "cookie_translation_id": 187,
