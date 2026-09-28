@@ -60,7 +60,7 @@ pub async fn connect_url(
     }
     db.use_ns(ns).use_db(database).await?;
     ensure_search_schema(&db).await?;
-    seed_auto_increment(&db).await?;
+    ensure_sequences(&db).await?;
     Ok(db)
 }
 
@@ -106,53 +106,32 @@ async fn ensure_search_schema(db: &Db) -> Result<()> {
     }
     Ok(())
 }
-/// The next id for `table` from the `auto_increment` counter, one atomic
-/// statement per allocation. The old scheme read the table's max id and
-/// added 1, which is a full scan per write and races two concurrent writes
-/// onto one id. Counters are instead seeded at startup (see
-/// `seed_auto_increment`) and bumped transactionally here.
+/// The next id for `table` from its `DEFINE SEQUENCE`, one lock-free
+/// statement per allocation. Sequences are durable and monotonic; a failed
+/// transaction leaves a gap, never a duplicate.
 pub async fn next_id(db: &Db, table: &str) -> Result<i64> {
     let mut res = db
-        .query("UPSERT type::record('auto_increment', $tb) SET value = (value ?? 0) + 1 RETURN VALUE value;")
-        .bind(("tb", table.to_string()))
+        .query("RETURN sequence::nextval($seq);")
+        .bind(("seq", format!("{table}_seq")))
         .await?;
-    let value = res.take::<Option<i64>>(0)?;
-    value.ok_or_else(|| surrealdb::Error::internal(format!("auto_increment for {table} returned no value")))
+    res.take::<Option<i64>>(0)?
+        .ok_or_else(|| surrealdb::Error::internal(format!("sequence {table}_seq returned no value")))
 }
 
-/// Lifts every `auto_increment` counter to its table's current max id at
-/// startup, so a database seeded directly from `seed.surql` (which carries
-/// no counters) starts allocating past its rows. The floor can only raise a
-/// counter, never lower it: `math::max([(value ?? 0), $max])`, so re-running
-/// the seeding on every boot is idempotent and a fresh seed import heals on
-/// the next startup without a migration step. One statement per table, two
-/// scans each — startup-only, off the request path.
-///
-/// Also defines a counter-maintenance event per table: every numeric-id
-/// CREATE raises the counter inside the triggering transaction (verified:
-/// a cancelled transaction rolls the counter back with the row). Events are
-/// NOT fired by `surreal import`, which is exactly why the startup floor
-/// above still exists — the two compose: events keep the counter live under
-/// normal writes, the floor heals imports on the next boot.
-async fn seed_auto_increment(db: &Db) -> Result<()> {
-    let tables: Vec<String> = Section::ALL
+/// Defines every id sequence the app allocates from, past the seeded max
+/// ids (see seed.surql, which carries the same definitions). `IF NOT
+/// EXISTS` keeps restarts and already-seeded databases untouched; the
+/// application never resizes a live sequence.
+async fn ensure_sequences(db: &Db) -> Result<()> {
+    let mut query = String::new();
+    for table in Section::ALL
         .iter()
         .filter(|s| s.editable())
-        .map(|s| s.table().to_string())
-        .chain(["user".to_string(), "build".to_string()])
-        .collect();
-    let mut query = String::from(
-        "DEFINE TABLE IF NOT EXISTS auto_increment SCHEMALESS PERMISSIONS FULL;\n",
-    );
-    for (i, tb) in tables.iter().enumerate() {
+        .map(|s| s.table())
+        .chain(["user", "build"])
+    {
         query.push_str(&format!(
-            "DEFINE EVENT IF NOT EXISTS {tb}_counter ON TABLE {tb} \
-             WHEN $event = 'CREATE' AND type::is_number(record::id($after.id)) THEN \
-             (UPSERT type::record('auto_increment', '{tb}') \
-             SET value = math::max([(value ?? 0), record::id($after.id)]));\n\
-             LET $m{i} = (SELECT VALUE record::id(id) FROM type::table('{tb}')); \
-             UPSERT type::record('auto_increment', '{tb}') \
-             SET value = math::max([(value ?? 0), (array::max($m{i}) ?? 0)]);\n"
+            "DEFINE SEQUENCE IF NOT EXISTS {table}_seq START 1;\n"
         ));
     }
     db.query(query).await?.check()?;
