@@ -1877,13 +1877,28 @@ pub async fn sitemap_entries(db: &Db) -> Result<Vec<(String, i64)>> {
     Ok(out)
 }
 
-/// Cross-entity full-text search over localized and English catalog prose.
+/// Cross-entity search. The needle goes two ways per table, merged here:
+/// - the full-text index ranks whole-word hits (`@1@`), one query per
+///   locale pair, `search::score` ordering — same tool the V app's FTS5
+///   tables gave it;
+/// - a substring pass matches fragments the tokenizer cannot: prefixes
+///   (`ginger` → GingerBrave) and any Thai run (no tokenizer segments
+///   Thai, so the V app LIKE'd it and this port does the same with
+///   `CONTAINS`). The planner refuses `search::score()` in a WHERE that
+///   mixes MATCHES with non-index clauses, so the passes cannot be OR'd
+///   in SQL; the ranked hits keep their order and the fragment hits fill
+///   the tail, deduped by id.
 pub async fn search(db: &Db, lang: &str, q: &str, limit: i64) -> Result<Vec<(String, Card)>> {
     let query = q.trim();
     if query.is_empty() || limit <= 0 {
         return Ok(Vec::new());
     }
-    let mut out = Vec::new();
+    let needle = query.to_lowercase();
+    let is_thai = needle.chars().any(|c| {
+        matches!(u32::from(c) as u32, 0x0E00..=0x0E7F)
+    });
+    let mut out: Vec<(String, Card)> = Vec::new();
+    let mut seen: std::collections::HashSet<i64> = std::collections::HashSet::new();
     for (section, table, extra, prose) in [
         ("cookies", "cookie", ", grade", "abilities"),
         ("pets", "pet", ", grade", "description"),
@@ -1916,7 +1931,55 @@ pub async fn search(db: &Db, lang: &str, q: &str, limit: i64) -> Result<Vec<(Str
             .bind(("q", query.to_string()))
             .await?
             .take(0)?;
-        out.extend(rows.into_iter().map(|r| (section.to_string(), Card::from(r))));
+        for r in rows {
+            let card = Card::from(r);
+            if seen.insert(card.id) {
+                out.push((section.to_string(), card));
+            }
+        }
+
+        // the substring pass: Thai needles search the th columns (the en
+        // text cannot contain them), latin needles search en plus the
+        // viewer's locale; fragments only, so skip when the index pass
+        // already answered a whole word
+        let columns: Vec<&str> = if is_thai {
+            vec!["th"]
+        } else {
+            vec!["en", &lang[..]]
+        };
+        let mut contains = Vec::with_capacity(columns.len() * (2 + usize::from(prose == "abilities")));
+        for locale in columns {
+            contains.push(format!("string::lowercase(tr.{locale}.name ?? '') CONTAINS $frag"));
+            contains.push(format!(
+                "string::lowercase(tr.{locale}.description ?? '') CONTAINS $frag"
+            ));
+            if prose == "abilities" {
+                contains.push(format!(
+                    "string::lowercase(tr.{locale}.abilities ?? '') CONTAINS $frag"
+                ));
+            }
+        }
+        let sql = format!(
+            "SELECT record::id(id) AS id, image{extra}, {} AS name,
+                    (tr.en.name ?? '') AS en_name
+               FROM {table}
+              WHERE {}
+              LIMIT {limit}",
+            tr("name"),
+            contains.join(" OR "),
+        );
+        let rows: Vec<CardRow> = db
+            .query(sql)
+            .bind(("lang", lang.to_string()))
+            .bind(("frag", needle.clone()))
+            .await?
+            .take(0)?;
+        for r in rows {
+            let card = Card::from(r);
+            if seen.insert(card.id) {
+                out.push((section.to_string(), card));
+            }
+        }
     }
     Ok(out)
 }
