@@ -561,7 +561,7 @@
   {
    "cookie_id": 94,
    "grade": 4,
-   "image": null,
+   "image": "mango_sticky_rice_cookie.png",
    "release_date": "2026-08-27T00:00:00Z"
   }
  ],
@@ -3236,9 +3236,8 @@
    "grade": 4,
    "release_date": "2026-07-23T00:00:00Z"
   },
-  {
-   "pet_id": 101,
-   "image": null,
+  {    "pet_id": 101,
+    "image": "mango_roll.png",
    "grade": 4,
    "release_date": "1970-01-01T00:00:00Z"
   }
