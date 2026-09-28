@@ -241,6 +241,13 @@
     <ul class="flex flex-col gap-2">
         {% for row in combi %}
         <li class="flex items-center gap-3 rounded-xl border border-secondary/40 px-3 py-2">
+            {% match row.partner_image %}{% when Some with (img) %}
+            <img
+                src="/static/img/pets/{{ img }}"
+                alt="{{ row.partner_name }}"
+                class="size-12 shrink-0 object-contain"
+            />
+            {% when None %}{% endmatch %}
             <span class="font-bold">{{ row.partner_name }}</span>
             <span class="text-sm text-foreground-muted">{{ row.effect }}</span>
             {% if row.is_hidden %}

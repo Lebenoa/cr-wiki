@@ -2673,6 +2673,7 @@ pub struct CombiEditRow {
     #[allow(dead_code)]
     pub partner_id: i64,
     pub partner_name: String,
+    pub partner_image: Option<String>,
     pub effect: String,
     pub is_hidden: bool,
 }
@@ -2690,6 +2691,7 @@ pub async fn combi_edit_rows(
             id: record.id,
             partner_id: row.partner_id,
             partner_name: row.partner_name,
+            partner_image: row.partner_image,
             effect: row.effect,
             is_hidden: row.is_hidden,
         })
