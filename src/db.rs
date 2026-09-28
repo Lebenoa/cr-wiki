@@ -106,18 +106,6 @@ async fn ensure_search_schema(db: &Db) -> Result<()> {
     }
     Ok(())
 }
-/// The next id for `table` from its `DEFINE SEQUENCE`, one lock-free
-/// statement per allocation. Sequences are durable and monotonic; a failed
-/// transaction leaves a gap, never a duplicate.
-pub async fn next_id(db: &Db, table: &str) -> Result<i64> {
-    let mut res = db
-        .query("RETURN sequence::nextval($seq);")
-        .bind(("seq", format!("{table}_seq")))
-        .await?;
-    res.take::<Option<i64>>(0)?
-        .ok_or_else(|| surrealdb::Error::internal(format!("sequence {table}_seq returned no value")))
-}
-
 /// Defines every id sequence the app allocates from, past the seeded max
 /// ids (see seed.surql, which carries the same definitions). `IF NOT
 /// EXISTS` keeps restarts and already-seeded databases untouched; the
@@ -1968,29 +1956,32 @@ pub async fn find_user(db: &Db, username: &str) -> Result<Option<User>> {
 /// Creates a user with an already-hashed password. `None` when the username
 /// is taken, which the unique index enforces rather than a prior SELECT.
 pub async fn create_user(db: &Db, username: &str, password_hash: &str) -> Result<Option<User>> {
-    let id = next_id(db, "user").await?;
-    let res = db
-        .query("CREATE type::record(\"user\", $id) SET username = $u, password = $p, is_admin = false, created_at = time::unix();")
-        .bind(("id", id))
+    let mut res = db
+        .query(
+            "LET $id = sequence::nextval('user_seq'); \
+             CREATE type::record('user', $id) SET username = $u, password = $p, is_admin = false, created_at = time::unix(); \
+             RETURN $id;",
+        )
         .bind(("u", username.to_string()))
         .bind(("p", password_hash.to_string()))
         .await?;
-    match res.check() {
-        Ok(_) => Ok(Some(User {
-            id,
-            username: username.to_string(),
-            password: password_hash.to_string(),
-            is_admin: false,
-        })),
-        // a duplicate username trips the unique index; the form says taken
-        Err(e) => {
-            if e.to_string().contains("already contains") {
-                Ok(None)
-            } else {
-                Err(e)
-            }
+    // a duplicate username trips the unique index; the form says taken.
+    // take_errors() leaves the Ok results in place, so the id reads after.
+    if let Some(e) = res.take_errors().into_values().next() {
+        if e.to_string().contains("already contains") {
+            return Ok(None);
         }
+        return Err(e);
     }
+    let id = res
+        .take::<Option<i64>>(2)?
+        .ok_or_else(|| surrealdb::Error::internal("user insert returned no id".to_string()))?;
+    Ok(Some(User {
+        id,
+        username: username.to_string(),
+        password: password_hash.to_string(),
+        is_admin: false,
+    }))
 }
 
 /// Hydrates an explicit id list, preserving the caller's order — which is the
@@ -2252,7 +2243,6 @@ pub async fn insert_entity(
     let Some(table) = entity_table(section) else {
         return Ok(0);
     };
-    let id = next_id(db, table).await?;
     let now = now_unix();
     let image = clean_image(&form.image);
 
@@ -2285,10 +2275,21 @@ pub async fn insert_entity(
             sets.push(format!("unlock_pet_id = {p}"));
         }
     }
-    db.query(format!("CREATE {table}:{id} SET {}", sets.join(", ")).as_str())
+    // allocate and insert in one message: the id comes from the table's
+    // sequence (seed.surql / ensure_sequences), the CREATE consumes it
+    let mut res = db
+        .query(format!(
+            "LET $id = sequence::nextval('{table}_seq'); \
+             CREATE type::record('{table}', $id) SET {}; \
+             RETURN $id;",
+            sets.join(", ")
+        ))
         .bind(("image", image))
         .await?
         .check()?;
+    let id = res
+        .take::<Option<i64>>(2)?
+        .ok_or_else(|| surrealdb::Error::internal(format!("{table} insert returned no id")))?;
     write_translation(db, lang, section, table, id, form).await?;
     crate::options::invalidate();
     Ok(id)

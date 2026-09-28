@@ -392,12 +392,6 @@ pub struct NewBuild {
     pub expires_at: Option<i64>,
 }
 
-/// Builds allocate from the shared `auto_increment` counter like every other
-/// table.
-async fn next_build_id(db: &Db) -> crate::db::Result<i64> {
-    crate::db::next_id(db, "build").await
-}
-
 fn build_sets(b: &NewBuild) -> String {
     format!(
         concat!(
@@ -447,12 +441,15 @@ fn build_sets(b: &NewBuild) -> String {
 /// silent 0: the route logs the cause and answers 500 instead of pretending
 /// the save happened.
 pub async fn insert_build(db: &Db, b: &NewBuild) -> crate::db::Result<i64> {
-    let id = next_build_id(db).await?;
+    // allocate and insert in one message: the id comes from the build
+    // sequence (seed.surql / db::ensure_sequences), the CREATE consumes it
     let sql = format!(
-        "CREATE build:{id} SET {}, created_at = {now},
+        "LET $id = sequence::nextval('build_seq'); \
+         CREATE type::record('build', $id) SET {}, created_at = {now},
             tag = $tags,
             description = $desc, youtube_url = $yt,
-            author = $author, user_id = {uid}, expires_at = $exp",
+            author = $author, user_id = {uid}, expires_at = $exp; \
+         RETURN $id;",
         build_sets(b),
         uid = b.user_id,
         now = now_unix(),
@@ -460,13 +457,17 @@ pub async fn insert_build(db: &Db, b: &NewBuild) -> crate::db::Result<i64> {
     // an explicit 0 reads back as "permanent" everywhere the expiry rule looks;
     // binding None would store NONE and read back identically
     let exp = b.expires_at.unwrap_or(0);
-    db.query(&sql)
+    let mut res = db
+        .query(&sql)
         .bind(("tags", b.tags.clone()))
         .bind(("desc", b.description.clone()))
         .bind(("yt", b.youtube_url.clone()))
         .bind(("exp", exp))
         .await?
         .check()?;
+    let id = res
+        .take::<Option<i64>>(2)?
+        .ok_or_else(|| surrealdb::Error::internal("build insert returned no id".to_string()))?;
     Ok(id)
 }
 
