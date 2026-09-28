@@ -76,6 +76,13 @@ pub async fn warm_pool(db: &Db) -> Result<()> {
 
 /// Ensures the indexes needed by search exist for seeded and upgraded databases.
 /// The application authenticates with the deployment's configured root user.
+///
+/// Also defines the per-table name-gram ingest events: whenever an entity's
+/// translation lands (CREATE with tr, or the UPDATE write_translation sends
+/// right after), the event replaces that entity's name_gram rows — old
+/// name's grams deleted, new name's 3-grams inserted. seed.surql seeds the
+/// rows themselves (events never fire on `surreal import`); this keeps
+/// admin-created and renamed entities fresh on live databases.
 async fn ensure_search_schema(db: &Db) -> Result<()> {
     db.query("DEFINE ANALYZER IF NOT EXISTS cookie_search_en TOKENIZERS class, punct FILTERS lowercase;")
         .await?
@@ -103,6 +110,26 @@ async fn ensure_search_schema(db: &Db) -> Result<()> {
             );
             db.query(sql).await?.check()?;
         }
+    }
+    // the name-gram ingest events. The guard accepts any event that leaves
+    // an en name behind — CREATE-with-tr and write_translation's UPDATE —
+    // and the body first deletes the entity's existing gram rows, so a
+    // rename cannot leave stale grams behind. seed.surql defines the same
+    // statements for fresh imports.
+    for (table, _) in indexes {
+        let sql = format!(
+            "DEFINE EVENT IF NOT EXISTS {table}_gram ON TABLE {table} \
+             WHEN ($after.tr.en.name ?? '') != '' THEN {{ \
+             FOR $g IN (SELECT VALUE gram FROM name_gram \
+                        WHERE section = '{table}' AND entity_id = record::id($after.id)) {{ \
+             DELETE name_gram WHERE section = '{table}' AND gram = $g \
+                AND entity_id = record::id($after.id); }}; \
+             FOR $g IN array::windows(array::filter(string::split(string::lowercase($after.tr.en.name), ''), |$c| $c != ''), 3) \
+                       .map(|$w| array::join($w, '')) {{ \
+             CREATE name_gram SET gram = $g, section = '{table}', \
+                entity_id = record::id($after.id); }} }};"
+        );
+        db.query(sql).await?.check()?;
     }
     Ok(())
 }
@@ -1877,26 +1904,31 @@ pub async fn sitemap_entries(db: &Db) -> Result<Vec<(String, i64)>> {
     Ok(out)
 }
 
-/// Cross-entity search. The needle goes two ways per table, merged here:
+/// Cross-entity search. The needle goes three ways per table, merged here:
 /// - the full-text index ranks whole-word hits (`@1@`), one query per
 ///   locale pair, `search::score` ordering — same tool the V app's FTS5
 ///   tables gave it;
-/// - a substring pass matches fragments the tokenizer cannot: prefixes
-///   (`ginger` → GingerBrave) and any Thai run (no tokenizer segments
-///   Thai, so the V app LIKE'd it and this port does the same with
-///   `CONTAINS`). The planner refuses `search::score()` in a WHERE that
-///   mixes MATCHES with non-index clauses, so the passes cannot be OR'd
-///   in SQL; the ranked hits keep their order and the fragment hits fill
-///   the tail, deduped by id.
+/// - the name-gram index answers fragments and typos in one mechanism
+///   (`name_gram`, seeded with three-character grams of every catalog
+///   name, maintained by the `*_gram` ingest events): the needle's own
+///   grams are looked up and entities ranked by gram overlap. Prefix
+///   (`ginger`), infix, Thai runs and transposed typos (`gingerbrvae`)
+///   all reduce to gram overlap — the same trick Meilisearch's typo
+///   tolerance is built on;
+/// - a substring pass over description/abilities prose for needles the
+///   grams cannot see (grams cover names only; prose is word-level).
+/// The planner refuses `search::score()` in a WHERE that mixes MATCHES
+/// with non-index clauses, so the passes cannot be OR'd in SQL; ranked
+/// hits keep their order and the later passes fill the tail, deduped by id.
 pub async fn search(db: &Db, lang: &str, q: &str, limit: i64) -> Result<Vec<(String, Card)>> {
     let query = q.trim();
     if query.is_empty() || limit <= 0 {
         return Ok(Vec::new());
     }
     let needle = query.to_lowercase();
-    let is_thai = needle.chars().any(|c| {
-        matches!(u32::from(c) as u32, 0x0E00..=0x0E7F)
-    });
+    let is_thai = needle
+        .chars()
+        .any(|c| matches!(u32::from(c) as u32, 0x0E00..=0x0E7F));
     let mut out: Vec<(String, Card)> = Vec::new();
     let mut seen: std::collections::HashSet<i64> = std::collections::HashSet::new();
     for (section, table, extra, prose) in [
@@ -1938,18 +1970,45 @@ pub async fn search(db: &Db, lang: &str, q: &str, limit: i64) -> Result<Vec<(Str
             }
         }
 
-        // the substring pass: Thai needles search the th columns (the en
-        // text cannot contain them), latin needles search en plus the
-        // viewer's locale; fragments only, so skip when the index pass
-        // already answered a whole word
+        // the name-gram pass: the needle's 3-grams against the index, most
+        // overlapping entities first. Grams live in one table for all
+        // sections; the composite index covers the (gram, section) pair.
+        let grams = name_grams(&needle);
+        if !grams.is_empty() {
+            let rows: Vec<CardRow> = db
+                .query(format!(
+                    "SELECT record::id(id) AS id, image{extra}, {} AS name,
+                            (tr.en.name ?? '') AS en_name
+                       FROM {table}
+                      WHERE record::id(id) IN (
+                            SELECT VALUE entity_id FROM name_gram
+                             WHERE section = $sec AND gram IN $grams
+                             GROUP BY entity_id LIMIT {limit})",
+                    tr("name")
+                ))
+                .bind(("sec", table.to_string()))
+                .bind(("grams", grams.clone()))
+                .await?
+                .take(0)?;
+            for r in rows {
+                let card = Card::from(r);
+                if seen.insert(card.id) {
+                    out.push((section.to_string(), card));
+                }
+            }
+        }
+
+        // the prose pass: substring over description (and abilities), for
+        // needles the name grams cannot see. Thai needles search the th
+        // columns (the en text cannot contain them), latin needles search
+        // en plus the viewer's locale.
         let columns: Vec<&str> = if is_thai {
             vec!["th"]
         } else {
             vec!["en", &lang[..]]
         };
-        let mut contains = Vec::with_capacity(columns.len() * (2 + usize::from(prose == "abilities")));
+        let mut contains = Vec::with_capacity(columns.len() * (1 + usize::from(prose == "abilities")));
         for locale in columns {
-            contains.push(format!("string::lowercase(tr.{locale}.name ?? '') CONTAINS $frag"));
             contains.push(format!(
                 "string::lowercase(tr.{locale}.description ?? '') CONTAINS $frag"
             ));
@@ -1982,6 +2041,20 @@ pub async fn search(db: &Db, lang: &str, q: &str, limit: i64) -> Result<Vec<(Str
         }
     }
     Ok(out)
+}
+
+/// The needle's name-gram vocabulary: distinct three-*character* slices of
+/// the lowercased needle (char boundaries, not bytes — Thai chars are 3
+/// bytes each); a needle shorter than three characters is its own gram so
+/// one- and two-character queries still find names containing them.
+fn name_grams(needle: &str) -> Vec<String> {
+    let chars: Vec<char> = needle.chars().collect();
+    if chars.len() < 3 {
+        return vec![needle.to_string()];
+    }
+    (0..=chars.len() - 3)
+        .map(|i| chars[i..i + 3].iter().collect())
+        .collect()
 }
 
 /// A user row, for the session layer.
