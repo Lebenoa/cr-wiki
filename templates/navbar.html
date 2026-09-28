@@ -88,7 +88,9 @@
             </div>
             {% endif %}
 
-            <button type="button" data-lang-open class="btn hover:bg-secondary/20">
+            <button class="btn hover:bg-secondary/20" command="show-modal"
+                commandfor="language-dropdown"
+                onclick="document.getElementById('account-dropdown')?.hidePopover()">
                 {{ ctx.l.t("language") }}:
                 <span class="inline-block size-5 rounded-full overflow-hidden shrink-0 ml-2"
                     aria-hidden="true">{{ ctx.lang_flag(ctx.lang)|safe }}</span>
@@ -186,19 +188,6 @@
         </dialog>
     </div>
     <script>
-        (function () {
-            // the old app opened this dialog through command=show-modal; the
-            // ported markup had popovertarget, which only targets popover
-            // elements and never fired on a <dialog>. Open it here, and hide
-            // the account popover first so the two never stack.
-            const account = document.getElementById('account-dropdown');
-            document.querySelectorAll('[data-lang-open]').forEach(function (btn) {
-                btn.addEventListener('click', function () {
-                    account?.hidePopover();
-                    document.getElementById('language-dropdown')?.showModal();
-                });
-            });
-        })();
         (function () {
             const btn = document.getElementById('search-toggle');
             const box = document.getElementById('search-box');
