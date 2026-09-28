@@ -1,20 +1,18 @@
-{% if hits.is_empty() %}
+{% if groups.is_empty() %}
 <p class="text-center text-foreground-muted py-4 px-2">{{ ctx.l.t("search_no_results") }}</p>
 {% else %}
-{% let mut last_section = "" %}
-{% for hit in hits %}
-{% if hit.0 != last_section %}
-<div class="px-2 mt-2 text-xs font-label uppercase text-foreground-muted">{{ ctx.l.t(hit.0) }}</div>
-{% let last_section = hit.0 %}
-{% endif %}
-<a href="/{{ hit.0 }}/{{ hit.1.id }}" class="flex items-center gap-3 rounded-lg p-2 hover:bg-surface transition-colors">
-    {% match hit.1.image %}{% when Some with (img) %}
-    <img src="/static/img/{{ hit.0 }}/{{ img }}" alt="{{ hit.1.name }}" class="size-10 object-contain shrink-0">
+{% for group in groups %}
+<div class="px-2 mt-2 text-xs font-label uppercase text-foreground-muted">{{ ctx.l.t(group.0) }}</div>
+{% for hit in group.1 %}
+<a href="/{{ group.0 }}/{{ hit.id }}" class="flex items-center gap-3 rounded-lg p-2 hover:bg-surface transition-colors">
+    {% match hit.image %}{% when Some with (img) %}
+    <img src="/static/img/{{ group.0 }}/{{ img }}" alt="{{ hit.name }}" class="size-10 object-contain shrink-0">
     {% when None %}{% endmatch %}
     <span class="flex flex-col min-w-0">
-        <span class="card-title truncate">{{ hit.1.name }}</span>
-        <span class="text-xs text-foreground-muted">{{ ctx.l.t(hit.0) }}</span>
+        <span class="card-title truncate">{{ hit.name }}</span>
+        <span class="text-xs text-foreground-muted">{{ ctx.l.t(group.0) }}</span>
     </span>
 </a>
+{% endfor %}
 {% endfor %}
 {% endif %}

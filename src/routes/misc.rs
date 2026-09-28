@@ -30,17 +30,19 @@ pub async fn index(ctx: Ctx) -> Html<String> {
 struct SearchPage {
     ctx: Ctx,
     q: String,
-    hits: Vec<(String, Card)>,
+    groups: Vec<(String, Vec<Card>)>,
 }
 
-/// The dropdown body the navbar swaps into `#search-results`: the same hits as
-/// the full page, without the page shell. One template serves both so the two
-/// views cannot drift.
+/// The dropdown body the navbar swaps into `#search-results` and the full
+/// page's result section share one template so the two views cannot drift.
+/// Section-grouped hits: grouping lives here, not in the template —
+/// askama's `let` shadows rather than assigns, so a running key inside the
+/// loop re-prints the header for every hit.
 #[derive(Template)]
 #[template(path = "search_results.html")]
 struct SearchResults {
     ctx: Ctx,
-    hits: Vec<(String, Card)>,
+    groups: Vec<(String, Vec<Card>)>,
 }
 
 pub async fn search(
@@ -50,13 +52,20 @@ pub async fn search(
     let state = crate::state::state();
     let query = q.q.clone().unwrap_or_default();
     let hits = db::search(&state.db, &ctx.lang, &query, 20).await?;
+    let mut groups: Vec<(String, Vec<Card>)> = Vec::new();
+    for (section, card) in hits {
+        match groups.last_mut() {
+            Some((last, cards)) if *last == section => cards.push(card),
+            _ => groups.push((section, vec![card])),
+        }
+    }
     let html = if ctx.is_fragment() {
-        SearchResults { ctx, hits }.render()
+        SearchResults { ctx, groups }.render()
     } else {
         SearchPage {
             ctx,
             q: query,
-            hits,
+            groups,
         }
         .render()
     };
