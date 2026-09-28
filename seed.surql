@@ -463,3 +463,26 @@ DEFINE INDEX episode_relic_episode_id ON episode_relic FIELDS episode_id;
 DEFINE INDEX cookie_release_date ON cookie FIELDS release_date;
 DEFINE INDEX pet_release_date ON pet FIELDS release_date;
 DEFINE INDEX treasure_rank_release_date ON treasure FIELDS rank, release_date;
+
+
+-- ------------------------------
+-- AUTO INCREMENT
+-- ------------------------------
+-- The app allocates numeric ids from one counter row per table with a single
+-- atomic UPSERT (see src/db.rs next_id). Import defines the counters and the
+-- CREATE events that keep them above every numeric id written later; the app
+-- re-asserts the same definitions at startup (idempotent) and lifts each
+-- counter to its table's current max id, which covers seed data itself since
+-- events do not fire on `surreal import`.
+DEFINE TABLE auto_increment TYPE ANY SCHEMALESS PERMISSIONS FULL;
+
+DEFINE EVENT build_counter ON TABLE build WHEN $event = 'CREATE' AND type::is_number(record::id($after.id)) THEN (UPSERT type::record('auto_increment', 'build') SET value = math::max([(value ?? 0), record::id($after.id)]));
+DEFINE EVENT user_counter ON TABLE user WHEN $event = 'CREATE' AND type::is_number(record::id($after.id)) THEN (UPSERT type::record('auto_increment', 'user') SET value = math::max([(value ?? 0), record::id($after.id)]));
+DEFINE EVENT cookie_counter ON TABLE cookie WHEN $event = 'CREATE' AND type::is_number(record::id($after.id)) THEN (UPSERT type::record('auto_increment', 'cookie') SET value = math::max([(value ?? 0), record::id($after.id)]));
+DEFINE EVENT pet_counter ON TABLE pet WHEN $event = 'CREATE' AND type::is_number(record::id($after.id)) THEN (UPSERT type::record('auto_increment', 'pet') SET value = math::max([(value ?? 0), record::id($after.id)]));
+DEFINE EVENT treasure_counter ON TABLE treasure WHEN $event = 'CREATE' AND type::is_number(record::id($after.id)) THEN (UPSERT type::record('auto_increment', 'treasure') SET value = math::max([(value ?? 0), record::id($after.id)]));
+DEFINE EVENT episode_counter ON TABLE episode WHEN $event = 'CREATE' AND type::is_number(record::id($after.id)) THEN (UPSERT type::record('auto_increment', 'episode') SET value = math::max([(value ?? 0), record::id($after.id)]));
+DEFINE EVENT ingredient_counter ON TABLE ingredient WHEN $event = 'CREATE' AND type::is_number(record::id($after.id)) THEN (UPSERT type::record('auto_increment', 'ingredient') SET value = math::max([(value ?? 0), record::id($after.id)]));
+DEFINE EVENT jelly_counter ON TABLE jelly WHEN $event = 'CREATE' AND type::is_number(record::id($after.id)) THEN (UPSERT type::record('auto_increment', 'jelly') SET value = math::max([(value ?? 0), record::id($after.id)]));
+DEFINE EVENT relic_counter ON TABLE relic WHEN $event = 'CREATE' AND type::is_number(record::id($after.id)) THEN (UPSERT type::record('auto_increment', 'relic') SET value = math::max([(value ?? 0), record::id($after.id)]));
+DEFINE EVENT skin_counter ON TABLE skin WHEN $event = 'CREATE' AND type::is_number(record::id($after.id)) THEN (UPSERT type::record('auto_increment', 'skin') SET value = math::max([(value ?? 0), record::id($after.id)]));
