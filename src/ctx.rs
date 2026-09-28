@@ -112,6 +112,16 @@ impl Ctx {
         format!("{}{}{}", self.site_url, self.path, suffix)
     }
 
+    /// The language modal's switch URL, distinct from `lang_url`: it always
+    /// carries the explicit `?lang=` (English included), because
+    /// `resolve_lang` lets a `?lang=` query beat the `wikilang` cookie while
+    /// the cookie beats an absent param. The clean canonical form of the
+    /// default locale would re-render the cookie's language and switching
+    /// to English could never work.
+    pub fn lang_switch_url(&self, lang: &str) -> String {
+        format!("{}{}?lang={}", self.site_url, self.path, lang)
+    }
+
     /// The loaded locales; a method because askama calls it on the context.
     #[allow(clippy::unused_self)]
     pub fn langs(&self) -> Vec<String> {

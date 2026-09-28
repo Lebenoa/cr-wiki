@@ -134,7 +134,7 @@
             <h2 class="font-bold text-center text-xl">{{ ctx.l.t("choose_language") }}</h2>
             <div class="flex items-center gap-2 w-full justify-center flex-row flex-wrap">
                 {% for opt in ctx.lang_options() %}
-                <a hreflang="{{ opt.code }}" href="{{ ctx.lang_url(opt.code) }}"
+                <a hreflang="{{ opt.code }}" href="{{ ctx.lang_switch_url(opt.code) }}"
                     class="flex items-center gap-2 px-4 py-2 rounded {% if opt.code == ctx.lang %}bg-primary{% else %}bg-secondary/30 hover:bg-secondary/50{% endif %} text-foreground transition-colors"
                     {% if opt.code == ctx.lang %}aria-current="true"{% endif %}>
                     <span class="inline-block size-5 rounded-full overflow-hidden shrink-0"
