@@ -327,6 +327,41 @@ impl Ctx {
         }
     }
 
+    /// The image URL's MIME type from its extension; sprites are PNG, the
+    /// banner JPEG. A method because askama's lexer has no single-quoted
+    /// strings, so the branch cannot live inline in the attribute.
+    #[allow(clippy::unused_self)]
+    pub fn image_mime(&self, image: &str) -> &'static str {
+        if image.ends_with(".png") {
+            "image/png"
+        } else {
+            "image/jpeg"
+        }
+    }
+
+    /// The image URL's on-disk size for `og:image:width`/`height`, so
+    /// platform previews reserve the right aspect for a detail page's sprite
+    /// as well as the wide banner. Banner dims when the file is missing or
+    /// unreadable — a wrong hint is better than an absent one, and the
+    /// sprite is served from `/static/img/...`, which this method maps to
+    /// `static/img/...`.
+    #[allow(clippy::unused_self)]
+    pub fn image_dimensions(&self, image: &str) -> (u32, u32) {
+        const BANNER: (u32, u32) = (2560, 1440);
+        let Some(path) = image
+            .strip_prefix(&format!("{}/", self.site_url.trim_end_matches('/')))
+            .and_then(|rel| rel.strip_prefix("static/"))
+            .map(|rel| format!("static/{rel}"))
+        else {
+            return BANNER;
+        };
+        std::fs::File::open(&path)
+            .map(|f| imagesize::reader_size(std::io::BufReader::new(f)))
+            .map(|s| s.map(|d| (d.width as u32, d.height as u32)))
+            .unwrap_or_else(|_| Ok(BANNER))
+            .unwrap_or(BANNER)
+    }
+
     /// The wikilang cookie as an Open Graph locale tag.
     pub fn og_locale(&self) -> &'static str {
         if self.lang == "th" {

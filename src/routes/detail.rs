@@ -50,6 +50,17 @@ struct DetailPage {
 }
 
 impl DetailPage {
+    /// The section for template expressions, which read `self.` fields.
+    fn section(&self) -> &str {
+        &self.section
+    }
+
+    /// The site URL likewise; askama expressions inside `{% call %}` see
+    /// only `self` fields, not the handler's locals.
+    fn site_url(&self) -> &str {
+        &self.ctx.site_url
+    }
+
     /// The section's own edit route, shown to an admin only.
     fn can_edit(&self) -> bool {
         self.ctx.is_admin()

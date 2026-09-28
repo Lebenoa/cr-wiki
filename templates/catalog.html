@@ -2,6 +2,7 @@
 {% import "title.html" as t %}
 {% block title %}{{ t::tags(ctx.page_title(title_key.as_str()), ctx.page_desc(desc_key.as_str()), ctx.social_image()) }}{% endblock %}
 {% block content %}
+{% call t::breadcrumb([(ctx.l.t("site_name"), Some(ctx.site_url.clone())), (ctx.l.t(title_key.as_str()), None)]) %}{% endcall %}
 <h1 class="page-title">{{ ctx.l.t(title_key.as_str()) }}</h1>
 {% if ctx.is_admin() && ctx.section_editable(section.as_str()) %}
 <div class="admin-actions">

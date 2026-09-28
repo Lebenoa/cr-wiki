@@ -1,7 +1,9 @@
-{% extends "base.html" %} {% import "title.html" as t %} {% block title %}{{
+{% extends "base.html" %} {% import "title.html" as t %} {% import "title.html" as t2 %} {% block title %}{{
 t::tags(ctx.entity_title(item.name.as_str()), ctx.entity_desc(section.as_str(),
 item.name.as_str()), ctx.entity_image(section.as_str(), item.image.as_ref()))
-}}{% endblock %} {% block content %}
+}}{% endblock %}
+{% block content %}
+{% call t2::breadcrumb([(ctx.l.t("site_name"), Some(ctx.site_url.clone())), (ctx.l.t(self.section()), Some(format!("{}/{}", self.site_url(), self.section()))), (item.name.clone(), None)]) %}{% endcall %}
 <section class="m-8 px-4">
     <a href="/{{ section }}" class="back-link"
         >&larr; {{ ctx.l.t("back_to_list") }}</a

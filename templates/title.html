@@ -1,9 +1,29 @@
+{% macro breadcrumb(items) %}
+<script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+        {% for it in items %}
+        {
+            "@type": "ListItem",
+            "position": {{ loop.index }},
+            "name": "{{ it.0 }}"{% if let Some(u) = &it.1 %},
+            "item": "{{ u }}"{% endif %}
+        }{% if !loop.last %},{% endif %}
+        {% endfor %}
+    ]
+}
+</script>
+{% endmacro %}
 {% macro tags(text, desc, image) %}
-<title>{{ text }}</title>
 <meta name="description" content="{{ desc }}" />
 <meta property="og:title" content="{{ text }}" />
 <meta property="og:description" content="{{ desc }}" />
 <meta property="og:image" content="{{ image }}" />
+<meta property="og:image:width" content="{{ ctx.image_dimensions(image.as_str()).0 }}" />
+<meta property="og:image:height" content="{{ ctx.image_dimensions(image.as_str()).1 }}" />
+<meta property="og:image:type" content="{{ ctx.image_mime(image.as_str()) }}" />
 <meta property="og:image:alt" content="{{ text }}" />
 <meta name="twitter:card" content="{{ ctx.social_card_type(image.as_str()) }}" />
 <meta name="twitter:title" content="{{ text }}" />
