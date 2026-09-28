@@ -41,13 +41,23 @@ impl Sessions {
         }
     }
 
+    /// Locks the map, warning on poison: a poisoned lock must not silently
+    /// turn `start` into a login that hands out a cookie for a session that
+    /// was never stored, nor mute `end`/`end_all_for` revocations.
+    fn lock(&self, op: &str) -> Option<std::sync::MutexGuard<'_, HashMap<String, Entry>>> {
+        self.inner.lock().map_err(|e| {
+            tracing::warn!(op, error = %e, "session store mutex poisoned");
+            e
+        }).ok()
+    }
+
     /// Starts a session and returns its key, which becomes the cookie value.
     /// Expired entries are swept on the way in, so the map cannot grow
     /// without bound.
     pub fn start(&self, user: SessionUser) -> String {
         let key = uuid::Uuid::new_v4().to_string();
         let now = now_unix();
-        if let Ok(mut map) = self.inner.lock() {
+        if let Some(mut map) = self.lock("start") {
             map.retain(|_, e| now.saturating_sub(e.issued) <= SESSION_TTL_SECS);
             map.insert(key.clone(), Entry { user, issued: now });
         }
@@ -55,7 +65,7 @@ impl Sessions {
     }
 
     pub fn get(&self, key: &str) -> Option<SessionUser> {
-        let mut map = self.inner.lock().ok()?;
+        let mut map = self.lock("get")?;
         let issued = map.get(key)?.issued;
         if now_unix().saturating_sub(issued) > SESSION_TTL_SECS {
             // a stale token must not authenticate anyone; drop it so it also
@@ -67,7 +77,7 @@ impl Sessions {
     }
 
     pub fn end(&self, key: &str) {
-        if let Ok(mut map) = self.inner.lock() {
+        if let Some(mut map) = self.lock("end") {
             map.remove(key);
         }
     }
@@ -76,7 +86,7 @@ impl Sessions {
     /// a stolen session token does not survive its owner logging out; login
     /// deliberately does NOT call this — multiple devices stay signed in.
     pub fn end_all_for(&self, user_id: i64) {
-        if let Ok(mut map) = self.inner.lock() {
+        if let Some(mut map) = self.lock("end_all_for") {
             map.retain(|_, e| e.user.id != user_id);
         }
     }
@@ -100,16 +110,26 @@ pub async fn hash_password(db: &Db, password: &str) -> Result<String, surrealdb:
 
 /// Verifies a password against a PHC hash via `crypto::argon2::compare`.
 /// Malformed hashes compare false rather than erroring, and so does a
-/// transport error — the caller only needs the verdict.
+/// transport error — the caller only needs the verdict. The failure is
+/// logged, though: an outage must not be indistinguishable from a typo.
 pub async fn verify_password(db: &Db, password: &str, hash: &str) -> bool {
-    matches!(
-        db.query("RETURN crypto::argon2::compare($h, $p)")
-            .bind(("h", hash.to_string()))
-            .bind(("p", password.to_string()))
-            .await
-            .and_then(|mut r| r.take::<Option<bool>>(0)),
-        Ok(Some(true))
-    )
+    match db
+        .query("RETURN crypto::argon2::compare($h, $p)")
+        .bind(("h", hash.to_string()))
+        .bind(("p", password.to_string()))
+        .await
+        .and_then(|mut r| r.take::<Option<bool>>(0))
+    {
+        Ok(Some(verdict)) => verdict,
+        Ok(None) => {
+            tracing::warn!("password verify returned no verdict; treating as wrong password");
+            false
+        }
+        Err(e) => {
+            tracing::warn!(error = %e, "password verify failed; treating as wrong password");
+            false
+        }
+    }
 }
 
 /// Burns roughly the time a real verification costs, so a missing username

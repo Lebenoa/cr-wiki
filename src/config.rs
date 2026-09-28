@@ -79,12 +79,23 @@ impl Default for RateLimit {
 
 impl Config {
     /// Loads Config.toml, falling back to the defaults when it is missing or
-    /// unparseable — the V version prints and carries on the same way.
+    /// unparseable — the V version prints and carries on the same way. The
+    /// fallback is loud: a half-read config silently disables rate limiting
+    /// and Turnstile, so the reason must reach the log.
     pub fn load(path: &str) -> Self {
-        let mut cfg: Self = std::fs::read_to_string(path)
-            .ok()
-            .and_then(|s| toml::from_str(&s).ok())
-            .unwrap_or_default();
+        let mut cfg: Self = match std::fs::read_to_string(path) {
+            Ok(s) => match toml::from_str(&s) {
+                Ok(c) => c,
+                Err(e) => {
+                    tracing::error!("config: {path} does not parse ({e}); running on defaults");
+                    Self::default()
+                }
+            },
+            Err(_) => {
+                tracing::warn!("config: {path} not found; running on defaults");
+                Self::default()
+            }
+        };
 
         // CR_HOST / CR_PORT override the bind address without editing the
         // shared file.

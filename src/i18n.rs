@@ -39,19 +39,31 @@ fn parse(text: &str) -> HashMap<String, String> {
 /// same scan `api/available_langs.v` does, and memoized the same way.
 pub fn load(dir: &str) {
     let mut catalog: HashMap<String, HashMap<String, String>> = HashMap::new();
-    if let Ok(entries) = std::fs::read_dir(dir) {
-        for entry in entries.flatten() {
-            let path = entry.path();
-            if path.extension().and_then(|e| e.to_str()) != Some("tr") {
-                continue;
+    match std::fs::read_dir(dir) {
+        Ok(entries) => {
+            for entry in entries.flatten() {
+                let path = entry.path();
+                if path.extension().and_then(|e| e.to_str()) != Some("tr") {
+                    continue;
+                }
+                let stem = match path.file_stem().and_then(|s| s.to_str()) {
+                    Some(s) if s != "lang_map" => s.to_string(),
+                    _ => continue,
+                };
+                match std::fs::read_to_string(&path) {
+                    Ok(text) => {
+                        catalog.insert(stem, parse(&text));
+                    }
+                    Err(e) => {
+                        // a dropped language answers every key with the key
+                        // itself, which looks like data loss on the site
+                        tracing::warn!("i18n: cannot read {}: {e}", path.display());
+                    }
+                }
             }
-            let stem = match path.file_stem().and_then(|s| s.to_str()) {
-                Some(s) if s != "lang_map" => s.to_string(),
-                _ => continue,
-            };
-            if let Ok(text) = std::fs::read_to_string(&path) {
-                catalog.insert(stem, parse(&text));
-            }
+        }
+        Err(e) => {
+            tracing::error!("i18n: cannot scan {dir}: {e}; every key will render as itself");
         }
     }
     let _ = CATALOG.set(catalog);
@@ -71,8 +83,15 @@ pub fn available_langs() -> Vec<String> {
 /// `lang_map.tr`'s locale → display name (en → English, th → ไทย); the code
 /// itself when unmapped, so a new locale renders even before it is added.
 pub fn lang_display(lang: &str) -> String {
-    static MAP: LazyLock<HashMap<String, String>> =
-        LazyLock::new(|| parse(&std::fs::read_to_string("translations/lang_map.tr").unwrap_or_default()));
+    static MAP: LazyLock<HashMap<String, String>> = LazyLock::new(|| {
+        match std::fs::read_to_string("translations/lang_map.tr") {
+            Ok(text) => parse(&text),
+            Err(e) => {
+                tracing::warn!("i18n: lang_map.tr unavailable ({e}); language names fall back to codes");
+                HashMap::new()
+            }
+        }
+    });
     MAP.get(lang)
         .cloned()
         .unwrap_or_else(|| lang.to_string())

@@ -1765,22 +1765,23 @@ pub async fn names_for(
         "SELECT record::id(id) AS id, image,
                 {} AS name
            FROM {}
-          WHERE id IN $ids",
+          WHERE record::id(id) IN $ids",
         tr("name"),
         kind.table,
     );
-    let list: Vec<String> = ids
-        .iter()
-        .map(|i| format!("{}:{}", kind.table, i))
-        .collect();
     let rows: Vec<CardRow> = db
         .query(&sql)
         .bind(("lang", lang.to_string()))
-        .bind(("ids", list))
+        .bind(("ids", ids.to_vec()))
         .await?
         .take(0)?;
     for r in rows {
         map.insert(r.id, (r.name, r.image));
+    }
+    for id in ids {
+        if !map.contains_key(id) {
+            tracing::warn!(table = kind.table, id, lang, "name lookup matched no row; callers render an empty name and no thumbnail");
+        }
     }
     Ok(map)
 }
@@ -1875,8 +1876,16 @@ pub async fn entity_link(
         .bind(("tb", k.table))
         .bind(("id", id))
         .await
+        .map_err(|e| {
+            tracing::warn!(table = k.table, id, error = %e, "rich-text link lookup failed");
+            e
+        })
         .ok()?
         .take(0)
+        .map_err(|e| {
+            tracing::warn!(table = k.table, id, error = %e, "rich-text link lookup failed");
+            e
+        })
         .ok()?;
     let row = rows.pop()?;
     let name = if row.name.is_empty() {
@@ -2145,19 +2154,15 @@ pub async fn cards_by_ids(db: &Db, lang: &str, kind: &str, ids: &[i64]) -> Resul
         "SELECT record::id(id) AS id, image{}, {} AS name,
                 (tr.en.name ?? '') AS en_name
            FROM {}
-          WHERE id IN $ids",
+          WHERE record::id(id) IN $ids",
         if k.graded { ", grade" } else { "" },
         tr("name"),
         k.table,
     );
-    let list: Vec<String> = ids
-        .iter()
-        .map(|i| format!("{}:{}", k.table, i))
-        .collect();
     let found: Vec<Card> = db
         .query(&sql)
         .bind(("lang", lang.to_string()))
-        .bind(("ids", list))
+        .bind(("ids", ids.to_vec()))
         .await?
         .take::<Vec<CardRow>>(0)?
         .into_iter()
@@ -2169,8 +2174,11 @@ pub async fn cards_by_ids(db: &Db, lang: &str, kind: &str, ids: &[i64]) -> Resul
     }
     let mut ordered = Vec::with_capacity(ids.len());
     for id in ids {
-        if let Some(card) = cards_by_id.get(id) {
-            ordered.push(card.clone());
+        match cards_by_id.get(id) {
+            Some(card) => ordered.push(card.clone()),
+            None => {
+                tracing::warn!(table = k.table, id, lang, "card lookup matched no row; the slot renders without it");
+            }
         }
     }
     Ok(ordered)
