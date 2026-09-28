@@ -608,7 +608,7 @@
    "description": "ลดอัตราการสูญเสียพลังชีวิต (สูงสุด 17%)\n\nคุกกี้รสสตรอเบอร์รี่ขี้อายสุดขีด ชอบโบนัสไทม์มากกว่าการวิ่งทั้งหมด เธออยากอยู่ตรงนั้นตลอดไปถ้าทำได้",
    "power_plus": "",
    "power_plus_requirement": "",
-   "unlock_goal": "มีเพื่อน 3 คน"
+   "unlock_goal": "มี เพื่อน 3 คน"
   },
   {
    "cookie_translation_id": 5,
@@ -850,7 +850,7 @@
    "description": "ฟื้นคืนชีพเมื่อพลังงานหมดได้สูงสุด 8 ครั้ง (ครั้งละ 17~30 พลังงาน) เมื่ออัปเกรด\n\nทำจากส่วนผสมที่ขึ้นรา คุกกี้ซอมบี้ถูกอบอย่างไม่ทั่วถึงและราดแยมสตรอว์เบอร์รีกับช็อกโกแลตละลายอย่างเลอะเทอะ เนื่องจากฟื้นคืนชีพได้ง่าย เขาจึงกังวลเพียงเรื่องการตกลงไปในหลุมเท่านั้น",
    "power_plus": "",
    "power_plus_requirement": "",
-   "unlock_goal": "มีเพื่อน 50 คนจากกิจกรรมเชิญเพื่อนระยะเวลาจำกัด"
+   "unlock_goal": "มี เพื่อน 50 คนจากกิจกรรมเชิญเพื่อนระยะเวลาจำกัด"
   },
   {
    "cookie_translation_id": 27,
@@ -916,7 +916,7 @@
    "description": "หลังจากพลังงานหมด จะฟื้นคืนชีพเป็นคุกกี้ผีโจรสลัดด้วยพลังงานสูงสุด 160\n\nน้ำทะเลและเหล้ารัมเป็นส่วนผสมสำคัญของคุกกี้โจรสลัด เขาอาจดูแข็งกร้าว แต่แท้จริงแล้วเป็นคนโรแมนติกสิ้นหวัง ในร่างผี คุกกี้โจรสลัดเดินทะลุอุปสรรคได้ แต่อนิจจา ไม่สามารถเก็บโพชันพลังงานได้เลย",
    "power_plus": "",
    "power_plus_requirement": "",
-   "unlock_goal": "มีเพื่อน 100 คน"
+   "unlock_goal": "มี เพื่อน 100 คน"
   },
   {
    "cookie_translation_id": 33,
@@ -960,7 +960,7 @@
    "description": "เมื่อเกจพลังเต็ม คุกกี้จะแปลงร่างเป็นซูเปอร์ฮีโร่ ซึ่งบินด้วยพุ่งและไร้เทียมทาน (ระหว่างโหมดฮีโร่ คุณสามารถบินความเร็วสูงแบบไร้เทียมทานและได้รับออร่าแม่เหล็ก)\n\nหลังจากการศึกษาหลายชั่วโมง ในที่สุดเขาก็ประสบความสำเร็จในการสร้างชุดซูเปอร์แคราเมลไซรัป ออกแบบมาเพื่อการหลบหนีอย่างเหมาะสม ด้วยเครื่องยนต์แคนดี้ที่ชาร์จได้และพลังจรวด การอัปเกรดจะลดเวลาที่ต้องใช้ในการชาร์จเครื่องยนต์เต็ม",
    "power_plus": "",
    "power_plus_requirement": "",
-   "unlock_goal": "มีเพื่อน 120 คน"
+   "unlock_goal": "มี เพื่อน 120 คน"
   },
   {
    "cookie_translation_id": 37,
@@ -1114,7 +1114,7 @@
    "description": "สร้างออร่าแม่เหล็กซึ่งทำหน้าที่เป็นโล่ด้วย\r\n\r\nด้วยแคลอรีน้อยที่สุดและไฟเบอร์สูงที่สุด เป็นคุกกี้ที่สุขภาพดีที่สุดในทั้งหมด เธอ甚至可以ผลิตออกซิเจน ซึ่งทำให้อากาศรอบตัวสะอาด พลังงานของป่าเลี้ยงโล่ปกป้องของเธอ ผู้ที่อิจฉาคุกกี้แฟรี่บอกว่าเธอมีแยมสตรอว์เบอร์รีแห่งความเย่อหยิ่งอยู่ข้างใน แต่คุณไม่เชื่อพวกเขาใช่ไหม?",
    "power_plus": "",
    "power_plus_requirement": "",
-   "unlock_goal": "มีสมบัติอัปเกรดเต็มที่ 5 ชิ้น"
+   "unlock_goal": "มี สมบัติอัปเกรดเต็มที่ 5 ชิ้น"
   },
   {
    "cookie_translation_id": 51,
@@ -1136,7 +1136,7 @@
    "description": "สไลด์พุ่งปล่อยโน้ตเยลลี่ที่เก็บเป็นคะแนนได้ สไลด์พุ่งที่ชาร์จเต็มจะทำลายอุปสรรคใกล้เคียง\n\n<nowiki>เขาเป็นคุกกี้เพียงคนเดียวที่ค้นพบร็อกแอนด์โรลในเตาอบ การแสดงร็อกของเขาจะทำให้ถุงเท้าคุณหลุด ความลับที่ทำให้การแสดงของเขาน่าทึ่งคืออะไร? เขารู้ว่าการฝึกฝนทำให้สมบูรณ์แบบ ท่ามกลางการปรับปรุงสไตล์ไม่หยุดหย่อน เขาค้นพบความสามารถสไลด์พุ่ง เขาคือดาวเด่นท่ามกลางเหล่าคุกกี้</nowiki>",
    "power_plus": "",
    "power_plus_requirement": "",
-   "unlock_goal": "มีสมบัติ 20 ชิ้น"
+   "unlock_goal": "มี สมบัติ 20 ชิ้น"
   },
   {
    "cookie_translation_id": 53,
@@ -1158,7 +1158,7 @@
    "description": "ขว้างเชอร์รี่บอมบ์ที่ทำลายอุปสรรคและสร้างเชอร์รี่เยลลี่ ความเร็วจะเพิ่มขึ้นจนกว่าจะชนอุปสรรค การชนอุปสรรคจะทำให้กลับสู่ความเร็วเดิม ระเบิดถี่ขึ้นเมื่ออัปเกรด\n\nตกแต่งด้วยไซรัปเชอร์รี่สดใส คุกกี้นี้ตามหาปัญหาอยู่เสมอ รูปลักษณ์น่ารักทำให้การแกล้งอันตรายของเธอคาดไม่ถึงมากขึ้น ระวังเชอร์รี่บอมบ์ที่เธอชอบขว้างไปมา",
    "power_plus": "",
    "power_plus_requirement": "",
-   "unlock_goal": "มีสมบัติอัปเกรดเต็มที่ 8 ชิ้น"
+   "unlock_goal": "มี สมบัติอัปเกรดเต็มที่ 8 ชิ้น"
   },
   {
    "cookie_translation_id": 55,
@@ -1202,7 +1202,7 @@
    "description": "ทำลายอุปสรรคตามช่วงเวลาที่กำหนดด้วยการเรียกซีสโนว์โคนที่สร้างสโนว์ฟลาวเวอร์เยลลี่ การเก็บสโนว์ฟลาวเวอร์เยลลี่จะสามารถเรียกเกรทสโนว์คิงที่สร้างพายุหิมะสโนว์ฟลาวเวอร์เยลลี่ได้ พลังงานจะฟื้นฟูเล็กน้อยเมื่ออยู่บนเกรทสโนว์คิง\n\nทำจากหิมะ น้ำตาล และส่วนผสมลับ คุกกี้นี้เคยเหงามาก เดินเตร่ไปในทุ่งหิมะอันกว้างใหญ่ แล้ววันหนึ่ง เธอพบไม้กายสิทธิ์ที่สามารถเรียกสิ่งมีชีวิตจากหิมะได้ และไม่ละลายแม้ในเตาอบ คุกกี้เรียนรู้ที่จะเรียกเพื่อนอย่างซีสโนว์โคนและเกรทสโนว์คิง และไม่เคยเหงาอีกเลย",
    "power_plus": "",
    "power_plus_requirement": "",
-   "unlock_goal": "มีสมบัติอันดับ S 12 ชิ้น"
+   "unlock_goal": "มี สมบัติอันดับ S 12 ชิ้น"
   },
   {
    "cookie_translation_id": 59,
@@ -1224,7 +1224,7 @@
    "description": "สร้างพิงก์บงบงเยลลี่ ยิงฮาร์ตบีมตามช่วงเวลาที่กำหนดเพื่อทำลายอุปสรรค ฮาร์ตบีมถี่ขึ้นเมื่ออัปเกรด\n\nคุกกี้นี้แพร่ความรักไปทั่วด้วยไวรัสรักอันหวานละมุนของเธอ รอยยิ้มติดเชื้อและแก้มสีชมพูสดใสของเธอทำให้ไม่อาจต้านทานฮาร์ตบีมอันน่ารักของเธอได้ อย่างไรก็ตาม ไม่ว่าเธอจะพยายามแค่ไหนในภารกิจให้เป็นที่รักของทุกคน เธอก็ใช้เวลาอยู่กับตัวเองตามลำพังเป็นเวลานาน ถ้าเพียงแต่เธอเล็งลำแสงรักได้ดีกว่านี้",
    "power_plus": "",
    "power_plus_requirement": "",
-   "unlock_goal": "มีเพื่อน 160 คน"
+   "unlock_goal": "มี เพื่อน 160 คน"
   },
   {
    "cookie_translation_id": 61,
@@ -1290,7 +1290,7 @@
    "description": "เมื่อแถบเล่นแร่แปรธาตุสีเขียวเต็ม กระโดดสองชั้นเพื่อยิงเยลลี่พิเศษ กระโดดเพื่อสลับประเภทการเล่นแร่แปรธาตุที่ใช้ได้ (แถบเล่นแร่แปรธาตุเติมเร็วขึ้นเมื่ออัปเกรด)\r\n\r\nทำจากองุ่นสดที่สุดที่ว่ากันว่าสืบเชื้อสายมาจากสรวงสวรรค์ คุกกี้ที่ฉลาดคนนี้สนใจเพียงสิ่งเดียว นั่นคือการวิจัย! เธอไม่เพียงคำนวณมูลค่าของสสารทั้งหมดในหัวได้ เธอยังรู้ว่าต้องเติมธาตุใดเพื่อเปลี่ยนมัน! แต่เธอรู้ดีว่าความเกียจคร้านหรือการนั่งเฉยจะไม่นำไปสู่อะไร! จะได้สิ่งที่มีค่า ต้องให้สิ่งที่มีค่าตอบแทน นั่นคือทฤษฎีของคุกกี้นักแปรธาตุ",
    "power_plus": "",
    "power_plus_requirement": "",
-   "unlock_goal": "มีสมบัติอัปเกรดเต็มที่ 11 ชิ้น"
+   "unlock_goal": "มี สมบัติอัปเกรดเต็มที่ 11 ชิ้น"
   },
   {
    "cookie_translation_id": 67,
@@ -1312,7 +1312,7 @@
    "description": "แปลงร่างเป็นค้างคาวน้ำผลไม้ติดปีกที่เร็วและไร้เทียมทานตามช่วงเวลาปกติ ในร่างค้างคาวน้ำผลไม้ เขาสกัดน้ำผลไม้แสนอร่อยจากอุปสรรคเป็นระยะเพื่อเพิ่มพลัง (แปลงร่างถี่ขึ้นหลังอัปเกรดและได้คะแนนพิเศษสำหรับการผ่านอุปสรรค)\n\nแม่มดกำลังยุ่งกับการทำคุกกี้พร้อมกับหมักน้ำองุ่นโปรดของเธอ แต่เธอใช้องุ่นที่สุกเกินไปและทิ้งไว้ในถังนานเกินไปนานเกินไป เธอพยายามสร้างคุกกี้รสน้ำผลไม้ แต่จากถังนั้นกลับออกมาคือคุกกี้แวมไพร์ คุกกี้ที่ทรงพลังอย่างเหลือเชื่อแต่อร่อย ด้วยความกระหายน้ำองุ่นที่ไม่อาจดับได้ เนื่องจากร่างกายของคุกกี้แวมไพร์เป็นน้ำองุ่น 10% เขาจึงออกล่าน้ำผลไม้หยดพิเศษอยู่เสมอเพื่อไม่ให้ระดับน้ำผลไม้ลดลง การออกล่าทำให้เขาตื่นดึกดื่นจนลำบากมากที่จะตื่นนอนตอนเช้า ท่าทางขี้เกียจยามเช้าของเขาอาจทำให้คุณคิดว่าเขาชอบชีวิตง่ายๆ แต่เขาเต็มไปด้วยความหลงใหล และตำนานเล่าว่าเขาเสี่ยงชีวิตเพื่อปลดปล่อย[[cookie:33]]จากถ้ำของแม่มด ทัศนคติที่มีเสน่ห์และใบหน้าหล่อเหลาแบบ rugged ทำให้เขาเป็นที่นิยมในหมู่คุกกี้สาว เมื่อไม่ได้ออกล่า เขาชอบพักผ่อนกับน้ำองุ่นเย็นๆ สักแก้วและครุ่นคิดถึงความหมายของชีวิต",
    "power_plus": "",
    "power_plus_requirement": "",
-   "unlock_goal": "มีสมบัติเกรด S 17 ชิ้น"
+   "unlock_goal": "มี สมบัติเกรด S 17 ชิ้น"
   },
   {
    "cookie_translation_id": 69,
@@ -1466,7 +1466,7 @@
    "description": "วิญญาณรอบตัวเธอกินเยลลี่และผลิตแบล็กเบอร์รีเยลลี่ตามช่วงเวลาที่กำหนด ผลิตเยลลี่มากขึ้นเมื่ออัปเกรด\n\nเธอสวมสีหน้าเฉยเมยเสมอ และคุกกี้ตัวอื่นอาจคิดว่าเธอเข้าถึงยาก แต่รูปลักษณ์หลอกลวง เธอมีความสามารถที่น่าทึ่งในการจดจ่อกับงานเดียวจนเสร็จ และได้ช่วยคุกกี้ตัวอื่นแก้ปัญหาด้วยทักษะการจัดการอันน่าทึ่งที่เธอเรียนรู้จากการทำงานให้บ้านอันทรงเกียรติ ใครๆ ก็คิดว่าคุกกี้ตัวเดียวไม่สามารถทำอะไรได้มากมายขนาดนั้น แต่เธอพิสูจน์ให้ทุกคนเห็นตรงกันข้าม เมื่อถึงเวลาวิ่ง เธอเร่งเครื่องจริงๆ",
    "power_plus": "",
    "power_plus_requirement": "",
-   "unlock_goal": "มีสมบัติอัปเกรดเต็มที่ 16 ชิ้น"
+   "unlock_goal": "มี สมบัติอัปเกรดเต็มที่ 16 ชิ้น"
   },
   {
    "cookie_translation_id": 83,
@@ -1488,7 +1488,7 @@
    "description": "เขาพุ่งทะลุแท่นขณะขี่มอเตอร์ไซค์ ซึ่งเร็วขึ้นเมื่อกินเฟวลเยลลี่ (เร็วขึ้นเมื่ออัปเกรด) โปรดทราบว่ามอเตอร์ไซค์ไม่ถือเป็น \"ไรด์\" ดังนั้นจะไม่ได้รับคะแนนพิเศษจากสมบัติเมื่อใช้\n\nเขาเป็นคุกกี้แกร่งที่แข็งแกร่งขึ้นภายใต้แสงอาทิตย์อันร้อนระอุ ขณะขี่ไปอย่างไร้จุดหมายกับจักรยานอันล้ำค่าของเขา เขารู้สึกมีชีวิตชีวาที่สุดเมื่อลมพัดเข้าหน้าขณะขี่ด้วยความเร็วสูงสุด ว่ากันว่าเขาปฏิญาณว่าจะแพร่กลิ่นกีวีไปทั่วโลก และดูเหมือนไม่มีอะไรจะดับความกระหายการผจญภัยของเขาได้ เขาจะขี่ไปที่ไหนต่อไป?",
    "power_plus": "",
    "power_plus_requirement": "",
-   "unlock_goal": "มีสมบัติอันดับ S 25 ชิ้น"
+   "unlock_goal": "มี สมบัติอันดับ S 25 ชิ้น"
   },
   {
    "cookie_translation_id": 85,
@@ -1532,7 +1532,7 @@
    "description": "เมื่อกินโพชัน เธอกระโดดขึ้นถ้วยโกโก้และบินผ่านเส้นทางในช่วงเวลาที่กำหนด เมื่ออยู่บนถ้วย เยลลี่ปกติจะกลายเป็นมาร์ชเมลโลว์เยลลี่ที่ให้คะแนนสูงขึ้น หลังจากดื่มโพชัน เธอฟื้นฟูพลังงานมากกว่าปกติ (เมื่ออัปเกรด เธอบินนานขึ้นด้วยถ้วยและฟื้นฟูพลังงานมากขึ้น) (ถ้วยของคุกกี้รสโกโก้ถือเป็นไรด์และจะได้รับคะแนนเพิ่มเติมเมื่อเธออยู่บนนั้น)\n\nถึงแม้ร่างกายของเธอจะเป็นโกโก้ 80% เธอก็ยังจิบโกโก้ร้อนเสมอ แม้ในฤดูร้อน หมวกมาร์ชเมลโลว์ของเธอหวานน่าทานจนเธอต้องอดใจไม่ให้กัดชิ้นหนึ่งแล้วจิ้มลงในถ้วย แก้มกลมเนียนของเธอเพิ่มเสน่ห์ให้เธอ! เมื่อเธอดื่มด่ำกับโกโก้ที่ชงสดใหม่ ความกังวลทั้งหมดของเธอละลายหายไป",
    "power_plus": "",
    "power_plus_requirement": "",
-   "unlock_goal": "มีสมบัติวิวัฒน์ 5 ชิ้น"
+   "unlock_goal": "มี สมบัติวิวัฒน์ 5 ชิ้น"
   },
   {
    "cookie_translation_id": 89,
@@ -1664,7 +1664,7 @@
    "description": "สร้างเชอร์รี่บลอสซัมเยลลี่ขณะบินตามช่วงเวลาที่กำหนด ปาร์ตี้เชอร์รี่บลอสซัมเยลลี่ถูกสร้างขึ้นในโบนัสไทม์ (บินถี่ขึ้นเมื่ออัปเกรด)\n\nในวันฤดูใบไม้ผลิอันอบอุ่น เชอร์รี่บลอสซัมสีชมพูดอกแรกถูกเก็บมา แล้วสกัดเป็นสาระสำคัญเหลวเป็นเวลานานพอสมควร และด้วยสาระสำคัญนี้ คุกกี้รสซากุระจึงถือกำเนิด เพียงแค่มองเธอ คุณจะรู้สึกงดงามและอบอุ่นภายใน พร้อมกับความซาบซ่านที่แก้มทั้งสองข้าง ในวันที่อากาศดี คุณจะได้เห็นเธอฮัมเพลงพร้อมกับร่มที่กาง พยายามบินขึ้นไปในอากาศ เธอน่ารักที่สุดเมื่อเธอเสนอแซนด์วิชและชาอร่อยๆ ให้คุณ แต่ระวังไว้ เมื่อเธอเริ่มคุย คุณจะลืมเวลาไปเลย",
    "power_plus": "",
    "power_plus_requirement": "",
-   "unlock_goal": "มีสมบัติวิวัฒน์อันดับ S 20 ชิ้น"
+   "unlock_goal": "มี สมบัติวิวัฒน์อันดับ S 20 ชิ้น"
   },
   {
    "cookie_translation_id": 101,
@@ -1730,7 +1730,7 @@
    "description": "กระโดดสองชั้นหลังจากรับลูกบอลชายหาดเพื่อขว้างมันและสร้างเนื้อมะนาวทำลายอุปสรรค เนื้อมะนาวถูกสร้างมากขึ้นในโหมดตัวยักษ์ ตามช่วงเวลาที่กำหนด คุกกี้รสมะนาวเข้าสู่บีชบอลแดช ทำลายอุปสรรคที่ขวางทาง (บีชบอลแดชถี่ขึ้นเมื่ออัปเกรด)\n\nตอนอบคุกกี้นี้ ใช้เปลือกส้มจำนวนมาก บางทีนั่นอาจเป็นเหตุผลที่คุกกี้รสมะนาวดุเดือด หน้าม้าอันเป็นเอกลักษณ์ของเธอทำจากพุดดิ้งหวานๆ ไม่ว่าเธอจะวิ่งเร็วหรือป่าเถื่อนแค่ไหน หน้าม้าของเธอก็สมบูรณ์แบบเสมอ อย่าปล่อยให้รูปลักษณ์น่ารักหลอกคุณ เธอเป็นที่รู้กันว่าค่อนข้างเย็นชากับคุกกี้ตัวอื่น แต่มีคุกกี้ตัวหนึ่งที่เธออ่อนแอด้วย เธอตามคุกกี้ตัวนั้นไปทั่วและชื่นชมมัน บางครั้ง ความหึงหวงของเธอทำให้เกิดสถานการณ์อึดอัด ว่ากันว่าเธอเรียนรู้ทักษะสแมช! จากคุกกี้ตัวนั้น...",
    "power_plus": "",
    "power_plus_requirement": "",
-   "unlock_goal": "มีสมบัติอันดับ S 60 ชิ้น"
+   "unlock_goal": "มี สมบัติอันดับ S 60 ชิ้น"
   },
   {
    "cookie_translation_id": 107,
@@ -1796,7 +1796,7 @@
    "description": "ขี่ม้าจูจูบแดงและทำลายอุปสรรคกับลูกธนูที่บินมาหาเขาตามช่วงเวลาที่กำหนด ปุ่มกระบี่แคนดี้แทนที่ปุ่มสไลด์ระหว่างการใช้สกิล กดเพื่อเปลี่ยนอุปสรรคเป็นจูจูบสไลซ์เยลลี่ (สกิลถี่ขึ้นเมื่ออัปเกรด) (การขี่ม้านับเป็นไรด์)\n\nคุกกี้เคราอาวนี้มาจากขอบตะวันออกสุดของทวีป อย่าปล่อยให้รูปลักษณ์ดุดันทำให้คุณกลัว จริงๆ แล้วเขาอ่อนหวานทีเดียว และเขายิ่งอ่อนหวานขึ้นเมื่อใบหน้าแดงก่ำด้วยความโกรธหรือความประหลาดใจ ด้วยกระบี่แคนดี้ของเขา เขาสามารถทำลายทุกสิ่งที่ขวางทางด้วยฟันอันรวดเร็ว แต่ไม่ต้องกังวล เบื้องหลังภายนอกที่หยาบกร้านคือจิตใจที่ละเอียดอ่อน ทุกเช้าเขาจะถูกพบเห็นหวีเคราอย่างระมัดระวัง",
    "power_plus": "",
    "power_plus_requirement": "",
-   "unlock_goal": "มีสมบัติอัปเกรดเต็มที่ 30 ชิ้น"
+   "unlock_goal": "มี สมบัติอัปเกรดเต็มที่ 30 ชิ้น"
   },
   {
    "cookie_translation_id": 113,
@@ -1818,7 +1818,7 @@
    "description": "เข้าไปในบ้านผีสิงและผ่านอุปสรรคตามช่วงเวลาที่กำหนด คะแนนพิเศษสำหรับการผ่านอุปสรรค (เยี่ยมบ้านผีสิงถี่ขึ้นเมื่ออัปเกรด)\n\nดวงตาของคุณจะเริ่มแสบหากเข้าใกล้คุกกี้รสหัวหอมนี้เกินไป! และเมื่อเธอเริ่มร้องไห้ เธอก็หยุดไม่ได้ สาเหตุหลักคือน้ำตาของเธอประกอบด้วยน้ำหัวหอม ซึ่งทำให้เธอร้องไห้มากขึ้นไปอีก น่าสงสารจริงๆ เธอกลัวผีอย่างแท้จริงและร้องไห้เมื่อตกใจ บางทีสักวันเธออาจรู้ว่าทำไมรอบตัวเธอถึงกลายเป็นผีๆ บางครั้ง และนาฬิกาจู่ๆ ก็เดินถอยหลัง",
    "power_plus": "",
    "power_plus_requirement": "",
-   "unlock_goal": "มีสมบัติวิวัฒน์อันดับ S 25 ชิ้น"
+   "unlock_goal": "มี สมบัติวิวัฒน์อันดับ S 25 ชิ้น"
   },
   {
    "cookie_translation_id": 115,
@@ -1829,7 +1829,7 @@
    "description": "Did you think this Cookie was made with artificial food coloring? Guess again! She is made with 100% all-natural ingredients. Even her long, gorgeous eyelashes are completely organic. Cookies are drawn to her friendly smile and gentle voice. In fact, cute little Macaron Animals love to gather around her too. Once she starts playing on her macaron drum, the Macaron Animals start a tiny parade. At times, the parade can get out of hand, but Macaron Cookie still enjoys the company anyway. When she gets really excited, Macaron Cookie may demonstrate her most festive performance for you.",
    "power_plus": "",
    "power_plus_requirement": "",
-   "unlock_goal": "Have Pet: [[pet:69]]"
+   "unlock_goal": "Have Pet: [[pet:69]]Castanets"
   },
   {
    "cookie_translation_id": 116,
@@ -1862,7 +1862,7 @@
    "description": "แสดงกลไพ่หลากหลายตามช่วงเวลาที่กำหนด เซอร์ไพรส์ด้วยเวทมนตร์คืนชีพ 1 ครั้ง (กลไกถี่ขึ้นเมื่ออัปเกรด)\n\nผงอบเชยหอมๆ ปลิวกระจายเบาๆ ทุกครั้งที่คุกกี้นี้โบกเสื้อคลุม คุกกี้ผู้รื่นเริงนี้ยืนยันจะแสดงกลไพ่ ซึ่งวุ่นวายมาก ขึ้นลงซ้ายขวาจนแทบเป็นไปไม่ได้ที่จะตามทัน คุกกี้ตัวอื่นบางครั้งเรียกคุกกี้ซินนามอนว่าขี้เล่นเกินไป แต่ตราบใดที่คุกกี้เพียงตัวเดียวเพลิดเพลินกับการแสดง มันก็ต้องดำเนินต่อไป รักษาระยะห่าง การอยู่ใกล้พ่อมดกลิ่นหอมนี้เกินไปจะทำให้คุณจาม ปุ๊ฟ!",
    "power_plus": "",
    "power_plus_requirement": "",
-   "unlock_goal": "มีสมบัติอันดับ S 70 ชิ้น"
+   "unlock_goal": "มี สมบัติอันดับ S 70 ชิ้น"
   },
   {
    "cookie_translation_id": 119,
@@ -1873,7 +1873,7 @@
    "description": "Red Bean Cookie was created on a frigid day when snow made of sweet rice flour fell from the sky. The hardiest grains of rice from that snowstorm were collected and used to make his thick and chewy Sweet Rice Cake Hat. The bitter winter is no challenge for Red Bean Cookie. He rides along joyfully on his sled as harsh winds muss up his red bean paste hair. As he rides along, Red Bean Cookie is always on the lookout for delicious Fish Treat Jellies. A single sniff of these tasty treats will elate even the grouchiest penguin. The more treats the penguins receive, the faster they'll pull the sled.",
    "power_plus": "",
    "power_plus_requirement": "",
-   "unlock_goal": "Have Pet: [[pet:71]]"
+   "unlock_goal": "Have Pet: [[pet:71]]Sweet Rice Seal"
   },
   {
    "cookie_translation_id": 120,
@@ -1950,7 +1950,7 @@
    "description": "วิ่งกับเยลลี่ไดโนเสาร์ เร่งความเร็วกับเยลลี่ไดโนเสาร์ในโหมดตัวยักษ์ การลงจอดแบบตัวยักษ์ทำให้ไดโนฟุตเยลลี่งอกจากพื้น ยิ่งกระโดดสูง เยลลี่ที่สร้างก็ยิ่งมาก\n\nเยลลี่เปรี้ยวเข้มข้นถูกหลอมเป็นส่วนผสมสำหรับคุกกี้เปรี้ยวนี้ กฎที่สำคัญที่สุดในการอบคุกกี้ไดโนซาวร์คือการจัดทรงผมแหลมของมันด้วยมูสครีมเปรี้ยว เพราะเขาปรารถนาการผจญภัยสุดขีดและรักไดโนเสาร์ เขาจึงใช้ชีวิตอยู่ในหุบเขามังกรเป็นหลัก ในการผจญภัยครั้งหนึ่ง เขาได้พบเพื่อนร่วมทาง เขาทำฟอสซิลหล่นโดยบังเอิญ แต่ที่น่าประหลาดใจคือ เยลลี่ไดโนเสาร์โผล่ออกมา! ตอนนี้ ทั้งคู่กลายเป็นเพื่อนซี้และออกผจญภัยอันตรายด้วยกัน",
    "power_plus": "",
    "power_plus_requirement": "",
-   "unlock_goal": "มีเพื่อน 333 คน"
+   "unlock_goal": "มี เพื่อน 333 คน"
   },
   {
    "cookie_translation_id": 127,
@@ -1983,7 +1983,7 @@
    "description": "Cotton Candy Cookie is made from the sweetest of sugars and undoubtedly has the highest level of sugar among the Cookies. With such a saccharine heart, no wonder she's always in love! Cotton Candy Cookie spends all her days writing love letters but ends up throwing away more than she sends. Her goal is not to reveal her feelings to her beloved one but to cherish each moment of being in love. Cookies often joke that Cotton Candy Cookie sends way too many letters, but the truth is that everyone secretly wishes for one: what's inside the envelope is so very sweet!",
    "power_plus": "",
    "power_plus_requirement": "",
-   "unlock_goal": "Have Pet: [[pet:75]]"
+   "unlock_goal": "Have Pet: [[pet:75]]Cotton Candy Bird"
   },
   {
    "cookie_translation_id": 130,
@@ -2005,7 +2005,7 @@
    "description": "Roll Cake Cookie was made out of the yummiest ingredients and generously decorated with the fluffiest fresh whipped cream. Sounds like a great combination? Far from it! Roll Cake Cookie has quite a set of destructive habits. First, he likes to smash things with a giant hammer. Second, he rides an enormous road roller. And as if that wasn't enough, once Roll Cake Cookie was caught yelling, \"I ONLY WANTED TO BE A LOVABLE CAKE!\" Perhaps the milked cow had a wild side, or the whipped cream was whipped too much? We'll never know!",
    "power_plus": "",
    "power_plus_requirement": "",
-   "unlock_goal": "Have Pet: [[pet:76]]"
+   "unlock_goal": "Have Pet: [[pet:76]]Light Bros"
   },
   {
    "cookie_translation_id": 132,
@@ -2027,7 +2027,7 @@
    "description": "Banana Cookie's fabulous hula hoop show begins! She used be a world-famous wilderness explorer, becoming friends with all sorts of animals and critters. With so many fresh bananas from the tallest of trees in her dough, it's no wonder that Banana Cookie is an expert climber. While climbing a massive tree, she met Choco the Monkey. The two immediately knew they were best friends for life! The duo decided to join the circus and, ever since, their show has energized crowds to the max! Banana Cookie is always so full of energy that it seems she never gets tired from performing! Perhaps she's enjoying her own shows a bit too much. Even after the curtains close, she's still spinning her hula hoop. Some say she's too excited because of all the Coins that were thrown on stage. But in reality, she's just excited and happy all the time!",
    "power_plus": "",
    "power_plus_requirement": "",
-   "unlock_goal": "Have Pet: [[pet:77]]"
+   "unlock_goal": "Have Pet: [[pet:77]]Banana Lion"
   },
   {
    "cookie_translation_id": 134,
@@ -2049,7 +2049,7 @@
    "description": "Browned to perfection, the ever-energetic Pancake Cookie is cute to the extreme. And unlike his brother, he chooses to use his cuteness to the fullest! He even added a piece of butter on top of his head to make himself even cuter. Cuteness overload! This sweet and innocent Cookie's favorite thing in the world is Acorn Jelly. When he sees one, he'll use all his cutie pie charms to get that Acorn Jelly. You can try to resist his charms, but he'll get that Acorn Jelly from you one way or another.",
    "power_plus": "",
    "power_plus_requirement": "",
-   "unlock_goal": "Have [[cookie:66]]"
+   "unlock_goal": "Have [[cookie:66]]Roll Cake Cookie"
   },
   {
    "cookie_translation_id": 136,
@@ -2236,7 +2236,7 @@
    "description": "คุกกี้ซิกเคใช้เวลาอยู่หน้าร้านขายขนมเลือกขนมมากกว่าคิดหมากต่อไป! ทันทีที่นั่งลงหน้ากระดานบาดุก ดวงตาของเธอเป็นประกายขณะวางแผนล่วงหน้าหลายสิบหมากในชั่วพริบตา ด้วยนิสัยอิสระของเธอ เธอส่งหมากที่คาดเดาไม่ได้เหมือนเมล็ดข้าวในซิกเคใส่คู่ต่อสู้ตลอดเวลา",
    "power_plus": "",
    "power_plus_requirement": "",
-   "unlock_goal": "มีคุกกี้เลเวล 8 จำนวน 70 ตัว"
+   "unlock_goal": "มี คุกกี้เลเวล 8 จำนวน 70 ตัว"
   },
   {
    "cookie_translation_id": 153,
@@ -2247,7 +2247,7 @@
    "description": "With a subtle scent of cinnamon and a focus as firm as ginger, Sujeonggwa Cookie always sits before the Baduk board with a look of perfect calm. With each move built upon sincerity, she always delivers quiet yet profound moves, much like the subtle sweetness lingering at the end of a bitter flavor.",
    "power_plus": "",
    "power_plus_requirement": "",
-   "unlock_goal": "Have Pet: [[pet:86]]"
+   "unlock_goal": "Have Pet: [[pet:86]]Elder White Rice"
   },
   {
    "cookie_translation_id": 154,
@@ -2313,7 +2313,7 @@
    "description": "Potato Salad Cookie travels far and wide carrying his fresh veggie carpets, stitch by stitch handcrafted with overflowing affection for vegetables. Be it on his hooves or on his delivery bike \"Mayo Vroom Vroom\", this Cookie reaches even the farthest corners of the land. As a true merchant, naturally he loves Coins and makes a jingling sound wherever he runs.",
    "power_plus": "",
    "power_plus_requirement": "",
-   "unlock_goal": "Have Pet: [[pet:89]]"
+   "unlock_goal": "Have Pet: [[pet:89]]Tater Trader"
   },
   {
    "cookie_translation_id": 160,
@@ -2346,7 +2346,7 @@
    "description": "เดิมทีเป็นต้นหอมสดเขียวชอุ่ม คุกกี้สแกลเลียนคิมจิกลับมาในรูปแบบที่หมักเต็มที่จากการฝึกที่สวรรค์เรียกหาเธอ รูปร่างทรุดโทรมของเธอเพียงอย่างเดียวอาจดูพอจะไล่ผีได้ แต่เมื่อเห็นใบมีดคมในมือเธอวับวาว คุณจะรู้ว่าเธอกำลังจะปล่อยพิธีไล่ผีที่เผ็ดที่สุดเท่าที่คุณจะจินตนาการได้!",
    "power_plus": "",
    "power_plus_requirement": "",
-   "unlock_goal": "มีสมบัติ S วิวัฒน์ 50 ชิ้น"
+   "unlock_goal": "มี สมบัติ S วิวัฒน์ 50 ชิ้น"
   },
   {
    "cookie_translation_id": 163,
@@ -2368,7 +2368,7 @@
    "description": "คุกกี้ไวท์คิมจิปลอบประโลมวิญญาณด้วยการร่ายรำชามานิกอันบริสุทธิ์ ท่วงท่าอันเคร่งขรึมและสงบนิ่งของเธอคล้ายการเต้นของผีเสื้อ ว่ากันว่าวิญญาณทั้งหมดที่สัมผัสใบของชุดของคุกกี้ไวท์คิมจิจะหลุดพ้นจากความทุกข์ทรมาน",
    "power_plus": "",
    "power_plus_requirement": "",
-   "unlock_goal": "มีสมบัติที่ +9 จำนวน 55 ชิ้น"
+   "unlock_goal": "มี สมบัติที่ +9 จำนวน 55 ชิ้น"
   },
   {
    "cookie_translation_id": 165,
@@ -2445,7 +2445,7 @@
    "description": "Garaetteok Cookie's fierce gaze is fixed on the village shrine under the protection of the heavens. After wandering the land in search of learning, he was chosen by the shrine as the village's guardian. With a nature as pure and firm as garaetteok, he watches over the village day and night, the totems his only companions.",
    "power_plus": "",
    "power_plus_requirement": "",
-   "unlock_goal": "Have Pet: [[pet:94]]"
+   "unlock_goal": "Have Pet: [[pet:94]]Sotdae Flock"
   },
   {
    "cookie_translation_id": 172,
@@ -2456,7 +2456,7 @@
    "description": "สายตาอันดุร้ายของคุกกี้คาแรตต็อกจับจ้องที่ศาลเจ้าหมู่บ้านภายใต้การคุ้มครองของสวรรค์ หลังจากท่องแผ่นดินเพื่อแสวงหาความรู้ เขาถูกศาลเจ้าเลือกให้เป็นผู้พิทักษ์หมู่บ้าน ด้วยนิสัยบริสุทธิ์และแน่วแน่ดั่งคาแรตต็อก เขาเฝ้ามองหมู่บ้านทั้งกลางวันและกลางคืน โดยมีเสาโทเท็มเป็นเพื่อนเพียงคนเดียว",
    "power_plus": "",
    "power_plus_requirement": "",
-   "unlock_goal": "มีสัตว์เลี้ยง: Sotdae Flock"
+   "unlock_goal": "มี สัตว์เลี้ยง: Sotdae Flock"
   },
   {
    "cookie_translation_id": 173,
@@ -2467,7 +2467,7 @@
    "description": "Boing! Choco Pistachio Cookie travels across the Cocoa Desert in search of the Pistachio Oasis. After discovering rich Spread Springs within the oasis, the Cookie built a massive fortune from collecting the precious liquid. The confident pose may come off as a little arrogant at first glance, but in truth, this Cookie generously shares the hard-earned spring water with every Cookie across the Cocoa Desert—a true believer in giving back to the community.",
    "power_plus": "",
    "power_plus_requirement": "",
-   "unlock_goal": "Own Marshmallow Bunny & [[cookie:32]]"
+   "unlock_goal": "Own Marshmallow Bunny & Pistachio Cookie"
   },
   {
    "cookie_translation_id": 174,
@@ -2555,7 +2555,7 @@
    "description": "Lotus Root Phantom Cookie used to spend the time leisurely by a small lake in the desert. She would put her trickster mind to use by playing all kinds of pranks on unassuming Cookies that had gotten lost in the desert. When [[cookie:90]]'s party managed to avoid falling for her traps, she took a keen interest and joined them on their journey. Though she rarely reveals her true feelings, she seems quite content among this group of unique and talented personalities.",
    "power_plus": "Summons XP Party when Kaymak, Pine Monk, Lotus Root Phantom Cookie, and [[cookie:93]] are gathered",
    "power_plus_requirement": "when [[cookie:89]], [[cookie:90]], Lotus Root Phantom Cookie, and [[cookie:93]] are gathered",
-   "unlock_goal": "Have Pet: [[pet:99]]"
+   "unlock_goal": "Have Pet: [[pet:99]]Lotus Sitter"
   },
   {
    "cookie_translation_id": 182,
@@ -2599,7 +2599,7 @@
    "description": "No one tops Braised Pork Cookie when it comes to plowing the field! Braised Pork Cookie's limbs are strong from working the fields. So famous she became for her reliability in handling all the village's tasks that [[cookie:90]] recruited her into his traveling party. Her biggest strengths are her fiery temperament that causes her to charge straight into any problem, and her hearty nature that allows her to shake off any hardship and bounce right back at the sight of a delicious meal.",
    "power_plus": "Summons XP Party when Kaymak, Pine Monk, Lotus Root Phantom, and Braised Pork Cookie are gathered",
    "power_plus_requirement": "when [[cookie:89]], [[cookie:90]], [[cookie:91]], and Braised Pork Cookie are gathered",
-   "unlock_goal": "Have Kaymak / Pine Monk / Lotus Root Cookie"
+   "unlock_goal": "Have [[cookie:89]]Kaymak / [[cookie:90]]Pine Monk / [[cookie:91]]Lotus Root Cookie"
   },
   {
    "cookie_translation_id": 186,
@@ -2610,7 +2610,7 @@
    "description": "เกจสีน้ำเงินเล็กชาร์จตามเวลา เมื่อเต็ม คุกกี้หมูตุ๋นพรวนดินเพื่อเก็บเกี่ยวหมูตุ๋นเยลลี่ แต่ละการเก็บเกี่ยวเติมเกจสีเขียวเล็กน้อย เมื่อเกจสีเขียวเต็ม คุกกี้หมุนคราดหมูตุ๋นเพื่อดูดเยลลี่และอุปสรรคเข้ามา เยลลี่ที่ถูกดูดมานี้ให้คะแนนโบนัส สุดท้าย คุกกี้หมูตุ๋นขว้างคราดเพื่อดูดเยลลี่ด้านหน้า (สกิลทำงานเร็วขึ้นเมื่อพลังชีวิตที่เหลือต่ำลง)\r\n\r\nไม่มีใครเทียบคุกกี้หมูตุ๋นได้เมื่อพูดถึงการไถนา! แขนขาของคุกกี้หมูตุ๋นแข็งแรงจากการทำงานในทุ่งนา เธอโด่งดังมากในเรื่องความน่าเชื่อถือในการจัดการงานทั้งหมดของหมู่บ้าน จน รับเธอเข้าร่วมคณะเดินทางของเขา จุดแข็งที่ใหญ่ที่สุดของเธอคือนิสัยไฟแรงที่ทำให้เธอพุ่งเข้าหาปัญหาโดยตรง และนิสัยใจกว้างที่ทำให้เธอสะบัดความยากลำบากและเด้งกลับมาได้ทันทีเมื่อเห็นอาหารอร่อย",
    "power_plus": "Summons XP Party when Kaymak, Pine Monk, Lotus Root Phantom, and Braised Pork Cookie are gathered",
    "power_plus_requirement": "when [[cookie:89]], [[cookie:90]], [[cookie:91]], and Braised Pork Cookie are gathered",
-   "unlock_goal": "มี Kaymak / Pine Monk / Lotus Root Cookie"
+   "unlock_goal": "มี [[cookie:89]]Kaymak / [[cookie:90]]Pine Monk / [[cookie:91]]Lotus Root Cookie"
   },
   {
    "cookie_translation_id": 187,
@@ -2621,7 +2621,7 @@
    "description": "Mango Sticky Rice Cookie was made using glutinous rice simmered in sweet coconut milk and topped with bright yellow mango. As a skilled windsurfer, she always rides the breezy wind across the Coconut Milk Sea. Her favorite thing is the mango-colored sun sparkling on the ocean! If you ever wonder where she might be, she's probably cutting through the waves toward that sun with a refreshing smile on her face.",
    "power_plus": "",
    "power_plus_requirement": "",
-   "unlock_goal": "Have Pet: [[pet:101]]"
+   "unlock_goal": "Have Pet: [[pet:101]]Mango Roll"
   },
   {
    "cookie_translation_id": 188,
@@ -2632,7 +2632,7 @@
    "description": "Mango Sticky Rice Cookie was made using glutinous rice simmered in sweet coconut milk and topped with bright yellow mango. As a skilled windsurfer, she always rides the breezy wind across the Coconut Milk Sea. Her favorite thing is the mango-colored sun sparkling on the ocean! If you ever wonder where she might be, she's probably cutting through the waves toward that sun with a refreshing smile on her face.",
    "power_plus": "",
    "power_plus_requirement": "",
-   "unlock_goal": "Have Pet: Mango Roll"
+   "unlock_goal": "Have Pet: [[pet:101]]Mango Roll"
   }
  ],
  "pet": [
