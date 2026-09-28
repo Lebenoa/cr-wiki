@@ -127,6 +127,13 @@ pub async fn next_id(db: &Db, table: &str) -> Result<i64> {
 /// the seeding on every boot is idempotent and a fresh seed import heals on
 /// the next startup without a migration step. One statement per table, two
 /// scans each — startup-only, off the request path.
+///
+/// Also defines a counter-maintenance event per table: every numeric-id
+/// CREATE raises the counter inside the triggering transaction (verified:
+/// a cancelled transaction rolls the counter back with the row). Events are
+/// NOT fired by `surreal import`, which is exactly why the startup floor
+/// above still exists — the two compose: events keep the counter live under
+/// normal writes, the floor heals imports on the next boot.
 async fn seed_auto_increment(db: &Db) -> Result<()> {
     let tables: Vec<String> = Section::ALL
         .iter()
@@ -134,10 +141,18 @@ async fn seed_auto_increment(db: &Db) -> Result<()> {
         .map(|s| s.table().to_string())
         .chain(["user".to_string(), "build".to_string()])
         .collect();
-    let mut query = String::from("DEFINE TABLE IF NOT EXISTS auto_increment SCHEMALESS PERMISSIONS FULL;\n");
+    let mut query = String::from(
+        "DEFINE TABLE IF NOT EXISTS auto_increment SCHEMALESS PERMISSIONS FULL;\n",
+    );
     for (i, tb) in tables.iter().enumerate() {
         query.push_str(&format!(
-            "LET $m{i} = (SELECT VALUE record::id(id) FROM type::table('{tb}')); UPSERT type::record('auto_increment', '{tb}') SET value = math::max([(value ?? 0), (array::max($m{i}) ?? 0)]);\n"
+            "DEFINE EVENT IF NOT EXISTS {tb}_counter ON TABLE {tb} \
+             WHEN $event = 'CREATE' AND type::is_number(record::id($after.id)) THEN \
+             (UPSERT type::record('auto_increment', '{tb}') \
+             SET value = math::max([(value ?? 0), record::id($after.id)]));\n\
+             LET $m{i} = (SELECT VALUE record::id(id) FROM type::table('{tb}')); \
+             UPSERT type::record('auto_increment', '{tb}') \
+             SET value = math::max([(value ?? 0), (array::max($m{i}) ?? 0)]);\n"
         ));
     }
     db.query(query).await?.check()?;
