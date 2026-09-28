@@ -59,7 +59,7 @@
         {% endif %}
         {% if self.is_treasure() %}
         <label class="flex items-center gap-2 cursor-pointer min-h-6">
-            <input type="checkbox" name="is_evolved" value="true" class="size-5"
+            <input id="is_evolved" type="checkbox" name="is_evolved" value="true" class="size-5"
                 {% if it.is_evolved %}checked{% endif %} />
             <span class="font-label text-secondary uppercase">{{ ctx.l.t("evolved") }}</span>
         </label>
@@ -68,7 +68,8 @@
                 {% if it.is_power_plus %}checked{% endif %} />
             <span class="font-label text-secondary uppercase">{{ ctx.l.t("is_power_plus") }}</span>
         </label>
-        <label class="flex flex-col gap-1 font-label text-secondary uppercase">
+        <div id="base-section" class="flex flex-col gap-1 font-label text-secondary uppercase"
+            {% if !it.is_evolved %}hidden{% endif %}>
             {{ ctx.l.t("base") }}
             <select name="base_treasure_id" class="filter-input">
                 <option value="">{{ ctx.l.t("none_option") }}</option>
@@ -77,7 +78,7 @@
                 {% endfor %}
             </select>
             <span class="text-xs font-body normal-case text-foreground-muted">{{ ctx.l.t("base_treasure_hint") }}</span>
-        </label>
+        </div>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <label class="flex flex-col gap-1 font-label text-secondary uppercase">
                 {{ ctx.l.t("unlock_cookie_label") }}
@@ -171,14 +172,14 @@
         {% endif %}
         {% if self.is_treasure() %}
         <label class="flex items-center gap-2 cursor-pointer min-h-6">
-            <input type="checkbox" name="is_evolved" value="true" class="size-5" />
+            <input id="is_evolved" type="checkbox" name="is_evolved" value="true" class="size-5" />
             <span class="font-label text-secondary uppercase">{{ ctx.l.t("evolved") }}</span>
         </label>
         <label class="flex items-center gap-2 cursor-pointer min-h-6">
             <input type="checkbox" name="is_power_plus" value="true" class="size-5" />
             <span class="font-label text-secondary uppercase">{{ ctx.l.t("is_power_plus") }}</span>
         </label>
-        <label class="flex flex-col gap-1 font-label text-secondary uppercase">
+        <div id="base-section" class="flex flex-col gap-1 font-label text-secondary uppercase" hidden>
             {{ ctx.l.t("base") }}
             <select name="base_treasure_id" class="filter-input">
                 <option value="">{{ ctx.l.t("none_option") }}</option>
@@ -187,7 +188,7 @@
                 {% endfor %}
             </select>
             <span class="text-xs font-body normal-case text-foreground-muted">{{ ctx.l.t("base_treasure_hint") }}</span>
-        </label>
+        </div>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <label class="flex flex-col gap-1 font-label text-secondary uppercase">
                 {{ ctx.l.t("unlock_cookie_label") }}
@@ -255,4 +256,21 @@
 </section>
 <script src="/static/js/richtext.js" defer></script>
 <script src="/static/js/admin_upload.js" defer></script>
+<script>
+    // the evolved checkbox shows/hides the base-treasure selector, like the
+    // old V form: unchecked hides the section and clears a stale base id so
+    // no dangling link submits
+    (function () {
+        var evolved = document.getElementById('is_evolved');
+        var baseSection = document.getElementById('base-section');
+        var baseSelect = baseSection && baseSection.querySelector('select');
+        if (!evolved || !baseSection) return;
+        function syncBase() {
+            baseSection.hidden = !evolved.checked;
+            if (!evolved.checked && baseSelect) baseSelect.value = '';
+        }
+        evolved.addEventListener('change', syncBase);
+        syncBase();
+    })();
+</script>
 {% endblock %}
