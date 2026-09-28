@@ -378,10 +378,12 @@ impl Ctx {
     /// The per-language Google Fonts stylesheet. Thai needs its own face,
     /// and shipping both to every visitor is two families nobody reads.
     pub fn font_css_url(&self) -> &'static str {
+        // only the weights the stylesheet uses (400-800); the variable-font
+        // axis otherwise ships ten
         if self.lang == "th" {
-            "https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@100..900&display=swap"
+            "https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400..800&display=swap"
         } else {
-            "https://fonts.googleapis.com/css2?family=Hanken+Grotesk:ital,wght@0,100..900;1,100..900&family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&family=Sora:wght@100..800&display=swap"
+            "https://fonts.googleapis.com/css2?family=Hanken+Grotesk:ital,wght@0,400..800;1,400..800&family=JetBrains+Mono:ital,wght@0,400..800;1,400..800&family=Sora:wght@400..800&display=swap"
         }
     }
 

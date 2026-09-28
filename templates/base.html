@@ -8,7 +8,11 @@
     <link rel="shortcut icon" href="/static/favicon.avif" type="image/x-icon" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="{{ ctx.font_css_url() }}" rel="stylesheet" />
+    <link href="{{ ctx.font_css_url() }}" rel="stylesheet"
+        media="print" onload="this.media='all'" />
+    <noscript>
+        <link href="{{ ctx.font_css_url() }}" rel="stylesheet" />
+    </noscript>
     <script src="/static/thirdparty/htmx.js" defer></script>
     <script src="/static/js/theme.js"></script>
     <script src="/static/js/theme_editor.js" defer></script>
