@@ -293,10 +293,24 @@ pub async fn edit_form_lang(
         return Ok(super::errors::not_found(ctx));
     };
     // the preview box resolves [[kind:id]] names in the locale being edited
-    // (the name lists carry the en fallback), not the viewer's UI locale
+    // (the name lists carry the en fallback), not the viewer's UI locale.
+    // The edited entity highlights rather than self-links, same as the
+    // detail page.
     let mut memo = crate::richtext::LinkCache::new();
-    let preview_html =
-        crate::richtext::render_with(&state.db, &edit_lang, &item.description, &mut memo).await;
+    let self_ref = match section {
+        Section::Cookies => Some(("cookie", id)),
+        Section::Pets => Some(("pet", id)),
+        Section::Treasures => Some(("treasure", id)),
+        _ => None,
+    };
+    let preview_html = crate::richtext::render_with(
+        &state.db,
+        &edit_lang,
+        &item.description,
+        &mut memo,
+        self_ref,
+    )
+    .await;
     let combi = db::combi_edit_rows(&state.db, &ctx.lang, section.as_str(), id).await?;
     Ok(page_with(ctx, section, Some(item), combi, "", edit_lang, preview_html).await)
 }

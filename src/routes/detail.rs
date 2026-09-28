@@ -120,23 +120,31 @@ pub async fn show(
         None
     };
     // one link cache across all five prose fields: an entity named twice on
-    // one page costs one lookup
+    // one page costs one lookup. The page's own entity renders mentions as
+    // a highlight, not a self-link.
+    let self_ref: Option<(&'static str, i64)> = match sec {
+        Section::Cookies => Some(("cookie", id)),
+        Section::Pets => Some(("pet", id)),
+        Section::Treasures => Some(("treasure", id)),
+        _ => None,
+    };
     let mut memo = richtext::LinkCache::new();
     let abilities_html =
-        richtext::render_with(&state.db, &ctx.lang, &item.abilities, &mut memo).await;
+        richtext::render_with(&state.db, &ctx.lang, &item.abilities, &mut memo, self_ref).await;
     let description_html =
-        richtext::render_with(&state.db, &ctx.lang, &item.description, &mut memo).await;
+        richtext::render_with(&state.db, &ctx.lang, &item.description, &mut memo, self_ref).await;
     let power_plus_html =
-        richtext::render_with(&state.db, &ctx.lang, &item.power_plus, &mut memo).await;
+        richtext::render_with(&state.db, &ctx.lang, &item.power_plus, &mut memo, self_ref).await;
     let power_plus_requirement_html = richtext::render_with(
         &state.db,
         &ctx.lang,
         &item.power_plus_requirement,
         &mut memo,
+        self_ref,
     )
     .await;
     let unlock_goal_html =
-        richtext::render_with(&state.db, &ctx.lang, &item.unlock_goal, &mut memo).await;
+        richtext::render_with(&state.db, &ctx.lang, &item.unlock_goal, &mut memo, self_ref).await;
 
     let blessed_differs = db::blessed_differs(&effects);
     let episode = if sec == Section::Episodes {
@@ -194,30 +202,49 @@ mod tests {
         };
 
         let mut memo = richtext::LinkCache::new();
-        let out = richtext::render_with(&pool, "en", "see [[89]] here", &mut memo).await;
+        let out = richtext::render_with(&pool, "en", "see [[89]] here", &mut memo, None).await;
         assert!(out.contains("href=\"/cookies/89\""));
         assert!(out.contains("<img src=\"/static/img/cookies/"));
 
         // an unresolvable ref stays literal
-        let miss = richtext::render_with(&pool, "en", "[[cookie:99999999]]", &mut memo).await;
+        let miss =
+            richtext::render_with(&pool, "en", "[[cookie:99999999]]", &mut memo, None).await;
         assert!(miss.contains("[[cookie:99999999]]"));
 
-        let colored =
-            richtext::render_with(&pool, "en", "a {color:red}red{/color} word", &mut memo).await;
+        // a reference to the page's own entity renders as a highlight, not
+        // an anchor
+        let own = richtext::render_with(&pool, "en", "[[cookie:89]]", &mut memo, Some(("cookie", 89)))
+            .await;
+        assert!(!own.contains("<a "), "{own}");
+        assert!(own.contains("font-bold"), "{own}");
+
+        let colored = richtext::render_with(
+            &pool,
+            "en",
+            "a {color:red}red{/color} word",
+            &mut memo,
+            None,
+        )
+        .await;
         assert!(colored.contains("<span style=\"color:red\">red</span>"));
 
         // an injection attempt is not a valid colour, so the whole thing
         // renders as text: no span is opened and the quotes come out escaped
-        let bad =
-            richtext::render_with(&pool, "en", "{color:red\" onclick=\"x}y{/color}", &mut memo)
-                .await;
+        let bad = richtext::render_with(
+            &pool,
+            "en",
+            "{color:red\" onclick=\"x}y{/color}",
+            &mut memo,
+            None,
+        )
+        .await;
         assert!(!bad.contains("<span style="), "{bad}");
         assert!(!bad.contains("onclick=\""), "{bad}");
         assert!(bad.contains("&quot;"), "{bad}");
 
         // pasted markup is escaped
         let script =
-            richtext::render_with(&pool, "en", "<script>alert(1)</script>", &mut memo).await;
+            richtext::render_with(&pool, "en", "<script>alert(1)</script>", &mut memo, None).await;
         assert!(!script.contains("<script>"));
         assert!(script.contains("&lt;script&gt;"));
     }

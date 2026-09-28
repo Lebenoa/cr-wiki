@@ -147,7 +147,8 @@ pub async fn show(
     let (verified, issues) = builds::review_counts(&state.db, id).await?;
     let mut memo = crate::richtext::LinkCache::new();
     let description_html =
-        crate::richtext::render_with(&state.db, &ctx.lang, &build.description, &mut memo).await;
+        crate::richtext::render_with(&state.db, &ctx.lang, &build.description, &mut memo, None)
+            .await;
     Ok(Html(
         BuildDetail {
             ctx,

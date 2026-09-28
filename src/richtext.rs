@@ -91,7 +91,16 @@ pub type LinkCache = HashMap<String, Option<(String, Option<String>)>>;
 /// Renders one prose field through the caller's cache. Names are resolved
 /// sequentially — the detail page shares one cache across its five fields,
 /// so an entity named in abilities and description costs one query.
-pub async fn render_with(db: &Db, lang: &str, raw: &str, cache: &mut LinkCache) -> String {
+/// `self_ref` is the entity the prose belongs to: a link to it renders as a
+/// bold highlight instead of an anchor, because a page linking to itself
+/// reads as noise (and SEO-wise a self-link is a dead weight).
+pub async fn render_with(
+    db: &Db,
+    lang: &str,
+    raw: &str,
+    cache: &mut LinkCache,
+    self_ref: Option<(&'static str, i64)>,
+) -> String {
     // the overwhelming majority of fields carry no markup at all
     if !raw.contains("[[") && !raw.contains("{color:") {
         return escape(raw);
@@ -114,6 +123,15 @@ pub async fn render_with(db: &Db, lang: &str, raw: &str, cache: &mut LinkCache) 
                         v
                     };
                     if let Some((name, image)) = hit {
+                        // a reference to the page's own entity: bold, no
+                        // anchor, no sprite — it is this page
+                        if self_ref.is_some_and(|(k, n)| k == kind && n == id) {
+                            out.push_str("<span class=\"font-bold text-primary\">");
+                            out.push_str(&escape(&name));
+                            out.push_str("</span>");
+                            i = end.saturating_add(2);
+                            continue;
+                        }
                         let dir = section_of(kind);
                         // the anchor stays a plain inline box: inline-flex
                         // would make it an atomic inline that cannot break
