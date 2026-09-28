@@ -336,14 +336,16 @@ async fn select_cards(
 
 /// Newest release date first with the id as the tie-break. Without that
 /// second key pages tied on `release_date` could repeat or skip between
-/// `offset=0` and `offset=30` fetches.
+/// `offset=0` and `offset=30` fetches. Unknown dates (0, the seed
+/// sentinel) sort last via `date_unknown` — the list is "newest known
+/// first", not "oldest first".
 pub async fn select_cookies(db: &Db, lang: &str, limit: i64, offset: i64) -> Result<Vec<Card>> {
     cards(
         db,
         lang,
         Section::Cookies,
-        ", grade, release_date",
-        " ORDER BY release_date DESC, id DESC",
+        ", grade, (release_date <= 0) AS date_unknown",
+        " ORDER BY date_unknown ASC, release_date DESC, id DESC",
         Some((limit, offset)),
         "",
     )
@@ -355,8 +357,8 @@ pub async fn select_pets(db: &Db, lang: &str, limit: i64, offset: i64) -> Result
         db,
         lang,
         Section::Pets,
-        ", grade, release_date",
-        " ORDER BY release_date DESC, id DESC",
+        ", grade, (release_date <= 0) AS date_unknown",
+        " ORDER BY date_unknown ASC, release_date DESC, id DESC",
         Some((limit, offset)),
         "",
     )
