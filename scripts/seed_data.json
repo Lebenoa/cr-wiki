@@ -3236,8 +3236,9 @@
    "grade": 4,
    "release_date": "2026-07-23T00:00:00Z"
   },
-  {    "pet_id": 101,
-    "image": "mango_roll.png",
+  {
+   "pet_id": 101,
+   "image": "mango_roll.png",
    "grade": 4,
    "release_date": "1970-01-01T00:00:00Z"
   }
@@ -37928,7 +37929,7 @@
   },
   {
    "treasure_id": 189,
-   "image": null,
+   "image": "topmost_golden_persimmon.png",
    "grade": 3,
    "base_treasure_id": null,
    "unlock_cookie_id": null,
@@ -40406,7 +40407,7 @@
   },
   {
    "treasure_id": 366,
-   "image": null,
+   "image": "elegant_crystal_drop_frame.png",
    "grade": 4,
    "base_treasure_id": null,
    "unlock_cookie_id": null,
@@ -40868,7 +40869,7 @@
   },
   {
    "treasure_id": 399,
-   "image": null,
+   "image": "fluffy_mango_seeds.png",
    "grade": 4,
    "base_treasure_id": null,
    "unlock_cookie_id": null,
@@ -40938,7 +40939,7 @@
   },
   {
    "treasure_id": 404,
-   "image": null,
+   "image": "fox_beads_heart.png",
    "grade": 4,
    "base_treasure_id": null,
    "unlock_cookie_id": null,
@@ -41036,7 +41037,7 @@
   },
   {
    "treasure_id": 411,
-   "image": null,
+   "image": "froggy_backpack.png",
    "grade": 4,
    "base_treasure_id": 412,
    "unlock_cookie_id": null,
@@ -41050,7 +41051,7 @@
   },
   {
    "treasure_id": 412,
-   "image": null,
+   "image": "froggy_mascot_doll.png",
    "grade": 4,
    "base_treasure_id": null,
    "unlock_cookie_id": null,
@@ -41848,7 +41849,7 @@
   },
   {
    "treasure_id": 469,
-   "image": null,
+   "image": "handmade_mangosteen_soap.png",
    "grade": 4,
    "base_treasure_id": null,
    "unlock_cookie_id": null,
@@ -42422,7 +42423,7 @@
   },
   {
    "treasure_id": 510,
-   "image": null,
+   "image": "kitchy_travel_tumbler.png",
    "grade": 4,
    "base_treasure_id": 589,
    "unlock_cookie_id": null,
@@ -42730,7 +42731,7 @@
   },
   {
    "treasure_id": 532,
-   "image": null,
+   "image": "luxury_fruit_soap_set.png",
    "grade": 4,
    "base_treasure_id": 469,
    "unlock_cookie_id": null,
@@ -42996,7 +42997,7 @@
   },
   {
    "treasure_id": 551,
-   "image": null,
+   "image": "mango_jam_wax.png",
    "grade": 4,
    "base_treasure_id": null,
    "unlock_cookie_id": 94,
@@ -43528,7 +43529,7 @@
   },
   {
    "treasure_id": 589,
-   "image": null,
+   "image": "night_sky_travel_mug.png",
    "grade": 4,
    "base_treasure_id": null,
    "unlock_cookie_id": null,
@@ -44494,7 +44495,7 @@
   },
   {
    "treasure_id": 658,
-   "image": null,
+   "image": "red_fox_beads_heart.png",
    "grade": 4,
    "base_treasure_id": 404,
    "unlock_cookie_id": null,
@@ -181586,7 +181587,7 @@
  "relic": [
   {
    "relic_id": 500001,
-   "image": null,
+   "image": "warming_heart.png",
    "episode_id": null,
    "unlock_cookie_id": 64
   },
@@ -219628,17 +219629,17 @@
   },
   {
    "jelly_id": 552,
-   "image": null,
+   "image": "coin_jelly.png",
    "score": 260.0
   },
   {
    "jelly_id": 553,
-   "image": null,
+   "image": "gold_coin_jelly.png",
    "score": 780.0
   },
   {
    "jelly_id": 554,
-   "image": null,
+   "image": "5coin_silver_coin_for_pet.png",
    "score": 260.0
   },
   {
@@ -219723,7 +219724,7 @@
   },
   {
    "jelly_id": 4118,
-   "image": null,
+   "image": "ghost_jelly.png",
    "score": 250000.0
   },
   {
@@ -219733,7 +219734,7 @@
   },
   {
    "jelly_id": 4121,
-   "image": null,
+   "image": "fairyitem.png",
    "score": 5000.0
   },
   {
@@ -219848,7 +219849,7 @@
   },
   {
    "jelly_id": 4222,
-   "image": null,
+   "image": "alphabetgiant.png",
    "score": 5000.0
   },
   {
@@ -219858,7 +219859,7 @@
   },
   {
    "jelly_id": 4224,
-   "image": null,
+   "image": "movingsnowenergy.png",
    "score": 1000.0
   },
   {
@@ -219878,22 +219879,22 @@
   },
   {
    "jelly_id": 4234,
-   "image": null,
+   "image": "fireflyjelly.png",
    "score": 1000.0
   },
   {
    "jelly_id": 4235,
-   "image": null,
+   "image": "oakcaskjelly.png",
    "score": 5000.0
   },
   {
    "jelly_id": 4236,
-   "image": null,
+   "image": "movingwine.png",
    "score": 10000.0
   },
   {
    "jelly_id": 4237,
-   "image": null,
+   "image": "ballonjelly.png",
    "score": 2000.0
   },
   {
@@ -219948,17 +219949,17 @@
   },
   {
    "jelly_id": 4248,
-   "image": null,
+   "image": "cheesecakemagicjelly.png",
    "score": 1500.0
   },
   {
    "jelly_id": 4250,
-   "image": null,
+   "image": "cheesecakepetcoin.png",
    "score": 1300.0
   },
   {
    "jelly_id": 4251,
-   "image": null,
+   "image": "sodalifejelly.png",
    "score": 1000.0
   },
   {
@@ -220023,7 +220024,7 @@
   },
   {
    "jelly_id": 4264,
-   "image": null,
+   "image": "blastbigcoin.png",
    "score": 100.0
   },
   {
@@ -220053,7 +220054,7 @@
   },
   {
    "jelly_id": 4270,
-   "image": null,
+   "image": "mooncookiejelly.png",
    "score": 8000.0
   },
   {
@@ -220093,7 +220094,7 @@
   },
   {
    "jelly_id": 4278,
-   "image": null,
+   "image": "orangeballjelly.png",
    "score": 10000.0
   },
   {
@@ -220128,17 +220129,17 @@
   },
   {
    "jelly_id": 4285,
-   "image": null,
+   "image": "waterdrop1.png",
    "score": 19000.0
   },
   {
    "jelly_id": 4286,
-   "image": null,
+   "image": "waterdrop2.png",
    "score": 19000.0
   },
   {
    "jelly_id": 4287,
-   "image": null,
+   "image": "waterdrop3.png",
    "score": 19000.0
   },
   {
@@ -220228,7 +220229,7 @@
   },
   {
    "jelly_id": 4309,
-   "image": null,
+   "image": "flyinggoldcoin.png",
    "score": 600.0
   },
   {
@@ -220398,7 +220399,7 @@
   },
   {
    "jelly_id": 4344,
-   "image": null,
+   "image": "whitechocopetjelly.png",
    "score": 1000.0
   },
   {
@@ -220863,7 +220864,7 @@
   },
   {
    "jelly_id": 4441,
-   "image": null,
+   "image": "honeyjellyparty.png",
    "score": 7777.0
   },
   {
@@ -220933,7 +220934,7 @@
   },
   {
    "jelly_id": 4455,
-   "image": null,
+   "image": "mangojelly.png",
    "score": 4000.0
   },
   {
@@ -221483,7 +221484,7 @@
   },
   {
    "jelly_id": 4614,
-   "image": null,
+   "image": "onionlifetearjelly.png",
    "score": 20000.0
   },
   {
@@ -221518,7 +221519,7 @@
   },
   {
    "jelly_id": 4621,
-   "image": null,
+   "image": "candyflossletterboxflying.png",
    "score": 5000.0
   },
   {
@@ -221538,7 +221539,7 @@
   },
   {
    "jelly_id": 4628,
-   "image": null,
+   "image": "candyflossletterboxflyingfast.png",
    "score": 5000.0
   },
   {
@@ -230131,7 +230132,7 @@
    "skin_id": 1800013,
    "cookie_id": 21,
    "pet_id": null,
-   "image": null,
+   "image": "scholar_of_the_wind.png",
    "grade": 4,
    "collab": false,
    "subtitle": "Rebel Cookie's Scholar of the Wind"
@@ -230140,7 +230141,7 @@
    "skin_id": 1800014,
    "cookie_id": 23,
    "pet_id": null,
-   "image": null,
+   "image": "colorful_wedding_hanbok.png",
    "grade": 4,
    "collab": false,
    "subtitle": "Kumiho Cookie's Colorful Wedding Hanbok"
@@ -230149,7 +230150,7 @@
    "skin_id": 1800015,
    "cookie_id": 80,
    "pet_id": null,
-   "image": null,
+   "image": "wax_cracking_squishy.png",
    "grade": 4,
    "collab": false,
    "subtitle": "Potato Salad Cookie's Wax-cracking Squishy"
