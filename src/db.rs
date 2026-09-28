@@ -1973,23 +1973,28 @@ pub async fn search(db: &Db, lang: &str, q: &str, limit: i64) -> Result<Vec<(Str
         // the name-gram pass: the needle's 3-grams against the index, most
         // overlapping entities first. Grams live in one table for all
         // sections; the composite index covers the (gram, section) pair.
+        // The subquery is materialized through LET first: an inline
+        // `id IN (subquery)` re-executes the subquery per scanned row
+        // (EXPLAIN: TableScan with "unsupported predicate" pre-decode),
+        // 13 s per search on the seeded catalog; materialized, ~30 ms.
         let grams = name_grams(&needle);
         if !grams.is_empty() {
             let rows: Vec<CardRow> = db
                 .query(format!(
-                    "SELECT record::id(id) AS id, image{extra}, {} AS name,
+                    "LET $ids = (SELECT VALUE entity_id FROM name_gram
+                             WHERE section = $sec AND gram IN $grams
+                             GROUP BY entity_id LIMIT {limit});
+                     SELECT record::id(id) AS id, image{extra}, {} AS name,
                             (tr.en.name ?? '') AS en_name
                        FROM {table}
-                      WHERE record::id(id) IN (
-                            SELECT VALUE entity_id FROM name_gram
-                             WHERE section = $sec AND gram IN $grams
-                             GROUP BY entity_id LIMIT {limit})",
+                      WHERE record::id(id) IN $ids",
                     tr("name")
                 ))
                 .bind(("sec", table.to_string()))
                 .bind(("grams", grams.clone()))
                 .await?
-                .take(0)?;
+                // statement 0 is the LET, statement 1 the select
+                .take(1)?;
             for r in rows {
                 let card = Card::from(r);
                 if seen.insert(card.id) {
