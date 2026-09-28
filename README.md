@@ -1,251 +1,80 @@
 # Cookie Run Wiki
 
-A web platform for displaying and managing rich data about collectible assets — cookies, pets, and treasures from the Cookie Run franchise. Built with **Rust** ([axum](https://github.com/tokio-rs/axum), [askama](https://github.com/askama-rs/askama), [SurrealDB](https://surrealdb.com) client) using server-side rendering (SSR). Originally a V/veb application, then a rusqlite port; both predecessors are gone (`PORTING.md` records the mappings).
+[![Release](https://img.shields.io/github/v/release/Lebenoa/cr-wiki)](https://github.com/Lebenoa/cr-wiki/releases)
+[![Language](https://img.shields.io/badge/lang-Rust-orange)](https://www.rust-lang.org)
+
+A self-hosted fan wiki for the Cookie Run franchise: catalogs of cookies, pets, treasures, episodes, ingredients, jellies, skins, relics and gacha pools, a community build planner, and admin editing — server-rendered in Rust (axum + askama) on SurrealDB v3.
 
 ## Features
 
-- **Cookie, pet & treasure databases** — List and detail views with localized names, abilities, and descriptions; grades, release dates, and unlock relationships
-- **Episodes, ingredients, jellies, skins, relics & gacha** — Dedicated catalog cards show episode stage/quest/relic counts, ingredient grades/drop episodes/recipe counts, jelly scores, skin owners, and relic groups. Ingredient detail pages link to crafted treasures; treasure pages show their recipe ingredients and base/evolved variant. `/gacha` discloses pool odds in tab cards.
-- **Treasure effects** — Normal/blessed effect panels with per-column value diffs and word-level text diffs for evolved treasures; every treasure carries its +0..+9 per-level values, rendered at the equipped level
-- **Community builds** — `/builds` list (EP/tag filters, infinite scroll, per-level effect values on cards) and `/builds/new` planner with modal pickers, a themed 0-9 level slider, per-card steppers, relay cookie, EP tiers, tags, anonymous 24-hour expiry, and a live combo-bonus preview; detail pages render each slot's per-level values and accept verify/issue reports
-- **Full-text search** — Navbar search over cookies/pets/treasures, case-insensitive `CONTAINS` matching with a Thai-aware fallback (substring match works where word tokenizers can't segment Thai)
-- **Admin module** — Authenticated create/edit forms for cookies, pets, and treasures (effects, combi bonuses, rich text with `[[cookie:1]]` id links whose display names localize at render time); upserts translations per language so editing in Thai cannot wipe the English text
-- **Multi-language support** — i18n via `translations/*.tr` (English + Thai) with English fallback. The locale lives in the URL (`?lang=th`, English unprefixed) and is mirrored into the `wikilang` cookie, so each language has its own indexable address with `hreflang` alternates
-- **HTMX** — Partial-page updates, hx-boost navigation, server-paginated infinite scroll, and live preview refreshes without full reloads
+- **Cookie, pet & treasure databases** — list and detail views with localized names, abilities, and descriptions; grades, release dates, and unlock relationships
+- **Episodes, ingredients, jellies, skins, relics & gacha** — catalog cards show episode stage/quest/relic counts, ingredient grades/drop episodes/recipe counts, jelly scores, skin owners, and relic groups. Ingredient detail pages link to crafted treasures; treasure pages show their recipe ingredients and base/evolved variant. `/gacha` discloses pool odds in tab cards.
+- **Treasure effects** — normal/blessed effect panels with per-column value diffs and word-level text diffs for evolved treasures; every treasure carries its +0..+9 per-level values, rendered at the equipped level
+- **Community builds** — `/builds` list (EP/tag filters, infinite scroll, per-level effect values on cards) and `/builds/new` planner with modal pickers, a 0–9 level slider, per-card steppers, relay cookie, EP tiers, tags, anonymous 24-hour expiry, and a live combo-bonus preview; detail pages render each slot's per-level values and accept verify/issue reports
+- **Full-text search** — navbar search over cookies/pets/treasures, case-insensitive matching with a Thai-aware fallback (substring match works where word tokenizers can't segment Thai)
+- **Admin module** — authenticated create/edit forms for cookies, pets, and treasures (effects, combi bonuses, rich text with `[[cookie:1]]` id links whose display names localize at render time); upserts translations per language so editing in Thai cannot wipe the English text
+- **Multi-language** — English + Thai via `translations/*.tr`. The locale lives in the URL (`?lang=th`, English unprefixed) and is mirrored into the `wikilang` cookie, so each language has its own indexable address with `hreflang` alternates
+- **HTMX** — partial-page updates, hx-boost navigation, server-paginated infinite scroll, and live preview refreshes without full reloads
 
-## Tech Stack
+## Tech stack
 
 | Layer | Technology |
 |-------|------------|
 | Language | Rust |
 | Web framework | axum + tokio |
 | Templates | askama (compile-time checked, escapes by default) |
-| Database | SurrealDB v3 (external server over http:// (recommended) or ws://; schemaless documents with numeric ids) |
+| Database | SurrealDB v3 (external server over http:// — recommended — or ws://) |
 | Styling | UnoCSS (Wind4 preset), generated `static/styles.css` |
 | Interactivity | HTMX (served from `/thirdparty/htmx.js`) |
-| Package manager | bun (never npm) |
+| Frontend tooling | bun (never npm) |
 
-## Project Structure
+## Project structure
 
 ```
 cookierun/
 ├── src/main.rs             # Router assembly, middleware ordering, tracing
 ├── src/routes/             # catalog, detail, builds, planner, picker,
-│                           #   admin, auth, uploads, misc, changelog, api
+│                           #   admin, auth, uploads, misc, api, errors
 ├── src/db.rs               # All SurrealQL — bound parameters, whitelisted tables
-├── src/ctx.rs              # Per-request context extractor (locale, session,
-│                           #   is_local/is_admin)
+├── src/ctx.rs              # Per-request context (locale, session, is_local/is_admin)
 ├── src/session.rs          # argon2id hashing, CSPRNG sessions with TTL
 ├── src/ratelimit.rs        # Per-client token bucket (peer-keyed, bounded)
 ├── src/i18n.rs             # .tr loader (startup scan, en fallback)
 ├── templates/              # askama templates
 ├── PORTING.md              # Port notes: what maps to what, deliberate deltas
-├── static/                 # Static assets
+├── static/
 │   ├── img/<entity>/       # Sprites named <english name in snake_case>.png
-│   ├── js/                 # picker.js, level_slider.js, catalog_filter.js,
-│   │                       #   gacha_tabs.js, combobox.js, richtext.js,
-│   │                       #   theme.js, theme_editor.js, admin_upload.js
+│   ├── js/                 # picker, level slider, filters, combobox, richtext,
+│   │                       #   theme, admin upload
 │   └── styles.css          # Generated by UnoCSS — don't edit by hand
 ├── translations/           # i18n .tr files (en, th)
-├── scripts/                # scraper tooling stays local and is never committed;
-│                           #   scripts/build_seed_cookierundb.py rebuilds the
-│                           #   legacy fixture the migrator reads
-├── Config.toml             # Runtime configuration (gitignored)
+├── deploy/                 # First-run installer + bundle builder (see below)
+├── Config.example.toml     # Template for the gitignored Config.toml
 ├── uno.config.ts           # UnoCSS config (preflights/keyframes live here)
 └── package.json            # Frontend tooling (unocss watcher)
 ```
 
-## Getting Started
-### Prerequisites
+## Installation
 
-- Rust toolchain (stable)
-- bun (for the UnoCSS watcher/generator)
-- A [SurrealDB](https://surrealdb.com) v3 server the app can reach (start one with `surreal start --user root --pass root --allow-all`)
+### Production (Linux)
 
-### Installation
-
-```bash
-git clone <repository-url>
-cd cookierun
-
-# Install frontend tooling
-bun install
-
-
-# Point the app at the server and run
-cargo run
-```
-
-The server binds per `Config.toml` (`[surreal] url/namespace/database/username/password`; `CR_HOST` / `CR_PORT` override the bind address without editing the shared config).
-
-**Debug vs release matters.** Debug builds skip rate limiting and Turnstile verification and grant admin to headerless loopback peers (local development needs no login). Release builds (`cargo run --release`) enable rate limiting and Turnstile and compile out the loopback bypass — always deploy a release build.
-
-### Deployment
-
-A first-time installer ships in [`deploy/`](deploy/README.md). `setup.sh`
-takes a fresh Linux box to a running wiki in one shot — installs SurrealDB,
-seeds the catalog, creates the first admin, and runs the site under systemd.
-
-#### Install
-
-**Requirements:** Linux x86_64 with glibc ≥ 2.39, root access, `curl`.
-(Binary built for glibc 2.43; verified on it.)
+Requirements: Linux x86_64, glibc ≥ 2.39, root access, `curl`.
 
 ```sh
 git clone https://github.com/Lebenoa/cr-wiki.git
 cd cr-wiki
-
-sudo ./deploy/setup.sh              # from this checkout, or from the release
-sudo ./deploy/setup.sh --bundle cookierun-bundle.tar.gz   # bundle: any machine
+sudo ./deploy/setup.sh
 ```
 
-The `cookierun-bundle.tar.gz` from the GitHub release — binary, `static/`,
-`translations/` and the seed — is the only artifact a server needs;
-`./deploy/make_bundle.sh` rebuilds it. `setup.sh` downloads the bundle
-automatically when `--bundle` is a URL.
-
-Done — the summary prints the site URL. What ran, in order:
-
-1. **SurrealDB v3** installed via `https://install.surrealdb.com` if absent;
-   data lives in `/var/lib/cookierun/surreal` (surrealkv), loopback-only.
-2. **Install tree** at `deploy/runtime/` beside the script (override
-   `--installdir`) — binary, `static/`, `translations/`, `seed.surql` and a
-   generated `Config.toml` (app talks to the datastore over `http://`),
-   owned by a `cookierun` system user. The root DB password is generated
-   and kept in `/etc/cookierun/surrealdb.env`.
-3. **Seed + admin** — `seed.surql` (a `surreal export` of the catalog)
-   imported only when the `cookie` table is empty; first admin bootstrapped
-   (password in `/etc/cookierun/admin-credentials`).
-4. **Services** — `cookierun.service` + `cookierun-surrealdb.service`
-   started under systemd; without systemd use `--no-systemd` (background
-   PID files, for containers).
-
-Useful options (full list in `deploy/README.md`): `--bundle`, `--installdir`,
-`--host`, `--port`, `--admin-user`, `--admin-pass`, `--db-pass`. Env
-overrides: `CR_TURNSTILE_SECRET`, `CR_TURNSTILE_HOSTNAMES`,
-`CR_TRUSTED_PROXIES`, `CR_RELEASE`, … Re-running is an idempotent upgrade
-(reuses the DB password, skips seeding).
-
-#### Manual install (no script)
-
-The same end state as `setup.sh`, step by step. Verified against the
-v0.1.2 bundle. All commands run as root; the app user is a dedicated
-`cookierun` system account, and the generated credentials live in
-`/etc/cookierun/`.
-
-**1. Install SurrealDB v3** — once, if `surreal` is not already on the
-machine. The official installer puts the binary in `~/.surrealdb/`:
+Or with the release bundle alone (no clone needed):
 
 ```sh
-curl -sSf https://install.surrealdb.com | sh
-sudo cp "$HOME/.surrealdb/surreal" /usr/local/bin/surreal
+sudo ./deploy/setup.sh --bundle cookierun-bundle.tar.gz
 ```
 
-**2. Fetch and extract the release bundle** — one tarball containing the
-binary, `static/`, `translations/` and `seed.surql`:
+`setup.sh` installs SurrealDB v3 if missing, imports the seed catalog, creates the first admin (credentials in `/etc/cookierun/admin-credentials`), and starts `cookierun.service` + `cookierun-surrealdb.service` under systemd. The printed summary shows the site URL. Re-running is an idempotent upgrade. Full option list and a step-by-step manual install: [`deploy/README.md`](deploy/README.md).
 
-```sh
-curl -sSfL -o cookierun-bundle.tar.gz \
-  https://github.com/Lebenoa/cr-wiki/releases/download/v0.1.2/cookierun-bundle.tar.gz
-sudo mkdir -p /opt/cookierun
-sudo tar xzf cookierun-bundle.tar.gz -C /opt/cookierun
-```
-
-**3. Runtime user and generated credentials** — a `cookierun` system user
-owns the install tree and the datastore directory. The SurrealDB root
-password is generated once and stored in `/etc/cookierun/surrealdb.env`
-(mode 640, readable by the service user):
-
-```sh
-sudo useradd --system --home-dir /opt/cookierun --shell /usr/sbin/nologin cookierun
-sudo mkdir -p /var/lib/cookierun/surreal /etc/cookierun
-DB_PASS="$(openssl rand -hex 24)"
-printf 'SURREAL_USER=root\nSURREAL_PASS=%s\nSURREAL_NO_BANNER=true\n' "$DB_PASS" \
-  | sudo tee /etc/cookierun/surrealdb.env > /dev/null
-sudo chmod 640 /etc/cookierun/surrealdb.env
-sudo chown -R cookierun:cookierun /opt/cookierun /var/lib/cookierun
-```
-
-**4. `Config.toml`** — the app reads it from its working directory, so it
-lives next to the binary. The `password` field echoes `$DB_PASS`; leave
-`[turnstile] secret` empty only until you have a Cloudflare secret —
-release builds fail closed (ignore that line and set it via the env
-overrides `TURNSTILE_SECRET` / `TURNSTILE_HOSTNAMES` if you prefer):
-
-```sh
-sudo tee /opt/cookierun/Config.toml > /dev/null <<EOF
-host = "0.0.0.0"
-port = 6785
-
-[surreal]
-url = "http://127.0.0.1:8100"
-namespace = "cookierun"
-database = "cookierun"
-username = "root"
-password = "$DB_PASS"
-
-[turnstile]
-secret = ""
-EOF
-```
-
-**5. Start the datastore** — SurrealDB v3 on the loopback, persistent
-`surrealkv` storage under `/var/lib/cookierun/surreal`. Run as the
-`cookierun` user; auth comes from the password you generated:
-
-```sh
-sudo -u cookierun env SURREAL_USER=root SURREAL_PASS="$DB_PASS" \
-  surreal start --bind 127.0.0.1:8100 surrealkv:///var/lib/cookierun/surreal
-```
-
-Wait until it answers its health endpoint before the next step:
-
-```sh
-until curl -sf -o /dev/null http://127.0.0.1:8100/health; do sleep 1; done
-```
-
-**6. Seed the catalog** — the single `seed.surql` was exported from a
-seeded database (`surreal export`); the import creates the namespace,
-database, all tables, the unique username index and every row:
-
-```sh
-sudo surreal import -e http://127.0.0.1:8100 -u root -p "$DB_PASS" \
-  --ns cookierun --db cookierun /opt/cookierun/seed.surql
-```
-
-**7. Bootstrap the first admin** — a `user` record with `is_admin = true`.
-The password is hashed server-side by SurrealDB's
-`crypto::argon2::generate`, the same primitive the app uses for login:
-
-```sh
-ADMIN_PASS="$(openssl rand -hex 12)"
-printf "CREATE type::record('user', 1) SET username = 'admin', \
-password = crypto::argon2::generate('%s'), is_admin = true, \
-created_at = time::unix();" "$ADMIN_PASS" \
-  | sudo surreal sql -e http://127.0.0.1:8100 -u root -p "$DB_PASS" \
-      --ns cookierun --db cookierun --hide-welcome
-```
-
-`$ADMIN_PASS` is your login — write it down now; nothing stores it.
-
-**8. Run the site** — from the install tree, as the `cookierun` user:
-
-```sh
-cd /opt/cookierun && sudo -u cookierun ./cookierun
-```
-
-For a long-running service, replace the last step with the two systemd
-units shown in [`deploy/README.md`](deploy/README.md).
-
-The Turnstile step below applies to this install path too: set the secret
-and restart the app (or set `TURNSTILE_SECRET` / `TURNSTILE_HOSTNAMES` in
-the unit's environment).
-
-#### After install — Turnstile (required)
-
-Release builds **fail closed**: login, register and every protected POST
-return 403 until a Cloudflare Turnstile secret is configured. Set the env
-vars and re-run setup:
+**Turnstile is required in production.** Release builds fail closed: login, register and every protected POST return 403 until a Cloudflare Turnstile secret is configured.
 
 ```sh
 sudo CR_TURNSTILE_SECRET=<siteverify secret> \
@@ -253,10 +82,9 @@ sudo CR_TURNSTILE_SECRET=<siteverify secret> \
      ./deploy/setup.sh
 ```
 
-Behind a CDN/nginx, also set `CR_TRUSTED_PROXIES` to your proxy IPs or every
-visitor shares one rate-limit bucket.
+Behind a CDN/nginx, also set `CR_TRUSTED_PROXIES` to your proxy IPs, or every visitor shares one rate-limit bucket.
 
-#### Verify / operate
+**Operate:**
 
 ```sh
 curl -sI http://127.0.0.1:6785/ | head -1           # HTTP/1.1 200
@@ -264,12 +92,36 @@ sudo journalctl -u cookierun -f                     # app logs
 sudo systemctl restart cookierun                    # sessions are in-memory
 ```
 
-Reseed (wipes seeded tables, including `user`):
-`sudo surreal import -e http://127.0.0.1:8100 -u root -p <db-pass> --ns cookierun --db cookierun deploy/runtime/seed.surql`
+## Routes
 
-### Configuration
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/` | Homepage |
+| GET | `/search` | Search results (case-insensitive; Thai-safe) |
+| GET | `/cookies`, `/pets`, `/treasures` | List pages (all/normal/evo tabs, htmx infinite scroll) |
+| GET | `/cookies/:id`, `/pets/:id`, `/treasures/:id` | Detail pages |
+| GET/POST | `/cookies/new`, `/pets/new`, `/treasures/new` | Admin create (admin-only) |
+| GET/POST | `/cookies/:id/edit`, `/pets/:id/edit`, `/treasures/:id/edit` | Admin edit (admin-only) |
+| GET | `/episodes`, `/episodes/:id` | Episode list and detail |
+| GET | `/ingredients`, `/ingredients/:id` | Crafting ingredients (grade + drop episode) |
+| GET | `/jellies`, `/jellies/:id` | Jelly catalog and detail |
+| GET | `/skins`, `/relics` (+ detail pages) | Skin and relic catalogs |
+| GET | `/gacha` | Disclosed draw/hatch odds, one tab card per pool |
+| GET | `/builds` | Community build list (filters, sort, pagination) |
+| GET/POST | `/builds/new` | Build planner + submission (anonymous allowed) |
+| GET | `/builds/preview` | Live loadout preview partial (combo bonus) |
+| GET | `/builds/:id` | Build detail (per-level treasure values, verdicts) |
+| POST | `/builds/:id/verify` | Report verified/issue verdict (authenticated) |
+| GET/POST | `/builds/:id/edit`, POST `/builds/:id/delete` | Owner/admin only (404 otherwise) |
+| GET/POST | `/login`, `/register`; POST `/logout` | Auth |
+| GET | `/api/available-langs` | Languages (HTML partial for HTMX, JSON otherwise) |
+| GET | `/api/richtext-names` | Linkable entity names for rich-text autocomplete |
+| POST | `/api/set-lang` | Set language cookie and redirect back |
+| GET | `/sitemap.xml`, `/robots.txt` | SEO surface (locale alternates, crawl rules) |
 
-`Config.toml` is loaded at startup (gitignored — create your own from `Config.example.toml`). All fields are optional and fall back to defaults; non-positive `[ratelimit] values` clamp back to those defaults at load.
+## Configuration
+
+`Config.toml` is loaded at startup from the working directory (gitignored — create yours from `Config.example.toml`). All fields are optional and fall back to defaults; non-positive `[ratelimit]` values clamp back to those defaults at load.
 
 ```toml
 host = "127.0.0.1"
@@ -298,68 +150,48 @@ trusted_proxies = []                   # proxy IPs whose forwarded headers count
 
 ## Development
 
+Prerequisites: Rust toolchain (stable), bun, and a reachable SurrealDB v3 server (`surreal start --user root --pass root --allow-all`).
+
+```sh
+bun install     # frontend tooling
+cargo run       # dev server on Config.toml's host/port (default 127.0.0.1:6785)
+```
+
+`CR_HOST` / `CR_PORT` override the bind address without editing the shared config. Debug builds skip rate limiting and Turnstile verification and grant admin to headerless loopback peers — local development needs no login. Release builds (`cargo run --release`) enable both and compile out the loopback bypass: **always deploy a release build**, or every form submission skips the bot check.
+
 ### Styles
 
-```bash
+```sh
 bunx unocss     # one-shot regenerate static/styles.css
 bun run dev     # unocss --watch
 ```
 
 UnoCSS scans `./**/*.html`. Commit regenerated CSS together with template class changes; never edit `static/styles.css` by hand; never add `<style>` tags or HTML comments in templates (styling via utilities plus the preflights in `uno.config.ts`, where theme palettes and keyframes live).
 
-### Building & checking
+### Checks
 
-```bash
-cargo check     # type-check (exit clean before yielding work)
+```sh
+cargo check     # type-check
 cargo test      # unit tests over queries, i18n, paging, grades, sessions…
 ```
 
-Integration tests that hit the database are gated: they run only when
-`CR_SURREAL_URL` names a live SurrealDB server (`SURREAL_USER` / `SURREAL_PASS`
-supply the credentials) and skip with a notice otherwise.
+Integration tests that hit the database are gated: they run only when `CR_SURREAL_URL` names a live SurrealDB server (`SURREAL_USER` / `SURREAL_PASS` supply the credentials) and skip with a notice otherwise. Point them at a scratch namespace/database.
 
-## Architecture
-
-**Request lifecycle:**
+### Architecture
 
 1. Middleware runs first: rate limit (peer-keyed token bucket), then locale resolution + session lookup into request extensions
 2. Handlers receive an extracted `Ctx` (locale, site URL, htmx flags, user, admin decision)
 3. Data access goes through `src/db.rs`, async against the SurrealDB server
 4. askama templates render the response; escaping is on by default
 
-**Invariants worth keeping:**
-
-- Admin routes return **404** (not 401/403) when unauthenticated; admin = session admin, or debug-build loopback peer with no forwarded headers
-- Graded grids order by the maintained `rank` column (display rank, where E outranks L) — never the raw `grade` ordinal
-- Redirect targets validated site-relative; build video links http(s)-only; sessions expire after 7 days
-
-## API Endpoints
-
-| Method | Path | Description |
-|--------|------|-------------|
-| GET | `/` | Homepage |
-| GET | `/search` | Search results (case-insensitive CONTAINS; Thai-safe) |
-| GET | `/cookies`, `/pets`, `/treasures` | List pages (all/normal/evo tabs, htmx infinite scroll) |
-| GET | `/cookies/:id`, `/pets/:id`, `/treasures/:id` | Detail pages |
-| GET/POST | `/cookies/new`, `/pets/new`, `/treasures/new` | Admin create (admin-only) |
-| GET/POST | `/cookies/:id/edit`, `/pets/:id/edit`, `/treasures/:id/edit` | Admin edit (admin-only) |
-| GET | `/episodes`, `/episodes/:id` | Episode list and detail |
-| GET | `/ingredients`, `/ingredients/:id` | Crafting ingredients (grade + drop episode) |
-| GET | `/jellies`, `/jellies/:id` | Jelly catalog and detail |
-| GET | `/skins`, `/relics` (+ detail pages) | Skin and relic catalogs |
-| GET | `/gacha` | Disclosed draw/hatch odds, one tab card per pool |
-| GET | `/builds` | Community build list (filters, sort, pagination) |
-| GET/POST | `/builds/new` | Build planner + submission (anonymous allowed) |
-| GET | `/builds/preview` | Live loadout preview partial (combo bonus) |
-| GET | `/builds/:id` | Build detail (per-level treasure values, verdicts) |
-| POST | `/builds/:id/verify` | Report verified/issue verdict (authenticated) |
-| GET/POST | `/builds/:id/edit`, POST `/builds/:id/delete` | Owner/admin only (404 otherwise) |
-| GET/POST | `/login`, `/register`; POST `/logout` | Auth |
-| GET | `/api/available-langs` | Languages (HTML partial for HTMX, JSON otherwise) |
-| GET | `/api/richtext-names` | Linkable entity names for rich-text autocomplete |
-| POST | `/api/set-lang` | Set language cookie and redirect back |
-| GET | `/sitemap.xml`, `/robots.txt` | SEO surface (locale alternates, crawl rules) |
+Invariants: admin routes return **404** (not 401/403) when unauthenticated; graded grids order by the maintained `rank` column (display rank, where E outranks L — never the raw `grade` ordinal); redirect targets are validated site-relative; build video links are http(s)-only; sessions expire after 7 days.
 
 ## License
 
-MIT.
+No LICENSE file is currently present in this repository — all rights reserved by the author until one is added.
+
+## Acknowledgments
+
+- [Cookie Run](https://www.cookierun.com/) is a game franchise by Devsisters; this is a non-commercial fan project, not affiliated with or endorsed by Devsisters.
+- Built with [axum](https://github.com/tokio-rs/axum), [askama](https://github.com/askama-rs/askama), [SurrealDB](https://surrealdb.com), [HTMX](https://htmx.org), and [UnoCSS](https://unocss.dev).
+- Originally a V/veb application, then a rusqlite port; both predecessors are gone — [`PORTING.md`](PORTING.md) records the mappings.

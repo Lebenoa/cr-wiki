@@ -104,7 +104,7 @@ generated SurrealDB root password you keep for yourself.
 2. **Bundle**: fetch and unpack next to where the site will live:
 
    ```sh
-   curl -sSfL https://github.com/Lebenoa/cr-wiki/releases/download/v0.1.2/cookierun-bundle.tar.gz \
+   curl -sSfL https://github.com/Lebenoa/cr-wiki/releases/latest/download/cookierun-bundle.tar.gz \
      | tar xz -C /opt/cookierun   # mkdir -p /opt/cookierun first
    ```
 
