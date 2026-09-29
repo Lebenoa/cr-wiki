@@ -8,7 +8,9 @@
 //! did.
 
 use std::collections::HashMap;
-use std::sync::{Arc, Mutex, MutexGuard, PoisonError};
+use std::sync::Arc;
+
+use parking_lot::Mutex;
 
 use surrealdb::engine::any::Any;
 use surrealdb::types::SurrealValue;
@@ -76,21 +78,14 @@ fn cache() -> &'static Mutex<Cache> {
     CACHE.get_or_init(|| Mutex::new(Cache::default()))
 }
 
-/// A poisoned cache means a builder panicked mid-write; the lists are
-/// rebuildable, so drop the stale contents and start over. Every lock site
-/// heals the same way — two different recoveries were two bugs waiting.
-fn heal(p: PoisonError<MutexGuard<'_, Cache>>) -> MutexGuard<'_, Cache> {
-    let mut c = p.into_inner();
-    *c = Cache::default();
-    c
-}
+// parking_lot's Mutex cannot poison: a panic mid-build happens before the
+// lock is taken for the insert, and inserts put in a complete list at once,
+// so the cache cannot hold half an entry after one.
 
 /// Drops every cached list. Called after any catalog write, since a new or
 /// renamed entity has to show up in the pickers on the next request.
 pub fn invalidate() {
-    if let Ok(mut c) = cache().lock() {
-        *c = Cache::default();
-    }
+    *cache().lock() = Cache::default();
 }
 
 /// The picker list for `kind` in `lang`, built on first use. Hits hand back
@@ -100,7 +95,7 @@ pub fn invalidate() {
 pub async fn options(db: &Db, lang: &str, kind: &str) -> crate::db::Result<Arc<Vec<PickerOption>>> {
     let key = lang.to_string();
     let hit = {
-        let c = cache().lock().unwrap_or_else(heal);
+        let c = cache().lock();
         match kind {
             "cookie" => c.cookies.get(&key).cloned(),
             "pet" => c.pets.get(&key).cloned(),
@@ -118,7 +113,7 @@ pub async fn options(db: &Db, lang: &str, kind: &str) -> crate::db::Result<Arc<V
         _ => build_treasures(db, lang).await?,
     };
     let list = Arc::new(built);
-    let mut c = cache().lock().unwrap_or_else(heal);
+    let mut c = cache().lock();
     match kind {
         "cookie" => c.cookies.insert(key, Arc::clone(&list)),
         "pet" => c.pets.insert(key, Arc::clone(&list)),

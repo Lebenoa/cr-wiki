@@ -3,7 +3,8 @@
 //! what the original does too.
 
 use std::collections::HashMap;
-use std::sync::Mutex;
+
+use parking_lot::Mutex;
 
 use crate::db::Db;
 
@@ -41,14 +42,12 @@ impl Sessions {
         }
     }
 
-    /// Locks the map, warning on poison: a poisoned lock must not silently
-    /// turn `start` into a login that hands out a cookie for a session that
-    /// was never stored, nor mute `end`/`end_all_for` revocations.
-    fn lock(&self, op: &str) -> Option<std::sync::MutexGuard<'_, HashMap<String, Entry>>> {
-        self.inner.lock().map_err(|e| {
-            tracing::warn!(op, error = %e, "session store mutex poisoned");
-            e
-        }).ok()
+    /// Locks the map. The mutex cannot poison (it is a parking-lot mutex),
+    /// and every
+    /// operation under it is one whole-value statement (retain/insert/remove),
+    /// so an interrupted op leaves the map with no half-applied entry.
+    fn lock(&self) -> parking_lot::MutexGuard<'_, HashMap<String, Entry>> {
+        self.inner.lock()
     }
 
     /// Starts a session and returns its key, which becomes the cookie value.
@@ -57,15 +56,14 @@ impl Sessions {
     pub fn start(&self, user: SessionUser) -> String {
         let key = uuid::Uuid::new_v4().to_string();
         let now = now_unix();
-        if let Some(mut map) = self.lock("start") {
-            map.retain(|_, e| now.saturating_sub(e.issued) <= SESSION_TTL_SECS);
-            map.insert(key.clone(), Entry { user, issued: now });
-        }
+        let mut map = self.lock();
+        map.retain(|_, e| now.saturating_sub(e.issued) <= SESSION_TTL_SECS);
+        map.insert(key.clone(), Entry { user, issued: now });
         key
     }
 
     pub fn get(&self, key: &str) -> Option<SessionUser> {
-        let mut map = self.lock("get")?;
+        let mut map = self.lock();
         let issued = map.get(key)?.issued;
         if now_unix().saturating_sub(issued) > SESSION_TTL_SECS {
             // a stale token must not authenticate anyone; drop it so it also
@@ -77,18 +75,14 @@ impl Sessions {
     }
 
     pub fn end(&self, key: &str) {
-        if let Some(mut map) = self.lock("end") {
-            map.remove(key);
-        }
+        self.lock().remove(key);
     }
 
     /// Revokes every session belonging to one user id. Called on logout so
     /// a stolen session token does not survive its owner logging out; login
     /// deliberately does NOT call this — multiple devices stay signed in.
     pub fn end_all_for(&self, user_id: i64) {
-        if let Some(mut map) = self.lock("end_all_for") {
-            map.retain(|_, e| e.user.id != user_id);
-        }
+        self.lock().retain(|_, e| e.user.id != user_id);
     }
 }
 

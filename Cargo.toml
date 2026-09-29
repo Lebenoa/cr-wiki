@@ -20,6 +20,7 @@ uuid = { version = "1.24.1", features = ["v4"] }
 serde_json = "1.0.151"
 reqwest = { version = "0.13", default-features = false, features = ["rustls", "json", "form"] }
 imagesize = "0.15.0"
+parking_lot = "0.12.5"
 
 [dev-dependencies]
 serde_urlencoded = "0.7.1"

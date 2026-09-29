@@ -485,6 +485,7 @@ dependencies = [
  "askama",
  "axum",
  "imagesize",
+ "parking_lot",
  "reqwest",
  "serde",
  "serde_json",

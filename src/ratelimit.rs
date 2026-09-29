@@ -6,7 +6,8 @@
 //! the server. One bucket per IP covers every endpoint together.
 
 use std::collections::HashMap;
-use std::sync::Mutex;
+
+use parking_lot::Mutex;
 
 use crate::config::RateLimit;
 
@@ -63,11 +64,9 @@ impl Limiter {
     #[cfg(not(debug_assertions))]
     pub fn check(&self, ip: &str) -> Decision {
         let now = now_unix();
-        let mut buckets = match self.buckets.lock() {
-            Ok(b) => b,
-            // a poisoned lock must not take the site down; let the request run
-            Err(e) => e.into_inner(),
-        };
+        // parking_lot's Mutex cannot poison; the lock spans one read-modify-
+        // write of a single entry, so a panic elsewhere cannot corrupt it
+        let mut buckets = self.buckets.lock();
 
         // prune buckets idle past the TTL once the map grows; under normal
         // traffic it stays small and no sweep ever runs. A flood of unique
