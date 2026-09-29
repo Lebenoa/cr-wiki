@@ -1,15 +1,20 @@
-//! The git history, read once at startup.
+//! The git history, captured by build.rs at compile time.
 //!
 //! Same reasoning as app/changelog.v: `git log`'s default layout is parsed
 //! rather than a --pretty format, because a format carries % placeholders and
 //! the V version shelled through cmd on Windows, which would expand `%h%` as
 //! a variable. Rust's Command execs directly, so the hazard is gone, but the
 //! parser is kept identical so both ports agree on what a commit looks like.
+//! build.rs runs the capture and drops the raw text into the build output, so a
+//! release tarball needs no `.git` directory — and no git at all — at runtime.
 
-use std::process::Command;
 use std::sync::OnceLock;
 
-pub const LIMIT: usize = 200;
+/// Raw `git log` output baked in by build.rs (which caps the capture, keeping
+/// its own `--max-count` in sync with what this page paginates well); empty
+/// when git was unavailable or the build ran outside a checkout, and the page
+/// then shows its empty state rather than failing.
+const LOG_TEXT: &str = include_str!(concat!(env!("OUT_DIR"), "/changelog.txt"));
 
 #[derive(Debug, Clone)]
 pub struct ChangeEntry {
@@ -27,25 +32,10 @@ pub struct ChangeEntry {
 static ENTRIES: OnceLock<Vec<ChangeEntry>> = OnceLock::new();
 
 pub fn entries() -> &'static Vec<ChangeEntry> {
-    ENTRIES.get_or_init(load)
+    ENTRIES.get_or_init(|| parse(LOG_TEXT))
 }
 
-fn load() -> Vec<ChangeEntry> {
-    let out = Command::new("git")
-        .args([
-            "log",
-            "--no-color",
-            "--date=short",
-            &format!("--max-count={LIMIT}"),
-        ])
-        .output();
-    let out = match out {
-        Ok(o) if o.status.success() => o.stdout,
-        // no git on PATH, or not a checkout: the page says so rather than failing
-        _ => return Vec::new(),
-    };
-    let text = String::from_utf8_lossy(&out);
-
+fn parse(text: &str) -> Vec<ChangeEntry> {
     let mut entries = Vec::new();
     let mut hash = String::new();
     let mut date = String::new();
@@ -190,5 +180,52 @@ mod tests {
                 assert!(!para.starts_with("Claude-Session:"));
             }
         }
+    }
+
+    /// The capture build.rs bakes in — not the live repo — is what parses, so
+    /// an empty capture (no git on the build machine) means an empty page.
+    #[test]
+    fn empty_capture_yields_no_entries() {
+        assert!(parse("").is_empty());
+        assert!(parse("fatal: not a git repository").is_empty());
+    }
+
+    #[test]
+    fn parse_splits_subject_and_body() {
+        // concat!, not \-continuations: those strip the leading indentation
+        // the parser keys on
+        let text = concat!(
+            "commit abc1234def5678\n",
+            "Author: someone\n",
+            "Date:   2026-09-29\n",
+            "\n",
+            "    feat(seed): add cookies\n",
+            "\n",
+            "    First paragraph\n",
+            "    continues here.\n",
+            "\n",
+            "    Second paragraph.\n",
+            "\n",
+            "    Co-Authored-By: bot <bot@example.com>\n",
+            "commit 0000000\n",
+            "Date:   2026-09-28\n",
+            "\n",
+            "    subject without a colon\n",
+        );
+        let entries = parse(text);
+        assert_eq!(entries.len(), 2);
+
+        let first = &entries[0];
+        assert_eq!(first.short, "abc1234");
+        assert_eq!(first.date, "2026-09-29");
+        assert_eq!(first.kind, "feat");
+        assert_eq!(first.scope, "seed");
+        assert_eq!(first.subject, "add cookies");
+        assert_eq!(first.body, vec!["First paragraph continues here.", "Second paragraph."]);
+
+        let second = &entries[1];
+        assert_eq!(second.kind, "");
+        assert_eq!(second.subject, "subject without a colon");
+        assert!(second.body.is_empty());
     }
 }
