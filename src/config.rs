@@ -83,18 +83,17 @@ impl Config {
     /// fallback is loud: a half-read config silently disables rate limiting
     /// and Turnstile, so the reason must reach the log.
     pub fn load(path: &str) -> Self {
-        let mut cfg: Self = match std::fs::read_to_string(path) {
-            Ok(s) => match toml::from_str(&s) {
+        let mut cfg: Self = if let Ok(s) = std::fs::read_to_string(path) {
+            match toml::from_str(&s) {
                 Ok(c) => c,
                 Err(e) => {
                     tracing::error!("config: {path} does not parse ({e}); running on defaults");
                     Self::default()
                 }
-            },
-            Err(_) => {
-                tracing::warn!("config: {path} not found; running on defaults");
-                Self::default()
             }
+        } else {
+            tracing::warn!("config: {path} not found; running on defaults");
+            Self::default()
         };
 
         // CR_HOST / CR_PORT override the bind address without editing the

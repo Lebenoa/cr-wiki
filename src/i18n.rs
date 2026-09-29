@@ -113,7 +113,7 @@ pub fn lang_flag(lang: &str) -> &'static str {
     match lang {
         "en" => r##"<svg viewBox="0 0 24 24" aria-hidden="true"><defs><clipPath id="flagclip-en"><circle cx="12" cy="12" r="12"/></clipPath></defs><g clip-path="url(#flagclip-en)"><rect width="24" height="24" fill="#012169"/><path d="M0 0 24 24M24 0 0 24" stroke="#fff" stroke-width="4.8"/><path d="M0 0 24 24M24 0 0 24" stroke="#C8102E" stroke-width="2.4"/><path d="M12 0v24M0 12h24" stroke="#fff" stroke-width="8"/><path d="M12 0v24M0 12h24" stroke="#C8102E" stroke-width="4.4"/></g></svg>"##,
         "th" => r##"<svg viewBox="0 0 24 24" aria-hidden="true"><defs><clipPath id="flagclip-th"><circle cx="12" cy="12" r="12"/></clipPath></defs><g clip-path="url(#flagclip-th)"><rect width="24" height="24" fill="#A51931"/><rect y="4" width="24" height="16" fill="#F4F5F8"/><rect y="8" width="24" height="8" fill="#2D2A4A"/></g></svg>"##,
-        _ => r##"<svg viewBox="0 0 24 24" aria-hidden="true"><defs><clipPath id="flagclip-globe"><circle cx="12" cy="12" r="12"/></clipPath></defs><g clip-path="url(#flagclip-globe)" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.5 3.8 5.6 3.8 9s-1.3 6.5-3.8 9c-2.5-2.5-3.8-5.6-3.8-9S9.5 5.5 12 3Z"/></g></svg>"##,
+        _ => r#"<svg viewBox="0 0 24 24" aria-hidden="true"><defs><clipPath id="flagclip-globe"><circle cx="12" cy="12" r="12"/></clipPath></defs><g clip-path="url(#flagclip-globe)" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.5 3.8 5.6 3.8 9s-1.3 6.5-3.8 9c-2.5-2.5-3.8-5.6-3.8-9S9.5 5.5 12 3Z"/></g></svg>"#,
     }
 }
 

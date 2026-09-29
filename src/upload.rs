@@ -9,7 +9,7 @@ use std::path::{Path, PathBuf};
 use crate::section::Section;
 
 /// Where the sprites for one section live, relative to the working
-/// directory — the same `static/` the ServeDir mount serves, so an uploaded
+/// directory — the same `static/` the `ServeDir` mount serves, so an uploaded
 /// sprite is reachable immediately. The section arrives already typed off
 /// the path capture, so the only question left is whether the editor
 /// writes it.

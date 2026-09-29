@@ -98,7 +98,7 @@ async fn render(
     match sec {
         Section::Episodes => episodes = db::select_episode_list(&state.db, &ctx.lang).await?,
         Section::Ingredients => {
-            ingredients = db::select_ingredient_list(&state.db, &ctx.lang).await?
+            ingredients = db::select_ingredient_list(&state.db, &ctx.lang).await?;
         }
         Section::Jellies => jellies = db::select_jelly_list(&state.db, &ctx.lang).await?,
         Section::Skins => skins = db::select_skin_list(&state.db, &ctx.lang).await?,

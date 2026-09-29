@@ -339,10 +339,12 @@ impl Ctx {
 
     /// The image URL's MIME type from its extension; sprites are PNG, the
     /// banner JPEG. A method because askama's lexer has no single-quoted
-    /// strings, so the branch cannot live inline in the attribute.
+    /// strings, so the branch cannot live inline in the attribute. The
+    /// comparison is case-insensitive out of paranoia about what a hand
+    /// edit of the image column can hold.
     #[allow(clippy::unused_self)]
     pub fn image_mime(&self, image: &str) -> &'static str {
-        if image.ends_with(".png") {
+        if image.to_ascii_lowercase().ends_with(".png") {
             "image/png"
         } else {
             "image/jpeg"
@@ -365,11 +367,17 @@ impl Ctx {
         else {
             return BANNER;
         };
-        std::fs::File::open(&path)
-            .map(|f| imagesize::reader_size(std::io::BufReader::new(f)))
-            .map(|s| s.map(|d| (d.width as u32, d.height as u32)))
-            .unwrap_or_else(|_| Ok(BANNER))
-            .unwrap_or(BANNER)
+        let read = |f: std::fs::File| -> Option<(u32, u32)> {
+            imagesize::reader_size(std::io::BufReader::new(f))
+                .ok()
+                .map(|d| {
+                    (
+                        u32::try_from(d.width).unwrap_or(0),
+                        u32::try_from(d.height).unwrap_or(0),
+                    )
+                })
+        };
+        std::fs::File::open(&path).map_or(BANNER, |f| read(f).unwrap_or(BANNER))
     }
 
     /// The wikilang cookie as an Open Graph locale tag.
@@ -409,14 +417,18 @@ impl Ctx {
     }
 
     /// An episode's difficulty as repeated stars ('' when unrated).
-    #[allow(clippy::unused_self)]
+    #[allow(clippy::unused_self, clippy::trivially_copy_pass_by_ref)]
+    // askama passes template arguments by reference, so the parameter has
+    // to stay `&i64` even though i64 is Copy
     pub fn stars_label(&self, stars: &i64) -> String {
-        "\u{2605}".repeat((*stars).max(0) as usize)
+        "\u{2605}".repeat(usize::try_from((*stars).max(0)).unwrap_or(0))
     }
 
-    /// A stored grade value as its label ("S+" for s_plus), or '' when the
+    /// A stored grade value as its label ("S+" for `s_plus`), or '' when the
     /// row has no grade. The ungraded grids (ingredients, skins) show it.
-    #[allow(clippy::unused_self)]
+    #[allow(clippy::unused_self, clippy::ref_option)]
+    // askama passes template arguments by reference: `&Option<T>`, not the
+    // `Option<&T>` the lint prefers
     pub fn grade_label_int(&self, grade: &Option<i64>) -> String {
         (*grade).map_or_else(String::new, crate::grade::label)
     }
@@ -425,7 +437,9 @@ impl Ctx {
     /// reads as its own colour on the ungraded grids. Wind4's palette is
     /// replaced by the semantic block in uno.config.ts, so the colors these
     /// name are declared there.
-    #[allow(clippy::unused_self)]
+    #[allow(clippy::unused_self, clippy::ref_option)]
+    // askama passes template arguments by reference: `&Option<T>`, not the
+    // `Option<&T>` the lint prefers
     pub fn grade_badge_cls(&self, grade: &Option<i64>) -> &'static str {
         match grade.unwrap_or(-1) {
             1 => "text-[10px] font-label uppercase rounded-full border px-2 py-0.5 border-lime-400 text-lime-400",
@@ -441,6 +455,9 @@ impl Ctx {
     /// An episode id as the short badge the ingredient cards and the
     /// drop-location tile use: "EP 2" story, "SP 1" special (501+), "EP 6-1"
     /// event (601+). Empty for none, so a template can test it directly.
+    #[allow(clippy::ref_option)]
+    // askama passes template arguments by reference: `&Option<T>`, not the
+    // `Option<&T>` the lint prefers
     pub fn episode_short(&self, id: &Option<i64>) -> String {
         let Some(eid) = *id else {
             return String::new();
@@ -458,7 +475,9 @@ impl Ctx {
     /// own colour on the ingredient cards. Story episodes run cool-to-warm
     /// in play order, the special episodes take the remaining cool hues and
     /// the event ones the reds.
-    #[allow(clippy::unused_self)]
+    #[allow(clippy::unused_self, clippy::ref_option)]
+    // askama passes template arguments by reference: `&Option<T>`, not the
+    // `Option<&T>` the lint prefers
     pub fn episode_badge_cls(&self, id: &Option<i64>) -> &'static str {
         match id.unwrap_or(0) {
             1 => "text-[10px] font-label uppercase rounded-full border px-2 py-0.5 border-emerald-400 text-emerald-400",
@@ -480,7 +499,9 @@ impl Ctx {
 
     /// The same palette as `episode_badge_cls` without the pill, for the
     /// drop-location tile where the number sits inline before the name.
-    #[allow(clippy::unused_self)]
+    #[allow(clippy::unused_self, clippy::ref_option)]
+    // askama passes template arguments by reference: `&Option<T>`, not the
+    // `Option<&T>` the lint prefers
     pub fn episode_text_cls(&self, id: &Option<i64>) -> &'static str {
         match id.unwrap_or(0) {
             1 => "text-emerald-400",
@@ -501,13 +522,17 @@ impl Ctx {
     }
 
     /// A jelly's score value without trailing zeroes (432.9 -> "432.9",
-    /// 5000 -> "5000").
-    #[allow(clippy::unused_self)]
+    /// 5000 -> "5000"). Formatted, then trimmed: no float comparisons or
+    /// casts, and Display for f64 never prints "5000.0" anyway.
+    #[allow(clippy::unused_self, clippy::trivially_copy_pass_by_ref)]
+    // askama passes template arguments by reference, so the parameter has
+    // to stay `&f64`
     pub fn score_label(&self, score: &f64) -> String {
-        if *score == (*score as i64) as f64 {
-            return format!("{}", *score as i64);
+        let mut s = format!("{score}");
+        if s.contains('.') {
+            s = s.trim_end_matches('0').trim_end_matches('.').to_string();
         }
-        format!("{score}")
+        s
     }
 
     /// The grade-filter buttons a tabbed catalog shows: (slug, label) in

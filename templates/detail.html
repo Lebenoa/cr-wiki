@@ -553,7 +553,7 @@ item.name.as_str()), ctx.entity_image(section.as_str(), item.image.as_ref()))
             <tbody class="divide-y divide-secondary/30">
                 {% for bg in episode.box_grades %}
                 <tr>
-                    <td class="px-3 py-2 font-bold text-on-surface">{{ bg.box_grade }}</td>
+                    <td class="px-3 py-2 font-bold text-on-surface">{{ bg.grade }}</td>
                     <td class="px-3 py-2 text-accent">{{ bg.first_label() }}</td>
                     <td class="px-3 py-2 text-accent">{{ bg.second_label() }}</td>
                     <td class="px-3 py-2 text-accent">{{ bg.third_label() }}</td>

@@ -18,6 +18,8 @@ use surrealdb::opt::auth::Root;
 use surrealdb::types::SurrealValue;
 use surrealdb::Surreal;
 
+use std::fmt::Write as _;
+
 use crate::config::SurrealConfig;
 use crate::grade;
 use crate::section::Section;
@@ -78,8 +80,8 @@ pub async fn warm_pool(db: &Db) -> Result<()> {
 /// The application authenticates with the deployment's configured root user.
 ///
 /// Also defines the per-table name-gram ingest events: whenever an entity's
-/// translation lands (CREATE with tr, or the UPDATE write_translation sends
-/// right after), the event replaces that entity's name_gram rows — old
+/// translation lands (CREATE with tr, or the UPDATE `write_translation` sends
+/// right after), the event replaces that entity's `name_gram` rows — old
 /// name's grams deleted, new name's 3-grams inserted. seed.surql seeds the
 /// rows themselves (events never fire on `surreal import`); this keeps
 /// admin-created and renamed entities fresh on live databases.
@@ -145,9 +147,8 @@ async fn ensure_sequences(db: &Db) -> Result<()> {
         .map(|s| s.table())
         .chain(["user", "build"])
     {
-        query.push_str(&format!(
-            "DEFINE SEQUENCE IF NOT EXISTS {table}_seq START 1;\n"
-        ));
+        // `writeln!` over `push_str(&format!..)`: nothing to reallocate twice
+        let _ = writeln!(query, "DEFINE SEQUENCE IF NOT EXISTS {table}_seq START 1;");
     }
     db.query(query).await?.check()?;
     Ok(())
@@ -239,10 +240,10 @@ impl Detail {
         }
         let days = self.release_date.div_euclid(86400);
         // inverse days-from-civil (Howard Hinnant's algorithm)
-        let z = days + 719468;
-        let era = if z >= 0 { z } else { z - 146096 } / 146097;
-        let doe = z - era * 146097;
-        let yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365;
+        let z = days + 719_468;
+        let era = if z >= 0 { z } else { z - 146_096 } / 146_097;
+        let doe = z - era * 146_097;
+        let yoe = (doe - doe / 1460 + doe / 36_524 - doe / 146_096) / 365;
         let y = yoe + era * 400;
         let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);
         let mp = (5 * doy + 2) / 153;
@@ -538,7 +539,7 @@ impl DrawReward {
 /// One mystery-box grade row with the three disclosed box columns.
 #[derive(Debug, Clone, Default)]
 pub struct BoxGrade {
-    pub box_grade: String,
+    pub grade: String,
     pub first: f64,
     pub second: f64,
     pub third: f64,
@@ -608,7 +609,7 @@ struct IngRow {
 
 /// Odds as "4.4%" — the stored value with trailing zeros trimmed.
 fn odds_pct(v: f64) -> String {
-    let mut s = format!("{}", v);
+    let mut s = format!("{v}");
     if s.contains('.') {
         s = s.trim_end_matches('0').trim_end_matches('.').to_string();
     }
@@ -646,6 +647,7 @@ pub struct EpisodeDetail {
 /// Everything the episode detail page shows besides name/description/image
 /// (which `select_detail` already carries). Child tables are read with one
 /// grouped query each; names resolve locale -> English.
+#[allow(clippy::too_many_lines)] // six independent child reads, one block each
 pub async fn episode_extras(db: &Db, lang: &str, id: i64) -> Result<EpisodeDetail> {
     let mut out = EpisodeDetail::default();
 
@@ -724,7 +726,7 @@ pub async fn episode_extras(db: &Db, lang: &str, id: i64) -> Result<EpisodeDetai
         .bind(("id", id))
         .await?
         .take(0)?;
-    out.quest_count = quests.len() as i64;
+    out.quest_count = i64::try_from(quests.len()).unwrap_or(i64::MAX);
     let mut order: Vec<String> = Vec::new();
     let mut groups: std::collections::HashMap<String, Vec<EpisodeQuest>> =
         std::collections::HashMap::new();
@@ -781,14 +783,17 @@ pub async fn episode_extras(db: &Db, lang: &str, id: i64) -> Result<EpisodeDetai
             by_grade.insert(
                 b.box_grade.clone(),
                 BoxGrade {
-                    box_grade: b.box_grade.clone(),
+                    grade: b.box_grade.clone(),
                     first: 0.0,
                     second: 0.0,
                     third: 0.0,
                 },
             );
         }
-        let g = by_grade.get_mut(&b.box_grade).expect("just inserted");
+        // the key was inserted two lines above, so the get cannot miss
+        let Some(g) = by_grade.get_mut(&b.box_grade) else {
+            continue;
+        };
         match b.box_no {
             1 => g.first = b.odds,
             2 => g.second = b.odds,
@@ -860,9 +865,15 @@ struct IngredientListRow {
 /// Recipe counts arrive as their own grouped query and are joined in Rust:
 /// a `$parent`-correlated subquery re-plans per row on v3 (~0.4 s for 242
 /// ingredients), and an in-SQL `array::find` join costs ~130 ms because the
-/// closure scan is linear per row. Two scans + a HashMap join stay in single
-/// digits.
+/// closure scan is linear per row. Two scans + a `HashMap` join stay in
+/// single digits.
 pub async fn select_ingredient_list(db: &Db, lang: &str) -> Result<Vec<IngredientList>> {
+    #[derive(Default, SurrealValue)]
+    #[surreal(default)]
+    struct CountRow {
+        ingredient_id: i64,
+        c: i64,
+    }
     let sql = format!(
         "SELECT record::id(id) AS id, image, grade, drop_episode_id,
                 (drop_episode_id IS NONE) AS no_episode,
@@ -877,12 +888,6 @@ pub async fn select_ingredient_list(db: &Db, lang: &str) -> Result<Vec<Ingredien
         .bind(("lang", lang.to_string()))
         .await?
         .take(0)?;
-    #[derive(Default, SurrealValue)]
-    #[surreal(default)]
-    struct CountRow {
-        ingredient_id: i64,
-        c: i64,
-    }
     let counts: Vec<CountRow> = db
         .query("SELECT ingredient_id, count() AS c FROM ingredient_recipe GROUP BY ingredient_id")
         .await?
@@ -1068,6 +1073,12 @@ pub struct RelicGroup {
 }
 
 pub async fn select_relic_groups(db: &Db, lang: &str) -> Result<Vec<RelicGroup>> {
+    #[derive(Default, SurrealValue)]
+    #[surreal(default)]
+    struct EpisodeName {
+        id: i64,
+        name: String,
+    }
     // The unlocking cookie's name resolves through one pre-built map (id ->
     // name) instead of a per-relic correlated subquery: v3 re-plans a
     // `$parent` subquery per row and never uses an index, so 85 relics cost
@@ -1092,12 +1103,6 @@ pub async fn select_relic_groups(db: &Db, lang: &str) -> Result<Vec<RelicGroup>>
         .bind(("lang", lang.to_string()))
         .await?
         .take(1)?;
-    #[derive(Default, SurrealValue)]
-    #[surreal(default)]
-    struct EpisodeName {
-        id: i64,
-        name: String,
-    }
     let ep_sql = format!(
         "SELECT record::id(id) AS id, {} AS name FROM episode ORDER BY id",
         tr("name")
@@ -1347,13 +1352,13 @@ pub async fn jelly_makers(db: &Db, lang: &str, jelly_id: i64) -> Result<Vec<Jell
 }
 
 /// A treasure row's evolution/unlock link ids, as the edit form preselects
-/// them. Zeros mean "no link" — the form renders those selects with a None
+/// them. Zeros mean "no link" — the form renders those selects with a `None`
 /// option first.
 #[derive(Debug, Clone, Copy, Default)]
 pub struct TreasureEditLinks {
-    pub base_treasure_id: i64,
-    pub unlock_cookie_id: i64,
-    pub unlock_pet_id: i64,
+    pub base: i64,
+    pub unlock_cookie: i64,
+    pub unlock_pet: i64,
 }
 
 /// Reads the three link ids for the treasure editor in one query.
@@ -1361,15 +1366,15 @@ pub async fn treasure_edit_links(db: &Db, id: i64) -> Result<TreasureEditLinks> 
     #[derive(Default, SurrealValue)]
     #[surreal(default)]
     struct Row {
-        base_treasure_id: i64,
-        unlock_cookie_id: i64,
-        unlock_pet_id: i64,
+        base: i64,
+        unlock_cookie: i64,
+        unlock_pet: i64,
     }
     let mut rows: Vec<Row> = db
         .query(
-            "SELECT (base_treasure_id ?? 0) AS base_treasure_id,
-                    (unlock_cookie_id ?? 0) AS unlock_cookie_id,
-                    (unlock_pet_id ?? 0) AS unlock_pet_id
+            "SELECT (base_treasure_id ?? 0) AS base,
+                    (unlock_cookie_id ?? 0) AS unlock_cookie,
+                    (unlock_pet_id ?? 0) AS unlock_pet
                FROM type::record('treasure', $id)",
         )
         .bind(("id", id))
@@ -1378,9 +1383,9 @@ pub async fn treasure_edit_links(db: &Db, id: i64) -> Result<TreasureEditLinks> 
     Ok(rows
         .pop()
         .map(|r| TreasureEditLinks {
-            base_treasure_id: r.base_treasure_id,
-            unlock_cookie_id: r.unlock_cookie_id,
-            unlock_pet_id: r.unlock_pet_id,
+            base: r.base,
+            unlock_cookie: r.unlock_cookie,
+            unlock_pet: r.unlock_pet,
         })
         .unwrap_or_default())
 }
@@ -1513,7 +1518,7 @@ pub async fn ingredient_facts(db: &Db, lang: &str, id: i64) -> Result<Ingredient
     })
 }
 
-/// One treasure an ingredient crafts (from ingredient_recipe), with its
+/// One treasure an ingredient crafts (from `ingredient_recipe`), with its
 /// localized name.
 #[derive(Debug, Clone, Default)]
 pub struct CraftRecipe {
@@ -1968,12 +1973,13 @@ pub async fn sitemap_entries(db: &Db) -> Result<Vec<(&'static str, i64)>> {
 ///   tolerance is built on;
 /// - a substring pass over description/abilities prose for needles the
 ///   grams cannot see (grams cover names only; prose is word-level).
+///
 /// The planner refuses `search::score()` in a WHERE that mixes MATCHES
 /// with non-index clauses, so the passes cannot be OR'd in SQL; ranked
 /// hits keep their order and the later passes fill the tail, deduped by id
-///   within their table. The tables are independent, so the six slices run
-///   concurrently — the latency is one table's three round trips, not
-///   eighteen sequential ones.
+/// within their table. The tables are independent, so the six slices run
+/// concurrently — the latency is one table's three round trips, not
+/// eighteen sequential ones.
 pub async fn search(db: &Db, lang: &str, q: &str, limit: i64) -> Result<Vec<(String, Card)>> {
     let query = q.trim();
     // one bound at the edge: the three passes below interpolate the limit,
@@ -1985,7 +1991,7 @@ pub async fn search(db: &Db, lang: &str, q: &str, limit: i64) -> Result<Vec<(Str
     let needle = query.to_lowercase();
     let is_thai = needle
         .chars()
-        .any(|c| matches!(u32::from(c) as u32, 0x0E00..=0x0E7F));
+        .any(|c| matches!(u32::from(c), 0x0E00..=0x0E7F));
     let (cookies, pets, treasures, relics, episodes, ingredients) = tokio::join!(
         search_table(db, lang, "cookies", "cookie", ", grade", "abilities", query, &needle, is_thai, limit),
         search_table(db, lang, "pets", "pet", ", grade", "description", query, &needle, is_thai, limit),
@@ -2096,7 +2102,7 @@ async fn search_table(
         let columns: Vec<&str> = if is_thai {
             vec!["th"]
         } else {
-            vec!["en", &lang[..]]
+            vec!["en", lang]
         };
         let mut contains = Vec::with_capacity(columns.len() * (1 + usize::from(prose == "abilities")));
         for locale in columns {
@@ -2615,7 +2621,7 @@ fn parse_release_date(raw: &str) -> Option<i64> {
     let mp = (m + 9) % 12;
     let doy = (153 * mp + 2) / 5 + d - 1;
     let doe = yoe * 365 + yoe / 4 - yoe / 100 + doy;
-    let days = era * 146097 + doe - 719468;
+    let days = era * 146_097 + doe - 719_468;
     Some(days * 86400)
 }
 
@@ -2684,6 +2690,7 @@ async fn write_translation(
 
 /// The cookie or pet that unlocks a treasure at max level.
 #[derive(Debug, Clone, Default)]
+#[allow(clippy::struct_field_names)] // the unlock_* prefix is the domain, not noise
 pub struct TreasureLinks {
     pub unlock_section: &'static str,
     pub unlock_id: i64,
@@ -2757,11 +2764,6 @@ pub fn blessed_differs(effects: &[EffectLine]) -> bool {
 #[derive(Debug, Clone)]
 pub struct CombiEditRow {
     pub id: i64,
-    /// the cookie/pet ids the pairing hangs between: the delete route
-    /// verifies the row actually belongs to this pair before removing it
-    pub cookie_id: i64,
-    pub pet_id: i64,
-    pub partner_id: i64,
     pub partner_name: String,
     pub partner_image: Option<String>,
     pub effect: String,
@@ -2779,9 +2781,6 @@ pub async fn combi_edit_rows(
         .into_iter()
         .map(|(record, row)| CombiEditRow {
             id: record.id,
-            cookie_id: record.cookie_id,
-            pet_id: record.pet_id,
-            partner_id: row.partner_id,
             partner_name: row.partner_name,
             partner_image: row.partner_image,
             effect: row.effect,

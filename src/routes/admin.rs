@@ -47,13 +47,13 @@ struct AdminForm {
 impl AdminForm {
     /// The stored base-treasure id, for the select's `selected` mark.
     pub fn base_treasure_id(&self) -> i64 {
-        self.links.base_treasure_id
+        self.links.base
     }
     pub fn unlock_cookie_id(&self) -> i64 {
-        self.links.unlock_cookie_id
+        self.links.unlock_cookie
     }
     pub fn unlock_pet_id(&self) -> i64 {
-        self.links.unlock_pet_id
+        self.links.unlock_pet
     }
 }
 
@@ -110,7 +110,7 @@ impl AdminForm {
     /// True when the section's rows carry a wiki grade, so the form renders
     /// the grade strip and date input.
     fn graded(&self) -> bool {
-        Section::parse(&self.section).is_some_and(|s| s.graded())
+        Section::parse(&self.section).is_some_and(Section::graded)
     }
 
     /// True when this is the treasure form, with its evolution/link fields.
@@ -125,14 +125,18 @@ impl AdminForm {
         vec![1, 2, 3, 4, 5, 6, 0]
     }
 
-    /// A grade ordinal's display label ("S+" for s_plus).
-    #[allow(clippy::unused_self)]
+    /// A grade ordinal's display label ("S+" for `s_plus`).
+    #[allow(clippy::unused_self, clippy::trivially_copy_pass_by_ref)]
+    // askama passes template arguments by reference, so the parameter has
+    // to stay `&i64` even though i64 is Copy
     fn grade_name(&self, g: &i64) -> String {
         crate::grade::label(*g)
     }
 
     /// A grade ordinal's image slug for the radio strip.
-    #[allow(clippy::unused_self)]
+    #[allow(clippy::unused_self, clippy::trivially_copy_pass_by_ref)]
+    // askama passes template arguments by reference, so the parameter has
+    // to stay `&i64` even though i64 is Copy
     fn grade_slug(&self, g: &i64) -> String {
         crate::grade::slug(*g).to_string()
     }
@@ -166,9 +170,11 @@ fn editable(section: &str) -> Option<Section> {
 /// is a loaded locale (the select the template renders), else the viewer's
 /// language. Validated so an unknown value cannot create a rogue `tr.xx`.
 fn form_lang(form: &EntityForm, ctx: &Ctx) -> String {
-    crate::i18n::is_available(&form.lang)
-        .then(|| form.lang.clone())
-        .unwrap_or_else(|| ctx.lang.clone())
+    if crate::i18n::is_available(&form.lang) {
+        form.lang.clone()
+    } else {
+        ctx.lang.clone()
+    }
 }
 
 async fn page(ctx: Ctx, section: Section, item: Option<Detail>, error: &str) -> Response {

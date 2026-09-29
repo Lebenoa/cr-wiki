@@ -229,6 +229,7 @@ pub async fn select_builds(
 /// an explicit 0 (the insert binds `unwrap_or(0)`), and `IS NONE` never
 /// matches a stored zero — the plain `> $now` test alone would hide every
 /// signed-in author's builds.
+#[allow(clippy::too_many_lines)] // the verified-sort branch is documented inline
 async fn select_where(
     db: &Db,
     lang: &str,
@@ -319,8 +320,10 @@ async fn select_where(
             let bv = by_build.get(&b.id).copied().unwrap_or(0);
             bv.cmp(&av).then(b.id.cmp(&a.id))
         });
-        let start = (offset.max(0) as usize).min(rows.len());
-        let end = (start + limit.max(0) as usize).min(rows.len());
+        let start = usize::try_from(offset.max(0)).unwrap_or(0).min(rows.len());
+        let end = start
+            .saturating_add(usize::try_from(limit.max(0)).unwrap_or(0))
+            .min(rows.len());
         rows = rows[start..end].to_vec();
     }
 
