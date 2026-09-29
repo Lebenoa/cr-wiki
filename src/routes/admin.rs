@@ -371,10 +371,10 @@ pub async fn update(
     Ok(Redirect::to(&format!("/{}/{}", section.as_str(), id)).into_response())
 }
 
-/// Removes one combo pairing from the editor. Scoped to the editor's own
-/// entity: the delete only lands when the row's `cookie_id` is the cookie
-/// being edited, so a guessed row id from a different editor's context
-/// cannot delete someone else's pairing.
+/// Removes one combo pairing row from the entity's editor. The delete only
+/// lands when the row hangs off the entity being edited (its cookie side on
+/// a cookie's editor, its pet side on a pet's), so a guessed row id from a
+/// different editor's context cannot delete someone else's pairing.
 pub async fn delete_combi(
     ctx: Ctx,
     Path((section, id, row_id)): Path<(String, i64, i64)>,
@@ -383,10 +383,15 @@ pub async fn delete_combi(
     let Some(section) = crate::section::Section::parse(&section) else {
         return super::errors::not_found(ctx);
     };
-    if !ctx.is_admin() || section != crate::section::Section::Cookies {
+    if !ctx.is_admin()
+        || !matches!(
+            section,
+            crate::section::Section::Cookies | crate::section::Section::Pets
+        )
+    {
         return super::errors::not_found(ctx);
     }
-    if let Err(e) = db::delete_combi(&state.db, row_id, id).await {
+    if let Err(e) = db::delete_combi(&state.db, row_id, section.as_str(), id).await {
         tracing::error!("delete combi row {row_id}: {e}");
     }
     Redirect::to(&format!("/{}/{}", section.as_str(), id)).into_response()

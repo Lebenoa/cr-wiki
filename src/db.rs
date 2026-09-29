@@ -1816,33 +1816,34 @@ pub async fn names_for(
     Ok(map)
 }
 
-/// The combo bonuses a cookie or pet takes part in, partner resolved.
+/// The combo bonuses a cookie or pet takes part in, partner resolved. Each
+/// `combi` row hangs between one cookie and one pet, so a pet's page reads
+/// the same rows through `pet_id` that the cookie's page reads through
+/// `cookie_id`.
 async fn combis(db: &Db, lang: &str, own: &str, id: i64) -> Result<Vec<(CombiRecord, CombiRow)>> {
-    if id <= 0 || own != "cookies" {
-        // combi pairings hang off cookies only; other sections list none
+    let (own_col, partner_kind) = match own {
+        "cookies" => ("cookie_id", Kind::of(Section::Pets)),
+        "pets" => ("pet_id", Kind::of(Section::Cookies)),
+        // pairings only exist between a cookie and a pet
+        _ => return Ok(Vec::new()),
+    };
+    if id <= 0 {
         return Ok(Vec::new());
     }
     let records: Vec<CombiRecord> = db
-        .query(
+        .query(format!(
             "SELECT record::id(id) AS id, cookie_id, pet_id, en, th, is_hidden
-               FROM combi WHERE cookie_id = $id ORDER BY id",
-        )
+               FROM combi WHERE {own_col} = $id ORDER BY id",
+        ))
         .bind(("id", id))
         .await?
         .take(0)?;
 
-    // pairings hang off cookies only (checked above), so the partner is
-    // always a pet
-    let partner_kind = Kind::of(Section::Pets);
+    // the partner is the row's other side: a pet on a cookie's page, a
+    // cookie on a pet's page
     let ids: Vec<i64> = records
         .iter()
-        .map(|c| {
-            if own == "cookies" {
-                c.pet_id
-            } else {
-                c.cookie_id
-            }
-        })
+        .map(|c| if own == "cookies" { c.pet_id } else { c.cookie_id })
         .collect();
     let partners = names_for(db, lang, &partner_kind, &ids).await?;
 
@@ -2804,13 +2805,20 @@ pub async fn combi_edit_rows(
 }
 
 /// Removes one combo pairing by record id, only when it hangs off the given
-/// cookie: the route passes the id from the editor's path, so a guessed row
-/// id cannot delete a pairing another editor displays.
-pub async fn delete_combi(db: &Db, row_id: i64, cookie_id: i64) -> Result<bool> {
+/// cookie or pet: the route passes the id from the editor's path, so a
+/// guessed row id cannot delete a pairing another editor displays.
+pub async fn delete_combi(db: &Db, row_id: i64, own: &str, own_id: i64) -> Result<bool> {
+    let own_col = match own {
+        "cookies" => "cookie_id",
+        "pets" => "pet_id",
+        _ => return Ok(false),
+    };
     let mut res = db
-        .query("DELETE type::record(\"combi\", $id) WHERE cookie_id = $cookie RETURN AFTER")
+        .query(format!(
+            "DELETE type::record(\"combi\", $id) WHERE {own_col} = $own RETURN AFTER"
+        ))
         .bind(("id", row_id))
-        .bind(("cookie", cookie_id))
+        .bind(("own", own_id))
         .await?
         .check()?;
     let removed: Vec<CombiRecord> = res.take(0)?;
