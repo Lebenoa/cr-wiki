@@ -453,8 +453,12 @@ impl Ctx {
     }
 
     /// An episode id as the short badge the ingredient cards and the
+    /// An episode id as the short badge the ingredient cards and the
     /// drop-location tile use: "EP 2" story, "SP 1" special (501+), "EP 6-1"
     /// event (601+). Empty for none, so a template can test it directly.
+    // The subtraction is range-checked just above it; the div/mod by the
+    // constant 100 cannot fault.
+    #[allow(clippy::arithmetic_side_effects)]
     #[allow(clippy::ref_option)]
     // askama passes template arguments by reference: `&Option<T>`, not the
     // `Option<&T>` the lint prefers

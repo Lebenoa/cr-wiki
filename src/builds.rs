@@ -324,7 +324,12 @@ async fn select_where(
         let end = start
             .saturating_add(usize::try_from(limit.max(0)).unwrap_or(0))
             .min(rows.len());
-        rows = rows[start..end].to_vec();
+        // start/end are clamped to the row count above, so the window can
+        // only be empty, never out of range — get() keeps that non-panicking
+        // by construction
+        rows = rows
+            .get(start..end)
+            .map_or_else(Vec::new, <[BuildRow]>::to_vec);
     }
 
 

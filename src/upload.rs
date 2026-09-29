@@ -29,7 +29,8 @@ pub fn sniff_image(bytes: &[u8]) -> Option<&'static str> {
     if bytes.starts_with(b"\xff\xd8\xff") {
         return Some("jpg");
     }
-    if bytes.len() >= 12 && &bytes[0..4] == b"RIFF" && &bytes[8..12] == b"WEBP" {
+    if bytes.len() >= 12 && bytes.starts_with(b"RIFF") && bytes.get(8..12) == Some(b"WEBP".as_slice())
+    {
         return Some("webp");
     }
     if bytes.starts_with(b"GIF87a") || bytes.starts_with(b"GIF89a") {

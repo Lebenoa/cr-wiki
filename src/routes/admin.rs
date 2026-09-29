@@ -46,13 +46,13 @@ struct AdminForm {
 
 impl AdminForm {
     /// The stored base-treasure id, for the select's `selected` mark.
-    pub fn base_treasure_id(&self) -> i64 {
+    pub const fn base_treasure_id(&self) -> i64 {
         self.links.base
     }
-    pub fn unlock_cookie_id(&self) -> i64 {
+    pub const fn unlock_cookie_id(&self) -> i64 {
         self.links.unlock_cookie
     }
-    pub fn unlock_pet_id(&self) -> i64 {
+    pub const fn unlock_pet_id(&self) -> i64 {
         self.links.unlock_pet
     }
 }

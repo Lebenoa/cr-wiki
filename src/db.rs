@@ -234,6 +234,10 @@ impl grade::Graded for Detail {
 impl Detail {
     /// The release date as the edit form's `<input type=date>` wants it:
     /// YYYY-MM-DD, or empty when the row never got a date.
+    // The Hinnant civil-from-days arithmetic is provably in-range: the input
+    // is a unix seconds value divided by 86400, so every intermediate stays
+    // far inside i64.
+    #[allow(clippy::arithmetic_side_effects)]
     pub fn release_date_input(&self) -> String {
         if self.release_date <= 0 {
             return String::new();
@@ -266,8 +270,8 @@ pub struct Kind {
 impl Kind {
     /// The facts one section's queries need, read from the one place each
     /// section's table and flags live (`Section`).
-    pub const fn of(section: Section) -> Kind {
-        Kind {
+    pub const fn of(section: Section) -> Self {
+        Self {
             table: section.table(),
             graded: section.graded(),
             dated: section.dated(),
@@ -276,17 +280,17 @@ impl Kind {
 
     /// The typed path's other half: an untyped `&str` (a path capture, a
     /// build row's column, a caller that has not parsed yet) resolves here.
-    pub fn of_section(section: &str) -> Option<Kind> {
-        Section::parse(section).map(Kind::of)
+    pub fn of_section(section: &str) -> Option<Self> {
+        Section::parse(section).map(Self::of)
     }
 }
 
 /// The locale fallback every translated column reads through, as a SQL
 /// fragment: the requested locale first, English behind it. Written once so
 /// the fallback rule cannot drift between queries — it used to appear 23
-/// times across two files. Pub(crate) because the picker lists read the same
-/// tables through the same rule.
-pub(crate) fn tr(field: &str) -> String {
+/// times across two files. `pub` inside this private module, so the picker
+/// lists read the same tables through the same rule.
+pub fn tr(field: &str) -> String {
     format!("(tr[$lang].{field} ?? tr.en.{field} ?? '')")
 }
 
@@ -667,7 +671,7 @@ pub async fn episode_extras(db: &Db, lang: &str, id: i64) -> Result<EpisodeDetai
         out.entry_cost = p.entry_cost;
     }
 
-    let mut stages: Vec<StageRow> = db
+    let stages: Vec<StageRow> = db
         .query(
             "SELECT stage_no, (name ?? '') AS name FROM episode_stage
               WHERE episode_id = $id ORDER BY stage_no",
@@ -676,7 +680,7 @@ pub async fn episode_extras(db: &Db, lang: &str, id: i64) -> Result<EpisodeDetai
         .await?
         .take(0)?;
     out.stages = stages
-        .drain(..)
+        .into_iter()
         .map(|s| EpisodeStage {
             stage_no: s.stage_no,
             name: s.name,
@@ -718,7 +722,7 @@ pub async fn episode_extras(db: &Db, lang: &str, id: i64) -> Result<EpisodeDetai
     }
 
     // quest chains in source order, grouped by their `group` field
-    let mut quests: Vec<QuestRow> = db
+    let quests: Vec<QuestRow> = db
         .query(
             "SELECT (group ?? '') AS grp, (name ?? '') AS name, (reward ?? '') AS reward
                FROM quest WHERE episode_id = $id ORDER BY id",
@@ -730,7 +734,7 @@ pub async fn episode_extras(db: &Db, lang: &str, id: i64) -> Result<EpisodeDetai
     let mut order: Vec<String> = Vec::new();
     let mut groups: std::collections::HashMap<String, Vec<EpisodeQuest>> =
         std::collections::HashMap::new();
-    for q in quests.drain(..) {
+    for q in quests {
         if !groups.contains_key(&q.grp) {
             order.push(q.grp.clone());
         }
@@ -747,7 +751,7 @@ pub async fn episode_extras(db: &Db, lang: &str, id: i64) -> Result<EpisodeDetai
         })
         .collect();
 
-    let mut draws: Vec<DrawRow> = db
+    let draws: Vec<DrawRow> = db
         .query(
             "SELECT rank, (reward ?? '') AS reward, (odds ?? 0) AS odds
                FROM episode_draw_reward WHERE episode_id = $id ORDER BY rank",
@@ -756,7 +760,7 @@ pub async fn episode_extras(db: &Db, lang: &str, id: i64) -> Result<EpisodeDetai
         .await?
         .take(0)?;
     out.draw_rewards = draws
-        .drain(..)
+        .into_iter()
         .map(|d| DrawReward {
             rank: d.rank,
             reward: d.reward,
@@ -766,7 +770,7 @@ pub async fn episode_extras(db: &Db, lang: &str, id: i64) -> Result<EpisodeDetai
 
     // one row per box grade with the three disclosed box columns; a grade
     // missing a box keeps 0 for it, which prints as "0%"
-    let mut boxes: Vec<BoxRow> = db
+    let boxes: Vec<BoxRow> = db
         .query(
             "SELECT (box_grade ?? '') AS box_grade, box_no, (odds ?? 0) AS odds
                FROM episode_box_odds WHERE episode_id = $id ORDER BY box_no",
@@ -777,7 +781,7 @@ pub async fn episode_extras(db: &Db, lang: &str, id: i64) -> Result<EpisodeDetai
     let mut grade_order: Vec<String> = Vec::new();
     let mut by_grade: std::collections::HashMap<String, BoxGrade> =
         std::collections::HashMap::new();
-    for b in boxes.drain(..) {
+    for b in boxes {
         if !by_grade.contains_key(&b.box_grade) {
             grade_order.push(b.box_grade.clone());
             by_grade.insert(
@@ -1290,7 +1294,7 @@ pub struct JellyMaker {
 /// locale -> English through one batched lookup per maker kind — the same
 /// `names_for` the combi panel uses — rather than one query per maker.
 pub async fn jelly_makers(db: &Db, lang: &str, jelly_id: i64) -> Result<Vec<JellyMaker>> {
-    let mut rows: Vec<MakerRow> = db
+    let rows: Vec<MakerRow> = db
         .query(
             "SELECT entity_kind, entity_id FROM jelly_maker
               WHERE jelly_id = $id ORDER BY id",
@@ -1332,7 +1336,7 @@ pub async fn jelly_makers(db: &Db, lang: &str, jelly_id: i64) -> Result<Vec<Jell
         treasures.unwrap_or_default(),
     );
     let mut out = Vec::with_capacity(rows.len());
-    for row in rows.drain(..) {
+    for row in rows {
         let (section, names) = match row.entity_kind.as_str() {
             "pet" => ("pets", &pets),
             "treasure" => ("treasures", &treasures),
@@ -1688,16 +1692,16 @@ pub async fn unlocked_treasure(
     Ok(rows.pop().map(|r| (r.id, r.name, r.image)))
 }
 
-/// The effect-line row type `options` shares: same shape on the record, one
-/// decode one locale rule. Kept pub(crate) so both read paths decode it the
-/// same way.
+/// One effect-line row type `options` shares: same shape on the record, one
+/// decode one locale rule. `pub` inside this private module, so both read
+/// paths decode it the same way.
 #[derive(Debug, Clone, Default, SurrealValue)]
 #[surreal(default)]
-pub(crate) struct EffectLineRow {
-    pub(crate) state: i64,
-    pub(crate) en: String,
-    pub(crate) th: String,
-    pub(crate) values: Vec<String>,
+pub struct EffectLineRow {
+    pub state: i64,
+    pub en: String,
+    pub th: String,
+    pub values: Vec<String>,
 }
 
 impl EffectLineRow {
@@ -1939,7 +1943,8 @@ pub async fn sitemap_entries(db: &Db) -> Result<Vec<(&'static str, i64)>> {
     const TTL_SECS: i64 = 600;
     let cache = CACHE.get_or_init(|| parking_lot::Mutex::new(None));
     let now = now_unix();
-    if let Some((expiry, entries)) = cache.lock().clone() {
+    let cached = cache.lock().clone();
+    if let Some((expiry, entries)) = cached {
         if now < expiry {
             return Ok((*entries).clone());
         }
@@ -2001,8 +2006,13 @@ pub async fn search(db: &Db, lang: &str, q: &str, limit: i64) -> Result<Vec<(Str
         search_table(db, lang, "ingredients", "ingredient", ", grade", "description", query, &needle, is_thai, limit),
     );
     // table order preserved: misc::search groups consecutive hits by section,
-    // which only holds while each table's slice arrives whole
+    // which only holds while each table's slice arrives whole. The array is
+    // iteration order, not a tuple conversion — the six join results are
+    // unrelated tables.
     let mut out = Vec::new();
+    // iteration order, not a tuple conversion — the six join results are
+    // unrelated tables.
+    #[allow(clippy::tuple_array_conversions)]
     for part in [cookies, pets, treasures, relics, episodes, ingredients] {
         out.extend(part?);
     }
@@ -2104,7 +2114,9 @@ async fn search_table(
         } else {
             vec!["en", lang]
         };
-        let mut contains = Vec::with_capacity(columns.len() * (1 + usize::from(prose == "abilities")));
+        // at most one contains clause per prose column and locale; the vec
+        // is two or three entries, no capacity hint needed
+        let mut contains = Vec::new();
         for locale in columns {
             contains.push(format!(
                 "string::lowercase(tr.{locale}.description ?? '') CONTAINS $frag"
@@ -2143,15 +2155,14 @@ async fn search_table(
 /// The needle's name-gram vocabulary: distinct three-*character* slices of
 /// the lowercased needle (char boundaries, not bytes — Thai chars are 3
 /// bytes each); a needle shorter than three characters is its own gram so
-/// one- and two-character queries still find names containing them.
+/// one- and two-character queries still find names containing them. `windows`
+/// yields the same slices without index arithmetic over the char count.
 fn name_grams(needle: &str) -> Vec<String> {
     let chars: Vec<char> = needle.chars().collect();
     if chars.len() < 3 {
         return vec![needle.to_string()];
     }
-    (0..=chars.len() - 3)
-        .map(|i| chars[i..i + 3].iter().collect())
-        .collect()
+    chars.windows(3).map(|w| w.iter().collect()).collect()
 }
 
 /// A user row, for the session layer.
@@ -2599,6 +2610,9 @@ fn clean_image(image: &str) -> Option<String> {
 
 /// YYYY-MM-DD -> unix seconds, like the old `parse_release_date`. `None`
 /// when the field is empty (update keeps the stored value) or malformed.
+// The Hinnant days-from-civil arithmetic is provably in-range: the parts
+// are validated to YYYY-MM-DD just above.
+#[allow(clippy::arithmetic_side_effects)]
 fn parse_release_date(raw: &str) -> Option<i64> {
     let raw = raw.trim();
     if raw.is_empty() {

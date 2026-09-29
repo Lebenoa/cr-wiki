@@ -113,12 +113,15 @@ pub async fn options(db: &Db, lang: &str, kind: &str) -> crate::db::Result<Arc<V
         _ => build_treasures(db, lang).await?,
     };
     let list = Arc::new(built);
-    let mut c = cache().lock();
-    match kind {
-        "cookie" => c.cookies.insert(key, Arc::clone(&list)),
-        "pet" => c.pets.insert(key, Arc::clone(&list)),
-        _ => c.treasures.insert(key, Arc::clone(&list)),
-    };
+    {
+        // the guard lives only as long as the insert needs it
+        let mut c = cache().lock();
+        match kind {
+            "cookie" => c.cookies.insert(key, Arc::clone(&list)),
+            "pet" => c.pets.insert(key, Arc::clone(&list)),
+            _ => c.treasures.insert(key, Arc::clone(&list)),
+        };
+    }
     Ok(list)
 }
 
