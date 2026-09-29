@@ -7,7 +7,7 @@ edition = "2021"
 axum = { version = "0.8", features = ["macros", "multipart"] }
 tokio = { version = "1", features = ["rt-multi-thread", "macros", "net", "signal"] }
 tower = "0.5"
-tower-http = { version = "0.7", features = ["fs", "trace", "catch-panic"] }
+tower-http = { version = "0.7", features = ["fs", "catch-panic", "compression-gzip", "compression-br"] }
 askama = "0.16"
 # SurrealDB client: the app never embeds a storage engine — it always talks
 # to an external server (ws:// or http://) over the wire.

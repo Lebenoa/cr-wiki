@@ -1282,7 +1282,8 @@ pub struct JellyMaker {
 }
 
 /// The entities that produce one jelly, in seed order. Names resolve
-/// locale -> English through each table's translation object.
+/// locale -> English through one batched lookup per maker kind — the same
+/// `names_for` the combi panel uses — rather than one query per maker.
 pub async fn jelly_makers(db: &Db, lang: &str, jelly_id: i64) -> Result<Vec<JellyMaker>> {
     let mut rows: Vec<MakerRow> = db
         .query(
@@ -1295,23 +1296,51 @@ pub async fn jelly_makers(db: &Db, lang: &str, jelly_id: i64) -> Result<Vec<Jell
     if rows.is_empty() {
         return Ok(Vec::new());
     }
+    let mut cookie_ids: Vec<i64> = Vec::new();
+    let mut pet_ids: Vec<i64> = Vec::new();
+    let mut treasure_ids: Vec<i64> = Vec::new();
+    for row in &rows {
+        let list = match row.entity_kind.as_str() {
+            "pet" => &mut pet_ids,
+            "treasure" => &mut treasure_ids,
+            _ => &mut cookie_ids,
+        };
+        if !list.contains(&row.entity_id) {
+            list.push(row.entity_id);
+        }
+    }
+    let (kc, kp, kt) = (
+        Kind::of(Section::Cookies),
+        Kind::of(Section::Pets),
+        Kind::of(Section::Treasures),
+    );
+    let (cookies, pets, treasures) = tokio::join!(
+        names_for(db, lang, &kc, &cookie_ids),
+        names_for(db, lang, &kp, &pet_ids),
+        names_for(db, lang, &kt, &treasure_ids),
+    );
+    // a failed lookup empties the map: the maker then renders without a
+    // name and is skipped, exactly as a failed `entity_link` did
+    let (cookies, pets, treasures) = (
+        cookies.unwrap_or_default(),
+        pets.unwrap_or_default(),
+        treasures.unwrap_or_default(),
+    );
     let mut out = Vec::with_capacity(rows.len());
     for row in rows.drain(..) {
-        let kind = row.entity_kind;
-        let id = row.entity_id;
-        let section = match kind.as_str() {
-            "pet" => "pets",
-            "treasure" => "treasures",
-            _ => "cookies",
+        let (section, names) = match row.entity_kind.as_str() {
+            "pet" => ("pets", &pets),
+            "treasure" => ("treasures", &treasures),
+            _ => ("cookies", &cookies),
         };
-        let Some((name, image)) = entity_link(db, lang, &kind, id).await else {
+        let Some((name, image)) = names.get(&row.entity_id) else {
             continue;
         };
         out.push(JellyMaker {
             kind: section.to_string(),
-            id,
-            name,
-            image,
+            id: row.entity_id,
+            name: name.clone(),
+            image: image.clone(),
         });
     }
     Ok(out)
@@ -1596,36 +1625,28 @@ pub async fn treasure_variant(
     id: i64,
     is_evolved: bool,
 ) -> Result<Option<(i64, String, Option<String>)>> {
-    let variant_id = if is_evolved {
-        let mut rows: Vec<i64> = db
-            .query("SELECT VALUE base_treasure_id FROM type::record(\"treasure\", $id)")
-            .bind(("id", id))
-            .await?
-            .take(0)?;
-        rows.pop()
-    } else {
-        None
-    };
-    let where_clause = if is_evolved {
-        "WHERE record::id(id) = $variant_id"
-    } else {
-        "WHERE base_treasure_id = $id"
-    };
+    // One message: the evolved row's base id is read in the same statement
+    // that then fetches the variant, instead of one round trip to discover
+    // the id and another to resolve it. A base of 0 (or a row missing its
+    // link) matches no treasure, since ids start at 1.
     let sql = format!(
-        "SELECT record::id(id) AS id, image, {tr_name} AS name,
+        "LET $base = (SELECT VALUE base_treasure_id FROM type::record(\"treasure\", $id))[0] ?? 0;
+         SELECT record::id(id) AS id, image, {tr_name} AS name,
                 (tr.en.name ?? '') AS en_name
            FROM treasure
-          {where_clause}
+          WHERE ($evolved AND record::id(id) = $base)
+             OR ($evolved = false AND base_treasure_id = $id)
           LIMIT 1",
         tr_name = tr("name"),
     );
     let mut rows: Vec<CardRow> = db
-        .query(&sql)
+        .query(sql)
         .bind(("lang", lang.to_string()))
         .bind(("id", id))
-        .bind(("variant_id", variant_id.unwrap_or(0)))
+        .bind(("evolved", is_evolved))
         .await?
-        .take(0)?;
+        // statement 0 is the LET, statement 1 the select
+        .take(1)?;
     Ok(rows.pop().map(|r| {
         let name = if r.name.is_empty() { r.en_name } else { r.name };
         (r.id, name, r.image)
@@ -1900,18 +1921,37 @@ pub async fn entity_link(
     }
 }
 
-/// Every (section, id) pair the sitemap lists.
-pub async fn sitemap_entries(db: &Db) -> Result<Vec<(String, i64)>> {
-    // every section from the one list: relics and skins were missing here
-    // when this list was hand-maintained, reachable "only by luck"
-    let mut out = Vec::new();
-    for section in Section::ALL {
-        let ids: Vec<i64> = db
-            .query(format!("SELECT VALUE record::id(id) FROM {}", section.table()).as_str())
-            .await?
-            .take(0)?;
-        out.extend(ids.into_iter().map(|id| (section.as_str().to_string(), id)));
+/// Every (section, id) pair the sitemap lists — every section from the one
+/// list, so a section can never go missing the way relics and skins once
+/// did when the list was hand-maintained. All eight tables' statements ride
+/// one message, and the result is cached for a few minutes: the sitemap
+/// serves crawlers, the catalog changes only through admin writes, and the
+/// old shape paid one query per section on every crawler hit.
+pub async fn sitemap_entries(db: &Db) -> Result<Vec<(&'static str, i64)>> {
+    type Entries = std::sync::Arc<Vec<(&'static str, i64)>>;
+    static CACHE: std::sync::OnceLock<parking_lot::Mutex<Option<(i64, Entries)>>> =
+        std::sync::OnceLock::new();
+    const TTL_SECS: i64 = 600;
+    let cache = CACHE.get_or_init(|| parking_lot::Mutex::new(None));
+    let now = now_unix();
+    if let Some((expiry, entries)) = cache.lock().clone() {
+        if now < expiry {
+            return Ok((*entries).clone());
+        }
     }
+    let mut sql = String::new();
+    for s in Section::ALL {
+        sql.push_str("SELECT VALUE record::id(id) FROM ");
+        sql.push_str(s.table());
+        sql.push(';');
+    }
+    let mut res = db.query(&sql).await?;
+    let mut out: Vec<(&'static str, i64)> = Vec::new();
+    for (i, section) in Section::ALL.iter().enumerate() {
+        let ids: Vec<i64> = res.take(i)?;
+        out.extend(ids.into_iter().map(|id| (section.as_str(), id)));
+    }
+    *cache.lock() = Some((now.saturating_add(TTL_SECS), Entries::new(out.clone())));
     Ok(out)
 }
 
@@ -1930,7 +1970,10 @@ pub async fn sitemap_entries(db: &Db) -> Result<Vec<(String, i64)>> {
 ///   grams cannot see (grams cover names only; prose is word-level).
 /// The planner refuses `search::score()` in a WHERE that mixes MATCHES
 /// with non-index clauses, so the passes cannot be OR'd in SQL; ranked
-/// hits keep their order and the later passes fill the tail, deduped by id.
+/// hits keep their order and the later passes fill the tail, deduped by id
+///   within their table. The tables are independent, so the six slices run
+///   concurrently — the latency is one table's three round trips, not
+///   eighteen sequential ones.
 pub async fn search(db: &Db, lang: &str, q: &str, limit: i64) -> Result<Vec<(String, Card)>> {
     let query = q.trim();
     // one bound at the edge: the three passes below interpolate the limit,
@@ -1943,84 +1986,113 @@ pub async fn search(db: &Db, lang: &str, q: &str, limit: i64) -> Result<Vec<(Str
     let is_thai = needle
         .chars()
         .any(|c| matches!(u32::from(c) as u32, 0x0E00..=0x0E7F));
+    let (cookies, pets, treasures, relics, episodes, ingredients) = tokio::join!(
+        search_table(db, lang, "cookies", "cookie", ", grade", "abilities", query, &needle, is_thai, limit),
+        search_table(db, lang, "pets", "pet", ", grade", "description", query, &needle, is_thai, limit),
+        search_table(db, lang, "treasures", "treasure", ", grade", "description", query, &needle, is_thai, limit),
+        search_table(db, lang, "relics", "relic", "", "description", query, &needle, is_thai, limit),
+        search_table(db, lang, "episodes", "episode", "", "description", query, &needle, is_thai, limit),
+        search_table(db, lang, "ingredients", "ingredient", ", grade", "description", query, &needle, is_thai, limit),
+    );
+    // table order preserved: misc::search groups consecutive hits by section,
+    // which only holds while each table's slice arrives whole
+    let mut out = Vec::new();
+    for part in [cookies, pets, treasures, relics, episodes, ingredients] {
+        out.extend(part?);
+    }
+    Ok(out)
+}
+
+/// One table's slice of `search`: the three passes in order, hits deduped by
+/// id within the table (the passes can return the same row; ids are only
+/// unique per table, so cross-table dedup would wrongly drop a pet that
+/// shares a cookie's numeric id).
+#[allow(clippy::too_many_arguments)]
+async fn search_table(
+    db: &Db,
+    lang: &str,
+    section: &str,
+    table: &str,
+    extra: &str,
+    prose: &str,
+    query: &str,
+    needle: &str,
+    is_thai: bool,
+    limit: i64,
+) -> Result<Vec<(String, Card)>> {
     let mut out: Vec<(String, Card)> = Vec::new();
     let mut seen: std::collections::HashSet<i64> = std::collections::HashSet::new();
-    for (section, table, extra, prose) in [
-        ("cookies", "cookie", ", grade", "abilities"),
-        ("pets", "pet", ", grade", "description"),
-        ("treasures", "treasure", ", grade", "description"),
-        ("relics", "relic", "", "description"),
-        ("episodes", "episode", "", "description"),
-        ("ingredients", "ingredient", ", grade", "description"),
-    ] {
-        let mut clauses = Vec::with_capacity(if prose == "abilities" { 6 } else { 4 });
-        for locale in ["en", lang] {
-            clauses.push(format!("tr.{locale}.name @1@ $q"));
-            clauses.push(format!("tr.{locale}.description @1@ $q"));
-            if prose == "abilities" {
-                clauses.push(format!("tr.{locale}.abilities @1@ $q"));
-            }
+    let mut clauses = Vec::with_capacity(if prose == "abilities" { 6 } else { 4 });
+    for locale in ["en", lang] {
+        clauses.push(format!("tr.{locale}.name @1@ $q"));
+        clauses.push(format!("tr.{locale}.description @1@ $q"));
+        if prose == "abilities" {
+            clauses.push(format!("tr.{locale}.abilities @1@ $q"));
         }
-        let sql = format!(
-            "SELECT record::id(id) AS id, image{extra}, {} AS name,
-                    (tr.en.name ?? '') AS en_name, search::score(1) AS score
-               FROM {table}
-              WHERE {}
-              ORDER BY score DESC, name ASC
-              LIMIT {limit}",
-            tr("name"),
-            clauses.join(" OR "),
-        );
+    }
+    let sql = format!(
+        "SELECT record::id(id) AS id, image{extra}, {} AS name,
+                (tr.en.name ?? '') AS en_name, search::score(1) AS score
+           FROM {table}
+          WHERE {}
+          ORDER BY score DESC, name ASC
+          LIMIT {limit}",
+        tr("name"),
+        clauses.join(" OR "),
+    );
+    let rows: Vec<CardRow> = db
+        .query(sql)
+        .bind(("lang", lang.to_string()))
+        .bind(("q", query.to_string()))
+        .await?
+        .take(0)?;
+    for r in rows {
+        let card = Card::from(r);
+        if seen.insert(card.id) {
+            out.push((section.to_string(), card));
+        }
+    }
+
+    // the name-gram pass: the needle's 3-grams against the index, most
+    // overlapping entities first. Grams live in one table for all
+    // sections; the composite index covers the (gram, section) pair.
+    // The subquery is materialized through LET first: an inline
+    // `id IN (subquery)` re-executes the subquery per scanned row
+    // (EXPLAIN: TableScan with "unsupported predicate" pre-decode),
+    // 13 s per search on the seeded catalog; materialized, ~30 ms.
+    let grams = name_grams(needle);
+    if !grams.is_empty() {
         let rows: Vec<CardRow> = db
-            .query(sql)
-            .bind(("lang", lang.to_string()))
-            .bind(("q", query.to_string()))
+            .query(format!(
+                "LET $ids = (SELECT VALUE entity_id FROM name_gram
+                         WHERE section = $sec AND gram IN $grams
+                         GROUP BY entity_id LIMIT {limit});
+                 SELECT record::id(id) AS id, image{extra}, {} AS name,
+                        (tr.en.name ?? '') AS en_name
+                   FROM {table}
+                  WHERE record::id(id) IN $ids",
+                tr("name")
+            ))
+            .bind(("sec", table.to_string()))
+            .bind(("grams", grams.clone()))
             .await?
-            .take(0)?;
+            // statement 0 is the LET, statement 1 the select
+            .take(1)?;
         for r in rows {
             let card = Card::from(r);
             if seen.insert(card.id) {
                 out.push((section.to_string(), card));
             }
         }
+    }
 
-        // the name-gram pass: the needle's 3-grams against the index, most
-        // overlapping entities first. Grams live in one table for all
-        // sections; the composite index covers the (gram, section) pair.
-        // The subquery is materialized through LET first: an inline
-        // `id IN (subquery)` re-executes the subquery per scanned row
-        // (EXPLAIN: TableScan with "unsupported predicate" pre-decode),
-        // 13 s per search on the seeded catalog; materialized, ~30 ms.
-        let grams = name_grams(&needle);
-        if !grams.is_empty() {
-            let rows: Vec<CardRow> = db
-                .query(format!(
-                    "LET $ids = (SELECT VALUE entity_id FROM name_gram
-                             WHERE section = $sec AND gram IN $grams
-                             GROUP BY entity_id LIMIT {limit});
-                     SELECT record::id(id) AS id, image{extra}, {} AS name,
-                            (tr.en.name ?? '') AS en_name
-                       FROM {table}
-                      WHERE record::id(id) IN $ids",
-                    tr("name")
-                ))
-                .bind(("sec", table.to_string()))
-                .bind(("grams", grams.clone()))
-                .await?
-                // statement 0 is the LET, statement 1 the select
-                .take(1)?;
-            for r in rows {
-                let card = Card::from(r);
-                if seen.insert(card.id) {
-                    out.push((section.to_string(), card));
-                }
-            }
-        }
-
-        // the prose pass: substring over description (and abilities), for
-        // needles the name grams cannot see. Thai needles search the th
-        // columns (the en text cannot contain them), latin needles search
-        // en plus the viewer's locale.
+    // the prose pass: substring over description (and abilities), for
+    // needles the name grams cannot see. Thai needles search the th
+    // columns (the en text cannot contain them), latin needles search
+    // en plus the viewer's locale. The scan is the expensive one and its
+    // hits only fill the tail, so it is skipped once the ranked passes
+    // already produced a full page.
+    if out.len() < usize::try_from(limit).unwrap_or(usize::MAX) {
         let columns: Vec<&str> = if is_thai {
             vec!["th"]
         } else {
@@ -2049,7 +2121,7 @@ pub async fn search(db: &Db, lang: &str, q: &str, limit: i64) -> Result<Vec<(Str
         let rows: Vec<CardRow> = db
             .query(sql)
             .bind(("lang", lang.to_string()))
-            .bind(("frag", needle.clone()))
+            .bind(("frag", needle.to_string()))
             .await?
             .take(0)?;
         for r in rows {

@@ -67,6 +67,7 @@ impl DetailPage {
     }
 }
 
+#[allow(clippy::too_many_lines)] // the join of the ten independent collections is the point
 pub async fn show(
     ctx: Ctx,
     Path((section, id)): Path<(String, i64)>,
@@ -79,46 +80,101 @@ pub async fn show(
     let Some(item) = item else {
         return Ok(super::errors::not_found(ctx));
     };
-    let effects = if sec == Section::Treasures {
-        db::treasure_effects(&state.db, &ctx.lang, id).await?
-    } else {
-        Vec::new()
-    };
-    let combi = db::combi_bonuses(&state.db, &ctx.lang, &section, id).await?;
-    let links = if sec == Section::Treasures {
-        db::treasure_links(&state.db, &ctx.lang, id).await?
-    } else {
-        TreasureLinks::default()
-    };
-    // the reverse link: what this cookie or pet unlocks
-    let unlocks = match sec {
-        Section::Cookies | Section::Pets => {
-            db::unlocked_treasure(&state.db, &ctx.lang, sec.table(), id).await?
-        }
-        _ => None,
-    };
-    // the kinds' own collections; each fills only what its page shows
-    let ingredient = if sec == Section::Ingredients {
-        db::ingredient_facts(&state.db, &ctx.lang, id).await?
-    } else {
-        db::IngredientFacts::default()
-    };
-    let recipes = if sec == Section::Ingredients {
-        db::ingredient_recipes(&state.db, &ctx.lang, id).await?
-    } else {
-        Vec::new()
-    };
-    let craft = if sec == Section::Treasures {
-        db::treasure_craft_ingredients(&state.db, &ctx.lang, id).await?
-    } else {
-        Vec::new()
-    };
-    // the linked variant: base of an evolved row, evolved form of a normal one
-    let variant = if sec == Section::Treasures {
-        db::treasure_variant(&state.db, &ctx.lang, id, item.is_evolved).await?
-    } else {
-        None
-    };
+    // Every collection below reads only (section, id) and the already-loaded
+    // row, so they all go out at once: the page's latency is the slowest one
+    // round trip, not the sum of ten of them. Each block still answers the
+    // default its kind's page ignores, exactly as the sequential version did.
+    let (
+        effects,
+        combi,
+        links,
+        unlocks,
+        ingredient,
+        recipes,
+        craft,
+        variant,
+        episode,
+        makers,
+    ) = tokio::join!(
+        async {
+            if sec == Section::Treasures {
+                db::treasure_effects(&state.db, &ctx.lang, id).await
+            } else {
+                Ok(Vec::new())
+            }
+        },
+        async { db::combi_bonuses(&state.db, &ctx.lang, &section, id).await },
+        async {
+            if sec == Section::Treasures {
+                db::treasure_links(&state.db, &ctx.lang, id).await
+            } else {
+                Ok(TreasureLinks::default())
+            }
+        },
+        // the reverse link: what this cookie or pet unlocks
+        async {
+            match sec {
+                Section::Cookies | Section::Pets => {
+                    db::unlocked_treasure(&state.db, &ctx.lang, sec.table(), id).await
+                }
+                _ => Ok(None),
+            }
+        },
+        async {
+            if sec == Section::Ingredients {
+                db::ingredient_facts(&state.db, &ctx.lang, id).await
+            } else {
+                Ok(db::IngredientFacts::default())
+            }
+        },
+        async {
+            if sec == Section::Ingredients {
+                db::ingredient_recipes(&state.db, &ctx.lang, id).await
+            } else {
+                Ok(Vec::new())
+            }
+        },
+        async {
+            if sec == Section::Treasures {
+                db::treasure_craft_ingredients(&state.db, &ctx.lang, id).await
+            } else {
+                Ok(Vec::new())
+            }
+        },
+        // the linked variant: base of an evolved row, evolved form of a normal
+        // one
+        async {
+            if sec == Section::Treasures {
+                db::treasure_variant(&state.db, &ctx.lang, id, item.is_evolved).await
+            } else {
+                Ok(None)
+            }
+        },
+        async {
+            if sec == Section::Episodes {
+                db::episode_extras(&state.db, &ctx.lang, id).await
+            } else {
+                Ok(db::EpisodeDetail::default())
+            }
+        },
+        async {
+            if sec == Section::Jellies {
+                db::jelly_makers(&state.db, &ctx.lang, id).await
+            } else {
+                Ok(Vec::new())
+            }
+        },
+    );
+    let effects = effects?;
+    let combi = combi?;
+    let links = links?;
+    let unlocks = unlocks?;
+    let ingredient = ingredient?;
+    let recipes = recipes?;
+    let craft = craft?;
+    let variant = variant?;
+    let episode = episode?;
+    let makers = makers?;
     // one link cache across all five prose fields: an entity named twice on
     // one page costs one lookup. The page's own entity renders mentions as
     // a highlight, not a self-link.
@@ -147,16 +203,6 @@ pub async fn show(
         richtext::render_with(&state.db, &ctx.lang, &item.unlock_goal, &mut memo, self_ref).await;
 
     let blessed_differs = db::blessed_differs(&effects);
-    let episode = if sec == Section::Episodes {
-        db::episode_extras(&state.db, &ctx.lang, id).await?
-    } else {
-        db::EpisodeDetail::default()
-    };
-    let makers = if sec == Section::Jellies {
-        db::jelly_makers(&state.db, &ctx.lang, id).await?
-    } else {
-        Vec::new()
-    };
     let page = DetailPage {
         ctx,
         section,

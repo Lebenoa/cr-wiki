@@ -179,9 +179,17 @@ pub async fn render_with(
                 }
             }
         }
-        out.push_str(&escape(
-            &chars.get(i).copied().map_or(String::new(), String::from),
-        ));
+        // plain characters go straight into the output: routing each one
+        // through `escape` would allocate a fresh String per character
+        match chars.get(i).copied() {
+            Some('&') => out.push_str("&amp;"),
+            Some('<') => out.push_str("&lt;"),
+            Some('>') => out.push_str("&gt;"),
+            Some('"') => out.push_str("&quot;"),
+            Some('\'') => out.push_str("&#39;"),
+            Some(c) => out.push(c),
+            None => {}
+        }
         i = i.saturating_add(1);
     }
     out

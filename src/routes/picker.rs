@@ -130,7 +130,9 @@ pub struct PickedSlot {
 }
 
 /// `/builds/preview` — the planner re-renders the loadout after each pick by
-/// fetching this with the current selection in the query string.
+/// fetching this with the current selection in the query string. The slots
+/// resolve through one batched lookup per kind (the same `names_for` the
+/// detail pages use) instead of one query per slot.
 pub async fn preview(
     ctx: Ctx,
     q: Query<CommonQuery>,
@@ -144,16 +146,55 @@ pub async fn preview(
         ("treasure", "treasures", q.t2.unwrap_or(0)),
         ("treasure", "treasures", q.t3.unwrap_or(0)),
     ];
+    let mut cookie_ids: Vec<i64> = Vec::new();
+    let mut pet_ids: Vec<i64> = Vec::new();
+    let mut treasure_ids: Vec<i64> = Vec::new();
+    for (kind, _, id) in &wanted {
+        if *id <= 0 {
+            continue;
+        }
+        let list = match *kind {
+            "cookie" => &mut cookie_ids,
+            "pet" => &mut pet_ids,
+            _ => &mut treasure_ids,
+        };
+        if !list.contains(id) {
+            list.push(*id);
+        }
+    }
+    let (kc, kp, kt) = (
+        db::Kind::of(crate::section::Section::Cookies),
+        db::Kind::of(crate::section::Section::Pets),
+        db::Kind::of(crate::section::Section::Treasures),
+    );
+    let (cookies, pets, treasures) = tokio::join!(
+        db::names_for(&state.db, &ctx.lang, &kc, &cookie_ids),
+        db::names_for(&state.db, &ctx.lang, &kp, &pet_ids),
+        db::names_for(&state.db, &ctx.lang, &kt, &treasure_ids),
+    );
+    // a lookup failure empties the maps, which renders an empty fragment —
+    // the same answer a dead database gave through `entity_link`'s None
+    let (cookies, pets, treasures) = (
+        cookies.unwrap_or_default(),
+        pets.unwrap_or_default(),
+        treasures.unwrap_or_default(),
+    );
+
     let mut picks = Vec::new();
     for (kind, section, id) in wanted {
         if id <= 0 {
             continue;
         }
-        if let Some((name, image)) = db::entity_link(&state.db, &ctx.lang, kind, id).await {
+        let map = match kind {
+            "cookie" => &cookies,
+            "pet" => &pets,
+            _ => &treasures,
+        };
+        if let Some((name, image)) = map.get(&id) {
             picks.push(PickedSlot {
                 section,
-                name,
-                image,
+                name: name.clone(),
+                image: image.clone(),
             });
         }
     }

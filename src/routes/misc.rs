@@ -96,7 +96,7 @@ pub async fn gacha(ctx: Ctx) -> Result<Html<String>, AppError> {
 /// section missing here is one crawlers only reach by luck.
 pub async fn sitemap(
     ctx: Ctx,
-) -> ([(&'static str, &'static str); 1], String) {
+) -> ([(&'static str, &'static str); 2], String) {
     let state = crate::state::state();
     let base = ctx.site_url;
     let langs = i18n::available_langs();
@@ -157,7 +157,15 @@ pub async fn sitemap(
         xml.push_str("\"/></url>\n");
     }
     xml.push_str("</urlset>\n");
-    ([("content-type", "application/xml; charset=utf-8")], xml)
+    (
+        [
+            ("content-type", "application/xml; charset=utf-8"),
+            // the entries behind this are cached server-side for ten minutes;
+            // matching it here keeps a crawler's re-fetch off the app entirely
+            ("cache-control", "public, max-age=600"),
+        ],
+        xml,
+    )
 }
 
 /// The form, auth and fragment routes are noise for a crawler.
@@ -234,7 +242,7 @@ mod tests {
             "jellies",
         ] {
             assert!(
-                entries.iter().any(|(s, _)| s == section),
+                entries.iter().any(|(s, _)| *s == section),
                 "{section} missing"
             );
         }

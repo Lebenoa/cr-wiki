@@ -27,9 +27,39 @@ mod upload;
 
 use std::net::SocketAddr;
 
+use axum::extract::Request;
+use axum::http::{header, HeaderValue};
+use axum::middleware::Next;
+use axum::response::Response;
+use tower_http::compression::CompressionLayer;
 use tower_http::services::ServeDir;
 
 use state::AppState;
+
+/// Static assets are named for their content (entity sprites never change;
+/// `styles.css` and `js/` ride deploys), so images cache for a year while
+/// everything else revalidates after a day. `ServeDir` already answers
+/// conditional requests with `Last-Modified`, so the day-old entries cost a
+/// 304, not a re-download. The layer sits on the whole router, so paths
+/// outside `/static` must pass through untouched — a cached day on a
+/// dynamic page would serve stale content after a deploy.
+async fn static_cache_headers(req: Request, next: Next) -> Response {
+    // the path must be read before the request moves into the inner service
+    let rest = req.uri().path().strip_prefix("/static/").map(str::to_string);
+    let mut res = next.run(req).await;
+    let Some(rest) = rest else {
+        return res;
+    };
+    let value = if rest.starts_with("img/") {
+        "public, max-age=31536000, immutable"
+    } else {
+        "public, max-age=86400"
+    };
+    if let Ok(v) = HeaderValue::from_str(value) {
+        res.headers_mut().insert(header::CACHE_CONTROL, v);
+    }
+    res
+}
 
 /// Paths are relative to the repo root, so the port runs against the same
 /// Config.toml, translations and database as the V app.
@@ -83,7 +113,12 @@ async fn main() {
     // `static/` tree. The catalog's `/{section}/{id}` detail route cannot
     // shadow these: its two-segment shape never overlaps a /static prefix,
     // and the prefix mount wins the match anyway.
-    let app = app.nest_service("/static", ServeDir::new("static"));
+    let app = app
+        .nest_service("/static", ServeDir::new("static"))
+        .layer(axum::middleware::from_fn(static_cache_headers))
+        // gzip/br for HTML, CSS and JS; the default predicate leaves image/*
+        // (the bulk of /static) and tiny responses alone
+        .layer(CompressionLayer::new());
 
     let addr = format!("{}:{}", cfg.host, cfg.port);
     let listener = match tokio::net::TcpListener::bind(&addr).await {
