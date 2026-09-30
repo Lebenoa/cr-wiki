@@ -45,10 +45,7 @@ struct SearchResults {
     groups: Vec<(String, Vec<Card>)>,
 }
 
-pub async fn search(
-    ctx: Ctx,
-    q: Query<CommonQuery>,
-) -> Result<Html<String>, AppError> {
+pub async fn search(ctx: Ctx, q: Query<CommonQuery>) -> Result<Html<String>, AppError> {
     let state = crate::state::state();
     let query = q.q.clone().unwrap_or_default();
     let hits = db::search(&state.db, &ctx.lang, &query, 20).await?;
@@ -94,9 +91,7 @@ pub async fn gacha(ctx: Ctx) -> Result<Html<String>, AppError> {
 
 /// Every list page plus every detail id, each with its locale alternates. A
 /// section missing here is one crawlers only reach by luck.
-pub async fn sitemap(
-    ctx: Ctx,
-) -> ([(&'static str, &'static str); 2], String) {
+pub async fn sitemap(ctx: Ctx) -> ([(&'static str, &'static str); 2], String) {
     let state = crate::state::state();
     let base = ctx.site_url;
     let langs = i18n::available_langs();
@@ -200,10 +195,40 @@ mod tests {
         assert!(!th.is_empty());
 
         let th_partial = db::search(&pool, "th", "กล้า", 20).await.unwrap();
-        assert!(th_partial.iter().any(|(section, c)| section == "cookies" && c.id == 1));
+        assert!(th_partial
+            .iter()
+            .any(|(section, c)| section == "cookies" && c.id == 1));
         let prose = db::search(&pool, "en", "abilities", 20).await.unwrap();
         assert!(prose.iter().any(|(section, _)| section == "cookies"));
         assert!(db::search(&pool, "en", "   ", 20).await.unwrap().is_empty());
+
+        // typo tolerance: `sruf` shares no 3-gram with any name (`sru`/
+        // `ruf` vs surf's `sur`/`urf`) and no catalog name contains `urf`
+        // — only the fuzzy prose pass can rescue it. Both surf cookies
+        // must surface; unrelated prose (`syrup`, `soda`) must not.
+        let typo = db::search(&pool, "en", "sruf", 20).await.unwrap();
+        let typo_names: Vec<&str> = typo.iter().map(|(_, c)| c.en_name.as_str()).collect();
+        assert!(
+            typo_names.iter().any(|n| n.contains("Soda")),
+            "sruf should find Soda Cookie, got {typo_names:?}"
+        );
+        assert!(
+            typo_names.iter().any(|n| n.contains("Mango Sticky Rice")),
+            "sruf should find Mango Sticky Rice Cookie, got {typo_names:?}"
+        );
+        // a correct short word still ranks its name hits first: `ginger`
+        // must return GingerBrave and the gram pass must rank by overlap
+        // (4-gram hits before 1-gram ones), not by raw id order.
+        let ginger = db::search(&pool, "en", "ginger", 20).await.unwrap();
+        let ginger_cookies: Vec<i64> = ginger
+            .iter()
+            .filter(|(s, _)| *s == "cookies")
+            .map(|(_, c)| c.id)
+            .collect();
+        assert!(
+            ginger_cookies.contains(&1),
+            "ginger should find GingerBrave, got {ginger_cookies:?}"
+        );
     }
 
     /// The gacha pools carry their prizes and odds.

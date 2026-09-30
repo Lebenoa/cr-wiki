@@ -86,19 +86,77 @@ pub async fn warm_pool(db: &Db) -> Result<()> {
 /// rows themselves (events never fire on `surreal import`); this keeps
 /// admin-created and renamed entities fresh on live databases.
 async fn ensure_search_schema(db: &Db) -> Result<()> {
-    db.query("DEFINE ANALYZER IF NOT EXISTS cookie_search_en TOKENIZERS class, punct FILTERS lowercase;")
-        .await?
-        .check()?;
+    db.query(
+        "DEFINE ANALYZER IF NOT EXISTS cookie_search_en TOKENIZERS class, punct FILTERS lowercase;",
+    )
+    .await?
+    .check()?;
     db.query("DEFINE ANALYZER IF NOT EXISTS cookie_search_th TOKENIZERS class FILTERS lowercase, ngram(1,3);")
         .await?
         .check()?;
     let indexes = [
-        ("cookie", ["tr.en.name", "tr.th.name", "tr.en.abilities", "tr.th.abilities", "tr.en.description", "tr.th.description"].as_slice()),
-        ("pet", ["tr.en.name", "tr.th.name", "tr.en.description", "tr.th.description"].as_slice()),
-        ("treasure", ["tr.en.name", "tr.th.name", "tr.en.description", "tr.th.description"].as_slice()),
-        ("relic", ["tr.en.name", "tr.th.name", "tr.en.description", "tr.th.description"].as_slice()),
-        ("episode", ["tr.en.name", "tr.th.name", "tr.en.description", "tr.th.description"].as_slice()),
-        ("ingredient", ["tr.en.name", "tr.th.name", "tr.en.description", "tr.th.description"].as_slice()),
+        (
+            "cookie",
+            [
+                "tr.en.name",
+                "tr.th.name",
+                "tr.en.abilities",
+                "tr.th.abilities",
+                "tr.en.description",
+                "tr.th.description",
+            ]
+            .as_slice(),
+        ),
+        (
+            "pet",
+            [
+                "tr.en.name",
+                "tr.th.name",
+                "tr.en.description",
+                "tr.th.description",
+            ]
+            .as_slice(),
+        ),
+        (
+            "treasure",
+            [
+                "tr.en.name",
+                "tr.th.name",
+                "tr.en.description",
+                "tr.th.description",
+            ]
+            .as_slice(),
+        ),
+        (
+            "relic",
+            [
+                "tr.en.name",
+                "tr.th.name",
+                "tr.en.description",
+                "tr.th.description",
+            ]
+            .as_slice(),
+        ),
+        (
+            "episode",
+            [
+                "tr.en.name",
+                "tr.th.name",
+                "tr.en.description",
+                "tr.th.description",
+            ]
+            .as_slice(),
+        ),
+        (
+            "ingredient",
+            [
+                "tr.en.name",
+                "tr.th.name",
+                "tr.en.description",
+                "tr.th.description",
+            ]
+            .as_slice(),
+        ),
     ];
     for (table, fields) in indexes {
         for (index, field) in fields.iter().enumerate() {
@@ -1810,7 +1868,12 @@ pub async fn names_for(
     }
     for id in ids {
         if !map.contains_key(id) {
-            tracing::warn!(table = kind.table, id, lang, "name lookup matched no row; callers render an empty name and no thumbnail");
+            tracing::warn!(
+                table = kind.table,
+                id,
+                lang,
+                "name lookup matched no row; callers render an empty name and no thumbnail"
+            );
         }
     }
     Ok(map)
@@ -1843,7 +1906,13 @@ async fn combis(db: &Db, lang: &str, own: &str, id: i64) -> Result<Vec<(CombiRec
     // cookie on a pet's page
     let ids: Vec<i64> = records
         .iter()
-        .map(|c| if own == "cookies" { c.pet_id } else { c.cookie_id })
+        .map(|c| {
+            if own == "cookies" {
+                c.pet_id
+            } else {
+                c.cookie_id
+            }
+        })
         .collect();
     let partners = names_for(db, lang, &partner_kind, &ids).await?;
 
@@ -1966,7 +2035,7 @@ pub async fn sitemap_entries(db: &Db) -> Result<Vec<(&'static str, i64)>> {
     Ok(out)
 }
 
-/// Cross-entity search. The needle goes three ways per table, merged here:
+/// Cross-entity search. The needle goes four ways per table, merged here:
 /// - the full-text index ranks whole-word hits (`@1@`), one query per
 ///   locale pair, `search::score` ordering — same tool the V app's FTS5
 ///   tables gave it;
@@ -1976,16 +2045,23 @@ pub async fn sitemap_entries(db: &Db) -> Result<Vec<(&'static str, i64)>> {
 ///   grams are looked up and entities ranked by gram overlap. Prefix
 ///   (`ginger`), infix, Thai runs and transposed typos (`gingerbrvae`)
 ///   all reduce to gram overlap — the same trick Meilisearch's typo
-///   tolerance is built on;
+///   tolerance is built on. Overlap order is SQL-side (`GROUP BY ...
+///   ORDER BY count() DESC`), so the raw group order cannot leak in;
 /// - a substring pass over description/abilities prose for needles the
-///   grams cannot see (grams cover names only; prose is word-level).
+///   grams cannot see (grams cover names only; prose is word-level);
+/// - a fuzzy pass, last resort, matching a single-word needle against
+///   name and prose words within damerau-levenshtein 1 (whole word or
+///   the word's needle-length prefix). Rescues the case the gram trick
+///   cannot: a short needle whose one transposition destroys *all* its
+///   3-grams (`sruf` vs `surf`, in prose "surfing" — no shared gram, no
+///   shared substring).
 ///
 /// The planner refuses `search::score()` in a WHERE that mixes MATCHES
 /// with non-index clauses, so the passes cannot be OR'd in SQL; ranked
 /// hits keep their order and the later passes fill the tail, deduped by id
 /// within their table. The tables are independent, so the six slices run
-/// concurrently — the latency is one table's three round trips, not
-/// eighteen sequential ones.
+/// concurrently — the latency is one table's round trips, not
+/// twenty-four sequential ones.
 pub async fn search(db: &Db, lang: &str, q: &str, limit: i64) -> Result<Vec<(String, Card)>> {
     let query = q.trim();
     // one bound at the edge: the three passes below interpolate the limit,
@@ -1999,12 +2075,78 @@ pub async fn search(db: &Db, lang: &str, q: &str, limit: i64) -> Result<Vec<(Str
         .chars()
         .any(|c| matches!(u32::from(c), 0x0E00..=0x0E7F));
     let (cookies, pets, treasures, relics, episodes, ingredients) = tokio::join!(
-        search_table(db, lang, "cookies", "cookie", ", grade", "abilities", query, &needle, is_thai, limit),
-        search_table(db, lang, "pets", "pet", ", grade", "description", query, &needle, is_thai, limit),
-        search_table(db, lang, "treasures", "treasure", ", grade", "description", query, &needle, is_thai, limit),
-        search_table(db, lang, "relics", "relic", "", "description", query, &needle, is_thai, limit),
-        search_table(db, lang, "episodes", "episode", "", "description", query, &needle, is_thai, limit),
-        search_table(db, lang, "ingredients", "ingredient", ", grade", "description", query, &needle, is_thai, limit),
+        search_table(
+            db,
+            lang,
+            "cookies",
+            "cookie",
+            ", grade",
+            "abilities",
+            query,
+            &needle,
+            is_thai,
+            limit
+        ),
+        search_table(
+            db,
+            lang,
+            "pets",
+            "pet",
+            ", grade",
+            "description",
+            query,
+            &needle,
+            is_thai,
+            limit
+        ),
+        search_table(
+            db,
+            lang,
+            "treasures",
+            "treasure",
+            ", grade",
+            "description",
+            query,
+            &needle,
+            is_thai,
+            limit
+        ),
+        search_table(
+            db,
+            lang,
+            "relics",
+            "relic",
+            "",
+            "description",
+            query,
+            &needle,
+            is_thai,
+            limit
+        ),
+        search_table(
+            db,
+            lang,
+            "episodes",
+            "episode",
+            "",
+            "description",
+            query,
+            &needle,
+            is_thai,
+            limit
+        ),
+        search_table(
+            db,
+            lang,
+            "ingredients",
+            "ingredient",
+            ", grade",
+            "description",
+            query,
+            &needle,
+            is_thai,
+            limit
+        ),
     );
     // table order preserved: misc::search groups consecutive hits by section,
     // which only holds while each table's slice arrives whole. The array is
@@ -2017,10 +2159,80 @@ pub async fn search(db: &Db, lang: &str, q: &str, limit: i64) -> Result<Vec<(Str
     for part in [cookies, pets, treasures, relics, episodes, ingredients] {
         out.extend(part?);
     }
+    // the fuzzy pass, last resort, only when the whole search found
+    // nothing: a single-word latin needle matched against name and prose
+    // words within damerau-levenshtein 1 (see `fuzzy_word_pass`). `sruf`
+    // against "surfing" prose has no name gram and no substring match, so
+    // without this it returns nothing. Gating on the merged result means
+    // a partial match anywhere skips the six full-table scans entirely;
+    // when they must run, all six go out concurrently like the slices
+    // above (a sequential loop costs the sum of the scans, ~250 ms on
+    // this catalog).
+    if out.is_empty() && !is_thai && !needle.contains(' ') && needle.chars().count() >= 3 {
+        out.extend(fuzzy_search(db, lang, &needle, limit).await?);
+    }
     Ok(out)
 }
 
-/// One table's slice of `search`: the three passes in order, hits deduped by
+/// The fuzzy fallback body: one damerau word-match scan per table, all six
+/// concurrent (see `fuzzy_word_pass` for the match rule). Runs only when
+/// the regular passes found nothing.
+async fn fuzzy_search(
+    db: &Db,
+    lang: &str,
+    needle: &str,
+    limit: i64,
+) -> Result<Vec<(String, Card)>> {
+    let parts = tokio::join!(
+        fuzzy_word_pass(db, lang, "cookie", ", grade", "abilities", needle, limit),
+        fuzzy_word_pass(db, lang, "pet", ", grade", "description", needle, limit),
+        fuzzy_word_pass(
+            db,
+            lang,
+            "treasure",
+            ", grade",
+            "description",
+            needle,
+            limit
+        ),
+        fuzzy_word_pass(db, lang, "relic", "", "description", needle, limit),
+        fuzzy_word_pass(db, lang, "episode", "", "description", needle, limit),
+        fuzzy_word_pass(
+            db,
+            lang,
+            "ingredient",
+            ", grade",
+            "description",
+            needle,
+            limit
+        ),
+    );
+    let mut out = Vec::new();
+    // cross-slice dedup: the slices run concurrently, so ids cannot repeat
+    // within a table, but a pet may share a cookie's numeric id — the set
+    // is keyed by section, exactly like the main passes'
+    for (section, rows) in [
+        ("cookies", parts.0?),
+        ("pets", parts.1?),
+        ("treasures", parts.2?),
+        ("relics", parts.3?),
+        ("episodes", parts.4?),
+        ("ingredients", parts.5?),
+    ] {
+        for r in rows {
+            let card = Card::from(r);
+            if !out
+                .iter()
+                .any(|(s, c): &(String, Card)| *s == section && c.id == card.id)
+            {
+                out.push((section.to_string(), card));
+            }
+        }
+    }
+    Ok(out)
+}
+
+/// One table's slice of `search`: the passes in order, hits deduped by
 /// id within the table (the passes can return the same row; ids are only
 /// unique per table, so cross-table dedup would wrongly drop a pet that
 /// shares a cookie's numeric id).
@@ -2039,31 +2251,7 @@ async fn search_table(
 ) -> Result<Vec<(String, Card)>> {
     let mut out: Vec<(String, Card)> = Vec::new();
     let mut seen: std::collections::HashSet<i64> = std::collections::HashSet::new();
-    let mut clauses = Vec::with_capacity(if prose == "abilities" { 6 } else { 4 });
-    for locale in ["en", lang] {
-        clauses.push(format!("tr.{locale}.name @1@ $q"));
-        clauses.push(format!("tr.{locale}.description @1@ $q"));
-        if prose == "abilities" {
-            clauses.push(format!("tr.{locale}.abilities @1@ $q"));
-        }
-    }
-    let sql = format!(
-        "SELECT record::id(id) AS id, image{extra}, {} AS name,
-                (tr.en.name ?? '') AS en_name, search::score(1) AS score
-           FROM {table}
-          WHERE {}
-          ORDER BY score DESC, name ASC
-          LIMIT {limit}",
-        tr("name"),
-        clauses.join(" OR "),
-    );
-    let rows: Vec<CardRow> = db
-        .query(sql)
-        .bind(("lang", lang.to_string()))
-        .bind(("q", query.to_string()))
-        .await?
-        .take(0)?;
-    for r in rows {
+    for r in fts_pass(db, lang, table, extra, prose, query, limit).await? {
         let card = Card::from(r);
         if seen.insert(card.id) {
             out.push((section.to_string(), card));
@@ -2071,30 +2259,33 @@ async fn search_table(
     }
 
     // the name-gram pass: the needle's 3-grams against the index, most
-    // overlapping entities first. Grams live in one table for all
-    // sections; the composite index covers the (gram, section) pair.
-    // The subquery is materialized through LET first: an inline
-    // `id IN (subquery)` re-executes the subquery per scanned row
-    // (EXPLAIN: TableScan with "unsupported predicate" pre-decode),
-    // 13 s per search on the seeded catalog; materialized, ~30 ms.
+    // overlapping entities first. The subquery is materialized through
+    // LET (an inline `id IN (subquery)` replans per scanned row —
+    // EXPLAIN: TableScan, 13 s on the seeded catalog; materialized,
+    // ~30 ms). Ranked rows travel through LET and the hydration read
+    // orders by `rank` (array::index_of over the id list), so the
+    // overlap order survives without a second round trip.
     let grams = name_grams(needle);
     if !grams.is_empty() {
         let rows: Vec<CardRow> = db
             .query(format!(
-                "LET $ids = (SELECT VALUE entity_id FROM name_gram
+                "LET $rows = (SELECT entity_id, count() AS hits FROM name_gram
                          WHERE section = $sec AND gram IN $grams
-                         GROUP BY entity_id LIMIT {limit});
+                         GROUP BY entity_id ORDER BY hits DESC LIMIT {limit});
+                 LET $ids = array::map($rows, |$r| $r.entity_id);
                  SELECT record::id(id) AS id, image{extra}, {} AS name,
-                        (tr.en.name ?? '') AS en_name
+                        (tr.en.name ?? '') AS en_name,
+                        array::index_of($ids, record::id(id)) AS rank
                    FROM {table}
-                  WHERE record::id(id) IN $ids",
+                  WHERE record::id(id) IN $ids
+                  ORDER BY rank",
                 tr("name")
             ))
             .bind(("sec", table.to_string()))
             .bind(("grams", grams.clone()))
             .await?
-            // statement 0 is the LET, statement 1 the select
-            .take(1)?;
+            // statement 0 and 1 are the LETs, statement 2 the select
+            .take(2)?;
         for r in rows {
             let card = Card::from(r);
             if seen.insert(card.id) {
@@ -2150,7 +2341,108 @@ async fn search_table(
             }
         }
     }
+
+    // the fuzzy pass lives in `search` (its gate is the whole search's
+    // emptiness, unknowable per table — see `fuzzy_search`).
     Ok(out)
+}
+
+/// The full-text pass: whole-word hits (`@1@`) ranked by `search::score`,
+/// one query per locale pair — same tool the V app's FTS5 tables gave it.
+#[allow(clippy::too_many_arguments)]
+async fn fts_pass(
+    db: &Db,
+    lang: &str,
+    table: &str,
+    extra: &str,
+    prose: &str,
+    query: &str,
+    limit: i64,
+) -> Result<Vec<CardRow>> {
+    let mut clauses = Vec::with_capacity(if prose == "abilities" { 6 } else { 4 });
+    for locale in ["en", lang] {
+        clauses.push(format!("tr.{locale}.name @1@ $q"));
+        clauses.push(format!("tr.{locale}.description @1@ $q"));
+        if prose == "abilities" {
+            clauses.push(format!("tr.{locale}.abilities @1@ $q"));
+        }
+    }
+    let sql = format!(
+        "SELECT record::id(id) AS id, image{extra}, {} AS name,
+                (tr.en.name ?? '') AS en_name, search::score(1) AS score
+           FROM {table}
+          WHERE {}
+          ORDER BY score DESC, name ASC
+          LIMIT {limit}",
+        tr("name"),
+        clauses.join(" OR "),
+    );
+    db.query(sql)
+        .bind(("lang", lang.to_string()))
+        .bind(("q", query.to_string()))
+        .await?
+        .take(0)
+}
+
+/// One table's rows whose name/description/abilities contain a word within
+/// damerau-levenshtein 1 of the needle — the last-resort typo pass. `sruf`
+/// vs "surfing" prose: no catalog name contains `urf` at all, so no gram
+/// overlap and no exact substring can see it. A word matches as the whole
+/// word OR as its needle-length prefix (so `sruf` reaches `surfing` via the
+/// `surf` prefix — one transposition; whole-word distance ignores length,
+/// which is why the prefix clause only fires on words longer than the
+/// needle). Damerau, not jaro-winkler: at the 0.75 threshold jaro also
+/// admits `syrup`/`sprout` for `sruf`; damerau ≤1 admits exactly the
+/// surf-class words (whole-word `surf` = 1) plus genuinely-one-edit
+/// neighbors like `stuff` (prefix `stuf`, t↔r) — the price of typo
+/// tolerance. Scans name + description + abilities in the locales the
+/// substring pass uses; multi-word needles have no single comparable word
+/// and never reach here.
+#[allow(clippy::too_many_arguments)]
+async fn fuzzy_word_pass(
+    db: &Db,
+    lang: &str,
+    table: &str,
+    extra: &str,
+    prose: &str,
+    needle: &str,
+    limit: i64,
+) -> Result<Vec<CardRow>> {
+    const WORD_MATCH: &str = "array::any(string::words(string::lowercase({col} ?? '')), |$w|
+                        string::len($w) >= 3 AND (
+                            string::distance::damerau_levenshtein($w, $frag) <= 1 OR
+                            (string::len($w) > string::len($frag) AND
+                             string::distance::damerau_levenshtein(
+                                 string::slice($w, 0, string::len($frag)), $frag) <= 1)))";
+    let mut clauses = Vec::new();
+    // the locale list stays deduped: for lang=en, ["en", lang] would emit
+    // every column twice and double the scan cost — the common case
+    let locales: Vec<&str> = if lang == "en" {
+        vec!["en"]
+    } else {
+        vec!["en", lang]
+    };
+    for locale in locales {
+        clauses.push(WORD_MATCH.replace("{col}", &format!("tr.{locale}.name")));
+        clauses.push(WORD_MATCH.replace("{col}", &format!("tr.{locale}.description")));
+        if prose == "abilities" {
+            clauses.push(WORD_MATCH.replace("{col}", &format!("tr.{locale}.abilities")));
+        }
+    }
+    let sql = format!(
+        "SELECT record::id(id) AS id, image{extra}, {} AS name,
+                (tr.en.name ?? '') AS en_name
+           FROM {table}
+          WHERE {}
+          LIMIT {limit}",
+        tr("name"),
+        clauses.join(" OR "),
+    );
+    db.query(sql)
+        .bind(("lang", lang.to_string()))
+        .bind(("frag", needle.to_string()))
+        .await?
+        .take(0)
 }
 
 /// The needle's name-gram vocabulary: distinct three-*character* slices of
@@ -2267,7 +2559,12 @@ pub async fn cards_by_ids(db: &Db, lang: &str, kind: &str, ids: &[i64]) -> Resul
         match cards_by_id.get(id) {
             Some(card) => ordered.push(card.clone()),
             None => {
-                tracing::warn!(table = k.table, id, lang, "card lookup matched no row; the slot renders without it");
+                tracing::warn!(
+                    table = k.table,
+                    id,
+                    lang,
+                    "card lookup matched no row; the slot renders without it"
+                );
             }
         }
     }
@@ -2390,17 +2687,16 @@ async fn prizes(
                 {} AS name,
                 (tr.en.name ?? '') AS en_name
            FROM {table}
-          WHERE id IN $ids",
+          WHERE record::id(id) IN $ids",
         tr("name"),
     );
-    let list: Vec<String> = ids
-        .iter()
-        .map(|i| format!("{table}:{i}"))
-        .collect();
+    // ints, not "table:42" strings: v3 does not coerce a string to a record
+    // id inside `IN`, so the string form silently matches nothing (the
+    // same shape `cards_by_ids` projects and binds)
     let rows: Vec<PrizeRow> = db
         .query(sql.as_str())
         .bind(("lang", lang.to_string()))
-        .bind(("ids", list))
+        .bind(("ids", ids.to_vec()))
         .await?
         .take(0)?;
     for r in rows {
@@ -2625,7 +2921,11 @@ fn parse_release_date(raw: &str) -> Option<i64> {
     if parts.next().is_some() || y.len() != 4 || m.len() != 2 || d.len() != 2 {
         return None;
     }
-    let (y, m, d) = (y.parse::<i64>().ok()?, m.parse::<i64>().ok()?, d.parse::<i64>().ok()?);
+    let (y, m, d) = (
+        y.parse::<i64>().ok()?,
+        m.parse::<i64>().ok()?,
+        d.parse::<i64>().ok()?,
+    );
     if !(1..=12).contains(&m) || !(1..=31).contains(&d) {
         return None;
     }
