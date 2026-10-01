@@ -136,10 +136,7 @@ pub async fn new_form(ctx: Ctx) -> Response {
 
 /// The prefilled edit form. 404 rather than 403 for someone else's build,
 /// matching the V routes: whether a build exists is not worth revealing.
-pub async fn edit_form(
-    ctx: Ctx,
-    Path(id): Path<i64>,
-) -> Result<Response, AppError> {
+pub async fn edit_form(ctx: Ctx, Path(id): Path<i64>) -> Result<Response, AppError> {
     let state = crate::state::state();
     let Some(build) = load_owned(state, &ctx, id).await? else {
         return Ok(super::errors::not_found(ctx));
@@ -172,13 +169,16 @@ pub async fn update(
         )
             .into_response());
     }
-    let record = match record_from(&form, ep, ep_special, tags, String::new(), 0, None) {
-        Ok(r) => r,
+    // the update only carries the mutable fields; author, owner and
+    // expiry are insert-only (update_build's parameter type has no room
+    // for them)
+    let changes = match changes_from(&form, ep, ep_special, tags) {
+        Ok(c) => c,
         Err(key) => {
             return Ok((StatusCode::BAD_REQUEST, page(ctx, Some(existing), key)).into_response())
         }
     };
-    builds::update_build(&state.db, id, &record).await?;
+    builds::update_build(&state.db, id, &changes).await?;
     Ok(Redirect::to(&format!("/builds/{id}")).into_response())
 }
 
@@ -191,10 +191,7 @@ async fn load_owned(state: &AppState, ctx: &Ctx, id: i64) -> Result<Option<Build
     Ok(can_edit(ctx, &found).then_some(found))
 }
 
-pub async fn create(
-    ctx: Ctx,
-    Form(form): Form<BuildForm>,
-) -> Result<Response, AppError> {
+pub async fn create(ctx: Ctx, Form(form): Form<BuildForm>) -> Result<Response, AppError> {
     let state = crate::state::state();
     if !crate::turnstile::verify(&state.cfg, form.turnstile.as_deref(), "build").await {
         return Ok((
@@ -261,10 +258,7 @@ pub async fn create(
     Ok(Redirect::to(&format!("/builds/{created}")).into_response())
 }
 
-pub async fn delete(
-    ctx: Ctx,
-    Path(id): Path<i64>,
-) -> Result<Response, AppError> {
+pub async fn delete(ctx: Ctx, Path(id): Path<i64>) -> Result<Response, AppError> {
     let state = crate::state::state();
     let found = builds::select_build(&state.db, &ctx.lang, id).await?;
 
@@ -322,18 +316,15 @@ fn validated_description(raw: Option<&String>) -> Result<String, &'static str> {
 
 /// The shared field mapping, so create and update cannot drift apart.
 #[allow(clippy::needless_pass_by_value)] // tags arrives pre-assembled for both callers
-fn record_from(
+fn changes_from(
     form: &BuildForm,
     ep: i64,
     ep_special: i64,
     tags: Vec<String>,
-    author: String,
-    user_id: i64,
-    expires_at: Option<i64>,
-) -> Result<builds::NewBuild, &'static str> {
+) -> Result<builds::BuildChanges, &'static str> {
     let description = validated_description(form.description.as_ref())?;
     let youtube_url = validated_youtube_url(form.youtube_url.as_ref())?;
-    Ok(builds::NewBuild {
+    Ok(builds::BuildChanges {
         cookie: form.cookie,
         cookie2: if form.c2 > 0 { Some(form.c2) } else { None },
         pet: form.pet,
@@ -354,6 +345,23 @@ fn record_from(
         boxes: number(form.boxes.as_ref()),
         description,
         youtube_url,
+    })
+}
+
+/// The insert-side record: the mutable fields plus the stamped author,
+/// owner and expiry.
+#[allow(clippy::needless_pass_by_value)] // tags arrives pre-assembled for both callers
+fn record_from(
+    form: &BuildForm,
+    ep: i64,
+    ep_special: i64,
+    tags: Vec<String>,
+    author: String,
+    user_id: i64,
+    expires_at: Option<i64>,
+) -> Result<builds::NewBuild, &'static str> {
+    Ok(builds::NewBuild {
+        changes: changes_from(form, ep, ep_special, tags)?,
         author,
         user_id,
         expires_at,

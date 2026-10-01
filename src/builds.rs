@@ -332,7 +332,6 @@ async fn select_where(
             .map_or_else(Vec::new, <[BuildRow]>::to_vec);
     }
 
-
     // the entities come back in three batched queries rather than one per
     // slot per build, which is what the V lookups do
     let mut cookie_ids: Vec<i64> = Vec::new();
@@ -393,8 +392,26 @@ pub async fn select_build(db: &Db, lang: &str, id: i64) -> crate::db::Result<Opt
 /// A build about to be written. Separate from `BuildCard` because that one
 /// carries resolved entities for rendering, while this carries the ids the
 /// row actually stores.
+///
+/// The loadout plus the free-text fields split out as [`BuildChanges`], the
+/// type `update_build` takes: author, owner and expiry are stamped on
+/// insert and never edited, so the update path has no way to even express
+/// touching them.
 #[derive(Debug, Clone)]
 pub struct NewBuild {
+    pub changes: BuildChanges,
+    /// stamped onto the record on insert; edits never touch it
+    pub author: String,
+    pub user_id: i64,
+    /// unix seconds for an anonymous build, None for a permanent one
+    pub expires_at: Option<i64>,
+}
+
+/// The fields an edit may change: the loadout and the free-text prose. No
+/// author, owner or expiry — an edit must not turn an anonymous build
+/// permanent or change who owns it, and the type says so.
+#[derive(Debug, Clone)]
+pub struct BuildChanges {
     pub cookie: i64,
     pub cookie2: Option<i64>,
     pub pet: i64,
@@ -410,15 +427,9 @@ pub struct NewBuild {
     pub boxes: i64,
     pub description: String,
     pub youtube_url: String,
-    /// stamped onto the record on insert; edits never touch it
-    #[allow(dead_code)]
-    pub author: String,
-    pub user_id: i64,
-    /// unix seconds for an anonymous build, None for a permanent one
-    pub expires_at: Option<i64>,
 }
 
-fn build_sets(b: &NewBuild) -> String {
+fn build_sets(b: &BuildChanges) -> String {
     format!(
         concat!(
             "cookie_id = {c},",
@@ -476,7 +487,7 @@ pub async fn insert_build(db: &Db, b: &NewBuild) -> crate::db::Result<i64> {
             description = $desc, youtube_url = $yt,
             author = $author, user_id = {uid}, expires_at = $exp; \
          RETURN $id;",
-        build_sets(b),
+        build_sets(&b.changes),
         uid = b.user_id,
         now = now_unix(),
     );
@@ -485,9 +496,13 @@ pub async fn insert_build(db: &Db, b: &NewBuild) -> crate::db::Result<i64> {
     let exp = b.expires_at.unwrap_or(0);
     let mut res = db
         .query(&sql)
-        .bind(("tags", b.tags.clone()))
-        .bind(("desc", b.description.clone()))
-        .bind(("yt", b.youtube_url.clone()))
+        .bind(("tags", b.changes.tags.clone()))
+        .bind(("desc", b.changes.description.clone()))
+        .bind(("yt", b.changes.youtube_url.clone()))
+        // $author was referenced by the SQL but never bound, so every
+        // build stored NONE and read back with an empty author; the field
+        // had to be `#[allow(dead_code)]` to compile. Bound now.
+        .bind(("author", b.author.clone()))
         .bind(("exp", exp))
         .await?
         .check()?;
@@ -509,9 +524,10 @@ pub async fn delete_build(db: &Db, id: i64) -> crate::db::Result<()> {
     Ok(())
 }
 
-/// Updates a build in place. Author, owner and expiry are untouched: an edit
-/// must not turn an anonymous build permanent or change who owns it.
-pub async fn update_build(db: &Db, id: i64, b: &NewBuild) -> crate::db::Result<()> {
+/// Updates a build in place. Takes [`BuildChanges`] — the insert-only
+/// fields (author, owner, expiry) are not representable here, so an edit
+/// cannot turn an anonymous build permanent or change who owns it.
+pub async fn update_build(db: &Db, id: i64, b: &BuildChanges) -> crate::db::Result<()> {
     let sql = format!(
         "UPDATE build:{id} SET {},
             tag = $tags, description = $desc, youtube_url = $yt",

@@ -253,6 +253,27 @@ Already have an account?
 dont_have_account
 Don't have an account?
 -----
+invalid_credentials
+Invalid username or password.
+-----
+register_required
+Username and password are required.
+-----
+register_username_short
+Username must be at least 3 characters.
+-----
+register_password_short
+Password must be at least 8 characters.
+-----
+register_mismatch
+Passwords do not match.
+-----
+register_failed
+Could not create the account. Please try again.
+-----
+register_taken
+That username is already taken.
+-----
 close
 Close
 -----

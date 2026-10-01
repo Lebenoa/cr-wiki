@@ -63,14 +63,13 @@ fn parse_ep(raw: &str) -> (i64, i64) {
     (if (1..=7).contains(&n) { n } else { 0 }, 0)
 }
 
-pub async fn list(
-    ctx: Ctx,
-    q: Query<CommonQuery>,
-) -> Result<Html<String>, AppError> {
+pub async fn list(ctx: Ctx, q: Query<CommonQuery>) -> Result<Html<String>, AppError> {
     let state = crate::state::state();
     let lang = ctx.lang.clone();
-    let page = q.page.unwrap_or(1).clamp(1, 10_000);
-    let offset = page.saturating_sub(1).saturating_mul(crate::section::PAGE_SIZE);
+    let page = crate::pagination::clamp_page(q.page);
+    let offset = page
+        .saturating_sub(1)
+        .saturating_mul(crate::section::PAGE_SIZE);
     let sort = match q.sort.as_deref() {
         Some(s @ ("score" | "coin" | "time" | "verified")) => s.to_string(),
         _ => "latest".to_string(),
@@ -132,10 +131,7 @@ pub async fn list(
     ))
 }
 
-pub async fn show(
-    ctx: Ctx,
-    Path(id): Path<i64>,
-) -> Result<Response, AppError> {
+pub async fn show(ctx: Ctx, Path(id): Path<i64>) -> Result<Response, AppError> {
     let state = crate::state::state();
     let found = builds::select_build(&state.db, &ctx.lang, id).await?;
 

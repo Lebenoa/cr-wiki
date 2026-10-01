@@ -6,12 +6,14 @@
 //! dev working directory they read does not exist in the test process; main
 //! adds them around the same routes.
 
+use axum::extract::DefaultBodyLimit;
 use axum::routing::{get, post};
 use axum::Router;
 use serde::{Deserialize, Deserializer};
 use tower_http::catch_panic::CatchPanicLayer;
 
 use crate::middleware;
+use crate::upload;
 pub mod admin;
 pub mod api;
 pub mod auth;
@@ -53,13 +55,30 @@ pub fn router() -> Router {
         .route("/builds/{id}", get(builds::show))
         .route("/login", get(auth::login_form).post(auth::login))
         .route("/register", get(auth::register_form).post(auth::register))
-        .route("/logout", get(auth::logout))
+        // GET logout with the SameSite=Lax session cookie lets any
+        // cross-site link end the session: Lax still rides a top-level GET
+        // navigation, so a linked /logout is a forced logout. POST only —
+        // Lax never sends the cookie on a cross-site POST, so a foreign
+        // page cannot forge it — matching /revoke-sessions below.
+        .route("/logout", post(auth::logout))
         .route("/revoke-sessions", post(auth::revoke_sessions))
         // the admin routes are registered before the catalog captures, so
         // /cookies/new is a form rather than a detail page for id "new"
         .route("/{section}/new", get(admin::new_form).post(admin::create))
-        .route("/{section}/{id}/combi/{row_id}/delete", post(admin::delete_combi))
-        .route("/{section}/upload", post(uploads::image))
+        .route(
+            "/{section}/{id}/combi/{row_id}/delete",
+            post(admin::delete_combi),
+        )
+        // the upload ceiling is declared here, not left to axum's 2 MB
+        // default: the handler's own check bounds a single field at
+        // MAX_BYTES, so the request limit only needs to cover the
+        // multipart envelope on top
+        .route(
+            "/{section}/upload",
+            post(uploads::image).layer(DefaultBodyLimit::max(
+                upload::MAX_BYTES.saturating_add(64 * 1024),
+            )),
+        )
         .route(
             "/{section}/{id}/edit",
             get(admin::edit_form).post(admin::update),
@@ -75,6 +94,8 @@ pub fn router() -> Router {
         // a panic in a handler would otherwise drop the connection with no
         // response at all; the client sees the 500 page instead
         .layer(CatchPanicLayer::custom(errors::panic_response))
+        // outermost, so even the panic page carries the baseline headers
+        .layer(axum::middleware::from_fn(middleware::security_headers))
 }
 
 /// Treats an empty parameter as absent.
@@ -239,6 +260,87 @@ mod tests {
         assert!(html.contains("<ol id=\"changelog-list\""));
         assert!(html.contains("rel=\"canonical\" href=\"http://localhost:6785/changelog\""));
         assert!(html.contains("hreflang=\"th\" href=\"http://localhost:6785/changelog?lang=th\""));
+    }
+
+    async fn post(uri: &str, body: &str) -> axum::response::Response {
+        router()
+            .oneshot(
+                Request::post(uri)
+                    .header(
+                        axum::http::header::CONTENT_TYPE,
+                        "application/x-www-form-urlencoded",
+                    )
+                    .body(Body::from(body.to_string()))
+                    .expect("request"),
+            )
+            .await
+            .expect("infallible")
+    }
+
+    /// Logout must be POST: with SameSite=Lax the session cookie still rides a
+    /// cross-site top-level GET, so a GET logout is a forced-logout vector. A
+    /// GET now 405s and a cookie-less POST degrades to the home redirect.
+    #[tokio::test]
+    async fn logout_is_post_only() {
+        state();
+        let res = get("/logout").await;
+        assert_eq!(res.status(), StatusCode::METHOD_NOT_ALLOWED);
+        let res = post("/logout", "").await;
+        assert_eq!(res.status(), StatusCode::SEE_OTHER);
+    }
+
+    /// The registration length floor is enforced before anything touches the
+    /// database: this no-DB state would 500 past the policy gate, so a 400 with
+    /// the password message proves the gate fired first.
+    #[tokio::test]
+    async fn register_enforces_min_lengths_before_touching_the_db() {
+        state();
+        let res = post(
+            "/register",
+            "username=ginger&password=short12&confirm_password=short12",
+        )
+        .await;
+        assert_eq!(res.status(), StatusCode::BAD_REQUEST);
+        let body = axum::body::to_bytes(res.into_body(), usize::MAX)
+            .await
+            .expect("body");
+        let html = String::from_utf8_lossy(&body);
+        assert!(
+            html.contains("Password must be at least 8 characters."),
+            "expected the min-length message, got: {html}"
+        );
+    }
+
+    /// Every response carries the security baselines — a page without
+    /// them (or whose CSP regresses) fails here, so the middleware cannot
+    /// silently drop out of the router.
+    #[tokio::test]
+    async fn responses_carry_security_headers() {
+        state();
+        let res = get("/changelog").await;
+        let headers = res.headers();
+        assert_eq!(
+            headers
+                .get("x-content-type-options")
+                .and_then(|v| v.to_str().ok()),
+            Some("nosniff")
+        );
+        assert_eq!(
+            headers.get("x-frame-options").and_then(|v| v.to_str().ok()),
+            Some("SAMEORIGIN")
+        );
+        let csp = headers
+            .get("content-security-policy")
+            .and_then(|v| v.to_str().ok())
+            .expect("CSP present");
+        assert!(csp.contains("object-src 'none'"));
+        assert!(csp.contains("frame-ancestors 'none'"));
+        // the Turnstile widget loads its script, iframe and token requests
+        // from challenges.cloudflare.com; a CSP that drops it breaks login
+        // and registration in release builds
+        assert!(csp.contains("script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com"));
+        assert!(csp.contains("frame-src https://challenges.cloudflare.com"));
+        assert!(csp.contains("connect-src 'self' https://challenges.cloudflare.com"));
     }
 
     /// The query string picker.js actually builds must parse. It sends an

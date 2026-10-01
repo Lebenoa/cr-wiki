@@ -33,7 +33,18 @@ pub struct Limiter {
     // one lock around the whole read-modify-write: per-entry locking would let
     // parallel requests read the same balance and spend one token per wave
     buckets: Mutex<HashMap<String, Bucket>>,
+    /// when the oversized-map idle sweep last ran; the sweep is throttled so
+    /// a sustained flood cannot turn every denied request into a full-map
+    /// scan under the lock
+    last_sweep: std::sync::atomic::AtomicI64,
 }
+
+/// The idle sweep runs at most this often while the map is past
+/// `sweep_above`. The memory bound is MAX_BUCKETS with oldest-eviction, not
+/// the sweep, so throttling it costs at most `SWEEP_INTERVAL` of stale idle
+/// buckets — and turns the flood path from O(n)-per-request back to O(1).
+#[cfg_attr(debug_assertions, allow(dead_code))]
+const SWEEP_INTERVAL_SECS: i64 = 30;
 
 #[cfg_attr(debug_assertions, allow(dead_code))]
 pub enum Decision {
@@ -47,6 +58,7 @@ impl Limiter {
         Self {
             cfg,
             buckets: Mutex::new(HashMap::new()),
+            last_sweep: std::sync::atomic::AtomicI64::new(0),
         }
     }
 
@@ -69,13 +81,21 @@ impl Limiter {
         let mut buckets = self.buckets.lock();
 
         // prune buckets idle past the TTL once the map grows; under normal
-        // traffic it stays small and no sweep ever runs. A flood of unique
-        // addresses must not grow the map without bound: past MAX_BUCKETS a
-        // new key evicts the least-recently-refilled entry (one scan, no
-        // allocation of key vectors).
-        if buckets.len() as i64 > self.cfg.sweep_above {
+        // traffic it stays small and no sweep ever runs. The sweep is
+        // throttled to once per SWEEP_INTERVAL while oversized: during a
+        // flood every bucket is fresh, so a per-request retain scans the
+        // whole map and removes nothing — pure O(n) CPU per request under
+        // the global lock. A flood of unique addresses must not grow the
+        // map without bound: past MAX_BUCKETS a new key evicts the
+        // least-recently-refilled entry (one scan, no allocation of key
+        // vectors).
+        use std::sync::atomic::Ordering;
+        if buckets.len() as i64 > self.cfg.sweep_above
+            && now.saturating_sub(self.last_sweep.load(Ordering::Relaxed)) >= SWEEP_INTERVAL_SECS
+        {
             let ttl = self.cfg.idle_ttl;
             buckets.retain(|_, b| now.saturating_sub(b.last_fill) <= ttl);
+            self.last_sweep.store(now, Ordering::Relaxed);
         }
         if !buckets.contains_key(ip) && buckets.len() >= MAX_BUCKETS {
             let oldest = buckets
@@ -153,6 +173,68 @@ mod tests {
             }
             // a different IP has its own bucket
             assert!(matches!(limiter.check("2.2.2.2"), Decision::Allow));
+        }
+    }
+
+    /// The oversized-map idle sweep is throttled (release path only, like
+    /// the drain test above): a flood must not pay a full-map retain on
+    /// every request. First check sweeps stale buckets; a second check
+    /// within SWEEP_INTERVAL leaves a freshly-staled bucket alone.
+    #[cfg(not(debug_assertions))]
+    #[test]
+    fn idle_sweep_is_throttled() {
+        let cfg = RateLimit {
+            capacity: 10.0,
+            refill: 1.0,
+            idle_ttl: 100,
+            sweep_above: 1,
+            trusted_proxies: Vec::new(),
+        };
+        let limiter = Limiter::new(cfg);
+
+        let mut map = limiter.buckets.lock();
+        for i in 0..5 {
+            map.insert(
+                format!("10.0.0.{i}"),
+                Bucket {
+                    tokens: 10.0,
+                    last_fill: now_unix() - 200,
+                },
+            );
+        }
+        drop(map);
+
+        // oversized + interval elapsed (last_sweep starts at 0): sweeps
+        limiter.check("10.0.0.9");
+        {
+            let map = limiter.buckets.lock();
+            assert!(
+                map.values()
+                    .all(|b| now_unix().saturating_sub(b.last_fill) <= 100),
+                "stale buckets must be swept on the first oversized check"
+            );
+            assert!(map.len() < 5, "sweep removed the stale entries");
+        }
+
+        // a new stale entry within the interval: throttled, so it survives
+        // until the next sweep window
+        {
+            let mut map = limiter.buckets.lock();
+            map.insert(
+                "10.0.0.8".to_string(),
+                Bucket {
+                    tokens: 10.0,
+                    last_fill: now_unix() - 200,
+                },
+            );
+        }
+        limiter.check("10.0.0.7");
+        {
+            let map = limiter.buckets.lock();
+            assert!(
+                map.contains_key("10.0.0.8"),
+                "sweep must not run every request once throttled"
+            );
         }
     }
 }

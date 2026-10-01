@@ -73,22 +73,35 @@ pub async fn image(ctx: Ctx, Path(section): Path<String>, mut form: Multipart) -
             )
                 .into_response();
         }
-        let name = upload::unique_name(&dir, &stem, ext);
-        if let Err(e) = std::fs::write(dir.join(&name), &bytes) {
-            tracing::warn!("upload: cannot write {name}: {e}");
-            return (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                Json(json!({ "error": "could not store image" })),
-            )
+        // the claim is atomic (create_new refuses to open an existing file
+        // for writing), so a concurrent upload racing for the same name
+        // retries the next candidate instead of clobbering a sprite
+        match upload::write_unique(&dir, &stem, ext, &bytes) {
+            Ok(Some(name)) => {
+                // the static handler already serves this directory, so the
+                // sprite is reachable immediately
+                return Json(json!({
+                    "image": name,
+                    "url": format!("/static/img/{}/{}", section.as_str(), name)
+                }))
                 .into_response();
+            }
+            Ok(None) => {
+                return (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Json(json!({ "error": "no free filename" })),
+                )
+                    .into_response();
+            }
+            Err(e) => {
+                tracing::warn!("upload: cannot write sprite for {stem}: {e}");
+                return (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Json(json!({ "error": "could not store image" })),
+                )
+                    .into_response();
+            }
         }
-        // the static handler already serves this directory, so the sprite is
-        // reachable immediately
-        return Json(json!({
-            "image": name,
-            "url": format!("/static/img/{}/{}", section.as_str(), name)
-        }))
-        .into_response();
     }
 
     (

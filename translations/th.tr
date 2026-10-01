@@ -253,6 +253,27 @@ already_have_account
 dont_have_account
 ยังไม่มีบัญชี?
 -----
+invalid_credentials
+ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง
+-----
+register_required
+กรุณากรอกชื่อผู้ใช้และรหัสผ่าน
+-----
+register_username_short
+ชื่อผู้ใช้ต้องมีความยาวอย่างน้อย 3 ตัวอักษร
+-----
+register_password_short
+รหัสผ่านต้องมีความยาวอย่างน้อย 8 ตัวอักษร
+-----
+register_mismatch
+รหัสผ่านไม่ตรงกัน
+-----
+register_failed
+ไม่สามารถสร้างบัญชีได้ กรุณาลองอีกครั้ง
+-----
+register_taken
+ชื่อผู้ใช้นี้ถูกใช้แล้ว
+-----
 close
 ปิด
 -----

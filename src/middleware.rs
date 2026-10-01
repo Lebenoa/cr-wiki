@@ -1,6 +1,6 @@
-//! The two layers every request goes through, in the order `before_request`
-//! applies them: rate limit first (a denied request should cost nothing
-//! further), then locale resolution.
+//! The layers every request goes through: rate limit first (a denied
+//! request should cost nothing further), then locale resolution, then the
+//! security baselines on the way out (see [`security_headers`]).
 
 use axum::extract::{ConnectInfo, Request};
 use axum::http::{header, HeaderValue, StatusCode};
@@ -33,6 +33,50 @@ pub async fn context(mut req: Request, next: Next) -> Response {
             res.headers_mut().append(header::SET_COOKIE, v);
         }
     }
+    res
+}
+
+/// Baselines every HTML response: clickjacking, MIME sniffing and referrer
+/// leakage are shut off at the header, and a CSP bounds what a page may
+/// load. The policy is deliberately permissive about scripts and styles —
+/// the templates ship inline `<script>` blocks and `onclick=` attributes,
+/// and the richtext renderer emits `style=` color spans — so `script-src`
+/// and `style-src` carry `'unsafe-inline'`; the value is in the harder
+/// defaults (`object-src 'none'`, `base-uri 'self'`, `frame-ancestors
+/// 'none'`, `form-action 'self'`) plus locking connect/img/font sources to
+/// the site, Google Fonts, and Cloudflare Turnstile (the login/register
+/// widget's script, iframe and token requests all live on
+/// `challenges.cloudflare.com`; gate those and auth fails closed in
+/// release builds, where the widget is actually enforced).
+pub async fn security_headers(req: Request, next: Next) -> Response {
+    let mut res = next.run(req).await;
+    let headers = res.headers_mut();
+    headers.insert(
+        header::X_CONTENT_TYPE_OPTIONS,
+        HeaderValue::from_static("nosniff"),
+    );
+    headers.insert(
+        header::X_FRAME_OPTIONS,
+        HeaderValue::from_static("SAMEORIGIN"),
+    );
+    headers.insert(
+        header::REFERRER_POLICY,
+        HeaderValue::from_static("strict-origin-when-cross-origin"),
+    );
+    headers.insert(
+        header::CONTENT_SECURITY_POLICY,
+        HeaderValue::from_static(
+            "default-src 'self'; \
+             script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com; \
+             style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; \
+             img-src 'self' data: https://challenges.cloudflare.com; \
+             font-src 'self' https://fonts.gstatic.com; \
+             connect-src 'self' https://challenges.cloudflare.com; \
+             frame-src https://challenges.cloudflare.com; \
+             object-src 'none'; base-uri 'self'; \
+             form-action 'self'; frame-ancestors 'none'",
+        ),
+    );
     res
 }
 

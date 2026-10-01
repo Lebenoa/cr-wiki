@@ -27,7 +27,7 @@ struct ChangelogPage {
 }
 
 pub async fn page(ctx: Ctx, q: Query<CommonQuery>) -> Html<String> {
-    let page = q.page.unwrap_or(1).clamp(1, 10_000);
+    let page = crate::pagination::clamp_page(q.page);
     let all = changelog::entries();
 
     let (entries, next_url) = match slice_page(page, crate::section::PAGE_SIZE, all.len()) {

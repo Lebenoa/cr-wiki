@@ -78,9 +78,10 @@ impl Sessions {
         self.lock().remove(key);
     }
 
-    /// Revokes every session belonging to one user id. Called on logout so
-    /// a stolen session token does not survive its owner logging out; login
-    /// deliberately does NOT call this — multiple devices stay signed in.
+    /// Revokes every session belonging to one user id. Called by the
+    /// account menu's revoke-all action, not by logout: logout ends only
+    /// the current session (`end`), so multi-device sign-in survives until
+    /// the owner explicitly revokes everywhere.
     pub fn end_all_for(&self, user_id: i64) {
         self.lock().retain(|_, e| e.user.id != user_id);
     }

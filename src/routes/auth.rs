@@ -12,6 +12,13 @@ use crate::session::{self, SessionUser, SESSION_COOKIE};
 
 use super::errors::AppError;
 
+/// A name has to be typeable by humans and hard to squat; 3 keeps
+/// "am" and "zz" out while letting every two-letter word-that-matters in.
+pub const MIN_USERNAME_LEN: usize = 3;
+/// Argon2id has no length floor of its own; 8 is the conventional minimum
+/// for anything a visitor can brute-force against a stolen hash list.
+pub const MIN_PASSWORD_LEN: usize = 8;
+
 #[derive(Template)]
 #[template(path = "auth.html")]
 struct AuthPage {
@@ -106,10 +113,25 @@ pub async fn register_form(ctx: Ctx) -> Response {
     page(ctx, "register", "")
 }
 
-pub async fn login(
-    ctx: Ctx,
-    Form(form): Form<LoginForm>,
-) -> Result<Response, AppError> {
+/// The registration policy gate, pure so it is testable without a server:
+/// `None` passes, `Some(key)` is the .tr key for the BAD_REQUEST response.
+/// One-character accounts are squatting and brute-force bait; the only cost
+/// of a couple of characters is a keystroke, so the floor is cheap. Login
+/// deliberately does not enforce it — old accounts must keep working.
+fn register_policy(username: &str, password: &str) -> Option<&'static str> {
+    if username.is_empty() || password.is_empty() {
+        return Some("register_required");
+    }
+    if username.chars().count() < MIN_USERNAME_LEN {
+        return Some("register_username_short");
+    }
+    if password.chars().count() < MIN_PASSWORD_LEN {
+        return Some("register_password_short");
+    }
+    None
+}
+
+pub async fn login(ctx: Ctx, Form(form): Form<LoginForm>) -> Result<Response, AppError> {
     let state = crate::state::state();
     if !crate::turnstile::verify(&state.cfg, form.turnstile.as_deref(), "login").await {
         return Ok((
@@ -155,29 +177,25 @@ pub async fn login(
     Ok(res)
 }
 
-pub async fn register(
-    ctx: Ctx,
-    Form(form): Form<RegisterForm>,
-) -> Result<Response, AppError> {
+pub async fn register(ctx: Ctx, Form(form): Form<RegisterForm>) -> Result<Response, AppError> {
     let state = crate::state::state();
-    if !crate::turnstile::verify(&state.cfg, form.turnstile.as_deref(), "register").await {
-        return Ok((
-            StatusCode::FORBIDDEN,
-            page(ctx, "register", "turnstile_form_failed"),
-        )
-            .into_response());
-    }
-    if form.username.is_empty() || form.password.is_empty() {
-        return Ok((
-            StatusCode::BAD_REQUEST,
-            page(ctx, "register", "register_required"),
-        )
-            .into_response());
+    // cheap local validation before the network round-trip: a malformed
+    // submission gets its precise 400 without spending a CAPTCHA check, and
+    // a complete one still needs the token below
+    if let Some(key) = register_policy(&form.username, &form.password) {
+        return Ok((StatusCode::BAD_REQUEST, page(ctx, "register", key)).into_response());
     }
     if form.password != form.confirm_password {
         return Ok((
             StatusCode::BAD_REQUEST,
             page(ctx, "register", "register_mismatch"),
+        )
+            .into_response());
+    }
+    if !crate::turnstile::verify(&state.cfg, form.turnstile.as_deref(), "register").await {
+        return Ok((
+            StatusCode::FORBIDDEN,
+            page(ctx, "register", "turnstile_form_failed"),
         )
             .into_response());
     }
@@ -260,6 +278,31 @@ fn set_session_cookie(headers: &mut HeaderMap, key: &str) {
 #[cfg_attr(test, allow(clippy::unwrap_used, clippy::expect_used, clippy::panic))]
 mod tests {
     use super::*;
+
+    /// The one-character accounts the review flagged are rejected; an
+    /// existing shorter account can still log in because login never calls
+    /// the policy.
+    #[test]
+    fn register_policy_enforces_lengths() {
+        assert_eq!(
+            register_policy("", "x".repeat(8).as_str()),
+            Some("register_required")
+        );
+        assert_eq!(
+            register_policy("ab", "password"),
+            Some("register_username_short")
+        );
+        assert_eq!(
+            register_policy("abc", "short1"),
+            Some("register_password_short")
+        );
+        assert_eq!(
+            register_policy("ようこそ", "password"),
+            None,
+            "3 chars counts characters, not bytes"
+        );
+        assert_eq!(register_policy("abc", "x".repeat(8).as_str()), None);
+    }
 
     /// Argon2 in PHC form, through `SurrealDB`'s crypto functions: a hash
     /// verifies, a wrong password does not, and two hashes of the same

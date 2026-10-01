@@ -6,6 +6,19 @@
 //! slice. i64 here with checked arithmetic, and past-the-end is a `None`
 //! rather than a bad window.
 
+/// The largest page any paged surface will serve. Deep offsets past the
+/// last real page are empty anyway; the cap keeps a hostile `?page=` from
+/// turning into absurd arithmetic (and the V original's 32-bit wrap).
+pub const MAX_PAGE: i64 = 10_000;
+
+/// The query-derived page, clamped to `1..=MAX_PAGE`.
+///
+/// Every paged surface (catalog, builds, changelog, picker) reads its page
+/// through this one helper so the windows cannot drift apart.
+pub fn clamp_page(page: Option<i64>) -> i64 {
+    page.unwrap_or(1).clamp(1, MAX_PAGE)
+}
+
 pub fn slice_page(page: i64, size: i64, total: usize) -> Option<(usize, usize)> {
     let total = i64::try_from(total).ok()?;
     if page < 1 || size < 1 || total <= 0 {

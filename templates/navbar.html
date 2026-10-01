@@ -26,8 +26,7 @@
     </div>
 
     <div class="flex shrink-0 items-center gap-6 max-md:gap-3">
-        <button id="search-toggle" type="button" class="btn-secondary size-12 md:hidden"
-            aria-label="{{ ctx.l.t("navbar_search_toggle") }}" aria-expanded="false">
+        <button id="search-toggle" type="button" class="btn-secondary size-12 md:hidden" aria-label="{{ ctx.l.t("navbar_search_toggle") }}" aria-expanded="false">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="m21 21-4.34-4.34" />
@@ -63,8 +62,7 @@
             </div>
         </div>
 
-        <button type="button" class="btn-primary size-12 md:hidden" popovertarget="mobile-nav"
-            aria-label="{{ ctx.l.t("wiki") }}">&#9776;</button>
+        <button type="button" class="btn-primary size-12 md:hidden" popovertarget="mobile-nav" aria-label="{{ ctx.l.t("wiki") }}">&#9776;</button>
         <div id="mobile-nav" popover
             class="p-4 m-bs-1 inline-64 bg-background text-foreground rounded border border-accent transition-discrete transition-all duration-300 flex-col gap-2 hidden popover-open:flex">
             {% for section in ctx.wiki_sections() %}
@@ -74,16 +72,18 @@
             <a href="/changelog" class="{{ ctx.nav_class("changelog") }}">{{ ctx.l.t("changelog_link") }}</a>
         </div>
 
-        <button class="btn-primary size-12" popovertarget="account-dropdown"
-            aria-label="{{ ctx.l.t("login") }}">&#128100;</button>
+        <button class="btn-primary size-12" popovertarget="account-dropdown" aria-label="{{ ctx.l.t("login")
+            }}">&#128100;</button>
         <div id="account-dropdown" popover
             class="p-4 m-bs-1 inline-64 bg-background text-foreground rounded border border-accent transition-discrete transition-all duration-300 flex-col gap-2 hidden popover-open:flex">
             {% if ctx.signed_in() %}
             <p class="btn">{{ ctx.username() }}</p>
-            <a href="/logout" class="btn-secondary">{{ ctx.l.t("logout") }}</a>
+            <form method="post" action="/logout" class="mt-1">
+                <button type="submit" class="btn-secondary w-full">{{ ctx.l.t("logout") }}</button>
+            </form>
             <form method="post" action="/revoke-sessions" class="mt-1">
-                <button type="submit" class="btn-secondary text-xs w-full"
-                    title="{{ ctx.l.t("revoke_sessions_hint") }}">{{ ctx.l.t("revoke_all_sessions") }}</button>
+                <button type="submit" class="btn-secondary text-xs w-full" title="{{ ctx.l.t("revoke_sessions_hint")
+                    }}">{{ ctx.l.t("revoke_all_sessions") }}</button>
             </form>
             {% else %}
             <div class="flex flex-col gap-2">
@@ -92,12 +92,11 @@
             </div>
             {% endif %}
 
-            <button class="btn hover:bg-secondary/20" command="show-modal"
-                commandfor="language-dropdown"
+            <button class="btn hover:bg-secondary/20" command="show-modal" commandfor="language-dropdown"
                 onclick="document.getElementById('account-dropdown')?.hidePopover()">
                 {{ ctx.l.t("language") }}:
-                <span class="inline-block size-5 rounded-full overflow-hidden shrink-0 ml-2"
-                    aria-hidden="true">{{ ctx.lang_flag(ctx.lang)|safe }}</span>
+                <span class="inline-block size-5 rounded-full overflow-hidden shrink-0 ml-2" aria-hidden="true">{{
+                    ctx.lang_flag(ctx.lang)|safe }}</span>
                 <span class="font-bold uppercase ml-2">{{ ctx.lang }}</span>
             </button>
 
@@ -140,9 +139,9 @@
                 {% for opt in ctx.lang_options() %}
                 <a hreflang="{{ opt.code }}" href="{{ ctx.lang_switch_url(opt.code) }}"
                     class="flex items-center gap-2 px-4 py-2 rounded {% if opt.code == ctx.lang %}bg-primary{% else %}bg-secondary/30 hover:bg-secondary/50{% endif %} text-foreground transition-colors"
-                    {% if opt.code == ctx.lang %}aria-current="true"{% endif %}>
-                    <span class="inline-block size-5 rounded-full overflow-hidden shrink-0"
-                        aria-hidden="true">{{ opt.flag|safe }}</span>
+                    {% if opt.code==ctx.lang %}aria-current="true" {% endif %}>
+                    <span class="inline-block size-5 rounded-full overflow-hidden shrink-0" aria-hidden="true">{{
+                        opt.flag|safe }}</span>
                     {{ opt.display }}
                 </a>
                 {% endfor %}
@@ -156,11 +155,13 @@
             class="hidden open:flex flex-col gap-4 m-auto p-6 w-[min(92vw,34rem)] max-h-[85vh] overflow-y-auto rounded-xl border border-accent/30 bg-surface text-foreground shadow-2xl backdrop:bg-black backdrop:opacity-40">
             <div class="flex items-center justify-between gap-4">
                 <h2 class="font-headline text-accent text-xl">{{ ctx.l.t("theme_customize") }}</h2>
-                <button type="button" onclick="this.closest('dialog').close()" class="btn-secondary size-8">&#10005;</button>
+                <button type="button" onclick="this.closest('dialog').close()"
+                    class="btn-secondary size-8">&#10005;</button>
             </div>
             <label class="flex items-center justify-between gap-3 text-sm">
                 <span class="font-label uppercase text-foreground-muted">{{ ctx.l.t("theme_base") }}</span>
-                <select data-theme-base class="bg-surface border-2 border-primary/30 rounded-xl py-2 px-3 text-foreground">
+                <select data-theme-base
+                    class="bg-surface border-2 border-primary/30 rounded-xl py-2 px-3 text-foreground">
                     {% for theme in ctx.themes() %}
                     <option value="{{ theme }}">{{ ctx.l.t(ctx.theme_key(theme).as_str()) }}</option>
                     {% endfor %}

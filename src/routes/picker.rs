@@ -133,10 +133,7 @@ pub struct PickedSlot {
 /// fetching this with the current selection in the query string. The slots
 /// resolve through one batched lookup per kind (the same `names_for` the
 /// detail pages use) instead of one query per slot.
-pub async fn preview(
-    ctx: Ctx,
-    q: Query<CommonQuery>,
-) -> Html<String> {
+pub async fn preview(ctx: Ctx, q: Query<CommonQuery>) -> Html<String> {
     let state = crate::state::state();
     let wanted: Vec<(&'static str, &'static str, i64)> = vec![
         ("cookie", "cookies", q.cookie.unwrap_or(0)),
@@ -222,7 +219,7 @@ pub async fn options_grid(
         Some(t @ ("normal" | "evo")) => t.to_string(),
         _ => "all".to_string(),
     };
-    let page = q.page.unwrap_or(1).clamp(1, 10_000);
+    let page = crate::pagination::clamp_page(q.page);
     let sel = q.sel.unwrap_or(0);
     let partner = q.partner.unwrap_or(0);
 
