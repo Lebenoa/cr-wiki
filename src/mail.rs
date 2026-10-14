@@ -71,6 +71,17 @@ fn capped(body: &str, cap: usize) -> String {
 /// `false` — there is nothing useful to tell the visitor, and saying more
 /// would confirm whether the address exists.
 pub async fn send(cfg: &Config, to: &str, mail: &Mail) -> bool {
+    match cfg.email.transport.as_str() {
+        "api" => send_api(cfg, to, mail).await,
+        "smtp" => send_smtp(cfg, to, mail).await,
+        other => {
+            tracing::error!(transport = other, "email: unsupported transport");
+            false
+        }
+    }
+}
+
+async fn send_api(cfg: &Config, to: &str, mail: &Mail) -> bool {
     if cfg.email.api_key.is_empty() {
         if cfg!(debug_assertions) {
             tracing::info!(
@@ -79,15 +90,12 @@ pub async fn send(cfg: &Config, to: &str, mail: &Mail) -> bool {
                 mail.text
             );
         } else {
-            tracing::error!(
-                to = %mask(to),
-                "email: no [email] api_key configured; the message was not sent"
-            );
+            tracing::error!(to = %mask(to), "email: no API key configured; message not sent");
         }
         return false;
     }
     if cfg.email.from.is_empty() {
-        tracing::error!("email: [email] from is empty; the provider cannot accept this send");
+        tracing::error!("email: [email] from is empty");
         return false;
     }
 
@@ -107,22 +115,112 @@ pub async fn send(cfg: &Config, to: &str, mail: &Mail) -> bool {
 
     match res {
         Ok(r) if r.status().is_success() => {
-            tracing::info!(to = %mask(to), "email: message accepted by the provider");
+            tracing::info!(to = %mask(to), "email: message accepted by API provider");
             true
         }
         Ok(r) => {
             let status = r.status();
             let body = r.text().await.unwrap_or_default();
             tracing::error!(
-                to = %mask(to),
-                http_status = status.as_u16(),
+                to = %mask(to), http_status = status.as_u16(),
                 reason = %capped(&body, ERROR_BODY_CAP),
-                "email: the provider refused the send"
+                "email: API provider refused the send"
             );
             false
         }
         Err(e) => {
-            tracing::error!(to = %mask(to), "email: send failed: {e}");
+            tracing::error!(to = %mask(to), "email: API send failed: {e}");
+            false
+        }
+    }
+}
+
+async fn send_smtp(cfg: &Config, to: &str, mail: &Mail) -> bool {
+    use lettre::{
+        message::{header::ContentType, Mailbox, MultiPart, SinglePart},
+        transport::smtp::authentication::Credentials,
+        AsyncSmtpTransport, AsyncTransport, Tokio1Executor,
+    };
+
+    if cfg.email.smtp_host.is_empty()
+        || cfg.email.smtp_username.is_empty()
+        || cfg.email.smtp_password.is_empty()
+        || cfg.email.from.is_empty()
+    {
+        tracing::error!("email: SMTP host, credentials, and from are required");
+        return false;
+    }
+
+    let from: Mailbox = match cfg.email.from.parse() {
+        Ok(address) => address,
+        Err(e) => {
+            tracing::error!("email: invalid from mailbox: {e}");
+            return false;
+        }
+    };
+    let to: Mailbox = match to.parse() {
+        Ok(address) => address,
+        Err(e) => {
+            tracing::error!("email: invalid recipient mailbox: {e}");
+            return false;
+        }
+    };
+    let masked_to = mask(&to.to_string());
+    let message = match lettre::Message::builder()
+        .from(from)
+        .to(to)
+        .subject(&mail.subject)
+        .multipart(
+            MultiPart::alternative()
+                .singlepart(
+                    SinglePart::builder()
+                        .header(ContentType::TEXT_PLAIN)
+                        .body(mail.text.clone()),
+                )
+                .singlepart(
+                    SinglePart::builder()
+                        .header(ContentType::TEXT_HTML)
+                        .body(mail.html.clone()),
+                ),
+        ) {
+        Ok(message) => message,
+        Err(e) => {
+            tracing::error!("email: SMTP message build failed: {e}");
+            return false;
+        }
+    };
+
+    let builder = match cfg.email.smtp_tls.as_str() {
+        "starttls" => AsyncSmtpTransport::<Tokio1Executor>::starttls_relay(&cfg.email.smtp_host),
+        "tls" => AsyncSmtpTransport::<Tokio1Executor>::relay(&cfg.email.smtp_host),
+        mode => {
+            tracing::error!(smtp_tls = mode, "email: unsupported SMTP TLS mode");
+            return false;
+        }
+    };
+    let mut builder = match builder {
+        Ok(builder) => builder.port(cfg.email.smtp_port),
+        Err(e) => {
+            tracing::error!("email: invalid SMTP relay host: {e}");
+            return false;
+        }
+    };
+    builder = builder.credentials(Credentials::new(
+        cfg.email.smtp_username.clone(),
+        cfg.email.smtp_password.clone(),
+    ));
+    let transport = builder.build();
+    match tokio::time::timeout(SEND_TIMEOUT, transport.send(message)).await {
+        Ok(Ok(_)) => {
+            tracing::info!(to = %masked_to, "email: message accepted by SMTP server");
+            true
+        }
+        Ok(Err(e)) => {
+            tracing::error!(to = %masked_to, "email: SMTP send failed: {e}");
+            false
+        }
+        Err(_) => {
+            tracing::error!(to = %masked_to, "email: SMTP send timed out");
             false
         }
     }
@@ -133,6 +231,7 @@ pub async fn send(cfg: &Config, to: &str, mail: &Mail) -> bool {
 #[cfg_attr(test, allow(clippy::unwrap_used, clippy::expect_used, clippy::panic))]
 mod tests {
     use super::*;
+    use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 
     fn mail() -> Mail {
         Mail {
@@ -140,6 +239,67 @@ mod tests {
             text: "https://cookierun.example/reset-password?token=abc".into(),
             html: "<p>reset</p>".into(),
         }
+    }
+
+    #[test]
+    fn smtp_transport_defaults_to_authenticated_starttls() {
+        let cfg = Config::default();
+        assert_eq!(cfg.email.transport, "api");
+        assert_eq!(cfg.email.smtp_port, 587);
+        assert_eq!(cfg.email.smtp_tls, "starttls");
+    }
+
+    #[tokio::test]
+    async fn smtp_requires_credentials_before_connecting() {
+        let mut cfg = Config::default();
+        cfg.email.transport = "smtp".into();
+        assert!(!send(&cfg, "ginger@cookie.run", &mail()).await);
+    }
+
+    #[tokio::test]
+    async fn smtp_rejects_plaintext_tls_mode() {
+        let mut cfg = Config::default();
+        cfg.email.transport = "smtp".into();
+        cfg.email.smtp_host = "mail.lebenoa.com".into();
+        cfg.email.smtp_username = "account".into();
+        cfg.email.smtp_password = "secret".into();
+        cfg.email.from = "Wiki <no-reply@lebenoa.com>".into();
+        cfg.email.smtp_tls = "none".into();
+        assert!(!send(&cfg, "ginger@cookie.run", &mail()).await);
+    }
+
+    #[tokio::test]
+    async fn smtp_starttls_requests_tls_before_authentication() {
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let address = listener.local_addr().unwrap();
+        let server = tokio::spawn(async move {
+            let (stream, _) = listener.accept().await.unwrap();
+            let (read, mut write) = stream.into_split();
+            let mut read = BufReader::new(read);
+            write.write_all(b"220 localhost ESMTP\r\n").await.unwrap();
+            let mut line = String::new();
+            read.read_line(&mut line).await.unwrap();
+            assert!(line.starts_with("EHLO "), "{line}");
+            write
+                .write_all(b"250-localhost\r\n250-STARTTLS\r\n250 AUTH PLAIN LOGIN\r\n")
+                .await
+                .unwrap();
+            line.clear();
+            read.read_line(&mut line).await.unwrap();
+            assert!(line.starts_with("STARTTLS"), "{line}");
+            write.write_all(b"220 begin TLS\r\n").await.unwrap();
+        });
+
+        let mut cfg = Config::default();
+        cfg.email.transport = "smtp".into();
+        cfg.email.smtp_host = "localhost".into();
+        cfg.email.smtp_port = address.port();
+        cfg.email.smtp_tls = "starttls".into();
+        cfg.email.smtp_username = "account".into();
+        cfg.email.smtp_password = "secret".into();
+        cfg.email.from = "Wiki <no-reply@lebenoa.com>".into();
+        assert!(!send(&cfg, "ginger@cookie.run", &mail()).await);
+        server.await.unwrap();
     }
 
     /// The body is what the provider reads, so its fields are pinned: Resend

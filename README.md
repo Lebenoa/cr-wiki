@@ -148,15 +148,21 @@ sweep_above = 2048
 trusted_proxies = []                   # proxy IPs whose forwarded headers count
 
 [email]
-api_key = ""                           # EMAIL_API_KEY overrides (empty = no mail)
-from = ""                              # EMAIL_FROM overrides, e.g. "Wiki <no-reply@example.com>"
-endpoint = "https://api.resend.com/emails"   # EMAIL_ENDPOINT overrides
-site_url = ""                          # EMAIL_SITE_URL overrides; set it in production
+transport = "api"                    # api or smtp
+api_key = ""                         # EMAIL_API_KEY (API mode only)
+from = ""                            # EMAIL_FROM, e.g. "Wiki <no-reply@lebenoa.com>"
+endpoint = "https://api.resend.com/emails" # EMAIL_ENDPOINT (API mode only)
+smtp_host = ""                       # EMAIL_SMTP_HOST, e.g. mail.lebenoa.com
+smtp_port = 587                       # EMAIL_SMTP_PORT
+smtp_tls = "starttls"                 # EMAIL_SMTP_TLS: starttls or tls
+smtp_username = ""                   # EMAIL_SMTP_USERNAME
+smtp_password = ""                   # EMAIL_SMTP_PASSWORD; keep secret
+site_url = ""                        # EMAIL_SITE_URL; set in production
 ```
 
-`[turnstile] hostnames` is the comma-separated frontend-hostname allowlist checked against siteverify — production deployments must set the real domain (never `localhost`), or every protected submission fails closed.
+`[email]` sends reset and account-security notices through either a Resend-compatible JSON API (`transport = "api"`) or authenticated SMTP (`transport = "smtp"`). For Stalwart, use the submission listener and credentials for a Stalwart account. Typical settings are `smtp_host = "mail.lebenoa.com"`, port `587` with `smtp_tls = "starttls"`, or port `465` with `smtp_tls = "tls"`. Plaintext SMTP is not supported. Set `from` to a sender Stalwart permits for that account and set `site_url` to the public wiki URL. The SMTP password can be provided as `EMAIL_SMTP_PASSWORD` rather than stored in the config file.
 
-`[email]` carries password-reset and account-security email: a JSON POST to `endpoint` (Resend's `POST /emails` by default), authenticated with `api_key` and sent from `from`. Messages use app templates and translations. Delivery failures are logged and do not block completed password or email changes. With no key, mail is not sent; debug builds log the reset link for local development, while release builds log an error.
+Delivery failures are logged and do not block completed password or email changes. With no transport credentials, mail is not sent; debug builds log the reset link for local development, while release builds log an error.
 
 ## Development
 

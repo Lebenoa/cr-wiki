@@ -1,7 +1,5 @@
-//! `Config.toml`: host/port, the `SurrealDB` server this app talks to (never an
-//! embedded engine — always `ws://` or `http://` over the wire), Turnstile
-//! credentials, the rate-limit tuning, and the sender the password-reset mail
-//! goes out through.
+//! `Config.toml`: host/port, external SurrealDB, Turnstile, rate limiting,
+//! and outgoing email API or authenticated SMTP settings.
 
 use serde::Deserialize;
 
@@ -55,38 +53,44 @@ pub struct Turnstile {
     pub hostnames: String,
 }
 
-/// Outgoing mail. The password-reset link is the only message the app sends,
-/// and it goes out as a JSON POST to `endpoint` — Resend's
-/// `POST https://api.resend.com/emails` by default — with the message text
-/// rendered by the app's own templates, so no copy lives in a provider
-/// dashboard.
+/// Outgoing app email through a JSON API or authenticated SMTP submission.
 #[derive(Debug, Clone, Deserialize)]
 #[serde(default)]
 pub struct Email {
-    /// Provider API key (`re_...` for Resend), sent as `Authorization: Bearer`.
-    /// Empty sends nothing at all: a debug build logs the reset link so the
-    /// flow stays walkable without an account, and a release build logs an
-    /// error. The visitor sees the same neutral page either way, so a
-    /// misconfigured deployment cannot leak which addresses exist.
+    /// Transport: `api` by default, or `smtp`.
+    pub transport: String,
+    /// API bearer key, used only by the `api` transport.
     pub api_key: String,
-    /// The `From` mailbox: `Cookie Run Wiki <no-reply@example.com>`. Resend
-    /// rejects a sender the account has not verified.
+    /// The sender mailbox, e.g. `Cookie Run Wiki <no-reply@example.com>`.
     pub from: String,
-    /// Where sends are posted. Only a test or a different provider changes it.
+    /// JSON API endpoint, used only by the `api` transport.
     pub endpoint: String,
-    /// Absolute site URL the reset link is built from, e.g.
-    /// `https://cookierun.example`. Empty falls back to the request's own
-    /// host, and a forged `Host` header would then be mailed to the visitor as
-    /// the place to type a new password — set it in production.
+    /// SMTP relay host, e.g. `mail.lebenoa.com`.
+    pub smtp_host: String,
+    /// Submission port, normally 587 (STARTTLS) or 465 (implicit TLS).
+    pub smtp_port: u16,
+    /// `starttls` for port 587 or `tls` for port 465. Plaintext is unsupported.
+    pub smtp_tls: String,
+    /// SMTP AUTH username.
+    pub smtp_username: String,
+    /// SMTP AUTH password.
+    pub smtp_password: String,
+    /// Absolute public site URL used to build reset links.
     pub site_url: String,
 }
 
 impl Default for Email {
     fn default() -> Self {
         Self {
+            transport: "api".into(),
             api_key: String::new(),
             from: String::new(),
             endpoint: "https://api.resend.com/emails".into(),
+            smtp_host: String::new(),
+            smtp_port: 587,
+            smtp_tls: "starttls".into(),
+            smtp_username: String::new(),
+            smtp_password: String::new(),
             site_url: String::new(),
         }
     }
@@ -188,8 +192,34 @@ impl Config {
         // the reset mail's sender. A key set here rather than in a file keeps
         // the secret out of the deployment bundle; the endpoint override is
         // what lets a test point the sender at a stub.
+        if let Ok(v) = std::env::var("EMAIL_TRANSPORT") {
+            if !v.is_empty() {
+                cfg.email.transport = v;
+            }
+        }
         if let Ok(v) = std::env::var("EMAIL_API_KEY") {
             cfg.email.api_key = v;
+        }
+        if let Ok(v) = std::env::var("EMAIL_SMTP_HOST") {
+            if !v.is_empty() {
+                cfg.email.smtp_host = v;
+            }
+        }
+        if let Ok(v) = std::env::var("EMAIL_SMTP_PORT") {
+            if let Ok(port) = v.parse() {
+                cfg.email.smtp_port = port;
+            }
+        }
+        if let Ok(v) = std::env::var("EMAIL_SMTP_TLS") {
+            if !v.is_empty() {
+                cfg.email.smtp_tls = v;
+            }
+        }
+        if let Ok(v) = std::env::var("EMAIL_SMTP_USERNAME") {
+            cfg.email.smtp_username = v;
+        }
+        if let Ok(v) = std::env::var("EMAIL_SMTP_PASSWORD") {
+            cfg.email.smtp_password = v;
         }
         if let Ok(v) = std::env::var("EMAIL_FROM") {
             cfg.email.from = v;
