@@ -94,6 +94,15 @@ pub struct RegisterForm {
     pub turnstile: Option<String>,
 }
 
+/// The error paragraph on its own, for the htmx form: the form swaps it into
+/// `#form-error`, so a rejected attempt does not re-render the page (and does
+/// not throw away what the visitor already typed).
+#[derive(Template)]
+#[template(path = "auth_error.html")]
+struct AuthError {
+    message: String,
+}
+
 fn page(ctx: Ctx, mode: &str, error: &str) -> Response {
     let html = AuthPage {
         ctx,
@@ -103,6 +112,41 @@ fn page(ctx: Ctx, mode: &str, error: &str) -> Response {
     .render()
     .unwrap_or_else(|e| format!("template error: {e}"));
     Html(html).into_response()
+}
+
+/// One rejection, both shapes: the htmx form gets just the message to swap
+/// into `#form-error`, everything else gets the whole page. The status code is
+/// the same either way — htmx only withholds a swap for 204/304, so a 400
+/// still reaches the `#form-error` div.
+fn auth_error(ctx: &Ctx, status: StatusCode, mode: &str, key: &str) -> Response {
+    if ctx.is_fragment() {
+        let html = AuthError {
+            message: ctx.l.t(key),
+        }
+        .render()
+        .unwrap_or_else(|e| format!("template error: {e}"));
+        (status, Html(html)).into_response()
+    } else {
+        (status, page(ctx.clone(), mode, key)).into_response()
+    }
+}
+
+/// Where a successful sign-in lands. htmx fetches follow the 303 themselves
+/// and hand the index page back to a form whose `hx-swap` drops it: the
+/// visitor would sit on /login with a valid session and no navigation at all.
+/// `HX-Redirect` is read before any swap and makes htmx navigate for real, so
+/// an htmx request gets a 200 carrying it; every other client keeps the plain
+/// 303 the browser follows on its own.
+fn home_response(ctx: &Ctx) -> Response {
+    if ctx.htmx {
+        let mut res = StatusCode::OK.into_response();
+        // a constant, so no request input can reach this header value
+        res.headers_mut()
+            .insert("HX-Redirect", HeaderValue::from_static("/"));
+        res
+    } else {
+        Redirect::to("/").into_response()
+    }
 }
 
 pub async fn login_form(ctx: Ctx) -> Response {
@@ -134,18 +178,20 @@ fn register_policy(username: &str, password: &str) -> Option<&'static str> {
 pub async fn login(ctx: Ctx, Form(form): Form<LoginForm>) -> Result<Response, AppError> {
     let state = crate::state::state();
     if !crate::turnstile::verify(&state.cfg, form.turnstile.as_deref(), "login").await {
-        return Ok((
+        return Ok(auth_error(
+            &ctx,
             StatusCode::FORBIDDEN,
-            page(ctx, "login", "turnstile_form_failed"),
-        )
-            .into_response());
+            "login",
+            "turnstile_form_failed",
+        ));
     }
     if form.username.is_empty() || form.password.is_empty() {
-        return Ok((
+        return Ok(auth_error(
+            &ctx,
             StatusCode::BAD_REQUEST,
-            page(ctx, "login", "invalid_credentials"),
-        )
-            .into_response());
+            "login",
+            "invalid_credentials",
+        ));
     }
     let found = db::find_user(&state.db, &form.username).await?;
 
@@ -153,18 +199,20 @@ pub async fn login(ctx: Ctx, Form(form): Form<LoginForm>) -> Result<Response, Ap
         // no such user: still pay for a hash, so the answer takes as long as
         // a real check and cannot be told apart by timing
         session::waste_time(&state.db, &form.password).await;
-        return Ok((
+        return Ok(auth_error(
+            &ctx,
             StatusCode::NOT_FOUND,
-            page(ctx, "login", "invalid_credentials"),
-        )
-            .into_response());
+            "login",
+            "invalid_credentials",
+        ));
     };
     if !session::verify_password(&state.db, &form.password, &user.password).await {
-        return Ok((
+        return Ok(auth_error(
+            &ctx,
             StatusCode::NOT_FOUND,
-            page(ctx, "login", "invalid_credentials"),
-        )
-            .into_response());
+            "login",
+            "invalid_credentials",
+        ));
     }
 
     let key = state.sessions.start(SessionUser {
@@ -172,7 +220,7 @@ pub async fn login(ctx: Ctx, Form(form): Form<LoginForm>) -> Result<Response, Ap
         username: user.username,
         is_admin: user.is_admin,
     });
-    let mut res = Redirect::to("/").into_response();
+    let mut res = home_response(&ctx);
     set_session_cookie(res.headers_mut(), &key);
     Ok(res)
 }
@@ -183,49 +231,53 @@ pub async fn register(ctx: Ctx, Form(form): Form<RegisterForm>) -> Result<Respon
     // submission gets its precise 400 without spending a CAPTCHA check, and
     // a complete one still needs the token below
     if let Some(key) = register_policy(&form.username, &form.password) {
-        return Ok((StatusCode::BAD_REQUEST, page(ctx, "register", key)).into_response());
+        return Ok(auth_error(&ctx, StatusCode::BAD_REQUEST, "register", key));
     }
     if form.password != form.confirm_password {
-        return Ok((
+        return Ok(auth_error(
+            &ctx,
             StatusCode::BAD_REQUEST,
-            page(ctx, "register", "register_mismatch"),
-        )
-            .into_response());
+            "register",
+            "register_mismatch",
+        ));
     }
     if !crate::turnstile::verify(&state.cfg, form.turnstile.as_deref(), "register").await {
-        return Ok((
+        return Ok(auth_error(
+            &ctx,
             StatusCode::FORBIDDEN,
-            page(ctx, "register", "turnstile_form_failed"),
-        )
-            .into_response());
+            "register",
+            "turnstile_form_failed",
+        ));
     }
     let hash = match session::hash_password(&state.db, &form.password).await {
         Ok(h) => h,
         Err(e) => {
             tracing::error!("password hash failed: {e}");
-            return Ok((
+            return Ok(auth_error(
+                &ctx,
                 StatusCode::INTERNAL_SERVER_ERROR,
-                page(ctx, "register", "register_failed"),
-            )
-                .into_response());
+                "register",
+                "register_failed",
+            ));
         }
     };
 
     let created = db::create_user(&state.db, &form.username, &hash).await?;
 
     let Some(user) = created else {
-        return Ok((
+        return Ok(auth_error(
+            &ctx,
             StatusCode::BAD_REQUEST,
-            page(ctx, "register", "register_taken"),
-        )
-            .into_response());
+            "register",
+            "register_taken",
+        ));
     };
     let key = state.sessions.start(SessionUser {
         id: user.id,
         username: user.username,
         is_admin: user.is_admin,
     });
-    let mut res = Redirect::to("/").into_response();
+    let mut res = home_response(&ctx);
     set_session_cookie(res.headers_mut(), &key);
     Ok(res)
 }
@@ -278,6 +330,101 @@ fn set_session_cookie(headers: &mut HeaderMap, key: &str) {
 #[cfg_attr(test, allow(clippy::unwrap_used, clippy::expect_used, clippy::panic))]
 mod tests {
     use super::*;
+
+    async fn body_text(res: Response) -> String {
+        let bytes = axum::body::to_bytes(res.into_body(), usize::MAX)
+            .await
+            .expect("body");
+        String::from_utf8_lossy(&bytes).to_string()
+    }
+
+    /// A successful sign-in has to reach `/` through htmx too: the fetch
+    /// inside htmx follows the 303 by itself and hands the index page back to
+    /// a form whose `hx-swap` drops it, which would leave the visitor on
+    /// /login with a live session and no navigation. htmx reads `HX-Redirect`
+    /// before any swap, so an htmx request gets that header on a 200; every
+    /// other client keeps the plain 303 the browser follows on its own.
+    #[test]
+    fn success_navigates_via_hx_redirect_for_htmx_only() {
+        let mut ctx = crate::testutil::test_ctx("en");
+        ctx.htmx = true;
+        let res = home_response(&ctx);
+        assert_eq!(res.status(), StatusCode::OK);
+        assert_eq!(
+            res.headers().get("HX-Redirect").and_then(|v| v.to_str().ok()),
+            Some("/")
+        );
+        assert!(
+            res.headers().get(header::LOCATION).is_none(),
+            "a 3xx would be followed inside htmx's fetch and lose the header"
+        );
+
+        let ctx = crate::testutil::test_ctx("en");
+        let res = home_response(&ctx);
+        assert_eq!(res.status(), StatusCode::SEE_OTHER);
+        assert_eq!(
+            res.headers().get(header::LOCATION).and_then(|v| v.to_str().ok()),
+            Some("/")
+        );
+    }
+
+    /// A rejection keeps its status either way, but the body is what the
+    /// caller can use: the message alone for the htmx form (which swaps it
+    /// into `#form-error`), the whole page for a plain submit. A boosted
+    /// request counts as a page — htmx swaps those into the body.
+    #[tokio::test]
+    async fn rejections_are_fragments_for_htmx_and_pages_otherwise() {
+        let mut ctx = crate::testutil::test_ctx("en");
+        ctx.htmx = true;
+        let res = auth_error(
+            &ctx,
+            StatusCode::BAD_REQUEST,
+            "register",
+            "register_password_short",
+        );
+        assert_eq!(res.status(), StatusCode::BAD_REQUEST);
+        let fragment = body_text(res).await;
+        assert!(
+            !fragment.contains("<!DOCTYPE"),
+            "a fragment, not a page: {fragment}"
+        );
+        assert!(fragment.contains("text-error"), "{fragment}");
+        assert!(
+            fragment.contains("Password must be at least 8 characters."),
+            "the message still reads: {fragment}"
+        );
+        // the widget keeps its own copy of the token, which the server has
+        // now spent: the visitor's retry needs a fresh one
+        assert!(fragment.contains("turnstile.reset()"), "{fragment}");
+
+        ctx.boosted = true;
+        let res = auth_error(
+            &ctx,
+            StatusCode::BAD_REQUEST,
+            "register",
+            "register_password_short",
+        );
+        let boosted = body_text(res).await;
+        assert!(boosted.contains("<!DOCTYPE"), "{boosted}");
+
+        let ctx = crate::testutil::test_ctx("en");
+        let res = auth_error(
+            &ctx,
+            StatusCode::BAD_REQUEST,
+            "register",
+            "register_password_short",
+        );
+        let page = body_text(res).await;
+        assert!(page.contains("<!DOCTYPE"), "{page}");
+        assert!(
+            page.contains("Password must be at least 8 characters."),
+            "{page}"
+        );
+        assert!(
+            !page.contains("turnstile.reset()"),
+            "a fresh page render hands out a fresh token on its own: {page}"
+        );
+    }
 
     /// The one-character accounts the review flagged are rejected; an
     /// existing shorter account can still log in because login never calls

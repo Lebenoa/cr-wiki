@@ -8,8 +8,8 @@
         <h1 class="font-headline font-bold text-2xl text-accent mb-2">{{ ctx.l.t("share_build_message") }}</h1>
         <p class="font-body text-lg text-secondary">{{ ctx.l.t("lets_register_message") }}</p>
     </div>
-    <form class="space-y-5" method="post" action="/{{ mode }}" hx-post="/{{ mode }}" hx-swap="none"
-        hx-disable="find button[type=submit]">
+    <form class="space-y-5" method="post" action="/{{ mode }}" hx-post="/{{ mode }}" hx-target="#form-error"
+        hx-swap="innerHTML" hx-disable="find button[type=submit]">
         <div id="form-error">
             {% if !error.is_empty() %}
             <p class="text-error text-center">{{ ctx.l.t(error.as_str()) }}</p>

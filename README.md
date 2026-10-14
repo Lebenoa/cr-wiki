@@ -25,7 +25,7 @@ A self-hosted fan wiki for the Cookie Run franchise: catalogs of cookies, pets, 
 | Templates | askama (compile-time checked, escapes by default) |
 | Database | SurrealDB v3 (external server over http:// — recommended — or ws://) |
 | Styling | UnoCSS (Wind4 preset), generated `static/styles.css` |
-| Interactivity | HTMX (served from `/thirdparty/htmx.js`) |
+| Interactivity | HTMX 4.0.0 (vendored at `/static/thirdparty/htmx.js`) |
 | Frontend tooling | bun (never npm) |
 
 ## Project structure

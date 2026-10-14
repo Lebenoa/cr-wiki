@@ -102,6 +102,13 @@ Run from the repo root:
   loaded locales, falling back to the `wikilang` cookie then `en`; canonical
   URLs and hreflang alternates derive from the same helper so they cannot
   disagree. Language switching is plain links, never POST.
+- **htmx never follows a redirect for you**: its fetch follows a 3xx itself and
+  hands the final page to the swap, so an htmx form that expects a navigation
+  must be answered with `HX-Redirect` on a 2xx (`ctx.htmx`), never a bare 3xx
+  (see `auth::home_response`). A failure body for a fragment request must be
+  the fragment the form swaps in (`ctx.is_fragment()`, see
+  `auth::auth_error`) — htmx withholds a swap only for 204/304, but a
+  `hx-swap="none"` form drops every body, errors included.
 - **No `<style>` tags anywhere** and **no HTML comments in templates** —
   styling is UnoCSS utilities plus the preflight blocks in `uno.config.ts`
   (theme palettes, popover positioning, the treasure effect-panel animations).

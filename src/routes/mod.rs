@@ -311,6 +311,97 @@ mod tests {
         );
     }
 
+    async fn text(res: axum::response::Response) -> String {
+        let bytes = axum::body::to_bytes(res.into_body(), usize::MAX)
+            .await
+            .expect("body");
+        String::from_utf8_lossy(&bytes).to_string()
+    }
+
+    /// The auth form posts through htmx, so a rejection has to come back as
+    /// the fragment `#form-error` swaps when the request carries the header
+    /// htmx sends — and as the whole page for a plain submit. Same handler,
+    /// same status; only the body differs.
+    #[tokio::test]
+    async fn register_rejection_matches_the_shape_the_form_asked_for() {
+        state();
+        let form = "username=ginger&password=short12&confirm_password=short12";
+
+        let res = router()
+            .oneshot(
+                Request::post("/register")
+                    .header(
+                        axum::http::header::CONTENT_TYPE,
+                        "application/x-www-form-urlencoded",
+                    )
+                    .header("HX-Request", "true")
+                    .body(Body::from(form.to_string()))
+                    .expect("request"),
+            )
+            .await
+            .expect("infallible");
+        assert_eq!(res.status(), StatusCode::BAD_REQUEST);
+        let fragment = text(res).await;
+        assert!(
+            !fragment.contains("<!DOCTYPE"),
+            "the htmx form swaps a fragment, not a page: {fragment}"
+        );
+        assert!(
+            fragment.contains("Password must be at least 8 characters."),
+            "the message still reads: {fragment}"
+        );
+
+        let res = post("/register", form).await;
+        assert_eq!(res.status(), StatusCode::BAD_REQUEST);
+        let page = text(res).await;
+        assert!(
+            page.contains("<!DOCTYPE"),
+            "a plain submit still gets the page: {page}"
+        );
+    }
+
+    /// htmx reads its configuration from `meta[name=htmx-config]` when the
+    /// deferred bundle runs, which is why the view-transition switch lives
+    /// there: as an inline `htmx.config…` assignment it executed before
+    /// `htmx` existed and threw, and htmx 4 renamed the key to `transitions`.
+    /// The template provides it; this guards the rendered head.
+    #[tokio::test]
+    async fn base_head_enables_htmx_view_transitions() {
+        state();
+        let html = text(get("/changelog").await).await;
+        assert!(
+            html.contains(r#"<meta name="htmx-config" content='{"transitions": true}' />"#),
+            "{html}"
+        );
+        assert!(
+            !html.contains("globalViewTransitions"),
+            "the htmx 4 key is `transitions`: {html}"
+        );
+        // the config has to be in the document before the deferred bundle runs
+        let config = html.find("htmx-config").expect("config meta present");
+        let bundle = html
+            .find("/static/thirdparty/htmx.js")
+            .expect("htmx script present");
+        assert!(config < bundle, "config first, bundle second");
+    }
+
+    /// The sign-in form is an htmx form, so two things have to hold in the
+    /// markup it renders: it swaps into its error slot (htmx drops a
+    /// `hx-swap="none"` body, which would silently eat every message) and it
+    /// still submits without JS via method/action.
+    #[tokio::test]
+    async fn auth_form_swaps_into_its_error_slot() {
+        state();
+        let html = text(get("/login").await).await;
+        assert!(
+            html.contains("hx-target=\"#form-error\""),
+            "the error must land in #form-error: {html}"
+        );
+        assert!(!html.contains("hx-swap=\"none\""), "{html}");
+        assert!(html.contains("action=\"/login\""), "no-JS fallback: {html}");
+        assert!(html.contains("id=\"form-error\""), "{html}");
+    }
+
     /// Every response carries the security baselines — a page without
     /// them (or whose CSP regresses) fails here, so the middleware cannot
     /// silently drop out of the router.

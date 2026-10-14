@@ -1,0 +1,11 @@
+<p class="text-error text-center">{{ message }}</p>
+<script>
+    // The token is single-use and this fragment is swapped in without a page
+    // load, so the widget has to start the next attempt with a fresh one —
+    // otherwise the visitor's retry carries a spent token and the bot check
+    // rejects it. htmx runs scripts in swapped content, and CSP allows
+    // inline script.
+    if (window.turnstile) {
+        turnstile.reset();
+    }
+</script>

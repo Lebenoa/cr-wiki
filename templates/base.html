@@ -13,6 +13,7 @@
     <noscript>
         <link href="{{ ctx.font_css_url() }}" rel="stylesheet" />
     </noscript>
+    <meta name="htmx-config" content='{"transitions": true}' />
     <script src="/static/thirdparty/htmx.js" defer></script>
     <script src="/static/js/theme.js"></script>
     <script src="/static/js/theme_editor.js" defer></script>
@@ -29,9 +30,6 @@
     <meta property="og:site_name" content="{{ ctx.l.t("site_name") }}" />
     <meta property="og:url" content="{{ ctx.canonical_url() }}" />
     <meta property="og:locale" content="{{ ctx.og_locale() }}" />
-    <script>
-        htmx.config.globalViewTransitions = true;
-    </script>
 </head>
 
 <body>
