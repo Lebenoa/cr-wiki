@@ -1,24 +1,13 @@
-//! Outgoing app mail, posted to the configured provider endpoint — Resend's
-//! `POST https://api.resend.com/emails` by default. Bodies use the provider's
-//! `from`/`to`/`subject`/`text`/`html` JSON shape with bearer authentication.
-//! Message text is rendered from app templates and translations.
-//!
-//! With no API key nothing is sent: a debug build logs the message body so
-//! flows can be tested locally; a release build logs an error. Callers decide
-//! whether delivery failure affects their operation.
+//! Outgoing app mail through authenticated SMTP. Message text is rendered
+//! from app templates and translations; failures do not disclose whether an
+//! account exists.
 
 use std::time::Duration;
 
 use crate::config::Config;
 
-/// How long the provider gets to accept a message before the send is given up
-/// on: a visitor waiting on a reset page should not hang on a slow mail API.
+/// How long SMTP submission may take before the send is given up on.
 const SEND_TIMEOUT: Duration = Duration::from_secs(10);
-
-/// How much of a refused response's body reaches the log — enough to read the
-/// provider's reason, short enough that a large error page cannot flood it.
-const ERROR_BODY_CAP: usize = 400;
-
 /// One message, already rendered in the visitor's language.
 pub struct Mail {
     pub subject: String,
@@ -40,102 +29,10 @@ fn mask(email: &str) -> String {
     }
 }
 
-/// The provider's JSON body, apart from the send so a test can read it without
-/// a network.
-fn payload(from: &str, to: &str, mail: &Mail) -> serde_json::Value {
-    serde_json::json!({
-        "from": from,
-        "to": [to],
-        "subject": mail.subject,
-        "text": mail.text,
-        "html": mail.html,
-    })
-}
-
-/// The first `cap` characters of a provider body, cut on a character boundary
-/// so a multi-byte message cannot be logged as broken UTF-8.
-fn capped(body: &str, cap: usize) -> String {
-    if body.chars().count() <= cap {
-        return body.to_string();
-    }
-    let mut out: String = body.chars().take(cap).collect();
-    out.push('…');
-    out
-}
-
-/// Sends one message. `true` only when the provider accepted it (2xx).
-///
-/// `to` is never request input: the caller passes the address stored on the
-/// account the reset was asked for, so a forged form cannot aim the mail
-/// anywhere. A refusal is logged with its status and reason and reported
-/// `false` — there is nothing useful to tell the visitor, and saying more
-/// would confirm whether the address exists.
+/// Sends one message through authenticated SMTP. Returns true only when the
+/// SMTP server accepts the message. Delivery failures do not reveal account
+/// existence to visitors.
 pub async fn send(cfg: &Config, to: &str, mail: &Mail) -> bool {
-    match cfg.email.transport.as_str() {
-        "api" => send_api(cfg, to, mail).await,
-        "smtp" => send_smtp(cfg, to, mail).await,
-        other => {
-            tracing::error!(transport = other, "email: unsupported transport");
-            false
-        }
-    }
-}
-
-async fn send_api(cfg: &Config, to: &str, mail: &Mail) -> bool {
-    if cfg.email.api_key.is_empty() {
-        if cfg!(debug_assertions) {
-            tracing::info!(
-                to = %mask(to),
-                "email: no [email] api_key configured, so nothing was sent; the message body follows for local development:\n{}",
-                mail.text
-            );
-        } else {
-            tracing::error!(to = %mask(to), "email: no API key configured; message not sent");
-        }
-        return false;
-    }
-    if cfg.email.from.is_empty() {
-        tracing::error!("email: [email] from is empty");
-        return false;
-    }
-
-    let client = match reqwest::Client::builder().timeout(SEND_TIMEOUT).build() {
-        Ok(c) => c,
-        Err(e) => {
-            tracing::error!("email: client build failed: {e}");
-            return false;
-        }
-    };
-    let res = client
-        .post(&cfg.email.endpoint)
-        .bearer_auth(&cfg.email.api_key)
-        .json(&payload(&cfg.email.from, to, mail))
-        .send()
-        .await;
-
-    match res {
-        Ok(r) if r.status().is_success() => {
-            tracing::info!(to = %mask(to), "email: message accepted by API provider");
-            true
-        }
-        Ok(r) => {
-            let status = r.status();
-            let body = r.text().await.unwrap_or_default();
-            tracing::error!(
-                to = %mask(to), http_status = status.as_u16(),
-                reason = %capped(&body, ERROR_BODY_CAP),
-                "email: API provider refused the send"
-            );
-            false
-        }
-        Err(e) => {
-            tracing::error!(to = %mask(to), "email: API send failed: {e}");
-            false
-        }
-    }
-}
-
-async fn send_smtp(cfg: &Config, to: &str, mail: &Mail) -> bool {
     use lettre::{
         message::{header::ContentType, Mailbox, MultiPart, SinglePart},
         transport::smtp::authentication::Credentials,
@@ -190,12 +87,12 @@ async fn send_smtp(cfg: &Config, to: &str, mail: &Mail) -> bool {
         }
     };
 
-    let builder = match cfg.email.smtp_tls.as_str() {
-        "starttls" => AsyncSmtpTransport::<Tokio1Executor>::starttls_relay(&cfg.email.smtp_host),
-        "tls" => AsyncSmtpTransport::<Tokio1Executor>::relay(&cfg.email.smtp_host),
-        mode => {
-            tracing::error!(smtp_tls = mode, "email: unsupported SMTP TLS mode");
-            return false;
+    let builder = match cfg.email.smtp_tls {
+        crate::config::SmtpTls::Starttls => {
+            AsyncSmtpTransport::<Tokio1Executor>::starttls_relay(&cfg.email.smtp_host)
+        }
+        crate::config::SmtpTls::Tls => {
+            AsyncSmtpTransport::<Tokio1Executor>::relay(&cfg.email.smtp_host)
         }
     };
     let mut builder = match builder {
@@ -242,29 +139,25 @@ mod tests {
     }
 
     #[test]
-    fn smtp_transport_defaults_to_authenticated_starttls() {
+    fn smtp_defaults_to_authenticated_starttls() {
         let cfg = Config::default();
-        assert_eq!(cfg.email.transport, "api");
+        assert_eq!(cfg.email.smtp_host, "");
         assert_eq!(cfg.email.smtp_port, 587);
-        assert_eq!(cfg.email.smtp_tls, "starttls");
+        assert_eq!(cfg.email.smtp_tls, crate::config::SmtpTls::Starttls);
     }
 
     #[tokio::test]
     async fn smtp_requires_credentials_before_connecting() {
-        let mut cfg = Config::default();
-        cfg.email.transport = "smtp".into();
+        let cfg = Config::default();
         assert!(!send(&cfg, "ginger@cookie.run", &mail()).await);
     }
 
     #[tokio::test]
-    async fn smtp_rejects_plaintext_tls_mode() {
+    async fn smtp_requires_configured_tls_mode() {
         let mut cfg = Config::default();
-        cfg.email.transport = "smtp".into();
         cfg.email.smtp_host = "mail.lebenoa.com".into();
-        cfg.email.smtp_username = "account".into();
         cfg.email.smtp_password = "secret".into();
-        cfg.email.from = "Wiki <no-reply@lebenoa.com>".into();
-        cfg.email.smtp_tls = "none".into();
+        cfg.email.smtp_tls = crate::config::SmtpTls::Tls;
         assert!(!send(&cfg, "ginger@cookie.run", &mail()).await);
     }
 
@@ -291,41 +184,14 @@ mod tests {
         });
 
         let mut cfg = Config::default();
-        cfg.email.transport = "smtp".into();
         cfg.email.smtp_host = "localhost".into();
         cfg.email.smtp_port = address.port();
-        cfg.email.smtp_tls = "starttls".into();
+        cfg.email.smtp_tls = crate::config::SmtpTls::Starttls;
         cfg.email.smtp_username = "account".into();
         cfg.email.smtp_password = "secret".into();
         cfg.email.from = "Wiki <no-reply@lebenoa.com>".into();
         assert!(!send(&cfg, "ginger@cookie.run", &mail()).await);
         server.await.unwrap();
-    }
-
-    /// The body is what the provider reads, so its fields are pinned: Resend
-    /// takes `to` as an array and needs at least one of `text`/`html`.
-    #[test]
-    fn payload_carries_the_fields_resend_expects() {
-        let body = payload("Wiki <no-reply@example.com>", "ginger@cookie.run", &mail());
-        assert_eq!(body["from"], "Wiki <no-reply@example.com>");
-        assert_eq!(body["to"][0], "ginger@cookie.run");
-        assert_eq!(body["to"].as_array().map(Vec::len), Some(1));
-        assert_eq!(body["subject"], "Reset your password");
-        assert!(body["text"]
-            .as_str()
-            .unwrap()
-            .contains("/reset-password?token="));
-        assert!(body["html"].as_str().unwrap().contains("<p>"));
-    }
-
-    /// An unconfigured sender sends nothing and reports `false` rather than a
-    /// hopeful `true`: the caller's response is neutral either way, so the
-    /// return value is the only honest account of what happened. No network is
-    /// touched — the key check comes first.
-    #[tokio::test]
-    async fn missing_api_key_sends_nothing() {
-        let cfg = Config::default();
-        assert!(!send(&cfg, "ginger@cookie.run", &mail()).await);
     }
 
     /// The mask keeps the address out of the log while still naming it.
@@ -335,16 +201,5 @@ mod tests {
         assert_eq!(mask("a@b.co"), "***@b.co");
         assert_eq!(mask("not-an-address"), "***");
         assert!(!mask("ginger@cookie.run").contains("inger"));
-    }
-
-    /// The cap counts characters, not bytes, so a multi-byte body is never cut
-    /// mid-character.
-    #[test]
-    fn capped_body_cuts_on_character_boundaries() {
-        let long = "ก".repeat(ERROR_BODY_CAP + 10);
-        let out = capped(&long, ERROR_BODY_CAP);
-        assert_eq!(out.chars().count(), ERROR_BODY_CAP + 1);
-        assert!(out.ends_with('…'));
-        assert_eq!(capped("short", ERROR_BODY_CAP), "short");
     }
 }

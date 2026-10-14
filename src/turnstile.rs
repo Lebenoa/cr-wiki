@@ -1,10 +1,8 @@
 //! Cloudflare Turnstile, checked on the forms that accept public input.
 //!
-//! Ported from app/turnstile.v, including its refusals: a submission is
-//! rejected when the secret is unset or the hostname allowlist is empty,
-//! rather than waved through. A misconfigured deployment should stop taking
-//! submissions, not silently stop checking them.
-
+//! Submissions fail closed when the secret or configured hostname allowlist
+//! is missing. Release builds verify tokens with Cloudflare; debug builds skip
+//! verification for local development and tests.
 #[cfg(not(debug_assertions))]
 use serde::Deserialize;
 
@@ -46,13 +44,7 @@ pub async fn verify(cfg: &Config, token: Option<&str>, expected_action: &str) ->
         tracing::warn!("turnstile: no secret configured, rejecting submission");
         return false;
     }
-    let hostnames: Vec<&str> = cfg
-        .turnstile
-        .hostnames
-        .split(',')
-        .map(|h| h.trim())
-        .filter(|h| !h.is_empty())
-        .collect();
+    let hostnames = &cfg.turnstile.hostnames;
     if hostnames.is_empty() {
         tracing::warn!("turnstile: no hostname allowlist configured, rejecting submission");
         return false;
@@ -101,7 +93,9 @@ pub async fn verify(cfg: &Config, token: Option<&str>, expected_action: &str) ->
     };
     if !parsed.success
         || parsed.action != expected_action
-        || !hostnames.contains(&parsed.hostname.as_str())
+        || !hostnames
+            .iter()
+            .any(|hostname| hostname == &parsed.hostname)
     {
         tracing::warn!(
             "turnstile: rejected (success={} action={} hostname={})",

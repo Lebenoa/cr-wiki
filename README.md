@@ -123,7 +123,7 @@ sudo systemctl restart cookierun                    # sessions are in-memory
 
 ## Configuration
 
-`Config.toml` is loaded at startup from the working directory (gitignored — create yours from `Config.example.toml`). All fields are optional and fall back to defaults; non-positive `[ratelimit]` values clamp back to those defaults at load.
+`Config.toml` loads from the working directory (gitignored; copy `Config.example.toml`). Invalid TOML or values stop startup with field-specific errors. An absent file uses defaults, but a valid SurrealDB URL, namespace, and database are required.
 
 ```toml
 host = "127.0.0.1"
@@ -138,7 +138,7 @@ password = "root"                     # SURREAL_PASS overrides
 
 [turnstile]
 secret = ""                            # TURNSTILE_SECRET overrides
-hostnames = "localhost,127.0.0.1"      # TURNSTILE_HOSTNAMES overrides
+hostnames = ["localhost", "127.0.0.1"] # TURNSTILE_HOSTNAMES overrides
 
 [ratelimit]
 capacity = 60
@@ -148,10 +148,7 @@ sweep_above = 2048
 trusted_proxies = []                   # proxy IPs whose forwarded headers count
 
 [email]
-transport = "api"                    # api or smtp
-api_key = ""                         # EMAIL_API_KEY (API mode only)
 from = ""                            # EMAIL_FROM, e.g. "Wiki <no-reply@lebenoa.com>"
-endpoint = "https://api.resend.com/emails" # EMAIL_ENDPOINT (API mode only)
 smtp_host = ""                       # EMAIL_SMTP_HOST, e.g. mail.lebenoa.com
 smtp_port = 587                       # EMAIL_SMTP_PORT
 smtp_tls = "starttls"                 # EMAIL_SMTP_TLS: starttls or tls
@@ -160,7 +157,7 @@ smtp_password = ""                   # EMAIL_SMTP_PASSWORD; keep secret
 site_url = ""                        # EMAIL_SITE_URL; set in production
 ```
 
-`[email]` sends reset and account-security notices through either a Resend-compatible JSON API (`transport = "api"`) or authenticated SMTP (`transport = "smtp"`). For Stalwart, use the submission listener and credentials for a Stalwart account. Typical settings are `smtp_host = "mail.lebenoa.com"`, port `587` with `smtp_tls = "starttls"`, or port `465` with `smtp_tls = "tls"`. Plaintext SMTP is not supported. Set `from` to a sender Stalwart permits for that account and set `site_url` to the public wiki URL. The SMTP password can be provided as `EMAIL_SMTP_PASSWORD` rather than stored in the config file.
+`[email]` sends reset and account-security notices through authenticated SMTP. For Stalwart, use the submission listener and credentials for a Stalwart account. Configure `smtp_tls = "starttls"` on port 587 or `smtp_tls = "tls"` on port 465. Plaintext SMTP is not supported. The SMTP password can be provided as `EMAIL_SMTP_PASSWORD` rather than stored in the config file.
 
 Delivery failures are logged and do not block completed password or email changes. With no transport credentials, mail is not sent; debug builds log the reset link for local development, while release builds log an error.
 

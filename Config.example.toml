@@ -1,6 +1,5 @@
-# Copy to Config.toml (gitignored) and adjust. All fields are optional —
-# omitted fields fall back to the defaults in config/config.v, and
-# non-positive [ratelimit] values are clamped back to those defaults at load.
+# Copy to Config.toml (gitignored) and adjust. Omitted fields use defaults.
+# Invalid TOML or values stop startup with field-specific errors.
 
 # Address the HTTP server binds to. 0.0.0.0 serves on all interfaces
 # (needed for LAN/container access); the default is 127.0.0.1 (loopback only).
@@ -37,29 +36,22 @@ password = ""
 # builds reject every protected submission (fail closed).
 secret = ""
 
-# Comma-separated frontend-hostname allowlist checked against the hostname
-# Cloudflare reports in the siteverify response. Empty falls back to
-# "localhost,127.0.0.1" so development works unconfigured; production
-# deployments must set the real domain or every protected submission is
-# rejected (fail closed).
-hostnames = "localhost,127.0.0.1"
+# Hostname allowlist as a TOML string array; TURNSTILE_HOSTNAMES accepts
+# comma-separated values as an environment override.
+hostnames = ["localhost", "127.0.0.1"]
 
 # Per-IP rate limiting for the public read endpoints (search, list/detail
 # pages, API/planner AJAX). One token bucket per IP covers all endpoints
 # together; a 429 is returned while the bucket is empty.
 [ratelimit]
-# Burst tokens granted to a fresh IP (the bucket's ceiling). Default 60.
-# Non-positive values clamp back to the default at load.
+# Burst tokens granted to a fresh IP. Must be finite and greater than zero.
 capacity = 60
-# Tokens restored per second up to `capacity`. Default 20. Non-positive
-# values clamp back to the default at load.
+# Tokens restored per second up to `capacity`. Must be finite and greater
+# than zero.
 refill = 20
-# Seconds a bucket may sit unused before the sweep prunes it. Default 300.
-# Non-positive values clamp back to the default at load.
+# Seconds before an idle bucket may be pruned. Must be greater than zero.
 idle_ttl = 300
-# The sweep only runs once the bucket map grows past this many entries, so
-# low-traffic servers never pay for it. Default 2048. Non-positive values
-# clamp back to the default at load.
+# Sweep activates above this many entries. Must be greater than zero.
 sweep_above = 2048
 # Proxy IPs whose forwarded client headers (CF-Connecting-IP,
 # X-Forwarded-For, X-Real-Ip) may stand in for the visitor's address when
@@ -70,14 +62,11 @@ sweep_above = 2048
 # one bucket.
 trusted_proxies = []
 
-# Outgoing mail through a Resend-compatible API or authenticated SMTP.
+# Outgoing mail through authenticated SMTP.
 # Stalwart normally offers STARTTLS on port 587 and implicit TLS on port 465.
 # Plain SMTP is unsupported. EMAIL_* environment variables override fields.
 [email]
-transport = "api" # api or smtp
-api_key = "" # EMAIL_API_KEY (API mode only)
 from = "" # EMAIL_FROM, e.g. "Cookie Run Wiki <no-reply@lebenoa.com>"
-endpoint = "https://api.resend.com/emails" # EMAIL_ENDPOINT (API mode only)
 smtp_host = "" # EMAIL_SMTP_HOST, e.g. mail.lebenoa.com
 smtp_port = 587 # EMAIL_SMTP_PORT
 smtp_tls = "starttls" # EMAIL_SMTP_TLS: starttls (587) or tls (465)
