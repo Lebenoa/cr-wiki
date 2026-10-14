@@ -58,7 +58,14 @@ pub fn router() -> Router {
         // the reset pair sits with the other auth routes, well before the
         // catalog captures, so neither path can be read as a `/{section}/{id}`
         // detail page
-        .route("/forgot-password", get(auth::forgot_form).post(auth::forgot))
+        .route(
+            "/forgot-password",
+            get(auth::forgot_form).post(auth::forgot),
+        )
+        .route(
+            "/account/email",
+            get(auth::account_email_form).post(auth::update_account_email),
+        )
         .route("/reset-password", get(auth::reset_form).post(auth::reset))
         // GET logout with the SameSite=Lax session cookie lets any
         // cross-site link end the session: Lax still rides a top-level GET
@@ -206,12 +213,54 @@ mod tests {
     #[tokio::test]
     async fn non_db_routes_answer_through_the_middleware_order() {
         state();
-        for uri in ["/robots.txt", "/changelog", "/login", "/register"] {
+        for uri in [
+            "/robots.txt",
+            "/changelog",
+            "/login",
+            "/register",
+            "/reset-password",
+        ] {
             let res = get(uri).await;
             assert_eq!(res.status(), StatusCode::OK, "{uri}");
         }
         let miss = get("/no-such-section").await;
         assert_eq!(miss.status(), StatusCode::NOT_FOUND);
+    }
+
+    #[tokio::test]
+    async fn account_menu_links_to_recovery_email_settings() {
+        let app = state();
+        let key = app.sessions.start(crate::session::SessionUser {
+            id: 7,
+            username: "tester".to_string(),
+            is_admin: false,
+        });
+        let res = router()
+            .oneshot(
+                Request::get("/changelog")
+                    .header("cookie", format!("CRSESSID={key}"))
+                    .body(Body::empty())
+                    .expect("request"),
+            )
+            .await
+            .expect("infallible");
+        let menu = text(res).await;
+        assert!(menu.contains("href=\"/account/email\""), "{menu}");
+        assert!(menu.contains("Recovery email"), "{menu}");
+    }
+
+    #[tokio::test]
+    async fn account_email_route_requires_an_authenticated_session() {
+        state();
+        let res = get("/account/email").await;
+        assert_eq!(res.status(), StatusCode::NOT_FOUND);
+
+        let res = post(
+            "/account/email",
+            "email=ginger%40cookie.run&password=longenough",
+        )
+        .await;
+        assert_eq!(res.status(), StatusCode::NOT_FOUND);
     }
 
     /// A database failure answers the site's own 500 page through `AppError`,

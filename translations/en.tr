@@ -238,6 +238,27 @@ Email
 email_hint
 Use for password reset only
 -----
+account_email
+Recovery email
+-----
+account_email_title
+Recovery email
+-----
+account_email_message
+Set an email address for password reset. Leave it blank to remove it.
+-----
+account_email_clear_hint
+Only used for password reset. Save a blank value to remove the address.
+-----
+account_email_save
+Save recovery email
+-----
+account_email_saved
+Recovery email updated.
+-----
+account_email_taken
+That email address is already used by another account.
+-----
 email_hint_toggle
 Why?
 -----
@@ -294,6 +315,18 @@ minutes and can be used once.
 -----
 reset_email_ignore
 If this was not you, ignore this mail — your password is unchanged.
+-----
+security_password_reset_subject
+Your password was changed
+-----
+security_password_reset_message
+Your account password was reset. If you did not do this, use Forgot password to reset it again and contact the site administrator.
+-----
+security_email_changed_subject
+Your recovery email was changed
+-----
+security_email_changed_message
+Your account recovery email was changed. If you did not do this, reset your password and contact the site administrator.
 -----
 password
 Password

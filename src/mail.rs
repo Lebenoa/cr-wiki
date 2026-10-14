@@ -1,15 +1,11 @@
-//! Outgoing mail: the password-reset link, posted to the configured provider
-//! endpoint — Resend's `POST https://api.resend.com/emails` by default, whose
-//! body is `from`/`to`/`subject`/`text`/`html` and whose auth is an
-//! `Authorization: Bearer <api key>` header
-//! (<https://resend.com/docs/api-reference/emails/send-email>). The message
-//! text comes from the app's own templates and translations, so no copy lives
-//! in a provider dashboard.
+//! Outgoing app mail, posted to the configured provider endpoint — Resend's
+//! `POST https://api.resend.com/emails` by default. Bodies use the provider's
+//! `from`/`to`/`subject`/`text`/`html` JSON shape with bearer authentication.
+//! Message text is rendered from app templates and translations.
 //!
-//! With no API key nothing is sent: a debug build logs the message body (the
-//! link included) so a developer can walk the whole flow without an account,
-//! a release build logs an error. Both report `false`, and the caller answers
-//! the visitor with the same neutral page either way.
+//! With no API key nothing is sent: a debug build logs the message body so
+//! flows can be tested locally; a release build logs an error. Callers decide
+//! whether delivery failure affects their operation.
 
 use std::time::Duration;
 
@@ -85,7 +81,7 @@ pub async fn send(cfg: &Config, to: &str, mail: &Mail) -> bool {
         } else {
             tracing::error!(
                 to = %mask(to),
-                "email: no [email] api_key configured; the reset mail was not sent"
+                "email: no [email] api_key configured; the message was not sent"
             );
         }
         return false;
@@ -111,7 +107,7 @@ pub async fn send(cfg: &Config, to: &str, mail: &Mail) -> bool {
 
     match res {
         Ok(r) if r.status().is_success() => {
-            tracing::info!(to = %mask(to), "email: reset mail accepted by the provider");
+            tracing::info!(to = %mask(to), "email: message accepted by the provider");
             true
         }
         Ok(r) => {

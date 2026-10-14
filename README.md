@@ -115,6 +115,7 @@ sudo systemctl restart cookierun                    # sessions are in-memory
 | POST | `/builds/:id/verify` | Report verified/issue verdict (authenticated) |
 | GET/POST | `/builds/:id/edit`, POST `/builds/:id/delete` | Owner/admin only (404 otherwise) |
 | GET/POST | `/login`, `/register`, `/forgot-password`, `/reset-password`; POST `/logout` | Auth |
+| GET/POST | `/account/email` | Signed-in recovery email settings; current password required to save |
 | GET | `/api/available-langs` | Languages (HTML partial for HTMX, JSON otherwise) |
 | GET | `/api/richtext-names` | Linkable entity names for rich-text autocomplete |
 | POST | `/api/set-lang` | Set language cookie and redirect back |
@@ -155,7 +156,7 @@ site_url = ""                          # EMAIL_SITE_URL overrides; set it in pro
 
 `[turnstile] hostnames` is the comma-separated frontend-hostname allowlist checked against siteverify — production deployments must set the real domain (never `localhost`), or every protected submission fails closed.
 
-`[email]` carries the password-reset mail: a JSON POST to `endpoint` (Resend's `POST /emails` by default) authenticated with `api_key`, sent from `from`. The message is rendered from the app's own templates and `translations/`, so no copy lives in a provider dashboard. With no key nothing is sent — a debug build logs the link so the flow stays walkable locally, a release build logs an error — and either way the request answers with the same neutral page, so the form never reveals whether an address is registered. Set `site_url` to the site's absolute URL in production: without it the link is built from the request's `Host` header, which a forged header can point elsewhere.
+`[email]` carries password-reset and account-security email: a JSON POST to `endpoint` (Resend's `POST /emails` by default), authenticated with `api_key` and sent from `from`. Messages use app templates and translations. Delivery failures are logged and do not block completed password or email changes. With no key, mail is not sent; debug builds log the reset link for local development, while release builds log an error.
 
 ## Development
 

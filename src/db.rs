@@ -2481,6 +2481,7 @@ pub struct User {
     pub username: String,
     pub password: String,
     pub is_admin: bool,
+    pub email: Option<String>,
 }
 
 #[derive(Default, SurrealValue)]
@@ -2490,11 +2491,12 @@ struct UserRow {
     username: String,
     password: String,
     is_admin: bool,
+    email: Option<String>,
 }
 
 pub async fn find_user(db: &Db, username: &str) -> Result<Option<User>> {
     let mut rows: Vec<UserRow> = db
-        .query("SELECT record::id(id) AS id, username, password, is_admin FROM user WHERE username = $u LIMIT 1")
+        .query("SELECT record::id(id) AS id, username, password, is_admin, email FROM user WHERE username = $u LIMIT 1")
         .bind(("u", username.to_string()))
         .await?
         .take(0)?;
@@ -2503,6 +2505,7 @@ pub async fn find_user(db: &Db, username: &str) -> Result<Option<User>> {
         username: r.username,
         password: r.password,
         is_admin: r.is_admin,
+        email: r.email,
     }))
 }
 
@@ -2545,6 +2548,7 @@ pub async fn create_user(
         username: username.to_string(),
         password: password_hash.to_string(),
         is_admin: false,
+        email: email.map(str::to_string),
     }))
 }
 
@@ -2558,8 +2562,8 @@ pub async fn create_user(
 pub async fn find_user_by_email(db: &Db, email: &str) -> Result<Option<User>> {
     let mut rows: Vec<UserRow> = db
         .query(
-            "SELECT record::id(id) AS id, username, password, is_admin FROM user \
-              WHERE string::lowercase(email) = string::lowercase($e) LIMIT 1",
+            "SELECT record::id(id) AS id, username, password, is_admin, email FROM user \
+               WHERE string::lowercase(email) = string::lowercase($e) LIMIT 1",
         )
         .bind(("e", email.to_string()))
         .await?
@@ -2569,7 +2573,36 @@ pub async fn find_user_by_email(db: &Db, email: &str) -> Result<Option<User>> {
         username: r.username,
         password: r.password,
         is_admin: r.is_admin,
+        email: r.email,
     }))
+}
+
+/// Reads a user by its stable record id for post-reset security notifications.
+pub async fn find_user_by_id(db: &Db, user_id: i64) -> Result<Option<User>> {
+    let mut rows: Vec<UserRow> = db
+        .query("SELECT record::id(id) AS id, username, password, is_admin, email FROM type::record('user', $u) LIMIT 1")
+        .bind(("u", user_id))
+        .await?
+        .take(0)?;
+    Ok(rows.pop().map(|r| User {
+        id: r.id,
+        username: r.username,
+        password: r.password,
+        is_admin: r.is_admin,
+        email: r.email,
+    }))
+}
+
+/// Replaces or clears the recovery address on one account. An empty value
+/// removes the optional field; non-empty addresses are normalized by the
+/// caller and checked against the existing case-insensitive lookup.
+pub async fn set_user_email(db: &Db, user_id: i64, email: Option<&str>) -> Result<()> {
+    db.query("UPDATE type::record('user', $u) SET email = $e")
+        .bind(("u", user_id))
+        .bind(("e", email.map(str::to_string)))
+        .await?
+        .check()?;
+    Ok(())
 }
 
 /// Whether the account asked for a link within `window_secs`. The throttle

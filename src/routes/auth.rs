@@ -169,6 +169,27 @@ struct ResetPage {
     error: String,
 }
 
+#[derive(Template)]
+#[template(path = "account_email.html")]
+struct AccountEmailPage {
+    ctx: Ctx,
+    email: String,
+    error: String,
+    notice: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct AccountEmailForm {
+    pub email: Option<String>,
+    pub password: String,
+}
+
+#[derive(Template)]
+#[template(path = "account_email_notice.html")]
+struct AccountEmailNotice {
+    message: String,
+}
+
 /// The mail's two bodies, rendered from the app's own templates so every
 /// string comes out of the .tr files exactly like the pages do.
 #[derive(Template)]
@@ -185,6 +206,38 @@ struct ResetEmailText {
     ctx: Ctx,
     link: String,
     minutes: i64,
+}
+
+#[derive(Template)]
+#[template(path = "security_notice.html")]
+struct SecurityNoticeHtml {
+    message: String,
+}
+
+#[derive(Template)]
+#[template(path = "security_notice.txt")]
+struct SecurityNoticeText {
+    message: String,
+}
+
+/// Sends localized security alerts best-effort after an account change.
+async fn send_security_notice(
+    ctx: &Ctx,
+    cfg: &crate::config::Config,
+    to: &str,
+    subject_key: &str,
+    message_key: &str,
+) -> Result<bool, askama::Error> {
+    let message = ctx.l.t(message_key);
+    let mail = crate::mail::Mail {
+        subject: ctx.l.t(subject_key),
+        text: SecurityNoticeText {
+            message: message.clone(),
+        }
+        .render()?,
+        html: SecurityNoticeHtml { message }.render()?,
+    };
+    Ok(crate::mail::send(cfg, to, &mail).await)
 }
 
 /// The error paragraph on its own, for the htmx form: the form swaps it into
@@ -326,13 +379,156 @@ pub async fn forgot_form(ctx: Ctx, Query(q): Query<AuthQuery>) -> Response {
     render_forgot(ctx, "", notice)
 }
 
+fn render_account_email(ctx: Ctx, email: &str, error: &str, notice: &str) -> Response {
+    let html = AccountEmailPage {
+        ctx,
+        email: email.to_string(),
+        error: error.to_string(),
+        notice: notice.to_string(),
+    }
+    .render()
+    .unwrap_or_else(|e| format!("template error: {e}"));
+    Html(html).into_response()
+}
+
+fn account_email_error(ctx: &Ctx, email: &str, key: &str) -> Response {
+    if ctx.is_fragment() {
+        (StatusCode::BAD_REQUEST, Html(error_fragment(ctx, key))).into_response()
+    } else {
+        (
+            StatusCode::BAD_REQUEST,
+            render_account_email(ctx.clone(), email, key, ""),
+        )
+            .into_response()
+    }
+}
+
+pub async fn account_email_form(ctx: Ctx) -> Result<Response, AppError> {
+    let Some(user) = ctx.user.as_ref() else {
+        return Ok(super::errors::not_found(ctx));
+    };
+    let state = crate::state::state();
+    let Some(account) = db::find_user(&state.db, &user.username)
+        .await?
+        .filter(|account| account.id == user.id)
+    else {
+        return Ok(super::errors::not_found(ctx));
+    };
+    Ok(render_account_email(
+        ctx,
+        account.email.as_deref().unwrap_or(""),
+        "",
+        "",
+    ))
+}
+
+pub async fn update_account_email(
+    ctx: Ctx,
+    Form(form): Form<AccountEmailForm>,
+) -> Result<Response, AppError> {
+    let Some(user) = ctx.user.as_ref() else {
+        return Ok(super::errors::not_found(ctx));
+    };
+    let state = crate::state::state();
+    let Some(account) = db::find_user(&state.db, &user.username)
+        .await?
+        .filter(|account| account.id == user.id)
+    else {
+        return Ok(super::errors::not_found(ctx));
+    };
+    if !session::verify_password(&state.db, &form.password, &account.password).await {
+        return Ok(account_email_error(
+            &ctx,
+            form.email.as_deref().unwrap_or(""),
+            "invalid_credentials",
+        ));
+    }
+    let email = form
+        .email
+        .as_deref()
+        .map(str::trim)
+        .filter(|s| !s.is_empty());
+    if let Some(key) = email_policy(email) {
+        return Ok(account_email_error(&ctx, email.unwrap_or(""), key));
+    }
+    if let Some(email) = email {
+        if db::find_user_by_email(&state.db, email)
+            .await?
+            .is_some_and(|other| other.id != account.id)
+        {
+            return Ok(account_email_error(&ctx, email, "account_email_taken"));
+        }
+    }
+    let old_email = account.email.clone();
+    db::set_user_email(&state.db, account.id, email).await?;
+    if let Some(old) = old_email
+        .as_deref()
+        .filter(|old| !email.is_some_and(|new| old.eq_ignore_ascii_case(new)))
+    {
+        match send_security_notice(
+            &ctx,
+            &state.cfg,
+            old,
+            "security_email_changed_subject",
+            "security_email_changed_message",
+        )
+        .await
+        {
+            Ok(_) => {}
+            Err(e) => tracing::error!(
+                user_id = account.id,
+                "email-change notice template failed: {e}"
+            ),
+        }
+    }
+    if let Some(new) = email.filter(|new| {
+        !old_email
+            .as_deref()
+            .is_some_and(|old| old.eq_ignore_ascii_case(new))
+    }) {
+        match send_security_notice(
+            &ctx,
+            &state.cfg,
+            new,
+            "security_email_changed_subject",
+            "security_email_changed_message",
+        )
+        .await
+        {
+            Ok(_) => {}
+            Err(e) => tracing::error!(
+                user_id = account.id,
+                "email-change notice template failed: {e}"
+            ),
+        }
+    }
+    if ctx.is_fragment() {
+        let notice = AccountEmailNotice {
+            message: ctx.l.t("account_email_saved"),
+        }
+        .render()
+        .unwrap_or_else(|e| format!("template error: {e}"));
+        return Ok(Html(notice).into_response());
+    }
+    Ok(render_account_email(
+        ctx,
+        email.unwrap_or(""),
+        "",
+        "account_email_saved",
+    ))
+}
+
 /// The reset request. Every path that reaches the end answers with the same
 /// redirect, and nothing on the page says whether the address was found —
 /// otherwise this form is a way to ask "does this person have an account?".
 pub async fn forgot(ctx: Ctx, Form(form): Form<ForgotForm>) -> Result<Response, AppError> {
     let state = crate::state::state();
     if !crate::turnstile::verify(&state.cfg, form.turnstile.as_deref(), "forgot_password").await {
-        return Ok(forgot_error(&ctx, StatusCode::FORBIDDEN, "turnstile_form_failed"));
+        return Ok(forgot_error(
+            &ctx,
+            StatusCode::FORBIDDEN,
+            "turnstile_form_failed",
+        ));
     }
     let email = form.email.as_deref().map(str::trim).unwrap_or_default();
     // a malformed address cannot belong to an account, so it is skipped
@@ -407,6 +603,21 @@ pub async fn reset(ctx: Ctx, Form(form): Form<ResetForm>) -> Result<Response, Ap
         }
     };
     db::set_user_password(&state.db, user_id, &hash).await?;
+    if let Some(user) = db::find_user_by_id(&state.db, user_id).await? {
+        if let Some(email) = user.email.as_deref() {
+            if let Err(e) = send_security_notice(
+                &ctx,
+                &state.cfg,
+                email,
+                "security_password_reset_subject",
+                "security_password_reset_message",
+            )
+            .await
+            {
+                tracing::error!(user_id, "password-reset notice delivery failed: {e}");
+            }
+        }
+    }
     // a reset is the moment to assume the old password is known to somebody
     // else, so every session it opened ends here
     state.sessions.end_all_for(user_id);
@@ -460,7 +671,10 @@ async fn send_reset_mail(
         return Ok(());
     }
     let token = reset_token();
-    let link = format!("{}/reset-password?token={token}", mail_base(ctx, &state.cfg));
+    let link = format!(
+        "{}/reset-password?token={token}",
+        mail_base(ctx, &state.cfg)
+    );
     let minutes = RESET_TTL_SECS / 60;
     let (subject, text, html) = match reset_mail_bodies(ctx, &link, minutes) {
         Ok(bodies) => bodies,
@@ -872,19 +1086,29 @@ mod tests {
         db::issue_reset_token(&pool, user.id, &token, RESET_TTL_SECS)
             .await
             .expect("issue");
-        assert!(db::reset_token_pending(&pool, &token).await.expect("pending"));
-        assert!(db::reset_requested_within(&pool, user.id, RESET_THROTTLE_SECS)
+        assert!(db::reset_token_pending(&pool, &token)
             .await
-            .expect("throttle"),
-            "the row the throttle reads is the one just written");
+            .expect("pending"));
+        assert!(
+            db::reset_requested_within(&pool, user.id, RESET_THROTTLE_SECS)
+                .await
+                .expect("throttle"),
+            "the row the throttle reads is the one just written"
+        );
 
         assert_eq!(
-            db::consume_reset_token(&pool, &token).await.expect("consume"),
+            db::consume_reset_token(&pool, &token)
+                .await
+                .expect("consume"),
             Some(user.id)
         );
-        assert!(!db::reset_token_pending(&pool, &token).await.expect("pending"));
+        assert!(!db::reset_token_pending(&pool, &token)
+            .await
+            .expect("pending"));
         assert_eq!(
-            db::consume_reset_token(&pool, &token).await.expect("replay"),
+            db::consume_reset_token(&pool, &token)
+                .await
+                .expect("replay"),
             None,
             "a link works once"
         );
@@ -894,9 +1118,13 @@ mod tests {
         db::issue_reset_token(&pool, user.id, &stale, -1)
             .await
             .expect("issue stale");
-        assert!(!db::reset_token_pending(&pool, &stale).await.expect("pending"));
+        assert!(!db::reset_token_pending(&pool, &stale)
+            .await
+            .expect("pending"));
         assert_eq!(
-            db::consume_reset_token(&pool, &stale).await.expect("consume stale"),
+            db::consume_reset_token(&pool, &stale)
+                .await
+                .expect("consume stale"),
             None
         );
 
@@ -909,8 +1137,12 @@ mod tests {
         db::issue_reset_token(&pool, user.id, &second, RESET_TTL_SECS)
             .await
             .expect("issue second");
-        assert!(!db::reset_token_pending(&pool, &first).await.expect("pending"));
-        assert!(db::reset_token_pending(&pool, &second).await.expect("pending"));
+        assert!(!db::reset_token_pending(&pool, &first)
+            .await
+            .expect("pending"));
+        assert!(db::reset_token_pending(&pool, &second)
+            .await
+            .expect("pending"));
 
         // the password the reset handler writes is the one that verifies, and
         // the reset leaves the email alone
@@ -933,7 +1165,10 @@ mod tests {
 
         drop_probe_tokens(&pool, user.id).await;
         drop_probe_user(&pool, username).await;
-        assert!(db::find_user(&pool, username).await.expect("find").is_none());
+        assert!(db::find_user(&pool, username)
+            .await
+            .expect("find")
+            .is_none());
     }
 
     /// The mail is rendered by the app's own templates, so its copy comes from
@@ -1002,7 +1237,9 @@ mod tests {
         let res = home_response(&ctx);
         assert_eq!(res.status(), StatusCode::OK);
         assert_eq!(
-            res.headers().get("HX-Redirect").and_then(|v| v.to_str().ok()),
+            res.headers()
+                .get("HX-Redirect")
+                .and_then(|v| v.to_str().ok()),
             Some("/")
         );
         assert!(
@@ -1014,7 +1251,9 @@ mod tests {
         let res = home_response(&ctx);
         assert_eq!(res.status(), StatusCode::SEE_OTHER);
         assert_eq!(
-            res.headers().get(header::LOCATION).and_then(|v| v.to_str().ok()),
+            res.headers()
+                .get(header::LOCATION)
+                .and_then(|v| v.to_str().ok()),
             Some("/")
         );
     }
@@ -1140,5 +1379,29 @@ mod tests {
         crate::db::connect_url(&url, &ns, &database, &user, &pass)
             .await
             .ok()
+    }
+
+    #[test]
+    fn security_notices_render_password_and_email_alerts() {
+        let en = crate::testutil::test_ctx("en");
+        let password = SecurityNoticeText {
+            message: en.l.t("security_password_reset_message"),
+        }
+        .render()
+        .expect("text renders");
+        assert!(password.contains("password was reset"), "{password}");
+
+        let html = SecurityNoticeHtml {
+            message: en.l.t("security_email_changed_message"),
+        }
+        .render()
+        .expect("html renders");
+        assert!(html.contains("recovery email was changed"), "{html}");
+
+        let th = crate::testutil::test_ctx("th");
+        assert_ne!(
+            th.l.t("security_email_changed_subject"),
+            "security_email_changed_subject"
+        );
     }
 }
