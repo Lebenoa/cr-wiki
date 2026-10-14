@@ -69,3 +69,31 @@ sweep_above = 2048
 # or CDN (e.g. Cloudflare), list the proxy's IPs here or every visitor shares
 # one bucket.
 trusted_proxies = []
+
+# Outgoing mail. The password-reset link is the only message the app sends, and
+# it goes out as a JSON POST to `endpoint` — Resend's
+# `POST https://api.resend.com/emails` by default — authenticated with an
+# `Authorization: Bearer <api_key>` header. The message text is rendered by the
+# app's own templates, so no copy lives in a provider dashboard. The
+# EMAIL_API_KEY / EMAIL_FROM / EMAIL_ENDPOINT / EMAIL_SITE_URL env vars
+# override these fields when set, which keeps the secret out of the file.
+[email]
+# Provider API key. Empty sends nothing at all: the debug test-session build
+# logs the reset link so the flow stays walkable locally, and a release build
+# logs an error — either way every reset request answers with the same neutral
+# page, so an unconfigured sender cannot reveal which addresses exist.
+api_key = ""
+
+# The From mailbox, "Cookie Run Wiki <no-reply@example.com>". Resend rejects a
+# sender the account has not verified; its test sender
+# (onboarding@resend.dev) works before a domain is set up.
+from = ""
+
+# Where sends are POSTed. Only a test or a different provider changes it.
+endpoint = "https://api.resend.com/emails"
+
+# Absolute site URL the reset link is built from, e.g.
+# "https://cookierun.example". Left empty the link is built from the request's
+# own Host header, which a forged header can point at another site — set it in
+# production.
+site_url = ""

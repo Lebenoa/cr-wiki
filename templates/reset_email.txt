@@ -1,0 +1,9 @@
+{{ ctx.l.t("reset_email_greeting") }}
+
+{{ ctx.l.t("reset_email_instruction") }}
+
+{{ link }}
+
+{{ ctx.l.t("reset_email_expiry_prefix") }} {{ minutes }} {{ ctx.l.t("reset_email_expiry_suffix") }}
+
+{{ ctx.l.t("reset_email_ignore") }}

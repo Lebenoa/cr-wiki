@@ -9,6 +9,7 @@ mod ctx;
 mod db;
 mod grade;
 mod i18n;
+mod mail;
 mod middleware;
 mod options;
 mod pagination;

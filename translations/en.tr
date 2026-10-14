@@ -235,6 +235,66 @@ Username
 email
 Email
 -----
+email_hint
+Use for password reset only
+-----
+email_hint_toggle
+Why?
+-----
+forgot_password
+Forgot password?
+-----
+forgot_password_title
+Reset your password
+-----
+forgot_password_message
+Enter the email address on your account and we will send you a link to choose a new password.
+-----
+forgot_password_button
+Send reset link
+-----
+forgot_password_sent
+If an account uses that address, a reset link is on its way.
+-----
+forgot_password_no_email
+Accounts created without an email address cannot be reset this way.
+-----
+remembered_password
+Remembered it after all?
+-----
+reset_password_title
+Choose a new password
+-----
+reset_password_message
+Pick a new password for your account.
+-----
+reset_password_button
+Set new password
+-----
+reset_password_invalid
+That reset link is invalid or has expired.
+-----
+reset_password_done
+Password updated — sign in with your new password.
+-----
+reset_email_subject
+Reset your password
+-----
+reset_email_greeting
+Someone asked to reset the password for this account.
+-----
+reset_email_instruction
+Open this link to choose a new password:
+-----
+reset_email_expiry_prefix
+The link stops working after
+-----
+reset_email_expiry_suffix
+minutes and can be used once.
+-----
+reset_email_ignore
+If this was not you, ignore this mail — your password is unchanged.
+-----
 password
 Password
 -----
@@ -264,6 +324,9 @@ Username must be at least 3 characters.
 -----
 register_password_short
 Password must be at least 8 characters.
+-----
+register_email_invalid
+That email address does not look right.
 -----
 register_mismatch
 Passwords do not match.

@@ -235,6 +235,66 @@ username
 email
 อีเมล
 -----
+email_hint
+ใช้สำหรับรีเซ็ตรหัสผ่านเท่านั้น
+-----
+email_hint_toggle
+ทำไม?
+-----
+forgot_password
+ลืมรหัสผ่าน?
+-----
+forgot_password_title
+รีเซ็ตรหัสผ่าน
+-----
+forgot_password_message
+กรอกอีเมลที่ผูกกับบัญชีของคุณ แล้วเราจะส่งลิงก์ให้ตั้งรหัสผ่านใหม่
+-----
+forgot_password_button
+ส่งลิงก์รีเซ็ต
+-----
+forgot_password_sent
+หากมีบัญชีที่ใช้อีเมลนี้ ลิงก์รีเซ็ตกำลังถูกส่งไปให้
+-----
+forgot_password_no_email
+บัญชีที่สร้างโดยไม่ได้ระบุอีเมลจะรีเซ็ตด้วยวิธีนี้ไม่ได้
+-----
+remembered_password
+นึกออกแล้วใช่ไหม?
+-----
+reset_password_title
+ตั้งรหัสผ่านใหม่
+-----
+reset_password_message
+เลือกรหัสผ่านใหม่สำหรับบัญชีของคุณ
+-----
+reset_password_button
+ตั้งรหัสผ่านใหม่
+-----
+reset_password_invalid
+ลิงก์รีเซ็ตนี้ไม่ถูกต้องหรือหมดอายุแล้ว
+-----
+reset_password_done
+อัปเดตรหัสผ่านแล้ว — เข้าสู่ระบบด้วยรหัสผ่านใหม่
+-----
+reset_email_subject
+รีเซ็ตรหัสผ่าน
+-----
+reset_email_greeting
+มีคำขอรีเซ็ตรหัสผ่านสำหรับบัญชีนี้
+-----
+reset_email_instruction
+เปิดลิงก์นี้เพื่อตั้งรหัสผ่านใหม่
+-----
+reset_email_expiry_prefix
+ลิงก์จะใช้ได้ภายใน
+-----
+reset_email_expiry_suffix
+นาที และใช้ได้เพียงครั้งเดียว
+-----
+reset_email_ignore
+หากไม่ใช่คุณ กรุณาเพิกเฉยอีเมลนี้ — รหัสผ่านของคุณยังไม่เปลี่ยนแปลง
+-----
 password
 รหัสผ่าน
 -----
@@ -264,6 +324,9 @@ register_username_short
 -----
 register_password_short
 รหัสผ่านต้องมีความยาวอย่างน้อย 8 ตัวอักษร
+-----
+register_email_invalid
+อีเมลนี้ดูไม่ถูกต้อง
 -----
 register_mismatch
 รหัสผ่านไม่ตรงกัน

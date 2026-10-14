@@ -63,6 +63,7 @@ pub async fn connect_url(
     db.use_ns(ns).use_db(database).await?;
     ensure_search_schema(&db).await?;
     ensure_sequences(&db).await?;
+    ensure_reset_schema(&db).await?;
     Ok(db)
 }
 
@@ -209,6 +210,21 @@ async fn ensure_sequences(db: &Db) -> Result<()> {
         let _ = writeln!(query, "DEFINE SEQUENCE IF NOT EXISTS {table}_seq START 1;");
     }
     db.query(query).await?.check()?;
+    Ok(())
+}
+
+/// Defines the password-reset tokens and their lookup index. Created on
+/// connect rather than left to the seed: a database that never took a reset
+/// export still has to answer the form, and `IF NOT EXISTS` leaves a seeded
+/// one alone. The index is unique so two accounts can never share a token
+/// hash, and the table stays schemaless like `user`.
+async fn ensure_reset_schema(db: &Db) -> Result<()> {
+    db.query(
+        "DEFINE TABLE IF NOT EXISTS password_reset SCHEMALESS; \
+         DEFINE INDEX IF NOT EXISTS password_reset_token ON password_reset FIELDS token_hash UNIQUE;",
+    )
+    .await?
+    .check()?;
     Ok(())
 }
 
@@ -2492,15 +2508,26 @@ pub async fn find_user(db: &Db, username: &str) -> Result<Option<User>> {
 
 /// Creates a user with an already-hashed password. `None` when the username
 /// is taken, which the unique index enforces rather than a prior SELECT.
-pub async fn create_user(db: &Db, username: &str, password_hash: &str) -> Result<Option<User>> {
+///
+/// `email` is `None` when the visitor left the field blank: it is collected
+/// for password reset only, so an account without one still signs in — the
+/// row simply has no way back. The table is schemaless, so an `email` no
+/// other query reads stays invisible to login, sessions and the admin UI.
+pub async fn create_user(
+    db: &Db,
+    username: &str,
+    password_hash: &str,
+    email: Option<&str>,
+) -> Result<Option<User>> {
     let mut res = db
         .query(
             "LET $id = sequence::nextval('user_seq'); \
-             CREATE type::record('user', $id) SET username = $u, password = $p, is_admin = false, created_at = time::unix(); \
+             CREATE type::record('user', $id) SET username = $u, password = $p, email = $e, is_admin = false, created_at = time::unix(); \
              RETURN $id;",
         )
         .bind(("u", username.to_string()))
         .bind(("p", password_hash.to_string()))
+        .bind(("e", email.map(str::to_string)))
         .await?;
     // a duplicate username trips the unique index; the form says taken.
     // take_errors() leaves the Ok results in place, so the id reads after.
@@ -2519,6 +2546,117 @@ pub async fn create_user(db: &Db, username: &str, password_hash: &str) -> Result
         password: password_hash.to_string(),
         is_admin: false,
     }))
+}
+
+/// The account behind an email address, matched case-insensitively: visitors
+/// type `Ginger@Cookie.Run` while the row keeps whatever the register form was
+/// given, and an address that differs only in case is the same mailbox.
+///
+/// `None` covers both "no account has that address" and "the row has no
+/// email" — callers must not tell those apart, which is why nothing more
+/// specific comes back.
+pub async fn find_user_by_email(db: &Db, email: &str) -> Result<Option<User>> {
+    let mut rows: Vec<UserRow> = db
+        .query(
+            "SELECT record::id(id) AS id, username, password, is_admin FROM user \
+              WHERE string::lowercase(email) = string::lowercase($e) LIMIT 1",
+        )
+        .bind(("e", email.to_string()))
+        .await?
+        .take(0)?;
+    Ok(rows.pop().map(|r| User {
+        id: r.id,
+        username: r.username,
+        password: r.password,
+        is_admin: r.is_admin,
+    }))
+}
+
+/// Whether the account asked for a link within `window_secs`. The throttle
+/// lives here rather than in a counter: the row it reads is the one the last
+/// request wrote, so a restart cannot lose it and a second node cannot hold a
+/// different idea of it.
+pub async fn reset_requested_within(db: &Db, user_id: i64, window_secs: i64) -> Result<bool> {
+    let rows: Vec<bool> = db
+        .query(
+            "SELECT VALUE created_at > time::unix() - $w FROM password_reset \
+              WHERE user = type::record('user', $u) LIMIT 1",
+        )
+        .bind(("u", user_id))
+        .bind(("w", window_secs))
+        .await?
+        .take(0)?;
+    Ok(rows.into_iter().next().unwrap_or(false))
+}
+
+/// Stores a fresh token and drops any outstanding one: one live link per
+/// account, so asking again invalidates the earlier mail rather than leaving
+/// two working links in an inbox.
+///
+/// The plaintext token is bound as a parameter and hashed by `SurrealDB`
+/// (`crypto::sha256`), so only the digest is ever written down — a leaked row
+/// cannot be turned back into a working link.
+pub async fn issue_reset_token(db: &Db, user_id: i64, token: &str, ttl_secs: i64) -> Result<()> {
+    db.query(
+        "DELETE password_reset WHERE user = type::record('user', $u); \
+         CREATE password_reset SET user = type::record('user', $u), \
+             token_hash = crypto::sha256($t), \
+             created_at = time::unix(), \
+             expires = time::unix() + $ttl;",
+    )
+    .bind(("u", user_id))
+    .bind(("t", token.to_string()))
+    .bind(("ttl", ttl_secs))
+    .await?
+    .check()?;
+    Ok(())
+}
+
+/// Whether a token would still be accepted. This is the GET half of the reset
+/// page, which has to say "this link is dead" before the visitor types a
+/// password — it consumes nothing.
+pub async fn reset_token_pending(db: &Db, token: &str) -> Result<bool> {
+    let rows: Vec<String> = db
+        .query(
+            "SELECT VALUE token_hash FROM password_reset \
+              WHERE token_hash = crypto::sha256($t) AND expires > time::unix() LIMIT 1",
+        )
+        .bind(("t", token.to_string()))
+        .await?
+        .take(0)?;
+    Ok(!rows.is_empty())
+}
+
+/// Consumes one token and answers with the account it belonged to.
+///
+/// The DELETE is what makes it single use: the row is removed by the same
+/// statement that matches it, so a replayed link finds nothing and two racing
+/// attempts cannot both win. An expired token matches nothing and the empty
+/// array maps to an empty list rather than an error — `record::id` refuses
+/// `NONE`, which is why the id is projected inside the map.
+pub async fn consume_reset_token(db: &Db, token: &str) -> Result<Option<i64>> {
+    let mut res = db
+        .query(
+            "LET $rows = DELETE password_reset \
+                 WHERE token_hash = crypto::sha256($t) AND expires > time::unix() RETURN BEFORE; \
+             RETURN $rows.map(|$r| record::id($r.user));",
+        )
+        .bind(("t", token.to_string()))
+        .await?;
+    let ids = res.take::<Vec<i64>>(1)?;
+    Ok(ids.into_iter().next())
+}
+
+/// Overwrites a user's password hash. The caller revokes that user's sessions
+/// itself: a reset is the moment to assume the old password leaked, so every
+/// device signed in with it has to be signed out.
+pub async fn set_user_password(db: &Db, user_id: i64, password_hash: &str) -> Result<()> {
+    db.query("UPDATE type::record('user', $u) SET password = $p")
+        .bind(("u", user_id))
+        .bind(("p", password_hash.to_string()))
+        .await?
+        .check()?;
+    Ok(())
 }
 
 /// Hydrates an explicit id list, preserving the caller's order — which is the

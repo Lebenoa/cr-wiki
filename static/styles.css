@@ -622,7 +622,8 @@
 .text-lg{font-size:var(--text-lg-fontSize);line-height:var(--un-leading, var(--text-lg-lineHeight));}
 .text-sm{font-size:var(--text-sm-fontSize);line-height:var(--un-leading, var(--text-sm-lineHeight));}
 .text-xl{font-size:var(--text-xl-fontSize);line-height:var(--un-leading, var(--text-xl-lineHeight));}
-.text-xs{font-size:var(--text-xs-fontSize);line-height:var(--un-leading, var(--text-xs-lineHeight));}
+.text-xs,
+[text-xs=""]{font-size:var(--text-xs-fontSize);line-height:var(--un-leading, var(--text-xs-lineHeight));}
 .text-\[10px\]{font-size:10px;}
 .text-\[9px\]{font-size:9px;}
 .text-accent{color:color-mix(in srgb, oklch(var(--accent, 0.70 0.18 330)) var(--un-text-opacity), transparent);}
@@ -632,7 +633,8 @@
 .text-emerald-400{color:color-mix(in srgb, var(--colors-emerald-400) var(--un-text-opacity), transparent);}
 .text-error{color:color-mix(in srgb, oklch(var(--error, 0.62 0.24 25)) var(--un-text-opacity), transparent);}
 .text-foreground{color:color-mix(in srgb, oklch(var(--foreground, 0.15 0 0)) var(--un-text-opacity), transparent);}
-.text-foreground-muted{color:color-mix(in srgb, oklch(var(--foreground-muted, 0.4 0 0)) var(--un-text-opacity), transparent);}
+.text-foreground-muted,
+[text-foreground-muted=""]{color:color-mix(in srgb, oklch(var(--foreground-muted, 0.4 0 0)) var(--un-text-opacity), transparent);}
 .text-fuchsia-400{color:color-mix(in srgb, var(--colors-fuchsia-400) var(--un-text-opacity), transparent);}
 .text-indigo-400{color:color-mix(in srgb, var(--colors-indigo-400) var(--un-text-opacity), transparent);}
 .text-lime-400{color:color-mix(in srgb, var(--colors-lime-400) var(--un-text-opacity), transparent);}
@@ -648,6 +650,7 @@
 .text-red-400{color:color-mix(in srgb, var(--colors-red-400) var(--un-text-opacity), transparent);}
 .text-secondary{color:color-mix(in srgb, oklch(var(--secondary, 0.72 0.12 220)) var(--un-text-opacity), transparent);}
 .text-sky-400{color:color-mix(in srgb, var(--colors-sky-400) var(--un-text-opacity), transparent);}
+.text-success{color:color-mix(in srgb, oklch(var(--success, 0.72 0.18 145)) var(--un-text-opacity), transparent);}
 .text-teal-400{color:color-mix(in srgb, var(--colors-teal-400) var(--un-text-opacity), transparent);}
 .text-violet-400{color:color-mix(in srgb, var(--colors-violet-400) var(--un-text-opacity), transparent);}
 .text-yellow-400{color:color-mix(in srgb, var(--colors-yellow-400) var(--un-text-opacity), transparent);}
@@ -684,6 +687,7 @@
 .my-0{margin-block:calc(var(--spacing) * 0);}
 .my-12{margin-block:calc(var(--spacing) * 12);}
 .my-auto{margin-block:auto;}
+.-mt-3{margin-top:calc(var(--spacing) * -3);}
 .mb-10{margin-bottom:calc(var(--spacing) * 10);}
 .mb-2{margin-bottom:calc(var(--spacing) * 2);}
 .mb-3{margin-bottom:calc(var(--spacing) * 3);}
@@ -847,8 +851,7 @@
 .gap-8{gap:calc(var(--spacing) * 8);}
 .gap-x-3{column-gap:calc(var(--spacing) * 3);}
 .gap-y-1{row-gap:calc(var(--spacing) * 1);}
-.grid,
-[grid=""]{display:grid;}
+.grid{display:grid;}
 .col-span-full{grid-column:1/-1;}
 .grid-cols-\[4rem_1fr\]{grid-template-columns:4rem 1fr;}
 .grid-cols-1{grid-template-columns:repeat(1,minmax(0,1fr));}
@@ -971,9 +974,11 @@
 .top-3{top:calc(var(--spacing) * 3);}
 .top-full{top:100%;}
 .justify-start{justify-content:flex-start;}
+.justify-end{justify-content:flex-end;}
 .justify-center{justify-content:center;}
 .justify-between{justify-content:space-between;}
-.absolute{position:absolute;}
+.absolute,
+[absolute=""]{position:absolute;}
 .relative{position:relative;}
 .sticky{position:sticky;}
 .static,
@@ -1028,6 +1033,9 @@
 }
 .space-y-5{
 :where(&>:not(:last-child)){--un-space-y-reverse:0;margin-block-start:calc(calc(var(--spacing) * 5) * var(--un-space-y-reverse));margin-block-end:calc(calc(var(--spacing) * 5) * calc(1 - var(--un-space-y-reverse)));}
+}
+.space-y-6{
+:where(&>:not(:last-child)){--un-space-y-reverse:0;margin-block-start:calc(calc(var(--spacing) * 6) * var(--un-space-y-reverse));margin-block-end:calc(calc(var(--spacing) * 6) * calc(1 - var(--un-space-y-reverse)));}
 }
 @starting-style{
 .not-\[\.hidden\]\:starting\:opacity-0:not(.hidden){opacity:0%;}

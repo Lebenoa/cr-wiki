@@ -1,6 +1,7 @@
 //! `Config.toml`: host/port, the `SurrealDB` server this app talks to (never an
 //! embedded engine — always `ws://` or `http://` over the wire), Turnstile
-//! credentials, and the rate-limit tuning.
+//! credentials, the rate-limit tuning, and the sender the password-reset mail
+//! goes out through.
 
 use serde::Deserialize;
 
@@ -12,6 +13,7 @@ pub struct Config {
     pub surreal: SurrealConfig,
     pub turnstile: Turnstile,
     pub ratelimit: RateLimit,
+    pub email: Email,
 }
 
 impl Default for Config {
@@ -22,6 +24,7 @@ impl Default for Config {
             surreal: SurrealConfig::default(),
             turnstile: Turnstile::default(),
             ratelimit: RateLimit::default(),
+            email: Email::default(),
         }
     }
 }
@@ -50,6 +53,43 @@ impl SurrealConfig {
 pub struct Turnstile {
     pub secret: String,
     pub hostnames: String,
+}
+
+/// Outgoing mail. The password-reset link is the only message the app sends,
+/// and it goes out as a JSON POST to `endpoint` — Resend's
+/// `POST https://api.resend.com/emails` by default — with the message text
+/// rendered by the app's own templates, so no copy lives in a provider
+/// dashboard.
+#[derive(Debug, Clone, Deserialize)]
+#[serde(default)]
+pub struct Email {
+    /// Provider API key (`re_...` for Resend), sent as `Authorization: Bearer`.
+    /// Empty sends nothing at all: a debug build logs the reset link so the
+    /// flow stays walkable without an account, and a release build logs an
+    /// error. The visitor sees the same neutral page either way, so a
+    /// misconfigured deployment cannot leak which addresses exist.
+    pub api_key: String,
+    /// The `From` mailbox: `Cookie Run Wiki <no-reply@example.com>`. Resend
+    /// rejects a sender the account has not verified.
+    pub from: String,
+    /// Where sends are posted. Only a test or a different provider changes it.
+    pub endpoint: String,
+    /// Absolute site URL the reset link is built from, e.g.
+    /// `https://cookierun.example`. Empty falls back to the request's own
+    /// host, and a forged `Host` header would then be mailed to the visitor as
+    /// the place to type a new password — set it in production.
+    pub site_url: String,
+}
+
+impl Default for Email {
+    fn default() -> Self {
+        Self {
+            api_key: String::new(),
+            from: String::new(),
+            endpoint: "https://api.resend.com/emails".into(),
+            site_url: String::new(),
+        }
+    }
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -143,6 +183,24 @@ impl Config {
         }
         if let Ok(v) = std::env::var("TURNSTILE_HOSTNAMES") {
             cfg.turnstile.hostnames = v;
+        }
+
+        // the reset mail's sender. A key set here rather than in a file keeps
+        // the secret out of the deployment bundle; the endpoint override is
+        // what lets a test point the sender at a stub.
+        if let Ok(v) = std::env::var("EMAIL_API_KEY") {
+            cfg.email.api_key = v;
+        }
+        if let Ok(v) = std::env::var("EMAIL_FROM") {
+            cfg.email.from = v;
+        }
+        if let Ok(v) = std::env::var("EMAIL_ENDPOINT") {
+            if !v.is_empty() {
+                cfg.email.endpoint = v;
+            }
+        }
+        if let Ok(v) = std::env::var("EMAIL_SITE_URL") {
+            cfg.email.site_url = v;
         }
 
         let d = RateLimit::default();

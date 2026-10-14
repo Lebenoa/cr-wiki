@@ -114,7 +114,7 @@ sudo systemctl restart cookierun                    # sessions are in-memory
 | GET | `/builds/:id` | Build detail (per-level treasure values, verdicts) |
 | POST | `/builds/:id/verify` | Report verified/issue verdict (authenticated) |
 | GET/POST | `/builds/:id/edit`, POST `/builds/:id/delete` | Owner/admin only (404 otherwise) |
-| GET/POST | `/login`, `/register`; POST `/logout` | Auth |
+| GET/POST | `/login`, `/register`, `/forgot-password`, `/reset-password`; POST `/logout` | Auth |
 | GET | `/api/available-langs` | Languages (HTML partial for HTMX, JSON otherwise) |
 | GET | `/api/richtext-names` | Linkable entity names for rich-text autocomplete |
 | POST | `/api/set-lang` | Set language cookie and redirect back |
@@ -145,9 +145,17 @@ refill = 20
 idle_ttl = 300
 sweep_above = 2048
 trusted_proxies = []                   # proxy IPs whose forwarded headers count
+
+[email]
+api_key = ""                           # EMAIL_API_KEY overrides (empty = no mail)
+from = ""                              # EMAIL_FROM overrides, e.g. "Wiki <no-reply@example.com>"
+endpoint = "https://api.resend.com/emails"   # EMAIL_ENDPOINT overrides
+site_url = ""                          # EMAIL_SITE_URL overrides; set it in production
 ```
 
 `[turnstile] hostnames` is the comma-separated frontend-hostname allowlist checked against siteverify — production deployments must set the real domain (never `localhost`), or every protected submission fails closed.
+
+`[email]` carries the password-reset mail: a JSON POST to `endpoint` (Resend's `POST /emails` by default) authenticated with `api_key`, sent from `from`. The message is rendered from the app's own templates and `translations/`, so no copy lives in a provider dashboard. With no key nothing is sent — a debug build logs the link so the flow stays walkable locally, a release build logs an error — and either way the request answers with the same neutral page, so the form never reveals whether an address is registered. Set `site_url` to the site's absolute URL in production: without it the link is built from the request's `Host` header, which a forged header can point elsewhere.
 
 ## Development
 

@@ -55,6 +55,11 @@ pub fn router() -> Router {
         .route("/builds/{id}", get(builds::show))
         .route("/login", get(auth::login_form).post(auth::login))
         .route("/register", get(auth::register_form).post(auth::register))
+        // the reset pair sits with the other auth routes, well before the
+        // catalog captures, so neither path can be read as a `/{section}/{id}`
+        // detail page
+        .route("/forgot-password", get(auth::forgot_form).post(auth::forgot))
+        .route("/reset-password", get(auth::reset_form).post(auth::reset))
         // GET logout with the SameSite=Lax session cookie lets any
         // cross-site link end the session: Lax still rides a top-level GET
         // navigation, so a linked /logout is a forced logout. POST only —
@@ -289,6 +294,26 @@ mod tests {
         assert_eq!(res.status(), StatusCode::SEE_OTHER);
     }
 
+    /// The email is optional, but a value that could never receive a reset
+    /// mail is refused — and refused before the row is created, so this
+    /// no-DB state answers 400 rather than 500. A blank field passes the same
+    /// gate and reaches the database.
+    #[tokio::test]
+    async fn register_refuses_a_malformed_email_before_touching_the_db() {
+        state();
+        let base = "username=ginger&password=longenough&confirm_password=longenough&email=";
+
+        for bad in ["ginger", "ginger%40cookie", "two%40at%40cookie.run"] {
+            let res = post("/register", &format!("{base}{bad}")).await;
+            assert_eq!(res.status(), StatusCode::BAD_REQUEST, "{bad}");
+            let body = text(res).await;
+            assert!(
+                body.contains("That email address does not look right."),
+                "{bad}: {body}"
+            );
+        }
+    }
+
     /// The registration length floor is enforced before anything touches the
     /// database: this no-DB state would 500 past the policy gate, so a 400 with
     /// the password message proves the gate fired first.
@@ -400,6 +425,135 @@ mod tests {
         assert!(!html.contains("hx-swap=\"none\""), "{html}");
         assert!(html.contains("action=\"/login\""), "no-JS fallback: {html}");
         assert!(html.contains("id=\"form-error\""), "{html}");
+    }
+
+    /// The register form asks for an email for password reset only, so the
+    /// markup has to say all of that: an optional field, a collapsed hint, and
+    /// the button that reveals it (whose `hidden` class lives in the markup, so
+    /// the CSS generator sees it). The sign-in form asks for no email at all.
+    #[tokio::test]
+    async fn register_form_asks_for_an_optional_email_and_hints_why() {
+        state();
+        let html = text(get("/register").await).await;
+        assert!(html.contains("name=\"email\""), "the field posts: {html}");
+        assert!(
+            !html.contains("name=\"email\" required"),
+            "optional, so no required attribute: {html}"
+        );
+        assert!(
+            html.contains("<p class=\"hidden text-xs text-foreground-muted\" id=\"email-hint\">Use for password reset only</p>"),
+            "the hint starts hidden: {html}"
+        );
+        assert!(html.contains("aria-controls=\"email-hint\""), "{html}");
+        assert!(
+            html.contains("aria-expanded=\"false\""),
+            "revealed only on click: {html}"
+        );
+        assert!(
+            html.contains("h.classList.toggle('hidden')"),
+            "the button toggles the hint: {html}"
+        );
+        assert!(html.contains(">Why?</button>"), "{html}");
+
+        let login = text(get("/login").await).await;
+        assert!(
+            !login.contains("email-hint"),
+            "no email field on the sign-in form: {login}"
+        );
+    }
+
+    /// The way out of a forgotten password sits on the sign-in page and
+    /// nowhere else: the register form has no password to recover, so it
+    /// carries no reset link.
+    #[tokio::test]
+    async fn login_offers_the_reset_link_and_register_does_not() {
+        state();
+        let login = text(get("/login").await).await;
+        assert!(login.contains("href=\"/forgot-password\""), "{login}");
+        assert!(login.contains(">Forgot password?</a>"), "{login}");
+
+        let register = text(get("/register").await).await;
+        assert!(
+            !register.contains("/forgot-password"),
+            "nothing to recover on the register form: {register}"
+        );
+    }
+
+    /// A reset request is answered with the same redirect whatever the address
+    /// was, and a malformed one is settled locally: this unconnected handle
+    /// would 500 past that gate, so the 303 proves the form neither confirms
+    /// nor denies an account. The address never comes back in the header.
+    #[tokio::test]
+    async fn forgot_answers_neutrally_without_echoing_the_address() {
+        state();
+        for address in ["ginger", "ginger%40cookie", "two%40at%40cookie.run"] {
+            let res = post("/forgot-password", &format!("email={address}")).await;
+            assert_eq!(res.status(), StatusCode::SEE_OTHER, "{address}");
+            assert_eq!(
+                res.headers().get("location").and_then(|v| v.to_str().ok()),
+                Some("/forgot-password?sent=1"),
+                "{address}"
+            );
+        }
+
+        let html = text(get("/forgot-password?sent=1").await).await;
+        assert!(
+            html.contains("If an account uses that address, a reset link is on its way."),
+            "{html}"
+        );
+        assert!(
+            html.contains("data-action=\"forgot_password\""),
+            "the bot check is bound to this form: {html}"
+        );
+        assert!(
+            !html.contains("ginger@cookie.run"),
+            "the page echoes no address back: {html}"
+        );
+    }
+
+    /// A missing link shows the dead-link page rather than a password form,
+    /// and the form validates before the link is spent: a typo costs a retry,
+    /// not the token. Both halves answer without a database.
+    #[tokio::test]
+    async fn reset_pages_refuse_a_dead_link_and_keep_the_token_on_a_typo() {
+        state();
+        let dead = text(get("/reset-password").await).await;
+        assert!(
+            dead.contains("That reset link is invalid or has expired."),
+            "{dead}"
+        );
+        assert!(
+            !dead.contains("name=\"token\""),
+            "nothing to type a password into: {dead}"
+        );
+        assert!(
+            dead.contains("href=\"/forgot-password\""),
+            "the way to ask for a fresh link: {dead}"
+        );
+
+        let res = post(
+            "/reset-password",
+            "token=abc&password=short12&confirm_password=short12",
+        )
+        .await;
+        assert_eq!(res.status(), StatusCode::BAD_REQUEST);
+        let html = text(res).await;
+        assert!(
+            html.contains("Password must be at least 8 characters."),
+            "{html}"
+        );
+        assert!(
+            html.contains("value=\"abc\""),
+            "the link survives a rejected password: {html}"
+        );
+
+        let res = post(
+            "/reset-password",
+            "token=abc&password=longenough&confirm_password=different1",
+        )
+        .await;
+        assert_eq!(res.status(), StatusCode::BAD_REQUEST);
+        assert!(text(res).await.contains("Passwords do not match."));
     }
 
     /// Every response carries the security baselines — a page without
