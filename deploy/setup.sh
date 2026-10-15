@@ -37,6 +37,8 @@
 # Environment overrides: CR_BUNDLE, CR_INSTALL_DIR, CR_HOST, CR_PORT, CR_NS,
 #   CR_DB, CR_ADMIN_USER, CR_ADMIN_PASS, CR_DB_PASS, CR_TURNSTILE_SECRET,
 #   CR_TURNSTILE_HOSTNAMES, CR_TRUSTED_PROXIES (space/comma separated),
+#   CR_GOOGLE_CLIENT_ID, CR_GOOGLE_CLIENT_SECRET, CR_GOOGLE_REDIRECT_URI (all
+#   three together enable Sign in with Google),
 #   CR_RELEASE (GitHub release tag for bundle download), CR_DB_BIND.
 set -Eeuo pipefail
 
@@ -153,6 +155,7 @@ CONF_PASS="$(sed -n 's/^SURREAL_PASS=//p' /etc/cookierun/surrealdb.env)"
 
 # Config.toml: host/port, the datastore, turnstile, trusted proxies.
 CONF="$INSTALL/Config.toml"
+HOSTNAMES="$(printf '%s' "${CR_TURNSTILE_HOSTNAMES:-localhost,127.0.0.1}" | tr ',' '\n' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//;s/.*/"&"/' | paste -sd, -)"
 cat > "$CONF" <<EOF
 host = "$HOST"
 port = $PORT
@@ -166,8 +169,19 @@ password = "$CONF_PASS"
 
 [turnstile]
 secret = "${CR_TURNSTILE_SECRET:-}"
-hostnames = "${CR_TURNSTILE_HOSTNAMES:-}"
+hostnames = [$HOSTNAMES]
 EOF
+# Sign in with Google is written only when it was asked for: an empty section
+# is the normal local-account setup, and the app treats a half-filled one as a
+# configuration error rather than silently disabling the button.
+if [ -n "${CR_GOOGLE_CLIENT_ID:-}" ]; then
+    if [ -z "${CR_GOOGLE_CLIENT_SECRET:-}" ]; then
+        echo "CR_GOOGLE_CLIENT_ID needs CR_GOOGLE_CLIENT_SECRET too" >&2
+        exit 1
+    fi
+    printf '\n[google]\nclient_id = "%s"\nclient_secret = "%s"\nredirect_uri = "%s"\n' \
+        "$CR_GOOGLE_CLIENT_ID" "$CR_GOOGLE_CLIENT_SECRET" "${CR_GOOGLE_REDIRECT_URI:-}" >> "$CONF"
+fi
 if [ -n "${CR_TRUSTED_PROXIES:-}" ]; then
     PROXIES="$(printf '%s\n' "${CR_TRUSTED_PROXIES//,/ }" | tr ' ' '\n' | sed '/^$/d' | sed 's/.*/"&"/' | paste -sd, -)"
     printf '\n[ratelimit]\ntrusted_proxies = [%s]\n' "$PROXIES" >> "$CONF"

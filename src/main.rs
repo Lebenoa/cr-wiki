@@ -11,6 +11,7 @@ mod grade;
 mod i18n;
 mod mail;
 mod middleware;
+mod oauth;
 mod options;
 mod pagination;
 mod prefill;
@@ -72,7 +73,19 @@ async fn main() {
         )
         .init();
 
-    let cfg = config::Config::load("Config.toml");
+    // A bad value or a bad file is a field-specific startup error, not a
+    // silently defaulted setting: without a usable SurrealDB URL there is
+    // nothing to serve, and a half-configured auth or mail setup fails in
+    // ways only the log would explain.
+    let cfg = match config::Config::load("Config.toml") {
+        Ok(cfg) => cfg,
+        Err(errors) => {
+            for error in &errors {
+                tracing::error!("configuration invalid: {error}");
+            }
+            return;
+        }
+    };
     i18n::load("translations");
     tracing::info!(langs = ?i18n::available_langs(), "translations loaded");
 
@@ -92,6 +105,7 @@ async fn main() {
         db: pool,
         limiter: ratelimit::Limiter::new(cfg.ratelimit.clone()),
         sessions: session::Sessions::new(),
+        oauth_states: oauth::States::new(),
         cfg: cfg.clone(),
     };
 

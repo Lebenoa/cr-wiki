@@ -2,6 +2,7 @@ use std::sync::OnceLock;
 
 use crate::config::Config;
 use crate::db::Db;
+use crate::oauth::States;
 use crate::ratelimit::Limiter;
 use crate::session::Sessions;
 
@@ -19,6 +20,9 @@ pub struct AppState {
     pub cfg: Config,
     pub limiter: Limiter,
     pub sessions: Sessions,
+    /// the Google sign-in flows waiting on a callback, in memory like the
+    /// sessions: a restart drops the flows in flight and the visitor retries
+    pub oauth_states: States,
 }
 
 static STATE: OnceLock<AppState> = OnceLock::new();
@@ -39,4 +43,12 @@ pub fn init(state: AppState) {
 #[allow(clippy::expect_used)] // sole exception: process-global set in main
 pub fn state() -> &'static AppState {
     STATE.get().expect("state initialized before serving")
+}
+
+/// Whether Google sign-in is configured, for the templates that decide whether
+/// to offer it. Deliberately not [`state`]: a test that renders a page without
+/// installing the shared state must get "no button" rather than a panic, and
+/// the answer is a property of the config, not of the request.
+pub fn google_login_enabled() -> bool {
+    STATE.get().is_some_and(|s| s.cfg.google.is_configured())
 }

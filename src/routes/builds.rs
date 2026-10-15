@@ -3,11 +3,22 @@
 use askama::Template;
 use axum::extract::{Path, Query};
 use axum::response::{Html, IntoResponse, Response};
+use axum::routing::get;
+use axum::Router;
 
 use crate::builds::{self, BuildCard};
 use crate::ctx::Ctx;
 
 use super::{errors::AppError, CommonQuery};
+
+/// The two read-only build pages. `/builds/new` and the write side belong to
+/// `planner`, which is merged first so the static segment keeps winning over
+/// the `{id}` capture here.
+pub fn routes() -> Router {
+    Router::new()
+        .route("/builds", get(list))
+        .route("/builds/{id}", get(show))
+}
 
 #[derive(Template)]
 #[template(path = "builds.html")]

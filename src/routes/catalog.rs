@@ -5,6 +5,8 @@
 use askama::Template;
 use axum::extract::{Path, Query};
 use axum::response::{Html, IntoResponse, Response};
+use axum::routing::get;
+use axum::Router;
 
 use crate::ctx::Ctx;
 use crate::db::{self, Card};
@@ -13,6 +15,12 @@ use crate::section::Section;
 use crate::state::AppState;
 
 use super::{errors::AppError, CommonQuery};
+
+/// One handler for every section: the section is a path capture, so eight
+/// lists share a function.
+pub fn routes() -> Router {
+    Router::new().route("/{section}", get(list))
+}
 
 #[derive(Template)]
 #[template(path = "catalog.html")]
@@ -285,8 +293,15 @@ mod tests {
         let database = std::env::var("CR_SURREAL_DB").unwrap_or_else(|_| "cookierun".into());
         let user = std::env::var("SURREAL_USER").unwrap_or_else(|_| "root".into());
         let pass = std::env::var("SURREAL_PASS").unwrap_or_default();
-        crate::db::connect_url(&url, &ns, &database, &user, &pass)
-            .await
-            .ok()
+        match crate::db::connect_url(&url, &ns, &database, &user, &pass).await {
+            Ok(db) => Some(db),
+            // a URL that is set but unusable must not read as "no server
+            // configured": that would turn a broken database into a green,
+            // silently skipping run
+            Err(e) => {
+                eprintln!("skip: CR_SURREAL_URL is set but unusable ({e})");
+                None
+            }
+        }
     }
 }

@@ -337,6 +337,21 @@ Confirm Password
 login_button_text
 Login
 -----
+google_sign_in
+Sign in with Google
+-----
+google_sign_in_failed
+We couldn't complete the sign-in with Google. Please try again.
+-----
+google_sign_in_cancelled
+The Google sign-in was cancelled. You can try again below.
+-----
+google_account_conflict
+That address is already linked to a different Google account. Sign in with that account, or use your password.
+-----
+account_email_google_hint
+This account signs in with Google, so it may have no password you know. Set one with the "Forgot password?" link first if the field above rejects you.
+-----
 register_button_text
 Register Now!
 -----

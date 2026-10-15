@@ -12,6 +12,7 @@ pub struct Config {
     pub turnstile: Turnstile,
     pub ratelimit: RateLimit,
     pub email: Email,
+    pub google: Google,
 }
 
 impl Default for Config {
@@ -23,7 +24,35 @@ impl Default for Config {
             turnstile: Turnstile::default(),
             ratelimit: RateLimit::default(),
             email: Email::default(),
+            google: Google::default(),
         }
+    }
+}
+
+/// Google sign-in (OAuth 2.0 authorization-code flow). An unconfigured
+/// section is not an error: the login form simply offers no Google button and
+/// `/auth/google` answers 404, which is how a wiki that only wants local
+/// accounts runs.
+#[derive(Debug, Clone, Default, Deserialize)]
+#[serde(default)]
+pub struct Google {
+    /// OAuth client id from the Google Cloud console.
+    pub client_id: String,
+    /// OAuth client secret. Server-side only — it never reaches a template.
+    pub client_secret: String,
+    /// The exact callback URL registered with Google. Empty derives it from
+    /// `[email] site_url` (or the request host when nothing is configured),
+    /// so the token exchange always echoes the URL the consent screen was
+    /// started with.
+    pub redirect_uri: String,
+}
+
+impl Google {
+    /// Google sign-in is offered only with both halves of the credential:
+    /// either one alone cannot complete a token exchange, and half a
+    /// credential is a misconfiguration rather than a feature toggle.
+    pub fn is_configured(&self) -> bool {
+        !self.client_id.trim().is_empty() && !self.client_secret.trim().is_empty()
     }
 }
 
@@ -38,6 +67,18 @@ pub struct SurrealConfig {
     pub database: String,
     pub username: String,
     pub password: String,
+}
+
+impl SurrealConfig {
+    /// Whether the datastore is configured well enough to connect: the
+    /// endpoint plus the namespace/database pair the app signs in to.
+    /// `Config::validate` refuses to start on an incomplete setup, so `main`
+    /// reads this to say *why* it will not serve rather than to decide it.
+    pub fn is_configured(&self) -> bool {
+        !self.url.trim().is_empty()
+            && !self.namespace.trim().is_empty()
+            && !self.database.trim().is_empty()
+    }
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -165,6 +206,25 @@ impl Config {
         {
             errors.push("[email] site_url must be an absolute http:// or https:// URL".to_string());
         }
+        let google = &self.google;
+        let google_partial = !google.client_id.is_empty() || !google.client_secret.is_empty();
+        if google_partial && !google.is_configured() {
+            errors.push(
+                "[google] client_id and client_secret are required together".to_string(),
+            );
+        }
+        if google.client_id.trim() != google.client_id || google.client_secret.trim() != google.client_secret
+        {
+            errors.push("[google] client_id and client_secret must not carry surrounding whitespace".to_string());
+        }
+        if !google.redirect_uri.is_empty()
+            && google.redirect_uri.parse::<reqwest::Url>().map_or(true, |url| {
+                !matches!(url.scheme(), "http" | "https") || url.host_str().is_none()
+            })
+        {
+            errors
+                .push("[google] redirect_uri must be an absolute http:// or https:// URL".to_string());
+        }
         if errors.is_empty() {
             Ok(())
         } else {
@@ -174,6 +234,8 @@ impl Config {
 }
 
 #[cfg(test)]
+// tests use unwrap/expect/panic freely; production code does not (Cargo.toml [lints])
+#[cfg_attr(test, allow(clippy::unwrap_used, clippy::expect_used, clippy::panic))]
 mod tests {
     use super::{Config, SmtpTls, Turnstile};
 
@@ -196,6 +258,67 @@ mod tests {
         assert!(errors.iter().any(|error| error.contains("[surreal]")));
         assert!(errors.iter().any(|error| error.contains("smtp_host")));
         assert!(errors.iter().any(|error| error.contains("SMTP mailbox")));
+    }
+
+    /// Half a Google credential is a misconfiguration, not a feature toggle:
+    /// the section is either complete (the button appears, the flow runs) or
+    /// empty (no button, `/auth/google` 404s).
+    /// A datastore-complete config, so the Google assertions below cannot be
+    /// satisfied by an unrelated startup error.
+    fn valid_base() -> Config {
+        let mut config = Config::default();
+        config.surreal.url = "http://localhost:8000".into();
+        config.surreal.namespace = "wiki".into();
+        config.surreal.database = "wiki".into();
+        config
+    }
+
+    #[test]
+    fn google_credential_is_all_or_nothing() {
+        let mut config = valid_base();
+        assert!(!config.google.is_configured(), "an empty section is fine");
+        config.validate().unwrap();
+
+        config.google.client_id = "123.apps.googleusercontent.com".into();
+        assert!(!config.google.is_configured());
+        let errors = config.validate().unwrap_err();
+        assert!(
+            errors.iter().any(|e| e.contains("[google]")),
+            "a half-credential stops startup: {errors:?}"
+        );
+
+        config.google.client_secret = "secret".into();
+        assert!(config.google.is_configured());
+        config.validate().unwrap();
+
+        // whitespace-only values are not a credential either
+        config.google.client_id = "   ".into();
+        assert!(!config.google.is_configured());
+        assert!(config
+            .validate()
+            .unwrap_err()
+            .iter()
+            .any(|e| e.contains("whitespace")));
+    }
+
+    /// The callback URL Google is told to return to must be absolute: a
+    /// relative or schemeless value produces a consent screen Google refuses
+    /// and a token exchange that cannot match.
+    #[test]
+    fn google_redirect_uri_must_be_absolute() {
+        let mut config = valid_base();
+        config.google.client_id = "id".into();
+        config.google.client_secret = "secret".into();
+
+        config.google.redirect_uri = "/auth/google/callback".into();
+        assert!(config
+            .validate()
+            .unwrap_err()
+            .iter()
+            .any(|e| e.contains("[google] redirect_uri")));
+
+        config.google.redirect_uri = "https://wiki.example/auth/google/callback".into();
+        config.validate().unwrap();
     }
 
     #[test]
@@ -309,6 +432,16 @@ impl Config {
                 .filter(|hostname| !hostname.is_empty())
                 .map(str::to_string)
                 .collect();
+        }
+
+        if let Ok(v) = std::env::var("GOOGLE_CLIENT_ID") {
+            cfg.google.client_id = v;
+        }
+        if let Ok(v) = std::env::var("GOOGLE_CLIENT_SECRET") {
+            cfg.google.client_secret = v;
+        }
+        if let Ok(v) = std::env::var("GOOGLE_REDIRECT_URI") {
+            cfg.google.redirect_uri = v;
         }
 
         if let Ok(v) = std::env::var("EMAIL_SMTP_HOST") {

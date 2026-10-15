@@ -83,6 +83,16 @@ Run from the repo root:
   server-side.
 - **Turnstile** fails closed on missing config or any network error, and is
   skipped only in debug builds.
+- **Google sign-in** (`src/oauth.rs`, `[google]` in Config.toml) refuses every
+  failure the same way — the sign-in page with one whitelisted reason and no
+  session. The `state` is single-use, short-lived, mirrored into an HttpOnly
+  `SameSite=Lax` cookie scoped to `/auth/google`, and burned even when the
+  cookie does not match; the callback only reaches Google's endpoints when that
+  check passes. Only a Google-**verified** address may match an existing
+  account, and an account already carrying a different subject is refused
+  rather than linked. A new account gets a random, never-shown password (the
+  hash keeps the password form closed) and never admin, and no username is
+  trusted from the profile without being offered to the unique index.
 
 ## Code Conventions & Common Patterns
 - **Grade model**: display rank is NOT the enum's declaration order —

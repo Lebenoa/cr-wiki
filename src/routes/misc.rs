@@ -3,6 +3,8 @@
 use askama::Template;
 use axum::extract::Query;
 use axum::response::Html;
+use axum::routing::get;
+use axum::Router;
 
 use crate::ctx::Ctx;
 use crate::db::{self, Card, GachaPool};
@@ -10,6 +12,17 @@ use crate::grade::Graded;
 use crate::i18n;
 
 use super::{errors::AppError, CommonQuery};
+
+/// This surface in one table: the landing page, search and the SEO
+/// endpoints. `super::router` merges it with every other surface.
+pub fn routes() -> Router {
+    Router::new()
+        .route("/", get(index))
+        .route("/search", get(search))
+        .route("/gacha", get(gacha))
+        .route("/sitemap.xml", get(sitemap))
+        .route("/robots.txt", get(robots))
+}
 
 #[derive(Template)]
 #[template(path = "index.html")]
@@ -297,8 +310,15 @@ mod tests {
         let database = std::env::var("CR_SURREAL_DB").unwrap_or_else(|_| "cookierun".into());
         let user = std::env::var("SURREAL_USER").unwrap_or_else(|_| "root".into());
         let pass = std::env::var("SURREAL_PASS").unwrap_or_default();
-        crate::db::connect_url(&url, &ns, &database, &user, &pass)
-            .await
-            .ok()
+        match crate::db::connect_url(&url, &ns, &database, &user, &pass).await {
+            Ok(db) => Some(db),
+            // a URL that is set but unusable must not read as "no server
+            // configured": that would turn a broken database into a green,
+            // silently skipping run
+            Err(e) => {
+                eprintln!("skip: CR_SURREAL_URL is set but unusable ({e})");
+                None
+            }
+        }
     }
 }

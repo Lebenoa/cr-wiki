@@ -2,15 +2,31 @@
 //! forms. Answers JSON, so the form can drop the returned filename into its
 //! image field without a page reload.
 
+use axum::extract::DefaultBodyLimit;
 use axum::extract::{Multipart, Path};
 use axum::http::StatusCode;
 use axum::response::{IntoResponse, Response};
+use axum::routing::post;
 use axum::Json;
+use axum::Router;
 use serde_json::json;
 
 use crate::ctx::Ctx;
 use crate::section::Section;
 use crate::upload;
+
+/// The admin image upload. The upload ceiling is declared here, not left to
+/// axum's 2 MB default: the handler's own check bounds a single field at
+/// `upload::MAX_BYTES`, so the request limit only needs to cover the multipart
+/// envelope on top.
+pub fn routes() -> Router {
+    Router::new().route(
+        "/{section}/upload",
+        post(image).layer(DefaultBodyLimit::max(
+            upload::MAX_BYTES.saturating_add(64 * 1024),
+        )),
+    )
+}
 
 pub async fn image(ctx: Ctx, Path(section): Path<String>, mut form: Multipart) -> Response {
     // 404 rather than 403 for a non-admin, matching the other admin routes

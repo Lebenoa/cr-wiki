@@ -115,6 +115,7 @@ sudo systemctl restart cookierun                    # sessions are in-memory
 | POST | `/builds/:id/verify` | Report verified/issue verdict (authenticated) |
 | GET/POST | `/builds/:id/edit`, POST `/builds/:id/delete` | Owner/admin only (404 otherwise) |
 | GET/POST | `/login`, `/register`, `/forgot-password`, `/reset-password`; POST `/logout` | Auth |
+| GET | `/auth/google`, `/auth/google/callback` | Sign in with Google (404 unless `[google]` is configured) |
 | GET/POST | `/account/email` | Signed-in recovery email settings; current password required to save |
 | GET | `/api/available-langs` | Languages (HTML partial for HTMX, JSON otherwise) |
 | GET | `/api/richtext-names` | Linkable entity names for rich-text autocomplete |
@@ -147,6 +148,11 @@ idle_ttl = 300
 sweep_above = 2048
 trusted_proxies = []                   # proxy IPs whose forwarded headers count
 
+[google]
+client_id = ""                        # GOOGLE_CLIENT_ID
+client_secret = ""                    # GOOGLE_CLIENT_SECRET; keep secret
+redirect_uri = ""                     # GOOGLE_REDIRECT_URI; empty derives it from site_url
+
 [email]
 from = ""                            # EMAIL_FROM, e.g. "Wiki <no-reply@lebenoa.com>"
 smtp_host = ""                       # EMAIL_SMTP_HOST, e.g. mail.lebenoa.com
@@ -160,6 +166,8 @@ site_url = ""                        # EMAIL_SITE_URL; set in production
 `[email]` sends reset and account-security notices through authenticated SMTP. For Stalwart, use the submission listener and credentials for a Stalwart account. Configure `smtp_tls = "starttls"` on port 587 or `smtp_tls = "tls"` on port 465. Plaintext SMTP is not supported. The SMTP password can be provided as `EMAIL_SMTP_PASSWORD` rather than stored in the config file.
 
 Delivery failures are logged and do not block completed password or email changes. With no transport credentials, mail is not sent; debug builds log the reset link for local development, while release builds log an error.
+
+`[google]` adds "Sign in with Google" to the sign-in and register pages. The client is created in the Google Cloud console (APIs & Services → Credentials → OAuth client ID → Web application); register `https://<your-site>/auth/google/callback` as an authorized redirect URI, or set `[google] redirect_uri` to whatever you registered. The first Google sign-in creates an account from the profile's display name and verified address with a random, unknown password, and a verified address that already belongs to an account links Google to that account instead of making a second one. An account that already carries a different Google account is refused, and an account with no password can set one through "Forgot password?" (the address has to receive mail for that). With the section empty, no button is rendered and both routes answer 404 — nothing else about local accounts changes.
 
 ## Development
 

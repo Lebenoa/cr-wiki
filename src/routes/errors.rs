@@ -44,6 +44,10 @@ pub async fn fallback(ctx: Ctx) -> Response {
 /// A failed database call: logged with its cause and answered with the
 /// site's own 500 page. An outage must never masquerade as an empty wiki —
 /// that reads as "no data" to visitors, crawlers and monitors alike.
+///
+/// `Debug` is derived so a caller (a test, or a future `tracing::error!(?e)`)
+/// can report the cause; the field itself stays private.
+#[derive(Debug)]
 pub struct AppError(surrealdb::Error);
 
 impl From<surrealdb::Error> for AppError {

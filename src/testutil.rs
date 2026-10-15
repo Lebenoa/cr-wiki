@@ -19,5 +19,15 @@ pub fn test_ctx(lang: &str) -> Ctx {
         boosted: false,
         is_local: true,
         user: None,
+        google_login: false,
+    }
+}
+
+/// The same stub with Google sign-in switched on, so a template that offers
+/// the button can be rendered without installing the shared state.
+pub fn test_ctx_with_google(lang: &str) -> Ctx {
+    Ctx {
+        google_login: true,
+        ..test_ctx(lang)
     }
 }

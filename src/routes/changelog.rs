@@ -1,12 +1,19 @@
 use askama::Template;
 use axum::extract::Query;
 use axum::response::Html;
+use axum::routing::get;
+use axum::Router;
 
 use crate::changelog::{self, ChangeEntry};
 use crate::ctx::Ctx;
 use crate::pagination::slice_page;
 
 use super::CommonQuery;
+
+/// The changelog page.
+pub fn routes() -> Router {
+    Router::new().route("/changelog", get(page))
+}
 
 #[derive(Template)]
 #[template(path = "changelog_entries.html")]

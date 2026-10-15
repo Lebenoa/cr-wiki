@@ -8,6 +8,8 @@
 use askama::Template;
 use axum::extract::{Path, Query};
 use axum::response::{Html, IntoResponse, Response};
+use axum::routing::get;
+use axum::Router;
 
 use crate::ctx::Ctx;
 use crate::db;
@@ -16,6 +18,13 @@ use crate::options::{self, PickerOption};
 use crate::pagination::slice_page;
 
 use super::{errors::AppError, CommonQuery};
+
+/// The picker endpoints: one option grid and the planner preview.
+pub fn routes() -> Router {
+    Router::new()
+        .route("/builds/options/{kind}", get(options_grid))
+        .route("/builds/preview", get(preview))
+}
 
 #[derive(Template)]
 #[template(path = "picker_options.html")]
@@ -384,8 +393,15 @@ mod tests {
         let database = std::env::var("CR_SURREAL_DB").unwrap_or_else(|_| "cookierun".into());
         let user = std::env::var("SURREAL_USER").unwrap_or_else(|_| "root".into());
         let pass = std::env::var("SURREAL_PASS").unwrap_or_default();
-        crate::db::connect_url(&url, &ns, &database, &user, &pass)
-            .await
-            .ok()
+        match crate::db::connect_url(&url, &ns, &database, &user, &pass).await {
+            Ok(db) => Some(db),
+            // a URL that is set but unusable must not read as "no server
+            // configured": that would turn a broken database into a green,
+            // silently skipping run
+            Err(e) => {
+                eprintln!("skip: CR_SURREAL_URL is set but unusable ({e})");
+                None
+            }
+        }
     }
 }

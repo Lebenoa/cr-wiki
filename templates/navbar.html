@@ -78,6 +78,7 @@
             class="p-4 m-bs-1 inline-64 bg-background text-foreground rounded border border-accent transition-discrete transition-all duration-300 flex-col gap-2 hidden popover-open:flex">
             {% if ctx.signed_in() %}
             <p class="btn">{{ ctx.username() }}</p>
+            <a href="/account/email" class="btn-secondary w-full mt-1">{{ ctx.l.t("account_email") }}</a>
             <form method="post" action="/logout" class="mt-1">
                 <button type="submit" class="btn-secondary w-full">{{ ctx.l.t("logout") }}</button>
             </form>

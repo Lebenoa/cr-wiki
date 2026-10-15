@@ -62,6 +62,21 @@ sweep_above = 2048
 # one bucket.
 trusted_proxies = []
 
+# Sign in with Google (OAuth 2.0 authorization code flow). Optional: with an
+# empty section the login form offers no Google button and /auth/google
+# answers 404, which is how a purely local-account wiki runs. Both fields must
+# be set together; GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET / GOOGLE_REDIRECT_URI
+# env vars override them. Create the OAuth client in the Google Cloud console
+# (APIs & Services → Credentials → OAuth client ID → Web application) and
+# register the callback URL of every deployment that serves it.
+[google]
+client_id = ""     # GOOGLE_CLIENT_ID, e.g. 1234-abc.apps.googleusercontent.com
+client_secret = "" # GOOGLE_CLIENT_SECRET; keep secrets in environment
+# Exact callback URL registered with Google. Empty derives it from
+# [email] site_url (or the request host with nothing configured), so a
+# deployment behind a proxy usually sets it explicitly.
+redirect_uri = ""  # GOOGLE_REDIRECT_URI, e.g. https://wiki.example.com/auth/google/callback
+
 # Outgoing mail through authenticated SMTP.
 # Stalwart normally offers STARTTLS on port 587 and implicit TLS on port 465.
 # Plain SMTP is unsupported. EMAIL_* environment variables override fields.

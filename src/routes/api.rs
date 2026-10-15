@@ -2,7 +2,9 @@
 
 use axum::extract::Query;
 use axum::response::{IntoResponse, Redirect, Response};
+use axum::routing::{get, post};
 use axum::Json;
+use axum::Router;
 use serde_json::json;
 
 use crate::ctx::{Ctx, LANG_COOKIE};
@@ -10,6 +12,15 @@ use crate::db;
 use crate::i18n;
 
 use super::{errors::AppError, CommonQuery};
+
+/// The JSON endpoints the front end calls, in one table.
+pub fn routes() -> Router {
+    Router::new()
+        .route("/api/available-langs", get(available_langs))
+        .route("/api/richtext-names", get(richtext_names))
+        .route("/api/relics", get(relics))
+        .route("/api/set-lang", post(set_lang))
+}
 
 /// The locales the site is served in.
 pub async fn available_langs() -> Json<serde_json::Value> {
@@ -42,9 +53,7 @@ pub async fn richtext_names(
     let names = crate::options::options(&state.db, &lang, &kind)
         .await?
         .iter()
-        .map(|o| {
-            json!({ "id": o.id, "name": o.name, "en_name": o.en_name, "image": o.image })
-        })
+        .map(|o| json!({ "id": o.id, "name": o.name, "en_name": o.en_name, "image": o.image }))
         .collect::<Vec<_>>();
     Ok(Json(json!({ "kind": section, "names": names })))
 }
@@ -78,9 +87,7 @@ pub async fn set_lang(q: Query<CommonQuery>) -> Response {
 
 /// Kept next to the other API handlers: the relic list, which has no page of
 /// its own yet but is already queryable.
-pub async fn relics(
-    ctx: Ctx,
-) -> Result<Json<serde_json::Value>, AppError> {
+pub async fn relics(ctx: Ctx) -> Result<Json<serde_json::Value>, AppError> {
     let state = crate::state::state();
     let rows = db::select_simple(&state.db, &ctx.lang, "relics").await?;
     Ok(Json(json!({
