@@ -100,7 +100,7 @@ fn is_current(request: &HeaderMap, etag: &str, last_modified: Option<i64>) -> bo
 /// any one of which matching means the client is current. The comparison is
 /// the weak one, `If-None-Match`'s rule, so a `W/"…"` client tag matches the
 /// strong tag we sent for the same bytes.
-fn none_match_hits(raw: &str, etag: &str) -> bool {
+pub(crate) fn none_match_hits(raw: &str, etag: &str) -> bool {
     let ours = weak(etag);
     raw.split(',').any(|candidate| {
         let candidate = candidate.trim();
@@ -123,7 +123,11 @@ fn not_modified(etag: &str, last_modified: Option<i64>) -> Response {
 fn validators(res: &mut Response, etag: &str, last_modified: Option<i64>) {
     insert(res, header::ETAG, etag);
     if let Some(ts) = last_modified {
-        insert(res, header::LAST_MODIFIED, &crate::time::format_http_date(ts));
+        insert(
+            res,
+            header::LAST_MODIFIED,
+            &crate::time::format_http_date(ts),
+        );
     }
     insert(res, header::CACHE_CONTROL, CACHE_CONTROL);
 }
@@ -140,7 +144,7 @@ fn insert(res: &mut Response, name: header::HeaderName, value: &str) {
 /// can only share a tag by colliding in both. `len` is carried alongside the
 /// hash because a length is free to check and closes the trivial collisions a
 /// 64-bit digest admits.
-fn tag(body: &str) -> String {
+pub(crate) fn tag(body: &str) -> String {
     format!("\"{}-{:016x}\"", body.len(), digest(body.as_bytes()))
 }
 
@@ -197,7 +201,12 @@ mod tests {
     /// that identifies it and the date its content reflects.
     #[tokio::test]
     async fn a_first_fetch_is_a_200_carrying_both_validators() {
-        let res = document(&HeaderMap::new(), "application/xml", "<xml/>".into(), Some(NEWEST));
+        let res = document(
+            &HeaderMap::new(),
+            "application/xml",
+            "<xml/>".into(),
+            Some(NEWEST),
+        );
         assert_eq!(res.status(), StatusCode::OK);
         assert_eq!(head(&res, header::CONTENT_TYPE), "application/xml");
         assert_eq!(
@@ -231,7 +240,12 @@ mod tests {
     /// no content type, and the freshness window it asked to refresh.
     #[tokio::test]
     async fn a_matching_tag_answers_304_without_a_body() {
-        let first = document(&HeaderMap::new(), "application/xml", "<xml/>".into(), Some(NEWEST));
+        let first = document(
+            &HeaderMap::new(),
+            "application/xml",
+            "<xml/>".into(),
+            Some(NEWEST),
+        );
         let etag = head(&first, header::ETAG);
 
         let again = document(
@@ -241,10 +255,16 @@ mod tests {
             Some(NEWEST),
         );
         assert_eq!(again.status(), StatusCode::NOT_MODIFIED);
-        assert!(again.headers().get(header::CONTENT_TYPE).is_none(), "a 304 has no representation");
+        assert!(
+            again.headers().get(header::CONTENT_TYPE).is_none(),
+            "a 304 has no representation"
+        );
         assert_eq!(head(&again, header::ETAG), etag);
         assert_eq!(head(&again, header::CACHE_CONTROL), CACHE_CONTROL);
-        assert_eq!(head(&again, header::LAST_MODIFIED), "Fri, 16 Oct 2026 00:00:00 GMT");
+        assert_eq!(
+            head(&again, header::LAST_MODIFIED),
+            "Fri, 16 Oct 2026 00:00:00 GMT"
+        );
         assert_eq!(body_of(again).await, "");
 
         // a tag for a different document re-fetches, however new the date is
@@ -278,9 +298,16 @@ mod tests {
             res.status()
         };
         assert_eq!(fresh("*"), StatusCode::NOT_MODIFIED);
-        assert_eq!(fresh(&format!("\"other\", {etag}")), StatusCode::NOT_MODIFIED);
+        assert_eq!(
+            fresh(&format!("\"other\", {etag}")),
+            StatusCode::NOT_MODIFIED
+        );
         assert_eq!(fresh(&format!("W/{etag}")), StatusCode::NOT_MODIFIED);
-        assert_eq!(fresh("\"other\""), StatusCode::OK, "the date must not rescue it");
+        assert_eq!(
+            fresh("\"other\""),
+            StatusCode::OK,
+            "the date must not rescue it"
+        );
     }
 
     /// The date path: a client whose copy is at least as new as the document's
@@ -297,8 +324,14 @@ mod tests {
             )
             .status()
         };
-        assert_eq!(at("Fri, 16 Oct 2026 00:00:00 GMT"), StatusCode::NOT_MODIFIED);
-        assert_eq!(at("Sat, 17 Oct 2026 00:00:00 GMT"), StatusCode::NOT_MODIFIED);
+        assert_eq!(
+            at("Fri, 16 Oct 2026 00:00:00 GMT"),
+            StatusCode::NOT_MODIFIED
+        );
+        assert_eq!(
+            at("Sat, 17 Oct 2026 00:00:00 GMT"),
+            StatusCode::NOT_MODIFIED
+        );
         assert_eq!(at("Thu, 15 Oct 2026 23:59:59 GMT"), StatusCode::OK);
         assert_eq!(at("garbage"), StatusCode::OK);
         assert_eq!(at("Fri, 16 Oct 2026 00:00:00 GMT+9"), StatusCode::OK);
@@ -310,8 +343,17 @@ mod tests {
     #[test]
     fn a_document_without_a_date_revalidates_on_its_tag_alone() {
         let first = document(&HeaderMap::new(), "application/xml", "<xml/>".into(), None);
-        assert!(first.headers().get(header::LAST_MODIFIED).is_none(), "no date to send");
-        let etag = first.headers().get(header::ETAG).unwrap().to_str().unwrap().to_string();
+        assert!(
+            first.headers().get(header::LAST_MODIFIED).is_none(),
+            "no date to send"
+        );
+        let etag = first
+            .headers()
+            .get(header::ETAG)
+            .unwrap()
+            .to_str()
+            .unwrap()
+            .to_string();
 
         let tagged = document(
             &headers(&[("if-none-match", &etag)]),
@@ -337,7 +379,10 @@ mod tests {
     async fn an_unconditional_request_gets_the_document() {
         let res = document(&HeaderMap::new(), "application/xml", String::new(), None);
         assert_eq!(res.status(), StatusCode::OK);
-        assert!(head(&res, header::ETAG).starts_with('"'), "even an empty document is tagged");
+        assert!(
+            head(&res, header::ETAG).starts_with('"'),
+            "even an empty document is tagged"
+        );
         assert_eq!(body_of(res).await, "");
     }
 }

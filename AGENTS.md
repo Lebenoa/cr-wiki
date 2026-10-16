@@ -110,12 +110,12 @@ Run from the repo root:
 - **Two kinds of stored day.** A *release date* is a civil day with no time of
   day in it — nothing compares it to a clock — so it stays UTC midnight and
   reads back as the day it was written (`time::parse_ymd`/`format_ymd`). A
-  *news publication date* is a moment, so it is the instant the chosen day
-  begins in the site's own zone (`[site] utc_offset_minutes`, Asia/Bangkok =
-  420, overridable by `SITE_UTC_OFFSET_MINUTES`): reads and writes go through
-  `time::parse_local_ymd`/`format_local_ymd`, and every surface that shows or
-  edits one passes the offset in (`Ctx::tz`) rather than formatting an instant
-  in UTC.
+  *news publication date* is a moment chosen as a local date and time in the
+  site's fixed zone (`[site] utc_offset_minutes`, Asia/Bangkok = 420,
+  overridable by `SITE_UTC_OFFSET_MINUTES`). Authoring uses
+  `time::parse_local_datetime`/`format_local_datetime` and shows the UTC offset;
+  public day labels use `format_local_ymd`. Every surface passes
+  `Ctx::tz_offset`, never the browser timezone.
 - **Treasure effects** live in one table with a `state` column
   (`normal`/`blessed`); per-level values stay strings (+0..+9 rows); builds
   store a per-slot equipped level 0–9. Combi bonuses reuse the effect table.

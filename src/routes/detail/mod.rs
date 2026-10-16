@@ -24,7 +24,9 @@ mod prose;
 
 /// The `/{section}/{id}` capture, last of the catalog-shaped routes.
 pub fn routes() -> Router {
-    Router::new().route("/{section}/{id}", get(show))
+    Router::new()
+        .route("/{section}/{id}", get(show))
+        .route_layer(axum::middleware::from_fn(super::catalog_cache::serve))
 }
 
 #[derive(Template)]
@@ -116,11 +118,17 @@ pub async fn show(
         episode: extras.episode,
         makers: extras.makers,
     };
-    Ok(Html(
-        page.render()
-            .unwrap_or_else(|e| format!("template error: {e}")),
-    )
-    .into_response())
+    match page.render() {
+        Ok(html) => Ok(Html(html).into_response()),
+        Err(error) => {
+            tracing::error!(%error, "detail template failed");
+            Ok((
+                axum::http::StatusCode::INTERNAL_SERVER_ERROR,
+                "template error",
+            )
+                .into_response())
+        }
+    }
 }
 
 #[cfg(test)]

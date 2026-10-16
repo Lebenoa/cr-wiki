@@ -37,11 +37,8 @@ impl Default for Config {
 pub struct Site {
     /// The site's own timezone, in minutes east of UTC — Asia/Bangkok is 420.
     ///
-    /// It is what a news publication date means: a post scheduled for
-    /// 2026-10-20 goes live when that day begins *there*, not at UTC midnight,
-    /// and every date the news surface shows an author or a reader is the
-    /// civil day in this zone. Unset (0) keeps the wiki on UTC, which is what
-    /// every deployment did before this key existed.
+    /// News authoring interprets local date-time inputs in this offset;
+    /// public date labels use the same zone. Unset (0) keeps the wiki on UTC.
     ///
     /// A fixed offset, not a zone name: a name would need the tz database in
     /// the binary for one form field, and this wiki's own zone (Asia/Bangkok)
@@ -235,21 +232,27 @@ impl Config {
         let google = &self.google;
         let google_partial = !google.client_id.is_empty() || !google.client_secret.is_empty();
         if google_partial && !google.is_configured() {
+            errors.push("[google] client_id and client_secret are required together".to_string());
+        }
+        if google.client_id.trim() != google.client_id
+            || google.client_secret.trim() != google.client_secret
+        {
             errors.push(
-                "[google] client_id and client_secret are required together".to_string(),
+                "[google] client_id and client_secret must not carry surrounding whitespace"
+                    .to_string(),
             );
         }
-        if google.client_id.trim() != google.client_id || google.client_secret.trim() != google.client_secret
-        {
-            errors.push("[google] client_id and client_secret must not carry surrounding whitespace".to_string());
-        }
         if !google.redirect_uri.is_empty()
-            && google.redirect_uri.parse::<reqwest::Url>().map_or(true, |url| {
-                !matches!(url.scheme(), "http" | "https") || url.host_str().is_none()
-            })
+            && google
+                .redirect_uri
+                .parse::<reqwest::Url>()
+                .map_or(true, |url| {
+                    !matches!(url.scheme(), "http" | "https") || url.host_str().is_none()
+                })
         {
-            errors
-                .push("[google] redirect_uri must be an absolute http:// or https:// URL".to_string());
+            errors.push(
+                "[google] redirect_uri must be an absolute http:// or https:// URL".to_string(),
+            );
         }
         if errors.is_empty() {
             Ok(())
@@ -355,7 +358,9 @@ mod tests {
         let mut config = valid_base();
         for offset in [0, 420, -720, 840] {
             config.site.utc_offset_minutes = offset;
-            config.validate().unwrap_or_else(|e| panic!("{offset}: {e:?}"));
+            config
+                .validate()
+                .unwrap_or_else(|e| panic!("{offset}: {e:?}"));
         }
         for offset in [900, -900, 1441, i64::MAX] {
             config.site.utc_offset_minutes = offset;

@@ -1,7 +1,9 @@
 {% extends "base.html" %}
 {% import "title.html" as t %}
-{% block title %}{{ t::tags(ctx.page_title(title_key.as_str()), ctx.meta_description(), ctx.social_image()) }}{% endblock %}
-{% block robots %}<meta name="robots" content="noindex, nofollow" />{% endblock %}
+{% block title %}{{ t::tags(ctx.page_title(title_key.as_str()), ctx.meta_description(), ctx.social_image()) }}{%
+endblock %}
+{% block robots %}
+<meta name="robots" content="noindex, nofollow" />{% endblock %}
 {% block content %}
 <section class="page-shell max-w-3xl">
     <a href="/admin/news" class="back-link">&larr; {{ ctx.l.t("news_admin_header") }}</a>
@@ -9,14 +11,15 @@
     {% if !error.is_empty() %}
     <p class="text-center text-error">{{ ctx.l.t(error.as_str()) }}</p>
     {% endif %}
-    <form method="post" action="{% if self.is_edit() %}/admin/news/{{ post_id }}/edit{% else %}/admin/news/new{% endif %}"
+    <form method="post"
+        action="{% if self.is_edit() %}/admin/news/{{ post_id }}/edit{% else %}/admin/news/new{% endif %}"
         class="mt-6 flex flex-col gap-4">
         <label class="flex flex-col gap-1 text-xs font-label uppercase text-foreground-muted">
             {{ ctx.l.t("language") }}
             <select id="lang" name="lang" class="filter-input"
                 onchange="var u=new URL(location); u.searchParams.set('lang',this.value); location=u">
                 {% for l in ctx.langs() %}
-                <option value="{{ l }}" {% if l == edit_lang %}selected{% endif %}>{{ ctx.lang_display(&l) }}</option>
+                <option value="{{ l }}" {% if l==edit_lang %}selected{% endif %}>{{ ctx.lang_display(&l) }}</option>
                 {% endfor %}
             </select>
         </label>
@@ -36,12 +39,16 @@
         </div>
         <div class="flex flex-wrap items-end gap-6">
             <label class="flex cursor-pointer items-center gap-2">
-                <input type="checkbox" name="published" value="true" class="size-5" {% if published %}checked{% endif %} />
-                <span class="text-xs font-label uppercase text-foreground-muted">{{ ctx.l.t("news_publish_label") }}</span>
+                <input type="checkbox" name="published" value="true" class="size-5" {% if published %}checked{% endif
+                    %} />
+                <span class="text-xs font-label uppercase text-foreground-muted">{{ ctx.l.t("news_publish_label")
+                    }}</span>
             </label>
             <label class="flex flex-col gap-1 text-xs font-label uppercase text-foreground-muted">
                 {{ ctx.l.t("news_date_label") }}
-                <input type="date" name="published_date" value="{{ published_date }}" class="filter-input" />
+                <input type="datetime-local" step="1" name="published_date" value="{{ published_date }}"
+                    class="filter-input" />
+                <span class="normal-case">{{ ctx.l.t("news_timezone_label") }}: {{ self.timezone_label() }}</span>
                 <span class="text-xs normal-case text-foreground-muted">{{ ctx.l.t("news_schedule_hint") }}</span>
             </label>
         </div>

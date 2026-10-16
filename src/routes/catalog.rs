@@ -19,7 +19,9 @@ use super::{errors::AppError, CommonQuery};
 /// One handler for every section: the section is a path capture, so eight
 /// lists share a function.
 pub fn routes() -> Router {
-    Router::new().route("/{section}", get(list))
+    Router::new()
+        .route("/{section}", get(list))
+        .route_layer(axum::middleware::from_fn(super::catalog_cache::serve))
 }
 
 #[derive(Template)]
@@ -169,7 +171,17 @@ async fn render(
         }
         .render()
     };
-    Ok(Html(html.unwrap_or_else(|e| format!("template error: {e}"))).into_response())
+    match html {
+        Ok(html) => Ok(Html(html).into_response()),
+        Err(error) => {
+            tracing::error!(%error, "catalog template failed");
+            Ok((
+                axum::http::StatusCode::INTERNAL_SERVER_ERROR,
+                "template error",
+            )
+                .into_response())
+        }
+    }
 }
 
 #[cfg(test)]

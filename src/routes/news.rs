@@ -135,6 +135,17 @@ impl NewsFormPage {
     fn is_edit(&self) -> bool {
         self.post_id > 0
     }
+
+    fn timezone_label(&self) -> String {
+        let offset = self.ctx.tz_offset;
+        let minutes = offset.unsigned_abs();
+        format!(
+            "UTC{}{:02}:{:02}",
+            if offset < 0 { '-' } else { '+' },
+            minutes / 60,
+            minutes % 60
+        )
+    }
 }
 
 /// The authoring submission. The checkbox is absent when unchecked, so
@@ -151,8 +162,8 @@ pub struct NewsForm {
     pub lang: String,
     #[serde(default)]
     pub published: Option<String>,
-    /// YYYY-MM-DD as the date input sends it; empty means \"now\" on first
-    /// publish, or \"keep\" on an edit
+    /// Site-local YYYY-MM-DDTHH:MM[:SS]; empty means "now" on first
+    /// publish, or "keep" on an edit.
     #[serde(default)]
     pub published_date: String,
 }
@@ -191,17 +202,10 @@ fn edit_lang(q: &Query<CommonQuery>, ctx: &Ctx) -> String {
         .to_string()
 }
 
-/// The publication date a save should store. An explicit date wins; otherwise
-/// an existing date is kept, a post being published for the first time is
-/// stamped now, and a draft that never had one stays at 0.
-///
-/// The date the author picked is a civil day in the site's own zone
-/// (`tz_offset` minutes east of UTC), so it is stored as the instant that day
-/// begins THERE — the whole of this change: a post scheduled for 2026-10-20
-/// goes live when the wiki's readers reach the 20th, not at UTC midnight, and
-/// the public reads only have to compare that instant with the clock.
+/// An explicit site-local date and time wins; otherwise keep an existing
+/// instant, stamp a first publication now, or leave an unpublished draft unset.
 fn resolve_published_at(form: &NewsForm, existing: i64, tz_offset: i64) -> i64 {
-    if let Some(ts) = crate::time::parse_local_ymd(&form.published_date, tz_offset) {
+    if let Some(ts) = crate::time::parse_local_datetime(&form.published_date, tz_offset) {
         return ts;
     }
     if existing > 0 {
@@ -480,9 +484,7 @@ fn news_form(ctx: Ctx, post: Option<&NewsEdit>, edit_lang: String, error: String
             String::new(),
             String::new(),
             false,
-            // a new post is offered today — today in the site's zone, not the
-            // UTC day, or an author working late would schedule a day behind
-            crate::time::format_local_ymd(now_unix(), ctx.tz_offset),
+            crate::time::format_local_datetime(now_unix(), ctx.tz_offset),
         ),
     };
     let (title_key, save_key) = if post_id > 0 {
@@ -577,9 +579,8 @@ fn server_error_form(
     let edit = NewsEdit {
         id: post_id,
         published: form.is_published(),
-        // the submitted day, back in the zone it was written in, so the form
-        // the author gets back shows what they typed
-        published_at: crate::time::parse_local_ymd(&form.published_date, ctx.tz_offset)
+        // Reopen the submitted instant in the same site timezone.
+        published_at: crate::time::parse_local_datetime(&form.published_date, ctx.tz_offset)
             .unwrap_or(0),
         text: news::PostText {
             title: form.title.clone(),
@@ -643,7 +644,7 @@ mod tests {
     #[test]
     fn publication_date_resolution() {
         assert_eq!(
-            resolve_published_at(&form("t", true, "2026-10-16"), 0, 0),
+            resolve_published_at(&form("t", true, "2026-10-16T00:00"), 0, 0),
             1_792_108_800
         );
         assert_eq!(resolve_published_at(&form("t", false, ""), 0, 0), 0);
@@ -655,48 +656,39 @@ mod tests {
         );
     }
 
-    /// The chosen day is stored as the instant it begins in the site's own
-    /// zone, which is the acceptance criterion: a post dated 2026-10-20 in
-    /// Asia/Bangkok goes live at 2026-10-19T17:00Z, so the public reads — which
-    /// only compare that instant with the clock — reveal it the moment the
-    /// wiki's own readers reach the 20th, and never a day early in UTC.
     #[test]
-    fn a_scheduled_day_is_stored_as_its_start_in_the_site_timezone() {
-        let midnight_utc = 1_792_454_400; // 2026-10-20T00:00:00Z
-        assert_eq!(
-            resolve_published_at(&form("t", true, "2026-10-20"), 0, 420),
-            midnight_utc - 7 * 3600
-        );
-        assert_eq!(
-            resolve_published_at(&form("t", true, "2026-10-20"), 0, -480),
-            midnight_utc + 8 * 3600
-        );
-        assert_eq!(
-            resolve_published_at(&form("t", true, "2026-10-20"), 0, 0),
-            midnight_utc,
-            "an unconfigured site keeps the UTC midnight it always had"
-        );
-        // and the day survives the round trip through the form the author gets
-        let edit = NewsEdit {
-            id: 7,
-            published: true,
-            published_at: resolve_published_at(&form("t", true, "2026-10-20"), 0, 420),
-            text: news::PostText::default(),
-        };
-        assert_eq!(edit.published_input(420), "2026-10-20");
-
-        // which is what "goes live at the start of the chosen local day"
-        // means: the first second of it is live and the one before is queued,
-        // and both are still the 19th in UTC — the public reads only ever
-        // compare the instant, so nothing else has to know about zones
-        let card = NewsCard {
-            published: true,
-            published_at: edit.published_at,
-            ..Default::default()
-        };
-        assert_eq!(card.state(edit.published_at - 1), news::PostState::Queued);
-        assert_eq!(card.state(edit.published_at), news::PostState::Live);
-        assert_eq!(card.date_label(420), "2026-10-20");
+    fn scheduled_time_round_trips_and_goes_live_at_the_exact_instant() {
+        for (offset, expected) in [
+            (420, 1_792_435_440),
+            (-480, 1_792_489_440),
+            (0, 1_792_460_640),
+        ] {
+            let chosen = form("t", true, "2026-10-20T01:44");
+            let instant = resolve_published_at(&chosen, 0, offset);
+            assert_eq!(instant, expected);
+            let edit = NewsEdit {
+                id: 7,
+                published: true,
+                published_at: instant,
+                text: news::PostText::default(),
+            };
+            assert_eq!(edit.published_input(offset), "2026-10-20T01:44:00");
+            assert_eq!(
+                resolve_published_at(
+                    &form("t", true, &edit.published_input(offset)),
+                    instant,
+                    offset
+                ),
+                instant
+            );
+            let card = NewsCard {
+                published: true,
+                published_at: instant,
+                ..Default::default()
+            };
+            assert_eq!(card.state(instant - 1), news::PostState::Queued);
+            assert_eq!(card.state(instant), news::PostState::Live);
+        }
     }
 
     /// A submission writes the locale it names, and an unknown one falls back
@@ -741,46 +733,6 @@ mod tests {
             html.contains("rel=\"alternate\" type=\"application/rss+xml\"")
                 && html.contains("href=\"http://localhost:6785/news/feed.xml\""),
             "the head links the feed: {html}"
-        );
-    }
-
-    /// The authoring form pre-fills the civil day *the site's zone* puts the
-    /// stored instant on, so opening and re-saving a queued post cannot move it
-    /// by a day, and the hint no longer promises a UTC date the save will not
-    /// keep.
-    #[test]
-    fn the_authoring_form_dates_in_the_sites_zone() {
-        crate::i18n::load("translations");
-        let mut ctx = crate::testutil::test_ctx("en");
-        ctx.tz_offset = 420;
-        // 2026-10-15T17:00:00Z: the 15th in UTC, the 16th in Asia/Bangkok
-        let stored = 1_792_108_800 - 7 * 3600;
-        let html = NewsFormPage {
-            ctx,
-            post_id: 3,
-            title: "Queued".into(),
-            summary: String::new(),
-            body: String::new(),
-            published: true,
-            published_date: crate::time::format_local_ymd(stored, 420),
-            edit_lang: "en".into(),
-            error: String::new(),
-            title_key: "news_edit_page_title".into(),
-            save_key: "news_save_button".into(),
-        }
-        .render()
-        .expect("form renders");
-        assert!(
-            html.contains("name=\"published_date\" value=\"2026-10-16\""),
-            "the field offers the author's own day: {html}"
-        );
-        assert!(
-            !html.contains("news_schedule_hint"),
-            "the hint is translated, not left as a key: {html}"
-        );
-        assert!(
-            html.contains("until that day begins"),
-            "and it names a zone rather than UTC: {html}"
         );
     }
 

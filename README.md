@@ -123,6 +123,21 @@ sudo systemctl restart cookierun                    # sessions are in-memory
 | GET | `/news`, `/news/:id`, `/news/feed.xml` | Published news, localized RSS feed, and article pages |
 | GET/POST | `/admin/news` and `/admin/news/:id/*` | Admin news authoring, scheduling, publishing, and deletion |
 
+News scheduling accepts a local date and time in `[site].utc_offset_minutes`,
+shown as a UTC offset beside the authoring field (not the browser timezone).
+Existing schedules retain their stored instant. The offset is fixed; daylight
+saving changes are not automatic.
+
+Catalog list/detail GETs (including htmx fragments) carry ETags and
+`Cache-Control: private, no-cache`. The process retains up to 256 rendered
+representations within a 32 MiB payload/key budget. Every request checks a
+database revision; unchanged pages skip catalog queries and template rendering.
+Catalog and related-table writes invalidate the cache, including direct database
+edits and deletions. Revision failures bypass retention; errors are not cached.
+Locale, URL/query, site URL, user/admin state and htmx variants are isolated.
+Templates/translations refresh on process restart. Bulk imports that disable
+database events require restarting the app to discard retained pages.
+
 ## Configuration
 
 `Config.toml` loads from the working directory (gitignored; copy `Config.example.toml`). Invalid TOML or values stop startup with field-specific errors. An absent file uses defaults, but a valid SurrealDB URL, namespace, and database are required.

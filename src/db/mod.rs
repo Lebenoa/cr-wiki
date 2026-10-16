@@ -260,7 +260,7 @@ pub mod users;
 /// The read/write surface the rest of the crate uses, re-exported so a caller
 /// never names a submodule.
 pub use admin::{insert_entity, update_entity};
-pub use stamp::{change_stamp, sitemap_sources, FEED_SOURCES};
+pub use stamp::{catalog_revision, change_stamp, sitemap_sources, FEED_SOURCES};
 pub use catalog::{
     cards_by_ids, select_cookies, select_episode_list, select_ingredient_list, select_jelly_list,
     select_pets, select_relic_groups, select_simple, select_skin_list, select_treasures,

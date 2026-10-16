@@ -68,28 +68,62 @@ pub fn format_ymd(ts: i64) -> String {
     format!("{y:04}-{m:02}-{d:02}")
 }
 
-/// A civil day in some zone -> the instant that day *begins* there, for a zone
-/// `offset_minutes` east of UTC. `2026-10-20` at `+07:00` is the instant
-/// `2026-10-19T17:00:00Z`, which is what makes a scheduled post go live at the
-/// start of the chosen local day rather than at UTC midnight.
-///
-/// Deliberately not [`parse_ymd`]: a *release date* is a civil day with no time
-/// of day in it at all — nothing ever compares it to a clock — so it stays UTC
-/// midnight and reads back as the day it was written, while a *publication
-/// date* is a moment, and a moment has to name a zone to mean anything.
-pub fn parse_local_ymd(raw: &str, offset_minutes: i64) -> Option<i64> {
-    parse_ymd(raw)?.checked_sub(offset_minutes.saturating_mul(60))
-}
-
-/// Unix seconds -> the civil day `offset_minutes` east of UTC: the inverse of
-/// [`parse_local_ymd`], and the only shape a reader or an authoring admin ever
-/// sees. The empty string stays the app's "unset" answer, since a
-/// non-positive timestamp is no day in any zone.
+/// Unix seconds -> the site's civil day for public date labels.
+/// An unset timestamp renders empty.
 pub fn format_local_ymd(ts: i64, offset_minutes: i64) -> String {
     if ts <= 0 {
         return String::new();
     }
     format_ymd(ts.saturating_add(offset_minutes.saturating_mul(60)))
+}
+
+/// A datetime-local value in the site's fixed offset -> Unix seconds.
+/// Optional seconds preserve existing publication instants on untouched edits.
+pub fn parse_local_datetime(raw: &str, offset_minutes: i64) -> Option<i64> {
+    let (date, clock) = raw.split_once('T')?;
+    let day = parse_ymd(date)?;
+    if format_ymd(day) != date {
+        return None;
+    }
+    let bytes = clock.as_bytes();
+    if !matches!(bytes.len(), 5 | 8)
+        || bytes[2] != b':'
+        || (bytes.len() == 8 && bytes[5] != b':')
+        || !bytes
+            .iter()
+            .enumerate()
+            .all(|(i, b)| i == 2 || i == 5 || b.is_ascii_digit())
+    {
+        return None;
+    }
+    let hour = clock.get(..2)?.parse::<i64>().ok()?;
+    let minute = clock.get(3..5)?.parse::<i64>().ok()?;
+    let second = if bytes.len() == 8 {
+        clock.get(6..8)?.parse::<i64>().ok()?
+    } else {
+        0
+    };
+    if hour > 23 || minute > 59 || second > 59 {
+        return None;
+    }
+    day.checked_add(hour * 3600 + minute * 60 + second)?
+        .checked_sub(offset_minutes.checked_mul(60)?)
+}
+
+/// Unix seconds -> a datetime-local value in the site's fixed offset.
+pub fn format_local_datetime(ts: i64, offset_minutes: i64) -> String {
+    if ts <= 0 {
+        return String::new();
+    }
+    let local = ts.saturating_add(offset_minutes.saturating_mul(60));
+    let clock = local.rem_euclid(86400);
+    format!(
+        "{}T{:02}:{:02}:{:02}",
+        format_ymd(local),
+        clock / 3600,
+        clock % 3600 / 60,
+        clock % 60
+    )
 }
 
 /// Unix seconds -> `Fri, 16 Oct 2026 00:00:00`, the civil date and time both
@@ -183,7 +217,13 @@ pub fn parse_http_date(raw: &str) -> Option<i64> {
         // year, with the weekday first and no zone at all
         let month = month_index(tokens.get(1)?)?;
         let day = tokens.get(2)?.parse::<i64>().ok()?;
-        (tokens.get(4)?.parse::<i64>().ok()?, month, day, *tokens.get(3)?, None)
+        (
+            tokens.get(4)?.parse::<i64>().ok()?,
+            month,
+            day,
+            *tokens.get(3)?,
+            None,
+        )
     };
     let civil = parse_ymd(&format!("{y:04}-{m:02}-{d:02}"))?;
     Some(civil + time_of_day(time)? - zone_offset(zone)?)
@@ -277,7 +317,10 @@ mod tests {
     /// wrong or missing one is what makes a reader misplace an item.
     #[test]
     fn rfc2822_stamps_the_weekday_and_utc_time() {
-        assert_eq!(format_rfc2822(1_792_108_800), "Fri, 16 Oct 2026 00:00:00 +0000");
+        assert_eq!(
+            format_rfc2822(1_792_108_800),
+            "Fri, 16 Oct 2026 00:00:00 +0000"
+        );
         assert_eq!(format_rfc2822(0), "Thu, 01 Jan 1970 00:00:00 +0000");
         assert_eq!(format_rfc2822(-5), "Thu, 01 Jan 1970 00:00:00 +0000");
         // 2024-02-29 is a leap day and a Thursday, mid-day UTC included
@@ -303,7 +346,10 @@ mod tests {
             parse_http_date("Sun, 06 Nov 1994 08:49:37 GMT"),
             Some(784_111_777)
         );
-        assert_eq!(format_http_date(784_111_777), "Sun, 06 Nov 1994 08:49:37 GMT");
+        assert_eq!(
+            format_http_date(784_111_777),
+            "Sun, 06 Nov 1994 08:49:37 GMT"
+        );
         // obsolete RFC 850, whose two-digit year is read as 1994 — the year
         // the RFC's own example names — and its four-digit form too
         assert_eq!(
@@ -316,13 +362,19 @@ mod tests {
             Some(evening),
             "a four-digit year is taken as written"
         );
-        assert_eq!(parse_http_date("Sun Nov  6 08:49:37 1994"), Some(784_111_777));
+        assert_eq!(
+            parse_http_date("Sun Nov  6 08:49:37 1994"),
+            Some(784_111_777)
+        );
         // a numeric offset is honoured, and GMT/UT are the same zone
         assert_eq!(
             parse_http_date("Sun, 06 Nov 1994 03:49:37 -0500"),
             Some(784_111_777)
         );
-        assert_eq!(parse_http_date("Sun, 06 Nov 1994 08:49:37 UT"), Some(784_111_777));
+        assert_eq!(
+            parse_http_date("Sun, 06 Nov 1994 08:49:37 UT"),
+            Some(784_111_777)
+        );
         // and every stamp this app emits, round-tripped
         for ts in [0, 1_792_108_800, 1_709_210_045, 1_792_972_799] {
             assert_eq!(parse_http_date(&format_http_date(ts)), Some(ts), "{ts}");
@@ -351,46 +403,6 @@ mod tests {
         }
     }
 
-    /// A publication date is the start of that civil day *in the site's own
-    /// zone*: the pair round-trips, the instant stored is the first second of
-    /// the local day rather than an hour or a day out, and UTC is exactly the
-    /// behaviour every deployment had before `[site]` existed.
-    #[test]
-    fn publication_days_are_local_midnights() {
-        // no [site] configured: UTC midnight, unchanged
-        assert_eq!(parse_local_ymd("2026-10-16", 0), Some(1_792_108_800));
-        assert_eq!(format_local_ymd(1_792_108_800, 0), "2026-10-16");
-
-        for offset in [60, 420, -480, 840, -720] {
-            let start = parse_local_ymd("2026-10-20", offset).unwrap();
-            assert_eq!(format_local_ymd(start, offset), "2026-10-20", "{offset}");
-            assert_eq!(
-                start,
-                parse_ymd("2026-10-20").unwrap() - offset * 60,
-                "the zone's offset is what separates it from UTC midnight: {offset}"
-            );
-            assert_eq!(
-                format_local_ymd(start - 1, offset),
-                "2026-10-19",
-                "the stored instant is the day's first second, not one before it: {offset}"
-            );
-            // a zone's day begins at its own instant, never at UTC's: this is
-            // the assertion the whole change exists for
-            if offset != 0 {
-                assert_ne!(
-                    start,
-                    parse_ymd("2026-10-20").unwrap(),
-                    "local midnight is not UTC midnight: {offset}"
-                );
-            }
-        }
-
-        // the sentinel survives the conversion: an unset date has no day
-        assert_eq!(format_local_ymd(0, 420), "");
-        assert_eq!(parse_local_ymd("", 420), None);
-        assert_eq!(parse_local_ymd("2026-1-1", 420), None);
-    }
-
     /// The two directions agree, and a malformed or unset date is never
     /// silently rounded into a real one.
     #[test]
@@ -403,8 +415,40 @@ mod tests {
         assert_eq!(format_ymd(0), "");
         assert_eq!(format_ymd(-5), "");
 
-        for bad in ["", "  ", "2026-1-1", "2026-13-01", "2026-01-32", "not-a-date", "2026-01-01-01"] {
+        for bad in [
+            "",
+            "  ",
+            "2026-1-1",
+            "2026-13-01",
+            "2026-01-32",
+            "not-a-date",
+            "2026-01-01-01",
+        ] {
             assert_eq!(parse_ymd(bad), None, "{bad:?}");
         }
+    }
+    #[test]
+    fn local_datetimes_preserve_seconds_and_reject_invalid_values() {
+        for offset in [0, 420, -480, 345] {
+            let ts = parse_local_datetime("2026-10-20T01:44:37", offset).unwrap();
+            assert_eq!(format_local_datetime(ts, offset), "2026-10-20T01:44:37");
+            assert_eq!(
+                parse_local_datetime("2026-10-20T01:44", offset),
+                Some(ts - 37)
+            );
+        }
+        for bad in [
+            "",
+            "2026-10-20",
+            "2026-02-30T12:00",
+            "2026-10-20T24:00",
+            "2026-10-20T12:60",
+            "2026-10-20T12:00:60",
+            "2026-10-20T1:00",
+            "2026-10-20T12:00Z",
+        ] {
+            assert_eq!(parse_local_datetime(bad, 420), None, "{bad}");
+        }
+        assert_eq!(format_local_datetime(0, 420), "");
     }
 }

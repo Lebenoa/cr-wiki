@@ -1361,7 +1361,7 @@ news_publish_label
 Published
 -----
 news_date_label
-Publication date
+Publication date and time
 -----
 news_by_author
 by
@@ -1385,5 +1385,8 @@ news_status_queued
 Scheduled
 -----
 news_schedule_hint
-A date in the future keeps the post hidden until that day begins in the site's timezone.
+A future date and time keeps the post hidden until that moment in the site's timezone.
+-----
+news_timezone_label
+Site timezone
 -----

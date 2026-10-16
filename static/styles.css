@@ -1036,7 +1036,8 @@
 .justify-center{justify-content:center;}
 .justify-between{justify-content:space-between;}
 .absolute{position:absolute;}
-.fixed{position:fixed;}
+.fixed,
+[fixed=""]{position:fixed;}
 .relative{position:relative;}
 .sticky{position:sticky;}
 .root-relative:root{position:relative;}

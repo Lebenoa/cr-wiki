@@ -12,10 +12,10 @@ port = 6785
 # Facts about the wiki itself. SITE_UTC_OFFSET_MINUTES overrides the offset.
 [site]
 # The site's own timezone, in minutes east of UTC: Asia/Bangkok is 420.
-# A news publication date is the start of that civil day *there*, so a post
-# scheduled for 2026-10-20 goes live at 2026-10-19T17:00Z — and every news date
-# an author or a reader sees is the civil day in this zone. Left at 0 the wiki
-# is on UTC. This is a fixed offset, not a zone name: Asia/Bangkok never shifts,
+# News schedules use a local date and time in this zone: 2026-10-20 09:30
+# at offset 420 goes live at 2026-10-20T02:30Z. The authoring form shows
+# the configured offset. Left at 0 the wiki is on UTC.
+# This is a fixed offset, not a zone name: Asia/Bangkok never shifts,
 # and a zone that observes daylight saving would need it moved twice a year.
 utc_offset_minutes = 0
 

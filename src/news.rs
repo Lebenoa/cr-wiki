@@ -157,12 +157,9 @@ pub struct NewsEdit {
 }
 
 impl NewsEdit {
-    /// The publication date as the form's `<input type=date>` wants it: the
-    /// same civil day the author chose, in the site's own zone — the round trip
-    /// that a save-then-reopen has to preserve, or an untouched edit would move
-    /// a queued post by a day every time it was opened.
+    /// Preserve the stored instant in the site's local date-time input.
     pub fn published_input(&self, tz_offset: i64) -> String {
-        crate::time::format_local_ymd(self.published_at, tz_offset)
+        crate::time::format_local_datetime(self.published_at, tz_offset)
     }
 }
 
@@ -257,12 +254,7 @@ pub async fn select_all(db: &Db, lang: &str) -> Result<Vec<NewsCard>> {
 /// read, because the feed is the only surface that wants every article's full
 /// text — the list, the teaser and the dashboard must not drag it over the
 /// wire to throw it away.
-pub async fn select_feed(
-    db: &Db,
-    lang: &str,
-    now: i64,
-    limit: i64,
-) -> Result<Vec<NewsFeedItem>> {
+pub async fn select_feed(db: &Db, lang: &str, now: i64, limit: i64) -> Result<Vec<NewsFeedItem>> {
     #[derive(Debug, Clone, Default, SurrealValue)]
     #[surreal(default)]
     struct FeedRow {
@@ -365,12 +357,11 @@ pub async fn select_edit(db: &Db, lang: &str, id: i64) -> Result<Option<NewsEdit
         .await?
         .take(0)?;
     Ok(rows.into_iter().next().map(|r| {
-        let text = r
-            .tr
-            .unwrap_or_default()
-            .get(lang)
-            .cloned()
-            .unwrap_or_default();
+        let text =
+            r.tr.unwrap_or_default()
+                .get(lang)
+                .cloned()
+                .unwrap_or_default();
         NewsEdit {
             id: r.id,
             published: r.published,
@@ -404,7 +395,11 @@ pub async fn newest_publication(db: &Db, now: i64) -> Result<Option<i64>> {
         .bind(("now", now))
         .await?
         .take(0)?;
-    Ok(rows.into_iter().next().map(|r| r.published_at).filter(|t| *t > 0))
+    Ok(rows
+        .into_iter()
+        .next()
+        .map(|r| r.published_at)
+        .filter(|t| *t > 0))
 }
 
 /// The ids of every post live at `now`, for the sitemap: a queued post's url
@@ -591,7 +586,10 @@ mod tests {
         assert!(id > 0, "the sequence hands out a real id");
 
         // a draft is invisible to every public read
-        assert!(select_published(&db, "en", NOW, 10, 0).await.unwrap().is_empty());
+        assert!(select_published(&db, "en", NOW, 10, 0)
+            .await
+            .unwrap()
+            .is_empty());
         assert!(published_ids(&db, NOW).await.unwrap().is_empty());
         let all = select_all(&db, "en").await.unwrap();
         assert_eq!(all.len(), 1);
@@ -651,7 +649,10 @@ mod tests {
         assert!(feed[0].updated_at > 1_700_000_000, "{:?}", feed[0]);
         assert_eq!(feed[0].changed_at(), feed[0].updated_at.max(1_792_108_800));
         // and the sitemap's date is the newest publication
-        assert_eq!(newest_publication(&db, NOW).await.unwrap(), Some(1_792_108_800));
+        assert_eq!(
+            newest_publication(&db, NOW).await.unwrap(),
+            Some(1_792_108_800)
+        );
 
         // the stored body renders through the real article path
         let mut memo = crate::richtext::LinkCache::new();
@@ -667,9 +668,7 @@ mod tests {
             published_at: 0,
             ..draft.clone()
         };
-        let id2 = insert_post(&db, "en", &second, "tester", 0)
-            .await
-            .unwrap();
+        let id2 = insert_post(&db, "en", &second, "tester", 0).await.unwrap();
         set_published(&db, id2, true).await.unwrap();
         let p2 = select_post(&db, "en", now_unix(), id2)
             .await
@@ -751,7 +750,10 @@ mod tests {
 
         // before its moment: absent from every public read, the sitemap
         // included, so its url is not a leak
-        assert!(select_published(&db, "en", NOW, 10, 0).await.unwrap().is_empty());
+        assert!(select_published(&db, "en", NOW, 10, 0)
+            .await
+            .unwrap()
+            .is_empty());
         assert!(select_feed(&db, "en", NOW, 50).await.unwrap().is_empty());
         assert!(select_post(&db, "en", NOW, id).await.unwrap().is_none());
         assert!(published_ids(&db, NOW).await.unwrap().is_empty());
@@ -782,7 +784,13 @@ mod tests {
                 .title,
             "Queued"
         );
-        assert_eq!(select_published(&db, "en", SOON, 10, 0).await.unwrap().len(), 1);
+        assert_eq!(
+            select_published(&db, "en", SOON, 10, 0)
+                .await
+                .unwrap()
+                .len(),
+            1
+        );
         let due = select_feed(&db, "en", SOON, 50).await.unwrap();
         assert_eq!(due.len(), 1, "the feed reveals it with everything else");
         assert_eq!(due[0].title, "Queued");
@@ -833,7 +841,10 @@ mod tests {
         let found = crate::db::select_detail_strict(&db, "en", "cookies", id)
             .await
             .expect("read back");
-        assert_eq!(found.expect("created row reads back").name, "Scratch Cookie");
+        assert_eq!(
+            found.expect("created row reads back").name,
+            "Scratch Cookie"
+        );
         db.query("DELETE type::record('cookie', $id)")
             .bind(("id", id))
             .await
@@ -928,11 +939,7 @@ mod tests {
             published_at: LOCAL_DAY_START,
             text: PostText::default(),
         };
-        assert_eq!(edit.published_input(420), "2026-10-16");
-        assert_eq!(
-            edit.published_input(0),
-            "2026-10-15",
-            "the form would silently move a queued post a day on an untouched save"
-        );
+        assert_eq!(edit.published_input(420), "2026-10-16T00:00:00");
+        assert_eq!(edit.published_input(0), "2026-10-15T17:00:00");
     }
 }
