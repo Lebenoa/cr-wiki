@@ -52,3 +52,12 @@ pub fn state() -> &'static AppState {
 pub fn google_login_enabled() -> bool {
     STATE.get().is_some_and(|s| s.cfg.google.is_configured())
 }
+
+/// The site's own timezone, in minutes east of UTC, for the surfaces that turn
+/// a stored instant into the civil day a reader or an author sees. Same rule as
+/// [`google_login_enabled`]: a test rendering a page without the shared state
+/// gets UTC rather than a panic. `main` installs the state before the listener
+/// binds, so a serving process always answers from config.
+pub fn site_tz_offset() -> i64 {
+    STATE.get().map_or(0, |s| s.cfg.site.utc_offset_minutes)
+}

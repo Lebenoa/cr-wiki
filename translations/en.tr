@@ -1267,3 +1267,123 @@ An exhaustive deep-dive into the history of the First King of the Vanilla Kingdo
 index_featured_cta
 Start Reading
 -----
+news_link
+News
+-----
+news_page_title
+News | Classic/FanWiki
+-----
+news_page_header
+News
+-----
+news_page_description
+Announcements, updates and community news for CookieRun: Classic.
+-----
+news_page_hint
+The latest announcements from the archive.
+-----
+news_unavailable
+No news yet.
+-----
+news_loading
+Loading...
+-----
+news_view_all
+View all news
+-----
+news_view_button
+View
+-----
+news_draft_badge
+Draft
+-----
+news_status_published
+Published
+-----
+news_status_draft
+Draft
+-----
+news_publish_button
+Publish
+-----
+news_unpublish_button
+Unpublish
+-----
+news_edit_button
+Edit
+-----
+news_delete_button
+Delete
+-----
+news_manage_button
+Manage news
+-----
+news_new_button
+New post
+-----
+news_new_page_title
+New Post | Classic/FanWiki
+-----
+news_edit_page_title
+Edit Post | Classic/FanWiki
+-----
+news_save_button
+Save post
+-----
+news_create_button
+Create post
+-----
+news_admin_page_title
+Manage News | Classic/FanWiki
+-----
+news_admin_header
+Manage news
+-----
+news_admin_hint
+Write a post, publish it now or schedule it for a later date, or keep it as a draft.
+-----
+news_admin_empty
+No posts yet. Create the first one.
+-----
+news_title_label
+Title
+-----
+news_summary_label
+Summary
+-----
+news_body_label
+Body
+-----
+news_article_hint
+Blank lines separate paragraphs. Start a line with #, ## or ### for a heading, or - for a list. Use [[cookie:12]] to link an entity.
+-----
+news_publish_label
+Published
+-----
+news_date_label
+Publication date
+-----
+news_by_author
+by
+-----
+news_empty_body
+This post has no body yet.
+-----
+news_error_title
+A title is required.
+-----
+news_error_save
+Could not save the post.
+-----
+news_feed_title
+CookieRun: Classic/FanWiki — News
+-----
+news_feed_link
+RSS feed
+-----
+news_status_queued
+Scheduled
+-----
+news_schedule_hint
+A date in the future keeps the post hidden until that day begins in the site's timezone.
+-----

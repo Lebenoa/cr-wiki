@@ -5,7 +5,6 @@
 use surrealdb::types::SurrealValue;
 
 use crate::section::Section;
-use crate::time::now_unix;
 
 use super::types::{tr, Card, CardRow, Kind};
 use super::{Db, Result};
@@ -626,20 +625,32 @@ pub async fn cards_by_ids(db: &Db, lang: &str, kind: &str, ids: &[i64]) -> Resul
 /// Every (section, id) pair the sitemap lists — every section from the one
 /// list, so a section can never go missing the way relics and skins once
 /// did when the list was hand-maintained. All eight tables' statements ride
-/// one message, and the result is cached for a few minutes: the sitemap
-/// serves crawlers, the catalog changes only through admin writes, and the
-/// old shape paid one query per section on every crawler hit.
-pub async fn sitemap_entries(db: &Db) -> Result<Vec<(&'static str, i64)>> {
+/// one message, and the result is cached against `stamp` rather than for a few
+/// minutes: the sitemap serves crawlers, the catalog changes only through
+/// writes, and every write moves the stamp (`db::stamp`) — so the cache is
+/// invalidated by the very thing the document dates itself by. A time window
+/// cannot make that promise: an entity created inside one left both the
+/// document and the cache on the previous list, and a crawler that sent the
+/// tag it had just been given was answered `304` for a sitemap that had
+/// changed. That is a lie a window cannot avoid and a stamp cannot tell.
+///
+/// `stamp` is read by the caller *before* this query for that reason: reading
+/// it afterwards would let a list from before a write be cached under the
+/// stamp from after it, which is the one order that freezes a change out of
+/// the cache for good.
+pub async fn sitemap_entries(db: &Db, stamp: Option<i64>) -> Result<Vec<(&'static str, i64)>> {
     type Entries = std::sync::Arc<Vec<(&'static str, i64)>>;
-    static CACHE: std::sync::OnceLock<parking_lot::Mutex<Option<(i64, Entries)>>> =
+    /// The list as it stood under one stamp.
+    struct Cached {
+        stamp: Option<i64>,
+        entries: Entries,
+    }
+    static CACHE: std::sync::OnceLock<parking_lot::Mutex<Option<Cached>>> =
         std::sync::OnceLock::new();
-    const TTL_SECS: i64 = 600;
     let cache = CACHE.get_or_init(|| parking_lot::Mutex::new(None));
-    let now = now_unix();
-    let cached = cache.lock().clone();
-    if let Some((expiry, entries)) = cached {
-        if now < expiry {
-            return Ok((*entries).clone());
+    if let Some(cached) = cache.lock().as_ref() {
+        if cached.stamp == stamp {
+            return Ok((*cached.entries).clone());
         }
     }
     let mut sql = String::new();
@@ -648,12 +659,18 @@ pub async fn sitemap_entries(db: &Db) -> Result<Vec<(&'static str, i64)>> {
         sql.push_str(s.table());
         sql.push(';');
     }
+    sql.push_str("SELECT VALUE record::id(id) FROM news WHERE published = true AND published_at <= time::unix();");
     let mut res = db.query(&sql).await?;
     let mut out: Vec<(&'static str, i64)> = Vec::new();
     for (i, section) in Section::ALL.iter().enumerate() {
         let ids: Vec<i64> = res.take(i)?;
         out.extend(ids.into_iter().map(|id| (section.as_str(), id)));
     }
-    *cache.lock() = Some((now.saturating_add(TTL_SECS), Entries::new(out.clone())));
+    let news_ids: Vec<i64> = res.take(Section::ALL.len())?;
+    out.extend(news_ids.into_iter().map(|id| ("news", id)));
+    *cache.lock() = Some(Cached {
+        stamp,
+        entries: Entries::new(out.clone()),
+    });
     Ok(out)
 }

@@ -1,0 +1,15 @@
+{% if posts.is_empty() %}
+<p class="text-center text-sm text-foreground-muted">{{ ctx.l.t("news_unavailable") }}</p>
+{% else %}
+{% for p in posts %}
+<a href="/news/{{ p.id }}"
+    class="rounded-2xl border-2 border-primary/20 bg-surface/50 p-4 hover:border-primary/50 transition-colors flex flex-wrap items-baseline gap-3">
+    <span class="font-bold text-on-surface">{{ p.title }}</span>
+    <time class="ml-auto text-xs text-foreground-muted font-label uppercase">{{ p.date_label(ctx.tz()) }}</time>
+    {% if !p.summary.is_empty() %}
+    <span class="w-full text-sm text-foreground-muted leading-relaxed">{{ p.summary }}</span>
+    {% endif %}
+</a>
+{% endfor %}
+<a href="/news" class="self-center text-xs font-label uppercase text-primary hover:text-accent transition-colors">{{ ctx.l.t("news_view_all") }}</a>
+{% endif %}

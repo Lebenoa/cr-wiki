@@ -21,6 +21,7 @@
                 {% endfor %}
             </div>
             <a href="/builds" class="{{ ctx.nav_class("builds") }}">{{ ctx.l.t("builds") }}</a>
+            <a href="/news" class="{{ ctx.nav_class("news") }}">{{ ctx.l.t("news_link") }}</a>
             <a href="/changelog" class="{{ ctx.nav_class("changelog") }}">{{ ctx.l.t("changelog_link") }}</a>
         </div>
     </div>
@@ -69,6 +70,7 @@
             <a href="/{{ section }}" class="{{ ctx.nav_class(section) }}">{{ ctx.l.t(section) }}</a>
             {% endfor %}
             <a href="/builds" class="{{ ctx.nav_class("builds") }}">{{ ctx.l.t("builds") }}</a>
+            <a href="/news" class="{{ ctx.nav_class("news") }}">{{ ctx.l.t("news_link") }}</a>
             <a href="/changelog" class="{{ ctx.nav_class("changelog") }}">{{ ctx.l.t("changelog_link") }}</a>
         </div>
 

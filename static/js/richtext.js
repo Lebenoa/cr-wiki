@@ -271,9 +271,8 @@
 
     // ---- live preview -----------------------------------------------------
 
-    // mirrors render_rich_text: escape first, then [[links]] and {color:...}
-    function renderPreview(ta) {
-        var s = escapeHtml(ta.value);
+    // mirrors render_inline: escape first, then [[links]] and {color:...}
+    function renderInline(s) {
         var out = '';
         var i = 0;
         while (i < s.length) {
@@ -314,6 +313,56 @@
             i++;
         }
         return out;
+    }
+
+    // mirrors render_article_with: blank-line-separated blocks, each a
+    // heading, a bullet/numbered list or a paragraph. The class strings are
+    // deliberately identical to src/richtext.rs's, so unocss (which scans
+    // both the templates and the Rust sources) generates them.
+    function isBullet(line) { return /^\s*[-*] /.test(line); }
+    function isNumber(line) { return /^\s*\d+\. /.test(line); }
+    function itemText(line) { return line.replace(/^\s*(?:[-*]|\d+\.) /, ''); }
+
+    function renderBlocks(s) {
+        var lines = s.replace(/\r\n/g, '\n').split('\n');
+        var chunks = [];
+        var chunk = [];
+        function flush() { if (chunk.length) { chunks.push(chunk); chunk = []; } }
+        lines.forEach(function (l) { if (l.trim() === '') flush(); else chunk.push(l.replace(/\s+$/, '')); });
+        flush();
+        var html = '';
+        chunks.forEach(function (blk) {
+            var head = /^(#{1,3}) (.*)$/.exec(blk[0]);
+            if (head && blk.length === 1) {
+                var level = Math.min(head[1].length + 1, 4);
+                var cls = level <= 2
+                    ? 'mt-8 mb-3 font-headline text-2xl text-accent'
+                    : 'mt-6 mb-2 font-headline text-xl text-accent';
+                html += '<h' + level + ' class="' + cls + '">' + renderInline(head[2]) + '</h' + level + '>';
+                return;
+            }
+            if (blk.every(isBullet)) {
+                html += list('ul', 'mt-4 list-disc list-inside space-y-1 text-foreground', blk);
+            } else if (blk.every(isNumber)) {
+                html += list('ol', 'mt-4 list-decimal list-inside space-y-1 text-foreground', blk);
+            } else {
+                html += '<p class="mt-4 leading-relaxed text-foreground">' + renderInline(blk.join(' ')) + '</p>';
+            }
+        });
+        return html;
+    }
+
+    function list(tag, cls, items) {
+        var html = '<' + tag + ' class="' + cls + '">';
+        items.forEach(function (it) { html += '<li>' + renderInline(itemText(it)) + '</li>'; });
+        return html + '</' + tag + '>';
+    }
+
+    // the article textareas (news) opt into block rendering; every other
+    // rich-text field is a single paragraph, exactly as before
+    function renderPreview(ta) {
+        var s = escapeHtml(ta.value);
+        return ta.getAttribute('data-richtext') === 'article' ? renderBlocks(s) : renderInline(s);
     }
 
     function updatePreview(ta) {

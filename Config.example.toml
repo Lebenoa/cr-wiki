@@ -9,6 +9,16 @@ host = "0.0.0.0"
 # on 6798 (CR_TEST_PORT overrides it).
 port = 6785
 
+# Facts about the wiki itself. SITE_UTC_OFFSET_MINUTES overrides the offset.
+[site]
+# The site's own timezone, in minutes east of UTC: Asia/Bangkok is 420.
+# A news publication date is the start of that civil day *there*, so a post
+# scheduled for 2026-10-20 goes live at 2026-10-19T17:00Z — and every news date
+# an author or a reader sees is the civil day in this zone. Left at 0 the wiki
+# is on UTC. This is a fixed offset, not a zone name: Asia/Bangkok never shifts,
+# and a zone that observes daylight saving would need it moved twice a year.
+utc_offset_minutes = 0
+
 # SurrealDB is the datastore. The app talks to an external SurrealDB server
 # over ws:// or http:// — it never embeds an engine. All five fields must be
 # set for the app to boot; the SURREAL_URL / SURREAL_NS / SURREAL_DB /

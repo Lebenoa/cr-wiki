@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% import "title.html" as t %}
+{% block title %}{{ t::tags(ctx.page_title(title_key.as_str()), ctx.meta_description(), ctx.social_image()) }}{% endblock %}
+{% block robots %}<meta name="robots" content="noindex, nofollow" />{% endblock %}
+{% block content %}
+<section class="page-shell max-w-3xl">
+    <a href="/admin/news" class="back-link">&larr; {{ ctx.l.t("news_admin_header") }}</a>
+    <h1 class="page-title">{{ ctx.l.t(title_key.as_str()) }}</h1>
+    {% if !error.is_empty() %}
+    <p class="text-center text-error">{{ ctx.l.t(error.as_str()) }}</p>
+    {% endif %}
+    <form method="post" action="{% if self.is_edit() %}/admin/news/{{ post_id }}/edit{% else %}/admin/news/new{% endif %}"
+        class="mt-6 flex flex-col gap-4">
+        <label class="flex flex-col gap-1 text-xs font-label uppercase text-foreground-muted">
+            {{ ctx.l.t("language") }}
+            <select id="lang" name="lang" class="filter-input"
+                onchange="var u=new URL(location); u.searchParams.set('lang',this.value); location=u">
+                {% for l in ctx.langs() %}
+                <option value="{{ l }}" {% if l == edit_lang %}selected{% endif %}>{{ ctx.lang_display(&l) }}</option>
+                {% endfor %}
+            </select>
+        </label>
+        <label class="flex flex-col gap-1 text-xs font-label uppercase text-foreground-muted">
+            {{ ctx.l.t("news_title_label") }}
+            <input type="text" name="title" value="{{ title }}" class="filter-input w-full" required />
+        </label>
+        <label class="flex flex-col gap-1 text-xs font-label uppercase text-foreground-muted">
+            {{ ctx.l.t("news_summary_label") }}
+            <textarea name="summary" rows="2" class="filter-input w-full">{{ summary }}</textarea>
+        </label>
+        <div class="flex flex-col gap-1">
+            <span class="text-xs font-label uppercase text-foreground-muted">{{ ctx.l.t("news_body_label") }}</span>
+            <textarea name="body" rows="16" class="filter-input w-full" data-richtext="article">{{ body }}</textarea>
+            {% include "richtext_preview.html" %}
+            <p class="text-xs text-foreground-muted">{{ ctx.l.t("news_article_hint") }}</p>
+        </div>
+        <div class="flex flex-wrap items-end gap-6">
+            <label class="flex cursor-pointer items-center gap-2">
+                <input type="checkbox" name="published" value="true" class="size-5" {% if published %}checked{% endif %} />
+                <span class="text-xs font-label uppercase text-foreground-muted">{{ ctx.l.t("news_publish_label") }}</span>
+            </label>
+            <label class="flex flex-col gap-1 text-xs font-label uppercase text-foreground-muted">
+                {{ ctx.l.t("news_date_label") }}
+                <input type="date" name="published_date" value="{{ published_date }}" class="filter-input" />
+                <span class="text-xs normal-case text-foreground-muted">{{ ctx.l.t("news_schedule_hint") }}</span>
+            </label>
+        </div>
+        <button type="submit" class="btn-primary">{{ ctx.l.t(save_key.as_str()) }}</button>
+    </form>
+</section>
+<script src="/static/js/richtext.js" defer></script>
+{% endblock %}

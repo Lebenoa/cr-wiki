@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% import "title.html" as t %}
+{% block title %}{{ t::tags(ctx.page_title("news_page_title"), ctx.page_desc("news_page_description"), ctx.social_image()) }}{% endblock %}
+{% block content %}
+<section class="page-shell max-w-3xl">
+    <h1 class="page-title">{{ ctx.l.t("news_page_header") }}</h1>
+    <p class="text-center text-sm text-foreground-muted">{{ ctx.l.t("news_page_hint") }}</p>
+    <p class="mt-3 text-center">
+        <a href="/news/feed.xml" class="text-xs font-label uppercase text-primary hover:text-accent transition-colors">{{ ctx.l.t("news_feed_link") }}</a>
+    </p>
+    {% if ctx.is_admin() %}
+    <div class="mt-4 flex justify-center">
+        <a href="/admin/news" class="btn-secondary">{{ ctx.l.t("news_manage_button") }}</a>
+    </div>
+    {% endif %}
+    <ol id="news-list" class="mt-8 flex flex-col gap-3">
+        {% include "news_cards.html" %}
+    </ol>
+</section>
+{% endblock %}

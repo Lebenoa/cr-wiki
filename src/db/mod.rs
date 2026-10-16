@@ -65,6 +65,8 @@ pub async fn connect_url(
     ensure_search_schema(&db).await?;
     ensure_sequences(&db).await?;
     ensure_reset_schema(&db).await?;
+    ensure_news_schema(&db).await?;
+    stamp::ensure(&db).await?;
     Ok(db)
 }
 
@@ -214,6 +216,21 @@ async fn ensure_sequences(db: &Db) -> Result<()> {
     Ok(())
 }
 
+/// Defines the news table and its id sequence. Created on connect rather
+/// than left to the seed: a database that predates the news surface still has
+/// to serve it, and `IF NOT EXISTS` leaves a seeded one alone. The table is
+/// schemaless like `user`, and the sequence starts past nothing because news
+/// rows are only ever created by the app.
+async fn ensure_news_schema(db: &Db) -> Result<()> {
+    db.query(
+        "DEFINE TABLE IF NOT EXISTS news SCHEMALESS; \
+         DEFINE SEQUENCE IF NOT EXISTS news_seq START 1;",
+    )
+    .await?
+    .check()?;
+    Ok(())
+}
+
 /// Defines the password-reset tokens and their lookup index. Created on
 /// connect rather than left to the seed: a database that never took a reset
 /// export still has to answer the form, and `IF NOT EXISTS` leaves a seeded
@@ -236,12 +253,14 @@ pub mod detail;
 pub mod episodes;
 pub mod gacha;
 pub mod search;
+pub mod stamp;
 pub mod types;
 pub mod users;
 
 /// The read/write surface the rest of the crate uses, re-exported so a caller
 /// never names a submodule.
 pub use admin::{insert_entity, update_entity};
+pub use stamp::{change_stamp, sitemap_sources, FEED_SOURCES};
 pub use catalog::{
     cards_by_ids, select_cookies, select_episode_list, select_ingredient_list, select_jelly_list,
     select_pets, select_relic_groups, select_simple, select_skin_list, select_treasures,

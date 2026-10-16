@@ -88,13 +88,25 @@ fn slice(chars: &[char], from: usize, to: usize) -> String {
 /// one page so the same entity is looked up once.
 pub type LinkCache = HashMap<String, Option<(String, Option<String>)>>;
 
-/// Renders one prose field through the caller's cache. Names are resolved
-/// sequentially — the detail page shares one cache across its five fields,
-/// so an entity named in abilities and description costs one query.
-/// `self_ref` is the entity the prose belongs to: a link to it renders as a
-/// bold highlight instead of an anchor, because a page linking to itself
+/// Renders one prose field's INLINE markup through the caller's cache. Names
+/// are resolved sequentially — the detail page shares one cache across its
+/// five fields, so an entity named in abilities and description costs one
+/// query. `self_ref` is the entity the prose belongs to: a link to it renders
+/// as a bold highlight instead of an anchor, because a page linking to itself
 /// reads as noise (and SEO-wise a self-link is a dead weight).
 pub async fn render_with(
+    db: &Db,
+    lang: &str,
+    raw: &str,
+    cache: &mut LinkCache,
+    self_ref: Option<(&'static str, i64)>,
+) -> String {
+    render_inline(db, lang, raw, cache, self_ref).await
+}
+
+/// The scanner behind [`render_with`]. Private so the article renderer below
+/// reuses it per block without exposing a second inline entry point.
+async fn render_inline(
     db: &Db,
     lang: &str,
     raw: &str,
@@ -195,6 +207,164 @@ pub async fn render_with(
     out
 }
 
+/// One block of an article body, before inline rendering. News prose is the
+/// one place the wiki markup gets structure: the catalog's short fields are
+/// single paragraphs, while a news post wants headings, lists and paragraphs
+/// the author can write without touching HTML.
+enum Block {
+    /// the heading's tag number (2..=4; h1 is the article title itself)
+    Heading(u8, String),
+    Bullets(Vec<String>),
+    Numbers(Vec<String>),
+    Paragraph(String),
+}
+
+/// Renders a news article body: blank-line-separated blocks, each a heading,
+/// a bullet/numbered list or a paragraph, with the same inline markup as
+/// every other prose field. Everything is escaped exactly like
+/// [`render_with`], so an article cannot inject HTML any more than a
+/// description can.
+pub async fn render_article_with(db: &Db, lang: &str, raw: &str, cache: &mut LinkCache) -> String {
+    if raw.trim().is_empty() {
+        return String::new();
+    }
+    let mut out = String::with_capacity(raw.len().saturating_add(64));
+    for block in split_blocks(raw) {
+        match block {
+            Block::Heading(level, text) => {
+                let class = if level <= 2 {
+                    "mt-8 mb-3 font-headline text-2xl text-accent"
+                } else {
+                    "mt-6 mb-2 font-headline text-xl text-accent"
+                };
+                out.push_str("<h");
+                out.push_str(&level.to_string());
+                out.push_str(" class=\"");
+                out.push_str(class);
+                out.push_str("\">");
+                out.push_str(&render_inline(db, lang, &text, cache, None).await);
+                out.push_str("</h");
+                out.push_str(&level.to_string());
+                out.push('>');
+            }
+            Block::Bullets(items) => {
+                out.push_str(&render_items(db, lang, &items, cache, "ul", "list-disc").await);
+            }
+            Block::Numbers(items) => {
+                out.push_str(&render_items(db, lang, &items, cache, "ol", "list-decimal").await);
+            }
+            Block::Paragraph(text) => {
+                out.push_str("<p class=\"mt-4 leading-relaxed text-foreground\">");
+                out.push_str(&render_inline(db, lang, &text, cache, None).await);
+                out.push_str("</p>");
+            }
+        }
+    }
+    out
+}
+
+/// One list, its items inline-rendered. `tag` is `ul`/`ol` and `marker` the
+/// matching list-style utility.
+async fn render_items(
+    db: &Db,
+    lang: &str,
+    items: &[String],
+    cache: &mut LinkCache,
+    tag: &str,
+    marker: &str,
+) -> String {
+    let mut out = String::new();
+    out.push('<');
+    out.push_str(tag);
+    out.push_str(" class=\"mt-4 ");
+    out.push_str(marker);
+    out.push_str(" list-inside space-y-1 text-foreground\">");
+    for item in items {
+        out.push_str("<li>");
+        out.push_str(&render_inline(db, lang, item, cache, None).await);
+        out.push_str("</li>");
+    }
+    out.push_str("</");
+    out.push_str(tag);
+    out.push('>');
+    out
+}
+
+/// Splits an article body into blocks on blank lines. Consecutive non-blank
+/// lines are one block; within it the first line's shape decides: a single
+/// `#`/`##`/`###` line is a heading, a run of `- `/`* ` lines a bullet list,
+/// a run of `1. ` lines a numbered one, anything else a soft-wrapped
+/// paragraph (its lines joined with spaces, so hard wraps in the textarea do
+/// not become hard breaks on the page).
+fn split_blocks(raw: &str) -> Vec<Block> {
+    let mut blocks = Vec::new();
+    let mut chunk: Vec<String> = Vec::new();
+    for line in raw.replace("\r\n", "\n").lines() {
+        if line.trim().is_empty() {
+            flush_block(&mut chunk, &mut blocks);
+        } else {
+            chunk.push(line.trim_end().to_string());
+        }
+    }
+    flush_block(&mut chunk, &mut blocks);
+    blocks
+}
+
+fn flush_block(chunk: &mut Vec<String>, blocks: &mut Vec<Block>) {
+    if chunk.is_empty() {
+        return;
+    }
+    if chunk.len() == 1 {
+        if let Some(heading) = heading_of(&chunk[0]) {
+            blocks.push(heading);
+            chunk.clear();
+            return;
+        }
+    }
+    if chunk.iter().all(|l| bullet_of(l).is_some()) {
+        blocks.push(Block::Bullets(
+            chunk.iter().filter_map(|l| bullet_of(l)).collect(),
+        ));
+    } else if chunk.iter().all(|l| number_of(l).is_some()) {
+        blocks.push(Block::Numbers(
+            chunk.iter().filter_map(|l| number_of(l)).collect(),
+        ));
+    } else {
+        blocks.push(Block::Paragraph(chunk.join(" ")));
+    }
+    chunk.clear();
+}
+
+fn heading_of(line: &str) -> Option<Block> {
+    let hashes = line.bytes().take_while(|b| *b == b'#').count();
+    if !(1..=3).contains(&hashes) {
+        return None;
+    }
+    let text = line.get(hashes..)?.strip_prefix(' ')?.trim();
+    if text.is_empty() {
+        return None;
+    }
+    // # -> h2, ## -> h3, ### -> h4: h1 is the article's own title
+    Some(Block::Heading(u8::try_from(hashes).ok()?.saturating_add(1), text.to_string()))
+}
+
+fn bullet_of(line: &str) -> Option<String> {
+    let t = line.trim_start();
+    ["- ", "* "]
+        .iter()
+        .find_map(|m| t.strip_prefix(m).map(|rest| rest.trim().to_string()))
+}
+
+fn number_of(line: &str) -> Option<String> {
+    let t = line.trim_start();
+    let digits = t.chars().take_while(char::is_ascii_digit).count();
+    if digits == 0 {
+        return None;
+    }
+    let rest = t.get(digits..)?.strip_prefix(". ")?;
+    Some(rest.trim().to_string())
+}
+
 fn starts_at(chars: &[char], at: usize, needle: &str) -> bool {
     needle
         .chars()
@@ -207,4 +377,61 @@ fn find(chars: &[char], from: usize, needle: &str) -> Option<usize> {
     let len = n.len();
     (from..chars.len().saturating_sub(len.saturating_sub(1)))
         .find(|&i| chars.get(i..i.saturating_add(len)) == Some(&n[..]))
+}
+
+#[cfg(test)]
+// tests use unwrap/expect/panic freely; production code does not (Cargo.toml [lints])
+#[cfg_attr(test, allow(clippy::unwrap_used, clippy::expect_used, clippy::panic))]
+mod tests {
+    use super::*;
+
+    fn shape(b: &Block) -> &'static str {
+        match b {
+            Block::Heading(..) => "h",
+            Block::Bullets(_) => "ul",
+            Block::Numbers(_) => "ol",
+            Block::Paragraph(_) => "p",
+        }
+    }
+
+    /// Paragraphs, headings and both list shapes split on blank lines, and a
+    /// multi-line paragraph soft-wraps into one block.
+    #[test]
+    fn blocks_split_on_blank_lines() {
+        let raw = "# Title\n\nFirst line\nsecond line\n\n- a\n- b\n\n1. one\n2. two\n\nTail";
+        let blocks = split_blocks(raw);
+        assert_eq!(
+            blocks.iter().map(shape).collect::<Vec<_>>(),
+            vec!["h", "p", "ul", "ol", "p"]
+        );
+        assert!(matches!(&blocks[0], Block::Heading(2, t) if t == "Title"));
+        assert!(matches!(&blocks[1], Block::Paragraph(t) if t == "First line second line"));
+        assert!(matches!(&blocks[2], Block::Bullets(v) if v == &["a", "b"]));
+        assert!(matches!(&blocks[3], Block::Numbers(v) if v == &["one", "two"]));
+    }
+
+    /// The escaper and the colour guard are the article renderer's whole
+    /// security surface: a pasted tag is text, and a colour value cannot
+    /// break out of the attribute.
+    #[test]
+    fn escaping_and_colour_guard_hold() {
+        assert_eq!(escape("<img src=x onerror=1>"), "&lt;img src=x onerror=1&gt;");
+        assert_eq!(escape("a & b 'c' \"d\""), "a &amp; b &#39;c&#39; &quot;d&quot;");
+        assert!(valid_color("#f00"));
+        assert!(valid_color("rgb(1, 2, 3)"));
+        assert!(!valid_color("red\" onclick=\"x"));
+        assert!(!valid_color("red;background:url(x)"));
+        assert!(!valid_color(&"a".repeat(33)));
+    }
+
+    /// A hashtag-ish line that is not a heading marker stays body text, and
+    /// an empty body yields no blocks (so the renderer returns nothing).
+    #[test]
+    fn near_misses_stay_paragraphs() {
+        assert!(split_blocks("   \n\n").is_empty());
+        assert!(matches!(split_blocks("#nospace").as_slice(), [Block::Paragraph(t)] if t == "#nospace"));
+        assert!(matches!(split_blocks("#### four").as_slice(), [Block::Paragraph(t)] if t == "#### four"));
+        // a bullet run interrupted by a plain line is one paragraph
+        assert!(matches!(split_blocks("- a\nplain").as_slice(), [Block::Paragraph(_)]));
+    }
 }

@@ -1267,3 +1267,123 @@ index_featured_desc
 index_featured_cta
 เริ่มอ่าน
 -----
+news_link
+ข่าวสาร
+-----
+news_page_title
+ข่าวสาร | Classic/FanWiki
+-----
+news_page_header
+ข่าวสาร
+-----
+news_page_description
+ประกาศ อัปเดต และข่าวสารชุมชนของ CookieRun: Classic
+-----
+news_page_hint
+ประกาศล่าสุดจากคลังข้อมูล
+-----
+news_unavailable
+ยังไม่มีข่าวสาร
+-----
+news_loading
+กำลังโหลด...
+-----
+news_view_all
+ดูข่าวทั้งหมด
+-----
+news_view_button
+ดู
+-----
+news_draft_badge
+ฉบับร่าง
+-----
+news_status_published
+เผยแพร่แล้ว
+-----
+news_status_draft
+ฉบับร่าง
+-----
+news_publish_button
+เผยแพร่
+-----
+news_unpublish_button
+ยกเลิกเผยแพร่
+-----
+news_edit_button
+แก้ไข
+-----
+news_delete_button
+ลบ
+-----
+news_manage_button
+จัดการข่าวสาร
+-----
+news_new_button
+เขียนข่าวใหม่
+-----
+news_new_page_title
+เขียนข่าวใหม่ | Classic/FanWiki
+-----
+news_edit_page_title
+แก้ไขข่าว | Classic/FanWiki
+-----
+news_save_button
+บันทึกข่าว
+-----
+news_create_button
+สร้างข่าว
+-----
+news_admin_page_title
+จัดการข่าวสาร | Classic/FanWiki
+-----
+news_admin_header
+จัดการข่าวสาร
+-----
+news_admin_hint
+เขียนโพสต์ เผยแพร่ทันทีหรือตั้งเวลาไว้ หรือเก็บเป็นฉบับร่าง
+-----
+news_admin_empty
+ยังไม่มีโพสต์ เริ่มเขียนข่าวแรกได้เลย
+-----
+news_title_label
+หัวข้อ
+-----
+news_summary_label
+สรุป
+-----
+news_body_label
+เนื้อหา
+-----
+news_article_hint
+เว้นบรรทัดว่างเพื่อแยกย่อหน้า ขึ้นต้นบรรทัดด้วย #, ## หรือ ### เพื่อทำหัวข้อ หรือ - เพื่อทำรายการ ใช้ [[cookie:12]] เพื่อลิงก์ตัวละคร
+-----
+news_publish_label
+เผยแพร่
+-----
+news_date_label
+วันที่เผยแพร่
+-----
+news_by_author
+โดย
+-----
+news_empty_body
+โพสต์นี้ยังไม่มีเนื้อหา
+-----
+news_error_title
+ต้องระบุหัวข้อ
+-----
+news_error_save
+ไม่สามารถบันทึกโพสต์ได้
+-----
+news_feed_title
+CookieRun: Classic/FanWiki — ข่าวสาร
+-----
+news_feed_link
+ฟีด RSS
+-----
+news_status_queued
+ตั้งเวลา
+-----
+news_schedule_hint
+ถ้าเลือกวันในอนาคต โพสต์จะยังไม่แสดงจนกว่าจะถึงวันนั้นตามเขตเวลาของเว็บไซต์
+-----

@@ -32,7 +32,7 @@ pub async fn insert_entity(
         let g = form.grade.unwrap_or(1);
         sets.push(format!("rank = {}", grade::rank(g)));
         sets.push(format!("grade = {g}"));
-        let ts = parse_release_date(&form.release_date).unwrap_or(now);
+        let ts = crate::time::parse_ymd(&form.release_date).unwrap_or(now);
         sets.push(format!("release_date = {ts}"));
     }
     if section == Section::Treasures {
@@ -93,7 +93,7 @@ pub async fn update_entity(
         sets.push(format!("grade = {g}"));
     }
     // an empty date field means "no change"; the create path defaults to now
-    if let Some(ts) = parse_release_date(&form.release_date) {
+    if let Some(ts) = crate::time::parse_ymd(&form.release_date) {
         sets.push(format!("release_date = {ts}"));
     }
     if section == Section::Treasures {
@@ -140,41 +140,6 @@ fn clean_image(image: &str) -> Option<String> {
     }
 }
 
-/// YYYY-MM-DD -> unix seconds, like the old `parse_release_date`. `None`
-/// when the field is empty (update keeps the stored value) or malformed.
-// The Hinnant days-from-civil arithmetic is provably in-range: the parts
-// are validated to YYYY-MM-DD just above.
-#[allow(clippy::arithmetic_side_effects)]
-fn parse_release_date(raw: &str) -> Option<i64> {
-    let raw = raw.trim();
-    if raw.is_empty() {
-        return None;
-    }
-    // a date input always sends YYYY-MM-DD; reject anything else
-    let mut parts = raw.split('-');
-    let (y, m, d) = (parts.next()?, parts.next()?, parts.next()?);
-    if parts.next().is_some() || y.len() != 4 || m.len() != 2 || d.len() != 2 {
-        return None;
-    }
-    let (y, m, d) = (
-        y.parse::<i64>().ok()?,
-        m.parse::<i64>().ok()?,
-        d.parse::<i64>().ok()?,
-    );
-    if !(1..=12).contains(&m) || !(1..=31).contains(&d) {
-        return None;
-    }
-    // days-from-civil (Howard Hinnant's algorithm), then to unix seconds
-    let y = if m <= 2 { y - 1 } else { y };
-    let era = if y >= 0 { y } else { y - 399 } / 400;
-    let yoe = y - era * 400;
-    let mp = (m + 9) % 12;
-    let doy = (153 * mp + 2) / 5 + d - 1;
-    let doe = yoe * 365 + yoe / 4 - yoe / 100 + doy;
-    let days = era * 146_097 + doe - 719_468;
-    Some(days * 86400)
-}
-
 /// Upserts the translation for one language INSIDE the nested tr object, so
 /// editing in Thai cannot wipe the English text and the other way round.
 async fn write_translation(
@@ -198,10 +163,15 @@ async fn write_translation(
         power_plus_requirement: String,
         unlock_goal: String,
     }
+    // `Option` is load-bearing, not tidiness: `SELECT tr` on a record that
+    // has no text yet returns an explicit `tr: NONE`, and a bare map field
+    // then fails to decode ("Expected object, got none") — so the very first
+    // save of a newly created entity used to fail. The option decodes that as
+    // None and the write proceeds from an empty map.
     #[derive(Default, SurrealValue)]
     #[surreal(default)]
     struct TrWrap {
-        tr: std::collections::BTreeMap<String, Tr>,
+        tr: Option<std::collections::BTreeMap<String, Tr>>,
     }
     let mut wrap: TrWrap = db
         .query("SELECT tr FROM type::record($tb, $id)")
@@ -211,7 +181,8 @@ async fn write_translation(
         .take::<Vec<TrWrap>>(0)?
         .pop()
         .unwrap_or_default();
-    let entry = wrap.tr.entry(lang.to_string()).or_default();
+    let mut tr = wrap.tr.take().unwrap_or_default();
+    let entry = tr.entry(lang.to_string()).or_default();
     entry.name = form.name.trim().to_string();
     match section {
         Section::Cookies => {
@@ -232,7 +203,7 @@ async fn write_translation(
     db.query("UPDATE type::record($tb, $id) SET tr = $tr")
         .bind(("tb", table.to_string()))
         .bind(("id", id))
-        .bind(("tr", wrap.tr))
+        .bind(("tr", tr))
         .await?
         .check()?;
     Ok(())

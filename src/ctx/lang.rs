@@ -36,12 +36,31 @@ impl Ctx {
     /// the default. Backs both the canonical tag and the hreflang alternates,
     /// so the two cannot disagree.
     pub fn lang_url(&self, lang: &str) -> String {
+        self.url_for(&self.path, lang)
+    }
+
+    /// `path` in `lang`, absolute. The one place the `?lang=` rule lives: the
+    /// default locale carries no param and every other one carries its own, so
+    /// a helper that builds a link can never disagree with the canonical form
+    /// or the hreflang alternates about what a locale's address is.
+    pub fn url_for(&self, path: &str, lang: &str) -> String {
         let suffix = if lang == DEFAULT_LANG {
             String::new()
         } else {
             format!("?lang={lang}")
         };
-        format!("{}{}{}", self.site_url, self.path, suffix)
+        format!("{}{}{}", self.site_url, path, suffix)
+    }
+
+    /// The news RSS feed in this locale, absolute. Same `?lang=` rule as
+    /// `lang_url` — the feed the head advertises has to be the language the
+    /// page is being read in, or a Thai visitor subscribes to an English
+    /// feed — but always the feed's own path, never the page's.
+    ///
+    /// A path, not a language: this is the one caller that needs another
+    /// address than the current one, which is why `url_for` takes the path.
+    pub fn news_feed_url(&self) -> String {
+        self.url_for("/news/feed.xml", &self.lang)
     }
 
     /// The language modal's switch URL, distinct from `lang_url`: it always
@@ -174,5 +193,19 @@ mod tests {
         let c = resolve_lang(Some("page=2&lang=en"), &with_cookie);
         assert_eq!(c.lang, "en");
         assert!(c.write_cookie);
+    }
+
+    /// The advertised feed is the locale's own: the default locale carries no
+    /// param, every other one carries its own, exactly like the alternates the
+    /// canonical tag shares a helper with.
+    #[test]
+    fn feed_url_follows_the_locale() {
+        let en = crate::testutil::test_ctx("en");
+        assert_eq!(en.news_feed_url(), "http://localhost:6785/news/feed.xml");
+        let th = crate::testutil::test_ctx("th");
+        assert_eq!(
+            th.news_feed_url(),
+            "http://localhost:6785/news/feed.xml?lang=th"
+        );
     }
 }

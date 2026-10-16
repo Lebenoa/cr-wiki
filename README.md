@@ -120,7 +120,8 @@ sudo systemctl restart cookierun                    # sessions are in-memory
 | GET | `/api/available-langs` | Languages (HTML partial for HTMX, JSON otherwise) |
 | GET | `/api/richtext-names` | Linkable entity names for rich-text autocomplete |
 | POST | `/api/set-lang` | Set language cookie and redirect back |
-| GET | `/sitemap.xml`, `/robots.txt` | SEO surface (locale alternates, crawl rules) |
+| GET | `/news`, `/news/:id`, `/news/feed.xml` | Published news, localized RSS feed, and article pages |
+| GET/POST | `/admin/news` and `/admin/news/:id/*` | Admin news authoring, scheduling, publishing, and deletion |
 
 ## Configuration
 
@@ -129,6 +130,9 @@ sudo systemctl restart cookierun                    # sessions are in-memory
 ```toml
 host = "127.0.0.1"
 port = 6785
+
+[site]
+utc_offset_minutes = 420              # Asia/Bangkok; SITE_UTC_OFFSET_MINUTES overrides
 
 [surreal]
 url = "http://127.0.0.1:8100"

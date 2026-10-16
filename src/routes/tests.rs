@@ -148,6 +148,151 @@ async fn changelog_page_is_branded_and_localized() {
     assert!(html.contains("hreflang=\"th\" href=\"http://localhost:6785/changelog?lang=th\""));
 }
 
+/// The news authoring surface is admin-only, answered with the site's 404 the
+/// way the catalog editor is: a signed-out visitor can neither reach nor POST
+/// any of it. The requests carry no peer address, so the debug loopback bypass
+/// fails closed.
+#[tokio::test]
+async fn news_authoring_is_admin_only() {
+    state();
+    for uri in ["/admin/news", "/admin/news/new", "/admin/news/1/edit"] {
+        assert_eq!(get(uri).await.status(), StatusCode::NOT_FOUND, "{uri}");
+    }
+    for uri in [
+        "/admin/news/new",
+        "/admin/news/1/edit",
+        "/admin/news/1/delete",
+        "/admin/news/1/publish",
+    ] {
+        assert_eq!(post(uri, "title=x").await.status(), StatusCode::NOT_FOUND, "{uri}");
+    }
+}
+
+/// The teaser endpoint is a fragment, not a page: a direct visit is sent to
+/// the list instead of rendering bare markup — and it answers without ever
+/// touching the database.
+#[tokio::test]
+async fn news_teaser_redirects_a_direct_visit() {
+    state();
+    assert_eq!(get("/news/latest").await.status(), StatusCode::SEE_OTHER);
+}
+
+/// The landing page renders its news teaser as a lazy htmx GET, so the page
+/// itself stays free of database work, and the navbar carries the link.
+#[tokio::test]
+async fn index_lazy_loads_the_news_teaser() {
+    state();
+    let html = text(get("/").await).await;
+    assert!(html.contains("id=\"news-latest\""), "{html}");
+    assert!(html.contains("hx-get=\"/news/latest\""), "{html}");
+    assert!(html.contains("href=\"/news\""), "{html}");
+    // and every page the base template frames advertises the feed, in the
+    // locale being read
+    assert!(
+        html.contains("rel=\"alternate\" type=\"application/rss+xml\""),
+        "{html}"
+    );
+    assert!(
+        html.contains("href=\"http://localhost:6785/news/feed.xml\""),
+        "{html}"
+    );
+}
+
+/// The feed is a route of its own, matched ahead of the `/news/{id}` capture:
+/// reaching that handler would answer 400, because "feed.xml" is not an id.
+/// The post read behind it cannot run here — this handle is unconnected, which
+/// is the only failure this route has — so a 500 is the site's own error page
+/// and proof the static path won.
+#[tokio::test]
+async fn the_feed_is_a_route_of_its_own() {
+    state();
+    let res = get("/news/feed.xml").await;
+    assert_eq!(
+        res.status(),
+        StatusCode::INTERNAL_SERVER_ERROR,
+        "feed.xml must not be read as a post id"
+    );
+}
+
+/// A crawler's revalidation through the real stack, headers and all: the
+/// sitemap answers 200 carrying its validators, 304 with no body and no
+/// content type when the tag comes back, and the document itself for a tag
+/// that does not match ours.
+///
+/// The date half is naturally absent here — the news read behind it cannot run
+/// on this unconnected handle — which is itself the rule being pinned: a
+/// document with nothing to date it by advertises no `Last-Modified` and is
+/// never validated by one, so the tag is the only way to a 304.
+#[tokio::test]
+async fn the_sitemap_answers_a_conditional_get() {
+    state();
+    let first = get("/sitemap.xml").await;
+    assert_eq!(first.status(), StatusCode::OK);
+    let etag = header_of(&first, axum::http::header::ETAG);
+    assert!(etag.starts_with('"'), "the tag is an entity-tag: {etag}");
+    assert_eq!(
+        header_of(&first, axum::http::header::CONTENT_TYPE),
+        "application/xml; charset=utf-8"
+    );
+    assert_eq!(
+        header_of(&first, axum::http::header::LAST_MODIFIED),
+        "",
+        "no live post to date it by, so no date is advertised"
+    );
+    assert!(text(first).await.contains("<urlset"));
+
+    let again = get_with("/sitemap.xml", "if-none-match", &etag).await;
+    assert_eq!(again.status(), StatusCode::NOT_MODIFIED);
+    assert_eq!(
+        header_of(&again, axum::http::header::CONTENT_TYPE),
+        "",
+        "a 304 carries no representation to describe"
+    );
+    assert_eq!(header_of(&again, axum::http::header::ETAG), etag);
+    assert_eq!(
+        header_of(&again, axum::http::header::CACHE_CONTROL),
+        crate::conditional::CACHE_CONTROL,
+        "revalidating is what refreshes the client's window"
+    );
+    assert!(text(again).await.is_empty(), "and no body comes with it");
+
+    // someone else's tag, an unreadable one, and a plain request all get the
+    // document: a 304 is only ever an answer to a validator we sent
+    for tag in ["\"0-0000000000000000\"", "not-a-tag"] {
+        let stale = get_with("/sitemap.xml", "if-none-match", tag).await;
+        assert_eq!(stale.status(), StatusCode::OK, "{tag}");
+        assert!(text(stale).await.contains("<urlset"), "{tag}");
+    }
+    let dated = get_with("/sitemap.xml", "if-modified-since", "Fri, 16 Oct 2026 00:00:00 GMT").await;
+    assert_eq!(
+        dated.status(),
+        StatusCode::OK,
+        "a date cannot revalidate a document that never advertised one"
+    );
+}
+
+/// A GET carrying one extra request header — the conditional ones below are
+/// the whole point of the request.
+async fn get_with(uri: &str, name: &str, value: &str) -> axum::response::Response {
+    router()
+        .oneshot(
+            Request::get(uri)
+                .header(name, value)
+                .body(Body::empty())
+                .expect("request"),
+        )
+        .await
+        .expect("infallible")
+}
+
+fn header_of(res: &axum::response::Response, name: axum::http::header::HeaderName) -> String {
+    res.headers()
+        .get(name)
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or_default()
+        .to_string()
+}
+
 async fn post(uri: &str, body: &str) -> axum::response::Response {
     router()
         .oneshot(

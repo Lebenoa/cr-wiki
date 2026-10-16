@@ -100,6 +100,22 @@ Run from the repo root:
   `rank` column (written on every insert/update via `grade::rank`), and every
   graded grid orders `ORDER BY rank DESC`, never by the raw `grade` ordinal.
 - **Ordering belongs in SQL**, not in memory over loaded rows.
+- **Change stamps date generated documents**: every table the sitemap or the
+  feed is built from carries a database EVENT keeping `change_stamp:<table>`
+  at the newest write, monotone under `math::max` (`src/db/stamp.rs`, defined
+  on connect). A generated document's `Last-Modified` is a stamp read, not a
+  row timestamp — a row that is deleted has no timestamp left to read. Cache
+  any list behind one of these documents against that stamp, never a TTL: a
+  time window will serve a document older than the date it advertises.
+- **Two kinds of stored day.** A *release date* is a civil day with no time of
+  day in it — nothing compares it to a clock — so it stays UTC midnight and
+  reads back as the day it was written (`time::parse_ymd`/`format_ymd`). A
+  *news publication date* is a moment, so it is the instant the chosen day
+  begins in the site's own zone (`[site] utc_offset_minutes`, Asia/Bangkok =
+  420, overridable by `SITE_UTC_OFFSET_MINUTES`): reads and writes go through
+  `time::parse_local_ymd`/`format_local_ymd`, and every surface that shows or
+  edits one passes the offset in (`Ctx::tz`) rather than formatting an instant
+  in UTC.
 - **Treasure effects** live in one table with a `state` column
   (`normal`/`blessed`); per-level values stay strings (+0..+9 rows); builds
   store a per-slot equipped level 0–9. Combi bonuses reuse the effect table.

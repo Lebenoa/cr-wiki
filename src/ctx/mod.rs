@@ -45,6 +45,10 @@ pub struct Ctx {
     /// times per page, so it is resolved once
     pub path: String,
     pub site_url: String,
+    /// The site's own timezone, in minutes east of UTC: the news surface reads
+    /// it to show a publication date that is a moment as the civil day it fell
+    /// on *here*, rather than the UTC day it happened to start on.
+    pub tz_offset: i64,
     pub htmx: bool,
     pub boosted: bool,
     // read by the debug-build admin bypass only; a release binary never
@@ -80,6 +84,7 @@ impl<S: Send + Sync> FromRequestParts<S> for Ctx {
             lang,
             path: parts.uri.path().to_string(),
             site_url: site_url(h),
+            tz_offset: crate::state::site_tz_offset(),
             htmx: header(h, "HX-Request").is_some(),
             boosted: header(h, "HX-Boosted").is_some(),
             is_local: is_local(h, peer),
@@ -98,6 +103,7 @@ impl Ctx {
             l: crate::i18n::Loc::new(crate::i18n::DEFAULT_LANG),
             path: "/".to_string(),
             site_url: String::new(),
+            tz_offset: crate::state::site_tz_offset(),
             htmx: false,
             boosted: false,
             is_local: false,
@@ -106,6 +112,14 @@ impl Ctx {
             // the failure page must never gain a sign-in control
             google_login: false,
         }
+    }
+
+    /// The site's own timezone in minutes east of UTC, for the templates that
+    /// stamp a stored instant as a civil day. A method rather than the field:
+    /// askama hands a *field* access to a call as a reference and a method's
+    /// result by value, and the news date helpers take the value.
+    pub const fn tz(&self) -> i64 {
+        self.tz_offset
     }
 
     /// A fragment swap, as opposed to an hx-boosted navigation which still

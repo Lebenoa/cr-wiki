@@ -8,6 +8,7 @@ use serde::Deserialize;
 pub struct Config {
     pub host: String,
     pub port: u16,
+    pub site: Site,
     pub surreal: SurrealConfig,
     pub turnstile: Turnstile,
     pub ratelimit: RateLimit,
@@ -20,6 +21,7 @@ impl Default for Config {
         Self {
             host: "127.0.0.1".into(),
             port: 6785,
+            site: Site::default(),
             surreal: SurrealConfig::default(),
             turnstile: Turnstile::default(),
             ratelimit: RateLimit::default(),
@@ -27,6 +29,25 @@ impl Default for Config {
             google: Google::default(),
         }
     }
+}
+
+/// Facts about the wiki itself rather than about a service it talks to.
+#[derive(Debug, Clone, Default, Deserialize)]
+#[serde(default)]
+pub struct Site {
+    /// The site's own timezone, in minutes east of UTC — Asia/Bangkok is 420.
+    ///
+    /// It is what a news publication date means: a post scheduled for
+    /// 2026-10-20 goes live when that day begins *there*, not at UTC midnight,
+    /// and every date the news surface shows an author or a reader is the
+    /// civil day in this zone. Unset (0) keeps the wiki on UTC, which is what
+    /// every deployment did before this key existed.
+    ///
+    /// A fixed offset, not a zone name: a name would need the tz database in
+    /// the binary for one form field, and this wiki's own zone (Asia/Bangkok)
+    /// has never observed a daylight-saving shift. A zone that does would need
+    /// the value moved twice a year.
+    pub utc_offset_minutes: i64,
 }
 
 /// Google sign-in (OAuth 2.0 authorization-code flow). An unconfigured
@@ -147,6 +168,11 @@ impl Config {
         }
         if self.port == 0 {
             errors.push("port must be between 1 and 65535".to_string());
+        }
+        // ±14:00 is the real range of civil offsets (UTC-12:00 .. UTC+14:00);
+        // anything wider would silently date documents in no zone at all
+        if !(-14 * 60..=14 * 60).contains(&self.site.utc_offset_minutes) {
+            errors.push("[site] utc_offset_minutes must be within ±14 hours of UTC".to_string());
         }
         let surreal_url = self.surreal.url.trim();
         if !(surreal_url.starts_with("ws://")
@@ -321,6 +347,29 @@ mod tests {
         config.validate().unwrap();
     }
 
+    /// The site's offset is what a publication date means, so a value no zone
+    /// on earth uses is a startup error rather than a date nothing can read:
+    /// ±14:00 bounds the real range (UTC-12:00 .. UTC+14:00).
+    #[test]
+    fn the_site_timezone_is_bounded() {
+        let mut config = valid_base();
+        for offset in [0, 420, -720, 840] {
+            config.site.utc_offset_minutes = offset;
+            config.validate().unwrap_or_else(|e| panic!("{offset}: {e:?}"));
+        }
+        for offset in [900, -900, 1441, i64::MAX] {
+            config.site.utc_offset_minutes = offset;
+            assert!(
+                config
+                    .validate()
+                    .unwrap_err()
+                    .iter()
+                    .any(|e| e.contains("utc_offset_minutes")),
+                "{offset} must be refused"
+            );
+        }
+    }
+
     #[test]
     fn validation_accepts_complete_valid_config() {
         let mut config = Config::default();
@@ -392,6 +441,15 @@ impl Config {
             cfg.port = v
                 .parse::<u16>()
                 .map_err(|_| vec!["CR_PORT must be a valid port number".to_string()])?;
+        }
+
+        // the site's own timezone, which schedules publish and reads show
+        if let Ok(v) = std::env::var("SITE_UTC_OFFSET_MINUTES") {
+            if !v.is_empty() {
+                cfg.site.utc_offset_minutes = v.parse::<i64>().map_err(|_| {
+                    vec!["SITE_UTC_OFFSET_MINUTES must be whole minutes east of UTC".to_string()]
+                })?;
+            }
         }
 
         // env overrides for the database server

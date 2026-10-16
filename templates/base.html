@@ -25,6 +25,8 @@
     <link rel="alternate" hreflang="{{ alt }}" href="{{ ctx.lang_url(alt) }}" />
     {% endfor %}
     <link rel="alternate" hreflang="x-default" href="{{ ctx.default_lang_url() }}" />
+    <link rel="alternate" type="application/rss+xml" title="{{ ctx.l.t("news_feed_title") }}"
+        href="{{ ctx.news_feed_url() }}" />
     {% block robots %}<meta name="robots" content="index, follow" />{% endblock %}
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="{{ ctx.l.t("site_name") }}" />

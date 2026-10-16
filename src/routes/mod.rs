@@ -26,6 +26,7 @@ pub mod changelog;
 pub mod detail;
 pub mod errors;
 pub mod misc;
+pub mod news;
 pub mod picker;
 pub mod planner;
 pub mod uploads;
@@ -39,6 +40,9 @@ pub fn router() -> Router {
     misc::routes()
         .merge(api::routes())
         .merge(changelog::routes())
+        // before the catalog captures: /news/{id} and /admin/news would
+        // otherwise be read as a section detail page
+        .merge(news::routes())
         .merge(picker::routes())
         .merge(planner::routes())
         .merge(builds::routes())

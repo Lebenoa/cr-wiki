@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% import "title.html" as t %}
+{% block title %}{{ t::tags(ctx.page_title("news_admin_page_title"), ctx.meta_description(), ctx.social_image()) }}{% endblock %}
+{% block robots %}<meta name="robots" content="noindex, nofollow" />{% endblock %}
+{% block content %}
+<section class="page-shell max-w-4xl">
+    <div class="flex flex-wrap items-center justify-between gap-4">
+        <h1 class="page-title">{{ ctx.l.t("news_admin_header") }}</h1>
+        <a href="/admin/news/new" class="btn-primary">{{ ctx.l.t("news_new_button") }}</a>
+    </div>
+    <p class="text-center text-sm text-foreground-muted">{{ ctx.l.t("news_admin_hint") }}</p>
+    {% if posts.is_empty() %}
+    <p class="py-12 text-center text-foreground-muted">{{ ctx.l.t("news_admin_empty") }}</p>
+    {% else %}
+    <ul class="mt-8 flex flex-col gap-3">
+        {% for p in posts %}
+        <li class="rounded-2xl border-2 border-primary/20 bg-surface/50 p-4">
+            <div class="flex flex-wrap items-center gap-3">
+                <span class="font-bold text-on-surface">{{ p.title }}</span>
+                {% if self.is_live(p) %}
+                <span class="pill-primary">{{ ctx.l.t("news_status_published") }}</span>
+                {% else if p.published %}
+                <span class="pill-accent">{{ ctx.l.t("news_status_queued") }}</span>
+                {% else %}
+                <span class="text-[10px] font-bold uppercase text-foreground-muted border border-secondary/40 rounded-full px-2 py-0.5">{{ ctx.l.t("news_status_draft") }}</span>
+                {% endif %}
+                <time class="text-xs text-foreground-muted font-label uppercase">{{ p.date_label(ctx.tz()) }}</time>
+                {% if !p.author.is_empty() %}
+                <span class="text-xs text-foreground-muted">{{ ctx.l.t("news_by_author") }} {{ p.author }}</span>
+                {% endif %}
+                <div class="ml-auto flex flex-wrap items-center gap-2">
+                    {% if self.is_live(p) %}
+                    <a href="/news/{{ p.id }}" class="btn-secondary text-xs">{{ ctx.l.t("news_view_button") }}</a>
+                    {% endif %}
+                    <a href="/admin/news/{{ p.id }}/edit" class="btn-secondary text-xs">{{ ctx.l.t("news_edit_button") }}</a>
+                    <form method="post" action="/admin/news/{{ p.id }}/publish">
+                        {% if p.published %}
+                        <input type="hidden" name="published" value="false" />
+                        <button type="submit" class="btn-secondary text-xs">{{ ctx.l.t("news_unpublish_button") }}</button>
+                        {% else %}
+                        <input type="hidden" name="published" value="true" />
+                        <button type="submit" class="btn-primary text-xs">{{ ctx.l.t("news_publish_button") }}</button>
+                        {% endif %}
+                    </form>
+                    <form method="post" action="/admin/news/{{ p.id }}/delete">
+                        <button type="submit" class="btn-error text-xs">{{ ctx.l.t("news_delete_button") }}</button>
+                    </form>
+                </div>
+            </div>
+            {% if !p.summary.is_empty() %}
+            <p class="mt-2 text-sm text-foreground-muted">{{ p.summary }}</p>
+            {% endif %}
+        </li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+</section>
+{% endblock %}

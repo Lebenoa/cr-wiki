@@ -2,7 +2,8 @@
 
 use askama::Template;
 use axum::extract::Query;
-use axum::response::Html;
+use axum::http::HeaderMap;
+use axum::response::{Html, Response};
 use axum::routing::get;
 use axum::Router;
 
@@ -104,7 +105,20 @@ pub async fn gacha(ctx: Ctx) -> Result<Html<String>, AppError> {
 
 /// Every list page plus every detail id, each with its locale alternates. A
 /// section missing here is one crawlers only reach by luck.
-pub async fn sitemap(ctx: Ctx) -> ([(&'static str, &'static str); 2], String) {
+///
+/// The document is served conditionally: the tag is a digest of the very bytes
+/// below, so a crawler re-crawling on its own schedule is answered `304` until
+/// a url is actually added or removed — a newly created entity changes the
+/// document and with it the tag.
+///
+/// `Last-Modified` is the newer of two facts, and neither alone is enough: the
+/// change stamp, which every write to a table this document lists moves — that
+/// is what makes a created, edited or *deleted* entity move the date, since a
+/// url is an id and a deleted row can no longer date anything (`db::stamp`) —
+/// and the newest live publication, which is what reveals a queued post on the
+/// day it comes due, with no write to stamp. No date at all is sent while
+/// neither has anything to say, and then only the tag can revalidate.
+pub async fn sitemap(ctx: Ctx, headers: HeaderMap) -> Response {
     let state = crate::state::state();
     let base = ctx.site_url;
     let langs = i18n::available_langs();
@@ -115,6 +129,7 @@ pub async fn sitemap(ctx: Ctx) -> ([(&'static str, &'static str); 2], String) {
         "/treasures",
         "/builds",
         "/changelog",
+        "/news",
         "/episodes",
         "/ingredients",
         "/jellies",
@@ -126,15 +141,38 @@ pub async fn sitemap(ctx: Ctx) -> ([(&'static str, &'static str); 2], String) {
     .map(str::to_string)
     .collect();
 
+    // the stamp: the newest write to any table this document lists, which is
+    // the half that can see a row vanish — and the key the url list's cache is
+    // read under, so it must be read first (see `db::sitemap_entries`).
+    // Lenient like the reads around it: a missing date costs a re-fetch, never
+    // a wrong answer.
+    let mut last_modified = crate::db::change_stamp(&state.db, &crate::db::sitemap_sources())
+        .await
+        .unwrap_or(None);
+
     // deliberately lenient: a database failure shrinks the sitemap rather
     // than failing it — robots.txt always answers, and the partial sitemap
     // heals on the next request
-    if let Ok(entries) = db::sitemap_entries(&state.db).await {
+    if let Ok(entries) = db::sitemap_entries(&state.db, last_modified).await {
         paths.extend(
             entries
                 .into_iter()
                 .map(|(section, id)| format!("/{section}/{id}")),
         );
+    }
+
+    // posts that are live right now only — a draft or a queued post has no
+    // page yet — and the lenient rule above applies here too, so a database
+    // hiccup shortens the sitemap rather than failing it
+    if let Ok(ids) = crate::news::published_ids(&state.db, crate::time::now_unix()).await {
+        paths.extend(ids.into_iter().map(|id| format!("/news/{id}")));
+        // the other half: a queued post coming due adds a url with no write
+        // behind it, so the publication date is the only thing that can date
+        // that moment
+        let live = crate::news::newest_publication(&state.db, crate::time::now_unix())
+            .await
+            .unwrap_or(None);
+        last_modified = last_modified.max(live);
     }
 
     let mut xml = String::from(
@@ -165,14 +203,11 @@ pub async fn sitemap(ctx: Ctx) -> ([(&'static str, &'static str); 2], String) {
         xml.push_str("\"/></url>\n");
     }
     xml.push_str("</urlset>\n");
-    (
-        [
-            ("content-type", "application/xml; charset=utf-8"),
-            // the entries behind this are cached server-side for ten minutes;
-            // matching it here keeps a crawler's re-fetch off the app entirely
-            ("cache-control", "public, max-age=600"),
-        ],
+    crate::conditional::document(
+        &headers,
+        "application/xml; charset=utf-8",
         xml,
+        last_modified,
     )
 }
 
@@ -180,7 +215,7 @@ pub async fn sitemap(ctx: Ctx) -> ([(&'static str, &'static str); 2], String) {
 pub async fn robots(ctx: Ctx) -> ([(&'static str, &'static str); 1], String) {
     let base = ctx.site_url;
     let body = format!(
-        "User-agent: *\nDisallow: /login\nDisallow: /register\nDisallow: /builds/new\nDisallow: /builds/preview\nDisallow: /builds/options/\nDisallow: /search\nAllow: /\n\nSitemap: {base}/sitemap.xml\n"
+        "User-agent: *\nDisallow: /login\nDisallow: /register\nDisallow: /admin/\nDisallow: /builds/new\nDisallow: /builds/preview\nDisallow: /builds/options/\nDisallow: /news/latest\nDisallow: /search\nAllow: /\n\nSitemap: {base}/sitemap.xml\n"
     );
     ([("content-type", "text/plain; charset=utf-8")], body)
 }
@@ -270,7 +305,8 @@ mod tests {
             return;
         };
 
-        let entries = db::sitemap_entries(&pool).await.unwrap();
+        // no stamp: the uncached path, which is what this test is about
+        let entries = db::sitemap_entries(&pool, None).await.unwrap();
         for section in [
             "cookies",
             "pets",

@@ -4,13 +4,16 @@
 mod builds;
 mod changelog;
 mod chrome;
+mod conditional;
 mod config;
 mod ctx;
 mod db;
+mod feed;
 mod grade;
 mod i18n;
 mod mail;
 mod middleware;
+mod news;
 mod oauth;
 mod options;
 mod pagination;
