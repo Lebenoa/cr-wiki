@@ -1,3 +1,18 @@
+settings_title
+การตั้งค่า
+-----
+settings_appearance
+รูปลักษณ์
+-----
+settings_account
+บัญชี
+-----
+settings_navigation
+หมวดการตั้งค่า
+-----
+settings_preferences_hint
+การตั้งค่ารูปลักษณ์และภาษาจะบันทึกไว้ในเบราว์เซอร์นี้
+-----
 index_page_title
 คุกกี้รัน: คลาสสิค/แฟนวิกิ
 -----
@@ -240,12 +255,6 @@ email_hint
 -----
 account_email
 อีเมลกู้คืนบัญชี
------
-account_email_title
-อีเมลกู้คืนบัญชี
------
-account_email_message
-ตั้งค่าอีเมลสำหรับรีเซ็ตรหัสผ่าน เว้นว่างเพื่อลบอีเมล
 -----
 account_email_clear_hint
 ใช้สำหรับรีเซ็ตรหัสผ่านเท่านั้น บันทึกช่องว่างเพื่อลบอีเมล

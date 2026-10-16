@@ -21,7 +21,7 @@ use crate::session;
 use super::{email_policy, error_fragment, send_security_notice};
 
 #[derive(Template)]
-#[template(path = "account_email.html")]
+#[template(path = "settings.html")]
 struct AccountEmailPage {
     ctx: Ctx,
     email: String,
@@ -60,7 +60,11 @@ fn render_account_email(
     }
     .render()
     .unwrap_or_else(|e| format!("template error: {e}"));
-    Html(html).into_response()
+    (
+        [(axum::http::header::CACHE_CONTROL, "private, no-store")],
+        Html(html),
+    )
+        .into_response()
 }
 
 fn account_email_error(ctx: &Ctx, email: &str, key: &str, google: bool) -> Response {
@@ -75,9 +79,9 @@ fn account_email_error(ctx: &Ctx, email: &str, key: &str, google: bool) -> Respo
     }
 }
 
-pub async fn account_email_form(ctx: Ctx) -> Result<Response, AppError> {
+pub async fn settings_form(ctx: Ctx) -> Result<Response, AppError> {
     let Some(user) = ctx.user.as_ref() else {
-        return Ok(errors::not_found(ctx));
+        return Ok(render_account_email(ctx, "", "", "", false));
     };
     let state = crate::state::state();
     let Some(account) = db::find_user(&state.db, &user.username)
@@ -210,8 +214,14 @@ mod tests {
     #[test]
     fn google_hint_appears_only_for_a_google_account() {
         let account = |google: bool| {
+            let mut ctx = crate::testutil::test_ctx("en");
+            ctx.user = Some(crate::session::SessionUser {
+                id: 1,
+                username: "tester".into(),
+                is_admin: false,
+            });
             AccountEmailPage {
-                ctx: crate::testutil::test_ctx("en"),
+                ctx,
                 email: "ginger@cookie.run".into(),
                 error: String::new(),
                 notice: String::new(),

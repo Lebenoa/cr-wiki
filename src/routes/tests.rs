@@ -60,38 +60,15 @@ async fn non_db_routes_answer_through_the_middleware_order() {
 }
 
 #[tokio::test]
-async fn account_menu_links_to_recovery_email_settings() {
-    let app = state();
-    let key = app.sessions.start(crate::session::SessionUser {
-        id: 7,
-        username: "tester".to_string(),
-        is_admin: false,
-    });
-    let res = router()
-        .oneshot(
-            Request::get("/changelog")
-                .header("cookie", format!("CRSESSID={key}"))
-                .body(Body::empty())
-                .expect("request"),
-        )
-        .await
-        .expect("infallible");
-    let menu = text(res).await;
-    assert!(menu.contains("href=\"/account/email\""), "{menu}");
-    assert!(menu.contains("Recovery email"), "{menu}");
-}
-
-#[tokio::test]
-async fn account_email_route_requires_an_authenticated_session() {
+async fn settings_are_public_but_account_changes_require_a_session() {
     state();
-    let res = get("/account/email").await;
-    assert_eq!(res.status(), StatusCode::NOT_FOUND);
+    let res = get("/settings").await;
+    assert_eq!(res.status(), StatusCode::OK);
+    let html = text(res).await;
+    assert!(!html.contains("id=\"account-email\""));
+    assert!(!html.contains("id=\"account\""));
 
-    let res = post(
-        "/account/email",
-        "email=ginger%40cookie.run&password=longenough",
-    )
-    .await;
+    let res = post("/settings", "email=ginger%40cookie.run&password=longenough").await;
     assert_eq!(res.status(), StatusCode::NOT_FOUND);
 }
 
@@ -164,7 +141,11 @@ async fn news_authoring_is_admin_only() {
         "/admin/news/1/delete",
         "/admin/news/1/publish",
     ] {
-        assert_eq!(post(uri, "title=x").await.status(), StatusCode::NOT_FOUND, "{uri}");
+        assert_eq!(
+            post(uri, "title=x").await.status(),
+            StatusCode::NOT_FOUND,
+            "{uri}"
+        );
     }
 }
 
@@ -263,7 +244,12 @@ async fn the_sitemap_answers_a_conditional_get() {
         assert_eq!(stale.status(), StatusCode::OK, "{tag}");
         assert!(text(stale).await.contains("<urlset"), "{tag}");
     }
-    let dated = get_with("/sitemap.xml", "if-modified-since", "Fri, 16 Oct 2026 00:00:00 GMT").await;
+    let dated = get_with(
+        "/sitemap.xml",
+        "if-modified-since",
+        "Fri, 16 Oct 2026 00:00:00 GMT",
+    )
+    .await;
     assert_eq!(
         dated.status(),
         StatusCode::OK,

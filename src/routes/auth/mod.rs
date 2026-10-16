@@ -51,10 +51,7 @@ pub fn routes() -> Router {
         // catalog captures, so neither path can be read as a `/{section}/{id}`
         // detail page
         .route("/forgot-password", get(forgot_form).post(forgot))
-        .route(
-            "/account/email",
-            get(account_email_form).post(update_account_email),
-        )
+        .route("/settings", get(settings_form).post(update_account_email))
         .route("/reset-password", get(reset_form).post(reset))
         // GET logout with the SameSite=Lax session cookie lets any
         // cross-site link end the session: Lax still rides a top-level GET
@@ -65,7 +62,7 @@ pub fn routes() -> Router {
         .route("/revoke-sessions", post(revoke_sessions))
 }
 
-pub use self::account::{account_email_form, update_account_email};
+pub use self::account::{settings_form, update_account_email};
 pub use self::google::{google_callback, google_start};
 pub use self::password::{forgot, forgot_form, reset, reset_form};
 

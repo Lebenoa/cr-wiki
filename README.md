@@ -116,7 +116,7 @@ sudo systemctl restart cookierun                    # sessions are in-memory
 | GET/POST | `/builds/:id/edit`, POST `/builds/:id/delete` | Owner/admin only (404 otherwise) |
 | GET/POST | `/login`, `/register`, `/forgot-password`, `/reset-password`; POST `/logout` | Auth |
 | GET | `/auth/google`, `/auth/google/callback` | Sign in with Google (404 unless `[google]` is configured) |
-| GET/POST | `/account/email` | Signed-in recovery email settings; current password required to save |
+| GET/POST | `/settings` | Appearance and language for all visitors; recovery email and session controls for signed-in users |
 | GET | `/api/available-langs` | Languages (HTML partial for HTMX, JSON otherwise) |
 | GET | `/api/richtext-names` | Linkable entity names for rich-text autocomplete |
 | POST | `/api/set-lang` | Set language cookie and redirect back |
@@ -127,6 +127,11 @@ News scheduling accepts a local date and time in `[site].utc_offset_minutes`,
 shown as a UTC offset beside the authoring field (not the browser timezone).
 Existing schedules retain their stored instant. The offset is fixed; daylight
 saving changes are not automatic.
+
+`/settings` groups Appearance, Language, and Account in a responsive category
+sidebar. Guests can change browser-local preferences; signed-in users can also
+manage recovery email and sessions. The account dropdown retains quick access
+to the same controls. Recovery-email changes still require the current password.
 
 Catalog list/detail GETs (including htmx fragments) carry ETags and
 `Cache-Control: private, no-cache`. The process retains up to 256 rendered

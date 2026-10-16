@@ -1,3 +1,18 @@
+settings_title
+Settings
+-----
+settings_appearance
+Appearance
+-----
+settings_account
+Account
+-----
+settings_navigation
+Settings sections
+-----
+settings_preferences_hint
+Appearance and language preferences are stored in this browser.
+-----
 index_page_title
 CookieRun: Classic/FanWiki
 -----
@@ -240,12 +255,6 @@ Use for password reset only
 -----
 account_email
 Recovery email
------
-account_email_title
-Recovery email
------
-account_email_message
-Set an email address for password reset. Leave it blank to remove it.
 -----
 account_email_clear_hint
 Only used for password reset. Save a blank value to remove the address.

@@ -20,14 +20,15 @@
                 <a href="/{{ section }}" class="{{ ctx.nav_class(section) }}">{{ ctx.l.t(section) }}</a>
                 {% endfor %}
             </div>
-            <a href="/builds" class="{{ ctx.nav_class("builds") }}">{{ ctx.l.t("builds") }}</a>
-            <a href="/news" class="{{ ctx.nav_class("news") }}">{{ ctx.l.t("news_link") }}</a>
-            <a href="/changelog" class="{{ ctx.nav_class("changelog") }}">{{ ctx.l.t("changelog_link") }}</a>
+            <a href="/builds" class="{{ ctx.nav_class(" builds") }}">{{ ctx.l.t("builds") }}</a>
+            <a href="/news" class="{{ ctx.nav_class(" news") }}">{{ ctx.l.t("news_link") }}</a>
+            <a href="/changelog" class="{{ ctx.nav_class(" changelog") }}">{{ ctx.l.t("changelog_link") }}</a>
         </div>
     </div>
 
     <div class="flex shrink-0 items-center gap-6 max-md:gap-3">
-        <button id="search-toggle" type="button" class="btn-secondary size-12 md:hidden" aria-label="{{ ctx.l.t("navbar_search_toggle") }}" aria-expanded="false">
+        <button id="search-toggle" type="button" class="btn-secondary size-12 md:hidden" aria-label="{{ ctx.l.t("
+            navbar_search_toggle") }}" aria-expanded="false">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="m21 21-4.34-4.34" />
@@ -47,7 +48,7 @@
                 <input name="q" hx-get="/search" hx-trigger="input changed delay:300ms" hx-target="#search-results"
                     hx-swap="innerHTML"
                     class="bg-surface border-2 border-secondary/50 focus:border-primary focus:ring-2 focus:ring-primary rounded-full py-2 pl-12 pr-6 w-full transition-all text-sm text-foreground"
-                    placeholder="{{ ctx.l.t("navbar_search_placeholder") }}" type="text" />
+                    placeholder="{{ ctx.l.t(" navbar_search_placeholder") }}" type="text" />
             </form>
             <div id="search-results"
                 class="absolute top-full left-0 mt-2 w-full max-h-96 overflow-y-auto rounded-xl border border-secondary/70 bg-background shadow-2xl z-50 hidden flex-col p-2 gap-1">
@@ -63,29 +64,30 @@
             </div>
         </div>
 
-        <button type="button" class="btn-primary size-12 md:hidden" popovertarget="mobile-nav" aria-label="{{ ctx.l.t("wiki") }}">&#9776;</button>
+        <button type="button" class="btn-primary size-12 md:hidden" popovertarget="mobile-nav" aria-label="{{ ctx.l.t("
+            wiki") }}">&#9776;</button>
         <div id="mobile-nav" popover
             class="p-4 m-bs-1 inline-64 bg-background text-foreground rounded border border-accent transition-discrete transition-all duration-300 flex-col gap-2 hidden popover-open:flex">
             {% for section in ctx.wiki_sections() %}
             <a href="/{{ section }}" class="{{ ctx.nav_class(section) }}">{{ ctx.l.t(section) }}</a>
             {% endfor %}
-            <a href="/builds" class="{{ ctx.nav_class("builds") }}">{{ ctx.l.t("builds") }}</a>
-            <a href="/news" class="{{ ctx.nav_class("news") }}">{{ ctx.l.t("news_link") }}</a>
-            <a href="/changelog" class="{{ ctx.nav_class("changelog") }}">{{ ctx.l.t("changelog_link") }}</a>
+            <a href="/builds" class="{{ ctx.nav_class(" builds") }}">{{ ctx.l.t("builds") }}</a>
+            <a href="/news" class="{{ ctx.nav_class(" news") }}">{{ ctx.l.t("news_link") }}</a>
+            <a href="/changelog" class="{{ ctx.nav_class(" changelog") }}">{{ ctx.l.t("changelog_link") }}</a>
         </div>
 
-        <button class="btn-primary size-12" popovertarget="account-dropdown" aria-label="{{ ctx.l.t("login")
+        <button class="btn-primary size-12" popovertarget="account-dropdown" aria-label="{{ ctx.l.t(" login")
             }}">&#128100;</button>
         <div id="account-dropdown" popover
             class="p-4 m-bs-1 inline-64 bg-background text-foreground rounded border border-accent transition-discrete transition-all duration-300 flex-col gap-2 hidden popover-open:flex">
             {% if ctx.signed_in() %}
             <p class="btn">{{ ctx.username() }}</p>
-            <a href="/account/email" class="btn-secondary w-full mt-1">{{ ctx.l.t("account_email") }}</a>
+            <a href="/settings#account" class="btn-secondary w-full mt-1">{{ ctx.l.t("account_email") }}</a>
             <form method="post" action="/logout" class="mt-1">
                 <button type="submit" class="btn-secondary w-full">{{ ctx.l.t("logout") }}</button>
             </form>
             <form method="post" action="/revoke-sessions" class="mt-1">
-                <button type="submit" class="btn-secondary text-xs w-full" title="{{ ctx.l.t("revoke_sessions_hint")
+                <button type="submit" class="btn-secondary text-xs w-full" title="{{ ctx.l.t(" revoke_sessions_hint")
                     }}">{{ ctx.l.t("revoke_all_sessions") }}</button>
             </form>
             {% else %}
@@ -94,6 +96,7 @@
                 <a href="/register" class="btn-secondary">{{ ctx.l.t("register") }}</a>
             </div>
             {% endif %}
+            <a href="/settings" class="btn-secondary w-full mt-1">{{ ctx.l.t("settings_title") }}</a>
 
             <button class="btn hover:bg-secondary/20" command="show-modal" commandfor="language-dropdown"
                 onclick="document.getElementById('account-dropdown')?.hidePopover()">
@@ -178,7 +181,7 @@
                     <input type="color" aria-label="{{ ctx.l.t(ctx.theme_token_key(token).as_str()) }}"
                         class="size-8 shrink-0 cursor-pointer rounded border-0 bg-transparent p-0" />
                     <span class="text-sm truncate">{{ ctx.l.t(ctx.theme_token_key(token).as_str()) }}</span>
-                    <button type="button" data-token-reset title="{{ ctx.l.t("theme_token_reset") }}"
+                    <button type="button" data-token-reset title="{{ ctx.l.t(" theme_token_reset") }}"
                         class="invisible ml-auto text-xs font-label uppercase text-foreground-muted hover:text-accent">
                         {{ ctx.l.t("theme_token_reset") }}
                     </button>
