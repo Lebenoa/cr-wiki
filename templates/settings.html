@@ -5,108 +5,118 @@
 {% block robots %}
 <meta name="robots" content="noindex, nofollow" />{% endblock %}
 {% block content %}
-<main class="mx-auto w-full max-w-6xl px-4 py-8 md:px-6 md:py-12">
-    <header class="mb-8">
-        <h1 class="font-headline font-bold text-3xl text-accent">{{ ctx.l.t("settings_title") }}</h1>
-        <p class="mt-2 text-sm text-foreground-muted">{{ ctx.l.t("settings_preferences_hint") }}</p>
+<main id="settings" class="mx-auto w-full max-w-6xl px-4 py-8 md:px-8 md:py-14">
+    <header class="mb-10 border-b border-primary/20 pb-8">
+        <div class="mb-4 h-1 w-16 rounded-full bg-primary"></div>
+        <h1 class="font-headline font-bold text-4xl text-foreground tracking-tight">{{ ctx.l.t("settings_title") }}</h1>
+        <p class="mt-3 max-w-xl text-sm leading-relaxed text-foreground-muted">{{ ctx.l.t("settings_preferences_hint")
+            }}</p>
     </header>
-    <div class="grid gap-8 md:grid-cols-[13rem_minmax(0,1fr)]">
-        <nav aria-label="{{ ctx.l.t(" settings_navigation") }}" class="md:sticky md:top-4 md:self-start">
-            <ul class="flex gap-2 overflow-x-auto md:flex-col">
-                <li><a class="btn-secondary block whitespace-nowrap" href="#appearance">{{
-                        ctx.l.t("settings_appearance") }}</a></li>
-                <li><a class="btn-secondary block whitespace-nowrap" href="#language">{{ ctx.l.t("language") }}</a></li>
+    <div class="grid gap-8 md:grid-cols-[12rem_minmax(0,1fr)] md:gap-12">
+        <nav aria-labelledby="settings-category-heading" class="md:sticky md:top-28 md:self-start">
+            <span id="settings-category-heading" class="sr-only">{{ ctx.l.t("settings_navigation") }}</span>
+            <ul class="flex gap-2 overflow-x-auto pb-2 md:flex-col">
+                <li><a class="settings-nav" href="#appearance"><span aria-hidden="true"
+                            class="text-primary font-mono text-xs">01</span>{{ ctx.l.t("settings_appearance") }}</a>
+                </li>
+                <li><a class="settings-nav" href="#language"><span aria-hidden="true"
+                            class="text-primary font-mono text-xs">02</span>{{ ctx.l.t("language") }}</a></li>
                 {% if ctx.signed_in() %}
-                <li><a class="btn-secondary block whitespace-nowrap" href="#account">{{ ctx.l.t("settings_account")
-                        }}</a></li>
+                <li><a class="settings-nav" href="#account"><span aria-hidden="true"
+                            class="text-primary font-mono text-xs">03</span>{{ ctx.l.t("settings_account") }}</a></li>
                 {% endif %}
             </ul>
         </nav>
         <div class="min-w-0 space-y-8">
-            <section id="appearance" aria-labelledby="appearance-heading"
-                class="rounded-2xl border border-secondary/40 bg-surface p-5 md:p-7">
-                <h2 id="appearance-heading" class="font-headline text-xl text-accent">{{ ctx.l.t("settings_appearance")
-                    }}</h2>
-                <p class="mt-2 text-sm text-foreground-muted">{{ ctx.l.t("theme_label") }}</p>
-                <div class="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+            <section id="appearance" aria-labelledby="appearance-heading" class="settings-panel">
+                <header class="mb-6 flex items-center gap-4">
+                    <span aria-hidden="true" class="settings-section-number">01</span>
+                    <div>
+                        <h2 id="appearance-heading" class="font-headline text-xl font-bold text-foreground">{{
+                            ctx.l.t("settings_appearance") }}</h2>
+                        <p class="mt-1 text-sm text-foreground-muted">{{ ctx.l.t("theme_label") }}</p>
+                    </div>
+                </header>
+                <div class="grid grid-cols-2 gap-3 lg:grid-cols-3">
                     {% for theme in ctx.themes() %}
-                    <button type="button" data-theme="{{ theme }}"
-                        class="theme-option flex min-w-0 items-center gap-3 rounded-xl border border-secondary/50 px-3 py-2 text-left text-foreground hover:border-primary transition-colors">
-                        <span class="theme-swatch size-6 shrink-0 rounded-full border border-white/20"
-                            data-theme="{{ theme }}"></span>
-                        <span class="truncate">{{ ctx.l.t(ctx.theme_key(theme).as_str()) }}</span>
-                        <span class="theme-check hidden ml-auto text-primary font-bold"
-                            aria-hidden="true">&#10003;</span>
+                    <button type="button" data-theme="{{ theme }}" class="theme-option settings-theme">
+                        <span class="theme-swatch h-12 w-full rounded-lg" data-theme="{{ theme }}"
+                            aria-hidden="true"></span>
+                        <span class="flex w-full items-center justify-between gap-2"><span class="truncate">{{
+                                ctx.l.t(ctx.theme_key(theme).as_str()) }}</span><span
+                                class="theme-check hidden text-primary" aria-hidden="true">&#10003;</span></span>
                     </button>
                     {% endfor %}
-                    <button type="button" data-theme="custom"
-                        class="theme-option flex min-w-0 items-center gap-3 rounded-xl border border-secondary/50 px-3 py-2 text-left text-foreground hover:border-primary transition-colors">
-                        <span class="theme-swatch size-6 shrink-0 rounded-full border border-white/20"
-                            data-theme="custom"></span>
-                        <span class="truncate">{{ ctx.l.t("theme_custom") }}</span>
-                        <span class="theme-check hidden ml-auto text-primary font-bold"
-                            aria-hidden="true">&#10003;</span>
+                    <button type="button" data-theme="custom" class="theme-option settings-theme">
+                        <span class="theme-swatch h-12 w-full rounded-lg" data-theme="custom" aria-hidden="true"></span>
+                        <span class="flex w-full items-center justify-between gap-2"><span>{{ ctx.l.t("theme_custom")
+                                }}</span><span class="theme-check hidden text-primary"
+                                aria-hidden="true">&#10003;</span></span>
                     </button>
                 </div>
-                <button type="button" data-theme-edit class="btn-secondary mt-4">{{ ctx.l.t("theme_customize")
-                    }}</button>
+                <div class="mt-6 border-t border-primary/15 pt-5"><button type="button" data-theme-edit
+                        class="settings-action">{{ ctx.l.t("theme_customize") }} <span
+                            aria-hidden="true">&#8599;</span></button></div>
             </section>
-            <section id="language" aria-labelledby="language-heading"
-                class="rounded-2xl border border-secondary/40 bg-surface p-5 md:p-7">
-                <h2 id="language-heading" class="font-headline text-xl text-accent">{{ ctx.l.t("language") }}</h2>
-                <div class="mt-4 flex flex-wrap gap-3">
+            <section id="language" aria-labelledby="language-heading" class="settings-panel">
+                <header class="mb-6 flex items-center gap-4"><span aria-hidden="true"
+                        class="settings-section-number">02</span>
+                    <h2 id="language-heading" class="font-headline text-xl font-bold text-foreground">{{
+                        ctx.l.t("language") }}</h2>
+                </header>
+                <div class="flex flex-wrap gap-3">
                     {% for opt in ctx.lang_options() %}
                     <a hreflang="{{ opt.code }}" href="{{ ctx.lang_switch_url(opt.code) }}"
-                        class="flex items-center gap-2 rounded-xl px-4 py-3 text-foreground transition-colors {% if opt.code == ctx.lang %}bg-primary{% else %}bg-secondary/30 hover:bg-secondary/50{% endif %}"
-                        {% if opt.code==ctx.lang %}aria-current="true" {% endif %}>
-                        {{ opt.display }}
-                    </a>
+                        class="settings-action {% if opt.code == ctx.lang %}border-primary bg-primary/10{% endif %}" {%
+                        if opt.code==ctx.lang %}aria-current="true" {% endif %}><span
+                            class="font-mono text-xs text-primary uppercase">{{ opt.code }}</span>{{ opt.display }}{% if
+                        opt.code == ctx.lang %}<span aria-hidden="true">&#10003;</span>{% endif %}</a>
                     {% endfor %}
                 </div>
             </section>
             {% if ctx.signed_in() %}
-            <section id="account" aria-labelledby="account-heading"
-                class="rounded-2xl border border-secondary/40 bg-surface p-5 md:p-7">
-                <h2 id="account-heading" class="font-headline text-xl text-accent">{{ ctx.l.t("settings_account") }}
-                </h2>
-                <div class="mt-5 space-y-5">
-                    <p class="text-foreground"><span class="font-label text-secondary">{{ ctx.l.t("username")
-                            }}</span><br />{{ ctx.username() }}</p>
-                    <form class="space-y-5" method="post" action="/settings" hx-post="/settings" hx-target="#form-error"
-                        hx-swap="innerHTML" hx-disable="find button[type=submit]">
-                        <div id="form-error">
-                            {% if !error.is_empty() %}<p class="text-error text-center">{{ ctx.l.t(error.as_str()) }}
-                            </p>{% endif %}
-                            {% if !notice.is_empty() %}<p class="text-success text-center">{{ ctx.l.t(notice.as_str())
-                                }}</p>{% endif %}
-                        </div>
-                        <div class="space-y-2">
-                            <label class="font-label text-secondary uppercase" for="account-email">{{ ctx.l.t("email")
-                                }}</label>
-                            <input id="account-email"
-                                class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground focus:border-primary focus:ring-2 focus:ring-primary transition-all"
-                                type="email" name="email" value="{{ email }}" autocomplete="email" />
-                            <p class="text-xs text-foreground-muted">{{ ctx.l.t("account_email_clear_hint") }}</p>
-                        </div>
-                        <div class="space-y-2">
-                            <label class="font-label text-secondary uppercase" for="account-password">{{
-                                ctx.l.t("password") }}</label>
-                            <input id="account-password"
-                                class="w-full bg-surface border-2 border-primary/30 rounded-xl py-3 px-4 text-foreground focus:border-primary focus:ring-2 focus:ring-primary transition-all"
-                                type="password" name="password" autocomplete="current-password" required />
-                            {% if google %}<p class="text-xs text-foreground-muted">{{
-                                ctx.l.t("account_email_google_hint") }}</p>{% endif %}
-                        </div>
-                        <button type="submit"
-                            class="w-full relative bg-primary hover:bg-primary/90 text-foreground font-headline py-4 rounded-xl shadow-lg transition-all active:scale-[0.98] neon-glow">{{
-                            ctx.l.t("account_email_save") }}</button>
-                    </form>
-                    <form method="post" action="/revoke-sessions">
-                        <button type="submit" class="btn-secondary w-full" title="{{ ctx.l.t(" revoke_sessions_hint")
-                            }}">{{ ctx.l.t("revoke_all_sessions") }}</button>
-                    </form>
-                    <form method="post" action="/logout">
-                        <button type="submit" class="btn-secondary w-full">{{ ctx.l.t("logout") }}</button>
+            <section id="account" aria-labelledby="account-heading" class="settings-panel">
+                <header class="mb-6 flex items-center gap-4"><span aria-hidden="true"
+                        class="settings-section-number">03</span>
+                    <h2 id="account-heading" class="font-headline text-xl font-bold text-foreground">{{
+                        ctx.l.t("settings_account") }}</h2>
+                </header>
+                <div class="mb-7 rounded-xl border border-primary/15 bg-background/50 px-4 py-3"><span
+                        class="block text-xs font-label uppercase tracking-wider text-foreground-muted">{{
+                        ctx.l.t("username") }}</span><span class="mt-1 block font-semibold text-foreground">{{
+                        ctx.username() }}</span></div>
+                <form class="space-y-5" method="post" action="/settings" hx-post="/settings" hx-target="#form-error"
+                    hx-swap="innerHTML" hx-disable="find button[type=submit]">
+                    <div id="form-error" aria-live="polite">
+                        {% if !error.is_empty() %}<p class="text-error">{{ ctx.l.t(error.as_str()) }}</p>{% endif %}
+                        {% if !notice.is_empty() %}<p class="text-success">{{ ctx.l.t(notice.as_str()) }}</p>{% endif %}
+                    </div>
+                    <div class="space-y-2"><label
+                            class="text-xs font-label uppercase tracking-wider text-foreground-muted"
+                            for="account-email">{{ ctx.l.t("account_email") }}</label><input id="account-email"
+                            class="settings-input" type="email" name="email" value="{{ email }}" autocomplete="email"
+                            aria-describedby="account-email-hint" />
+                        <p id="account-email-hint" class="text-xs leading-relaxed text-foreground-muted">{{
+                            ctx.l.t("account_email_clear_hint") }}</p>
+                    </div>
+                    <div class="space-y-2"><label
+                            class="text-xs font-label uppercase tracking-wider text-foreground-muted"
+                            for="account-password">{{ ctx.l.t("password") }}</label><input id="account-password"
+                            class="settings-input" type="password" name="password" autocomplete="current-password"
+                            required />{% if google %}<p class="text-xs text-foreground-muted">{{
+                            ctx.l.t("account_email_google_hint") }}</p>{% endif %}</div>
+                    <button type="submit"
+                        class="btn-primary rounded-xl px-6 py-3 font-semibold focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary">{{
+                        ctx.l.t("account_email_save") }}</button>
+                </form>
+                <div
+                    class="mt-8 flex flex-col gap-3 border-t border-error/20 pt-6 sm:flex-row sm:items-center sm:justify-between">
+                    <form method="post" action="/logout"><button type="submit" class="settings-action">{{
+                            ctx.l.t("logout") }}</button></form>
+                    <form method="post" action="/revoke-sessions"><button type="submit"
+                            class="settings-action text-error border-error/30 hover:bg-error/10"
+                            aria-describedby="settings-revoke-hint">{{ ctx.l.t("revoke_all_sessions") }}</button>
+                        <span id="settings-revoke-hint" class="sr-only">{{ ctx.l.t("revoke_sessions_hint") }}</span>
                     </form>
                 </div>
             </section>

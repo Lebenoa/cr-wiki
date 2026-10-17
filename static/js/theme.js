@@ -12,7 +12,7 @@
 
   var KEY = 'cr-theme';
   var CUSTOM_KEY = 'cr-theme-custom';
-  var PRESETS = ['default', 'light', 'tokyo_night', 'cappuccino', 'dracula', 'nord', 'gruvbox', 'rose_pine'];
+  var PRESETS = ['default', 'light', 'tokyo_night', 'cyberpunk', 'cappuccino', 'dracula', 'nord', 'gruvbox', 'rose_pine'];
   // the one editable theme. It is not a palette of its own: it names a preset
   // to inherit from and a set of per-token overrides on top, so the presets
   // themselves stay exactly as shipped.
@@ -140,6 +140,7 @@
     document.querySelectorAll('.theme-option').forEach(function (btn) {
       var check = btn.querySelector('.theme-check');
       if (check) check.classList.toggle('hidden', btn.dataset.theme !== active);
+      btn.setAttribute('aria-pressed', String(btn.dataset.theme === active));
     });
     var trig = document.getElementById('theme-trigger');
     var sw = trig && trig.querySelector('.theme-swatch');

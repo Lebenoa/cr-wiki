@@ -132,6 +132,11 @@ saving changes are not automatic.
 sidebar. Guests can change browser-local preferences; signed-in users can also
 manage recovery email and sessions. The account dropdown retains quick access
 to the same controls. Recovery-email changes still require the current password.
+The optional Cyberpunk theme uses a near-black navy palette with blue and violet
+accents. Select it from Settings or the account dropdown; it is also available as
+a custom-theme base. Existing saved theme selections remain unchanged.
+Settings anchor navigation clears the sticky header, and reduced-motion
+preferences disable settings and theme-switch transitions.
 
 Catalog list/detail GETs (including htmx fragments) carry ETags and
 `Cache-Control: private, no-cache`. The process retains up to 256 rendered

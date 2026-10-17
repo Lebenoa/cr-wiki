@@ -14,10 +14,11 @@ pub const NAV_SECTIONS: [Section; 8] = Section::ALL;
 
 /// The theme names the picker offers. The palettes live in the `UnoCSS`
 /// preflight; the dropdown only toggles the data-theme attribute.
-pub const THEMES: [&str; 8] = [
+pub const THEMES: [&str; 9] = [
     "default",
     "light",
     "tokyo_night",
+    "cyberpunk",
     "cappuccino",
     "dracula",
     "nord",

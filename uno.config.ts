@@ -86,6 +86,34 @@ export default defineConfig({
 						--on-surface: 0.2090 0.0000 89.88;
 						--on-muted: 0.2090 0.0000 89.88;
 					}
+					html[data-theme="cyberpunk"] {
+						--background: 0.145 0.025 275;
+						--surface: 0.205 0.035 275;
+						--border: 0.38 0.065 280;
+						--primary: 0.78 0.135 235;
+						--secondary: 0.76 0.14 295;
+						--accent: 0.79 0.155 300;
+						--muted: 0.28 0.045 280;
+						--foreground: 0.96 0.015 265;
+						--foreground-muted: 0.75 0.035 270;
+						--success: 0.80 0.15 160;
+						--warning: 0.85 0.14 85;
+						--error: 0.76 0.17 15;
+						--on-primary: 0.145 0.025 275;
+						--on-secondary: 0.145 0.025 275;
+						--on-accent: 0.145 0.025 275;
+						--on-success: 0.145 0.025 275;
+						--on-warning: 0.145 0.025 275;
+						--on-error: 0.145 0.025 275;
+						--on-surface: 0.96 0.015 265;
+						--on-muted: 0.96 0.015 265;
+					}
+					html[data-theme="cyberpunk"] #settings .settings-panel {
+						box-shadow: 0 0 24px oklch(var(--secondary) / 0.04), inset 0 1px 0 oklch(var(--primary) / 0.08);
+					}
+					html[data-theme="cyberpunk"] #settings .settings-theme[aria-pressed="true"] {
+						box-shadow: 0 0 16px oklch(var(--primary) / 0.12);
+					}
 					html[data-theme="tokyo_night"] {
 						--background: 0.2263 0.0214 280.49;
 						--border: 0.3867 0.0537 273.88;
@@ -218,6 +246,9 @@ export default defineConfig({
 					.theme-swatch[data-theme="light"] {
 						background: conic-gradient(from 0deg, oklch(0.4907 0.2412 292.58), oklch(0.6482 0.1754 131.68), oklch(0.9851 0.0000 89.88), oklch(0.4907 0.2412 292.58));
 					}
+					.theme-swatch[data-theme="cyberpunk"] {
+						background: conic-gradient(from 30deg, oklch(0.78 0.135 235), oklch(0.79 0.155 300), oklch(0.145 0.025 275), oklch(0.78 0.135 235));
+					}
 					.theme-swatch[data-theme="tokyo_night"] {
 						background: conic-gradient(from 0deg, oklch(0.7190 0.1322 264.20), oklch(0.7953 0.1395 130.14), oklch(0.2263 0.0214 280.49), oklch(0.7190 0.1322 264.20));
 					}
@@ -291,7 +322,24 @@ export default defineConfig({
 					animation: gacha-panel-in 0.24s ease-out both;
 					animation-delay: calc(min(var(--card-index, 0), 12) * 18ms);
 				}
+                html:has(#settings) {
+                    scroll-padding-top: 7rem;
+                }
 				@media (prefers-reduced-motion: reduce) {
+                    body,
+                    #settings *,
+                    #settings *::before,
+                    #settings *::after,
+                    #theme-editor,
+                    #theme-editor *,
+                    #theme-popover {
+                        animation: none !important;
+                        transition: none !important;
+                        scroll-behavior: auto !important;
+                    }
+                    html:has(#settings) {
+                        scroll-behavior: auto;
+                    }
 					[data-gacha-tab],
 					[role="tabpanel"]:not([hidden]),
 					[role="tabpanel"]:not([hidden])[data-revealing] [data-cr-card] {
@@ -537,6 +585,13 @@ export default defineConfig({
             "text-[10px] font-bold text-accent uppercase border border-accent/40 rounded-full px-2 py-0.5",
         "pill-primary":
             "text-[10px] font-bold text-primary uppercase border border-primary/40 rounded-full px-2 py-0.5",
+
+        "settings-panel": "rounded-2xl border border-primary/20 bg-surface p-5 sm:p-7 shadow-lg shadow-background/30",
+        "settings-nav": "flex items-center gap-3 whitespace-nowrap rounded-xl border border-transparent px-4 py-3 text-sm text-foreground-muted hover:text-foreground hover:bg-primary/10 hover:border-primary/25 transition-colors focus-visible:outline-2 focus-visible:outline-primary",
+        "settings-section-number": "flex size-10 shrink-0 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 text-primary font-mono text-xs",
+        "settings-theme": "flex min-w-0 flex-col gap-3 rounded-xl border border-primary/15 bg-background/40 p-3 text-left text-sm font-medium text-foreground hover:border-primary/60 transition-colors aria-pressed:border-primary aria-pressed:bg-primary/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary",
+        "settings-action": "inline-flex min-h-11 items-center justify-center gap-3 rounded-xl border border-primary/25 px-4 py-2 text-sm font-medium text-foreground hover:bg-primary/10 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary",
+        "settings-input": "w-full rounded-xl border border-primary/25 bg-background/50 px-4 py-3 text-foreground transition-colors focus:border-primary focus:outline-2 focus:outline-primary/30",
 
         btn: "inline-flex items-center justify-center px-4 py-2 rounded transition-colors duration-300",
         "btn-primary": "btn bg-primary text-on-primary hover:bg-primary/90",
