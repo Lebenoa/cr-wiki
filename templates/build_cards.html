@@ -1,5 +1,6 @@
 {% for b in builds %}
-<a href="/builds/{{ b.id }}" class="rounded-2xl border-2 border-primary/20 bg-surface/50 p-4 flex flex-wrap items-center gap-4 hover:border-primary transition-colors">
+<a href="/builds/{{ b.id }}"
+    class="rounded-2xl border-2 border-primary/20 bg-surface/50 p-4 flex flex-wrap items-center gap-4 hover:border-primary transition-colors">
     <span class="pill-accent">{{ b.ep_label(ctx) }}</span>
     {% for slot in b.slots() %}
     {% match slot.image %}{% when Some with (img) %}
@@ -22,8 +23,8 @@
 <p class="text-center text-foreground-muted py-12">{{ ctx.l.t("build_empty_list") }}</p>
 {% endif %}
 {% if next_page > 0 %}
-<div hx-get="/builds?sort={{ sort }}&cookie={{ filter_cookie }}&pet={{ filter_pet }}&treasure={{ filter_treasure }}&ep={{ ep }}&author={{ author }}&page={{ next_page }}"
-    hx-trigger="revealed" hx-swap="outerHTML"></div>
+<a href="{{ ctx.page_url(next_page) }}" hx-get="{{ ctx.page_url(next_page) }}" hx-trigger="revealed, click"
+    hx-swap="outerHTML">{{ ctx.l.t("seo_next_page") }}</a>
 {% else %}
 <div></div>
 {% endif %}

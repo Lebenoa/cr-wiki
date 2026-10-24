@@ -41,13 +41,6 @@ struct BuildCards {
     ctx: Ctx,
     builds: Vec<BuildCard>,
     next_page: i64,
-    sort: String,
-    filter_cookie: i64,
-    filter_pet: i64,
-    filter_treasure: i64,
-    ep: String,
-    /// free-text author filter, empty when unset
-    author: String,
 }
 
 #[derive(Template)]
@@ -61,6 +54,49 @@ struct BuildDetail {
     /// entity links and {color:...} spans, everything else stays escaped —
     /// the same markup the form's autocomplete and preview produce
     description_html: String,
+}
+
+impl BuildDetail {
+    fn title(&self) -> String {
+        let episode = self.build.ep_label(&self.ctx);
+        let subject = self
+            .build
+            .cookie
+            .as_ref()
+            .map(|c| c.name.as_str())
+            .or_else(|| self.build.pet.as_ref().map(|p| p.name.as_str()))
+            .map_or_else(
+                || self.ctx.l.t("build_detail_subject_fallback"),
+                str::to_string,
+            );
+        self.ctx
+            .l
+            .t("build_detail_meta_title")
+            .replace("{episode}", &episode)
+            .replace("{subject}", &subject)
+            .replace("{id}", &self.build.id.to_string())
+    }
+
+    fn description(&self) -> String {
+        let episode = self.build.ep_label(&self.ctx);
+        let mut names = Vec::with_capacity(5);
+        if let Some(cookie) = &self.build.cookie {
+            names.push(cookie.name.as_str());
+        }
+        if let Some(cookie) = &self.build.cookie2 {
+            names.push(cookie.name.as_str());
+        }
+        if let Some(pet) = &self.build.pet {
+            names.push(pet.name.as_str());
+        }
+        names.extend(self.build.treasures.iter().map(|t| t.name.as_str()));
+        self.ctx
+            .l
+            .t("build_detail_meta_description")
+            .replace("{id}", &self.build.id.to_string())
+            .replace("{loadout}", &names.join(", "))
+            .replace("{episode}", &episode)
+    }
 }
 
 /// The EP combobox value: `"1".."7"` for a regular tier, `"s1".."s3"` for a
@@ -115,12 +151,6 @@ pub async fn list(ctx: Ctx, q: Query<CommonQuery>) -> Result<Html<String>, AppEr
             ctx,
             builds: rows,
             next_page,
-            sort,
-            filter_cookie,
-            filter_pet,
-            filter_treasure,
-            ep: ep_raw,
-            author,
         }
         .render()
     } else {

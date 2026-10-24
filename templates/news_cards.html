@@ -1,24 +1,28 @@
-    {% for p in posts %}
-    <li class="rounded-2xl border-2 border-primary/20 bg-surface/50 p-4 hover:border-primary/50 transition-colors">
-        <div class="flex flex-wrap items-baseline gap-3">
-            <a href="/news/{{ p.id }}" class="font-headline text-lg font-bold text-on-surface hover:text-primary transition-colors">{{ p.title }}</a>
-            {% if !p.published %}
-            <span class="text-[10px] font-bold uppercase text-foreground-muted border border-secondary/40 rounded-full px-2 py-0.5">{{ ctx.l.t("news_draft_badge") }}</span>
-            {% endif %}
-            {% if !p.author.is_empty() %}
-            <span class="text-xs text-foreground-muted">{{ ctx.l.t("news_by_author") }} {{ p.author }}</span>
-            {% endif %}
-            <time class="ml-auto text-xs text-foreground-muted font-label uppercase">{{ p.date_label(ctx.tz()) }}</time>
-        </div>
-        {% if !p.summary.is_empty() %}
-        <p class="mt-2 text-sm text-foreground-muted leading-relaxed">{{ p.summary }}</p>
+{% for p in posts %}
+<li class="rounded-2xl border-2 border-primary/20 bg-surface/50 p-4 hover:border-primary/50 transition-colors">
+    <div class="flex flex-wrap items-baseline gap-3">
+        <a href="/news/{{ p.id }}"
+            class="font-headline text-lg font-bold text-on-surface hover:text-primary transition-colors">{{ p.title
+            }}</a>
+        {% if !p.published %}
+        <span
+            class="text-[10px] font-bold uppercase text-foreground-muted border border-secondary/40 rounded-full px-2 py-0.5">{{
+            ctx.l.t("news_draft_badge") }}</span>
         {% endif %}
-    </li>
-    {% endfor %}
-    {% if posts.is_empty() && page == 1 %}
-    <li class="text-center text-foreground-muted py-12">{{ ctx.l.t("news_unavailable") }}</li>
+        {% if !p.author.is_empty() %}
+        <span class="text-xs text-foreground-muted">{{ ctx.l.t("news_by_author") }} {{ p.author }}</span>
+        {% endif %}
+        <time class="ml-auto text-xs text-foreground-muted font-label uppercase">{{ p.date_label(ctx.tz()) }}</time>
+    </div>
+    {% if !p.summary.is_empty() %}
+    <p class="mt-2 text-sm text-foreground-muted leading-relaxed">{{ p.summary }}</p>
     {% endif %}
-    {% if !next_url.is_empty() %}
-    <li class="flex items-center justify-center py-6 text-foreground-muted font-label uppercase"
-        hx-get="{{ next_url }}" hx-trigger="revealed" hx-swap="outerHTML">{{ ctx.l.t("news_loading") }}</li>
-    {% endif %}
+</li>
+{% endfor %}
+{% if posts.is_empty() && page == 1 %}
+<li class="text-center text-foreground-muted py-12">{{ ctx.l.t("news_unavailable") }}</li>
+{% endif %}
+{% if !next_url.is_empty() %}
+<li class="flex items-center justify-center py-6 text-foreground-muted font-label uppercase" hx-get="{{ next_url }}"
+    hx-trigger="revealed" hx-swap="outerHTML"><a href="{{ next_url }}">{{ ctx.l.t("seo_next_page") }}</a></li>
+{% endif %}

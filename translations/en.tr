@@ -847,6 +847,18 @@ Builds | Classic/FanWiki
 build_detail_page_title
 Build Details | Classic/FanWiki
 -----
+build_detail_meta_title
+{subject} {episode} build #{id} | Classic/FanWiki
+-----
+build_detail_subject_fallback
+Community
+-----
+build_detail_meta_description
+CookieRun: Classic build #{id}: {loadout}. {episode}.
+-----
+seo_next_page
+Next page
+-----
 build_back_list
 Back to builds
 -----

@@ -44,6 +44,7 @@ pub struct Ctx {
     /// request path with the query stripped; the navbar asks for it many
     /// times per page, so it is resolved once
     pub path: String,
+    pub query: String,
     pub site_url: String,
     /// The site's own timezone, in minutes east of UTC: the news surface reads
     /// it to show a publication date that is a moment as the civil day it fell
@@ -83,6 +84,7 @@ impl<S: Send + Sync> FromRequestParts<S> for Ctx {
             l: Loc::new(&lang),
             lang,
             path: parts.uri.path().to_string(),
+            query: parts.uri.query().unwrap_or_default().to_string(),
             site_url: site_url(h),
             tz_offset: crate::state::site_tz_offset(),
             htmx: header(h, "HX-Request").is_some(),
@@ -102,6 +104,7 @@ impl Ctx {
             lang: crate::i18n::DEFAULT_LANG.to_string(),
             l: crate::i18n::Loc::new(crate::i18n::DEFAULT_LANG),
             path: "/".to_string(),
+            query: String::new(),
             site_url: String::new(),
             tz_offset: crate::state::site_tz_offset(),
             htmx: false,

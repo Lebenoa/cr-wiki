@@ -91,6 +91,30 @@ struct NewsDetailPage {
     body_html: String,
 }
 
+impl NewsDetailPage {
+    fn description(&self) -> String {
+        if self.post.summary.trim().is_empty() {
+            self.ctx.page_desc("news_page_description")
+        } else {
+            self.post.summary.clone()
+        }
+    }
+
+    fn article_json(&self) -> String {
+        let mut value = serde_json::json!({
+            "@context": "https://schema.org",
+            "@type": "Article",
+            "headline": self.post.title,
+            "datePublished": format!("{}Z", crate::time::format_local_datetime(self.post.published_at, 0)),
+            "mainEntityOfPage": self.ctx.canonical_url(),
+        });
+        if !self.post.author.is_empty() {
+            value["author"] = serde_json::json!({ "@type": "Person", "name": self.post.author });
+        }
+        value.to_string().replace('<', "\\u003c")
+    }
+}
+
 /// The authoring dashboard. It lists everything — drafts, queued and live —
 /// and carries the clock, because "queued" is a comparison against now rather
 /// than a stored column.

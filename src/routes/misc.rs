@@ -215,7 +215,7 @@ pub async fn sitemap(ctx: Ctx, headers: HeaderMap) -> Response {
 pub async fn robots(ctx: Ctx) -> ([(&'static str, &'static str); 1], String) {
     let base = ctx.site_url;
     let body = format!(
-        "User-agent: *\nDisallow: /login\nDisallow: /register\nDisallow: /admin/\nDisallow: /builds/new\nDisallow: /builds/preview\nDisallow: /builds/options/\nDisallow: /news/latest\nDisallow: /search\nAllow: /\n\nSitemap: {base}/sitemap.xml\n"
+        "User-agent: *\nDisallow: /login\nDisallow: /register\nDisallow: /admin/\nDisallow: /builds/new\nDisallow: /builds/preview\nDisallow: /builds/options/\nDisallow: /news/latest\nAllow: /\n\nSitemap: {base}/sitemap.xml\n"
     );
     ([("content-type", "text/plain; charset=utf-8")], body)
 }

@@ -57,7 +57,6 @@ struct CatalogCards {
     section: String,
     cards: Vec<Card>,
     next_page: i64,
-    tab: String,
 }
 
 /// One handler for every list: the section comes off the path, which keeps
@@ -142,7 +141,6 @@ async fn render(
             section: section.clone(),
             cards,
             next_page,
-            tab,
         }
         .render()
     } else {

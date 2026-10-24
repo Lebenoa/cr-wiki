@@ -27,16 +27,15 @@ pub struct LangChoice {
 // Four independent request facts live here as bools on purpose: they are not
 
 impl Ctx {
-    /// The clean (query-free) absolute URL of this page.
+    /// Absolute canonical URL, retaining meaningful listing parameters.
     pub fn canonical_url(&self) -> String {
         self.lang_url(&self.lang)
     }
 
-    /// This page in `lang`: the current path, plus ?lang= for every locale but
-    /// the default. Backs both the canonical tag and the hreflang alternates,
-    /// so the two cannot disagree.
+    /// This listing in `lang`, preserving pagination and supported filters.
+    /// Canonical and hreflang URLs share the same normalized query.
     pub fn lang_url(&self, lang: &str) -> String {
-        self.url_for(&self.path, lang)
+        self.listing_url(lang, None)
     }
 
     /// `path` in `lang`, absolute. The one place the `?lang=` rule lives: the
@@ -50,6 +49,45 @@ impl Ctx {
             format!("?lang={lang}")
         };
         format!("{}{}{}", self.site_url, path, suffix)
+    }
+
+    /// A crawlable next page in the current locale and filter sequence.
+    pub fn page_url(&self, page: &i64) -> String {
+        self.listing_url(&self.lang, Some(*page))
+    }
+
+    fn listing_url(&self, lang: &str, page: Option<i64>) -> String {
+        let base = self.url_for(&self.path, lang);
+        let Ok(mut url) = reqwest::Url::parse(&base) else {
+            return base;
+        };
+        let allowed: &[&str] = match self.path.as_str() {
+            "/cookies" | "/pets" | "/treasures" => &["page", "tab"],
+            "/builds" => &["page", "sort", "cookie", "pet", "treasure", "ep", "author"],
+            "/news" | "/changelog" => &["page"],
+            _ => &[],
+        };
+        let parsed = reqwest::Url::parse(&format!("http://local/?{}", self.query));
+        let mut pairs = std::collections::BTreeMap::new();
+        if let Ok(parsed) = parsed {
+            for (key, value) in parsed.query_pairs() {
+                if allowed.contains(&key.as_ref()) {
+                    pairs
+                        .entry(key.into_owned())
+                        .or_insert_with(|| value.into_owned());
+                }
+            }
+        }
+        let number = page.or_else(|| pairs.get("page").and_then(|v| v.parse().ok()));
+        pairs.remove("page");
+        let number = crate::pagination::clamp_page(number);
+        if number > 1 {
+            pairs.insert("page".into(), number.to_string());
+        }
+        if !pairs.is_empty() {
+            url.query_pairs_mut().extend_pairs(pairs);
+        }
+        url.into()
     }
 
     /// The news RSS feed in this locale, absolute. Same `?lang=` rule as
@@ -193,6 +231,35 @@ mod tests {
         let c = resolve_lang(Some("page=2&lang=en"), &with_cookie);
         assert_eq!(c.lang, "en");
         assert!(c.write_cookie);
+    }
+
+    #[test]
+    fn listing_urls_preserve_pages_filters_and_locale() {
+        let mut ctx = crate::testutil::test_ctx("th");
+        ctx.path = "/builds".into();
+        ctx.query = "page=2&author=A%26B&lang=th&utm_source=tracker".into();
+        assert_eq!(
+            ctx.canonical_url(),
+            "http://localhost:6785/builds?lang=th&author=A%26B&page=2"
+        );
+        assert_eq!(
+            ctx.lang_url("en"),
+            "http://localhost:6785/builds?author=A%26B&page=2"
+        );
+        assert_eq!(
+            ctx.page_url(&3),
+            "http://localhost:6785/builds?lang=th&author=A%26B&page=3"
+        );
+        for query in ["page=1", "page=0", "page=-1", "page=bad"] {
+            ctx.query = query.into();
+            assert_eq!(ctx.canonical_url(), "http://localhost:6785/builds?lang=th");
+        }
+        ctx.path = "/cookies/1".into();
+        ctx.query = "page=2&utm_source=tracker".into();
+        assert_eq!(
+            ctx.canonical_url(),
+            "http://localhost:6785/cookies/1?lang=th"
+        );
     }
 
     /// The advertised feed is the locale's own: the default locale carries no

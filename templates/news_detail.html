@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% import "title.html" as t %}
-{% block title %}{{ t::tags(ctx.entity_title(post.title.as_str()), ctx.page_desc("news_page_description"), ctx.social_image()) }}{% endblock %}
+{% block title %}{{ t::tags(ctx.entity_title(post.title.as_str()), self.description(), ctx.social_image()) }}<script type="application/ld+json">{{ self.article_json()|safe }}</script>{% endblock %}
 {% block content %}
 <section class="page-shell max-w-3xl">
     <a href="/news" class="back-link">&larr; {{ ctx.l.t("news_page_header") }}</a>

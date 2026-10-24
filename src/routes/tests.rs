@@ -823,3 +823,85 @@ async fn route_tables_claim_the_paths_they_name() {
         );
     }
 }
+
+/// A page that scrolls sideways is broken whichever way it looks on the
+/// machine it was written on, and no assertion about markup can see that: the
+/// 320px regression this guards was a navbar whose contents added up to 377px,
+/// which `html { display: table }` then turned into a horizontal scrollbar on
+/// every page of the site at once.
+///
+/// So the pages the router answers without a database are rendered here — the
+/// real answers through the real middleware, not the templates behind them —
+/// and `tools/overflow_check.mjs` serves them beside the repo's `static/`
+/// tree and measures each at 320, 768 and 1024px in a headless Chromium. The
+/// database-backed surfaces (catalog grids, detail pages, builds, news) are
+/// absent here because this handle cannot serve them; the same script measures
+/// any directory of saved pages, so a deployment with `CR_SURREAL_URL` set can
+/// extend the set without touching the measurement.
+///
+/// Skips with a notice when bun or a browser is missing (the script answers 2),
+/// the way the database tests skip without `CR_SURREAL_URL`.
+#[tokio::test]
+async fn no_page_scrolls_sideways() {
+    state();
+    let dir = std::path::Path::new("target/overflow");
+    let _ = std::fs::remove_dir_all(dir);
+    std::fs::create_dir_all(dir).expect("fixture directory");
+
+    // Thai is here because its labels run longer than the English ones, and
+    // the auth and planner forms are the two widest things the site renders
+    // without a database.
+    let pages = [
+        ("01-home", "/"),
+        ("02-home-th", "/?lang=th"),
+        ("03-changelog", "/changelog"),
+        ("04-changelog-th", "/changelog?lang=th"),
+        ("05-login", "/login"),
+        ("06-register", "/register"),
+        ("07-forgot-password", "/forgot-password?sent=1"),
+        ("08-reset-dead-link", "/reset-password"),
+        ("09-settings", "/settings"),
+        ("10-planner-form", "/builds/new"),
+        ("11-planner-form-th", "/builds/new?lang=th"),
+        ("12-not-found", "/no-such-section"),
+        ("13-error-page", "/cookies"),
+    ];
+    for (name, uri) in pages {
+        let res = get(uri).await;
+        let body = axum::body::to_bytes(res.into_body(), usize::MAX)
+            .await
+            .expect("body");
+        assert!(!body.is_empty(), "{uri} rendered nothing to measure");
+        std::fs::write(dir.join(format!("{name}.html")), &body).expect("fixture");
+    }
+
+    let output = std::process::Command::new("bun")
+        .arg("tools/overflow_check.mjs")
+        .arg("--fixtures")
+        .arg(dir)
+        .arg("--static")
+        .arg("static")
+        .arg("--widths")
+        .arg("320,768,1024")
+        .output();
+    let output = match output {
+        Ok(output) => output,
+        Err(e) => {
+            eprintln!("skip: cannot run bun to measure the rendered pages ({e})");
+            return;
+        }
+    };
+    // the report is the test's output: a failure has to say what sticks out
+    println!("{}", String::from_utf8_lossy(&output.stdout));
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    match output.status.code() {
+        Some(0) => {}
+        // the script's own "nothing to measure with" answer: no browser here
+        // is a skip, like no database is for the CR_SURREAL_URL tests
+        Some(2) => eprintln!("skip: {}", stderr.trim()),
+        code => panic!(
+            "a page does not fit its viewport ({code:?}):\n{stderr}\n{}",
+            String::from_utf8_lossy(&output.stdout)
+        ),
+    }
+}

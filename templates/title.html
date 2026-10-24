@@ -1,19 +1,6 @@
 {% macro breadcrumb(items) %}
 <script type="application/ld+json">
-{
-    "@context": "https://schema.org",
-    "@type": "BreadcrumbList",
-    "itemListElement": [
-        {% for it in items %}
-        {
-            "@type": "ListItem",
-            "position": {{ loop.index }},
-            "name": "{{ it.0 }}"{% if let Some(u) = &it.1 %},
-            "item": "{{ u }}"{% endif %}
-        }{% if !loop.last %},{% endif %}
-        {% endfor %}
-    ]
-}
+{{ ctx.breadcrumb_json(items.as_slice()) | safe }}
 </script>
 {% endmacro %}
 {% macro tags(text, desc, image) %}

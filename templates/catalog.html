@@ -1,8 +1,10 @@
 {% extends "base.html" %}
 {% import "title.html" as t %}
-{% block title %}{{ t::tags(ctx.page_title(title_key.as_str()), ctx.page_desc(desc_key.as_str()), ctx.social_image()) }}{% endblock %}
+{% block title %}{{ t::tags(ctx.page_title(title_key.as_str()), ctx.page_desc(desc_key.as_str()), ctx.social_image())
+}}{% endblock %}
 {% block content %}
-{% call t::breadcrumb([(ctx.l.t("site_name"), Some(ctx.site_url.clone())), (ctx.l.t(title_key.as_str()), None)]) %}{% endcall %}
+{% call t::breadcrumb([(ctx.l.t("site_name"), Some(ctx.url_for("/", ctx.lang.as_str()))), (ctx.l.t(title_key.as_str()),
+None)]) %}{% endcall %}
 <h1 class="page-title">{{ ctx.l.t(title_key.as_str()) }}</h1>
 {% if ctx.is_admin() && ctx.section_editable(section.as_str()) %}
 <div class="admin-actions">
@@ -15,7 +17,8 @@
     <div id="filter-grade" class="flex flex-wrap gap-2 items-center">
         {% for g in ctx.grade_options() %}
         <button type="button" class="grade-filter" data-grade="{{ g.0 }}" title="{{ g.1 }}">
-            <img src="/static/img/grades/{{ g.0 }}.png" alt="{{ g.1 }}" class="size-9 rounded-lg border-2 border-transparent transition-all" />
+            <img src="/static/img/grades/{{ g.0 }}.png" alt="{{ g.1 }}"
+                class="size-9 rounded-lg border-2 border-transparent transition-all" />
         </button>
         {% endfor %}
     </div>
@@ -23,9 +26,15 @@
 </div>
 {% if tabbed %}
 <div class="filter-bar">
-    <a href="/{{ section }}" class="rounded-full px-4 py-2 font-bold transition-colors {% if tab == "all" %}bg-primary text-foreground{% else %}border-2 border-secondary/50 text-secondary{% endif %}">{{ ctx.l.t("treasure_tab_all") }}</a>
-    <a href="/{{ section }}?tab=normal" class="rounded-full px-4 py-2 font-bold transition-colors {% if tab == "normal" %}bg-primary text-foreground{% else %}border-2 border-secondary/50 text-secondary{% endif %}">{{ ctx.l.t("treasure_tab_normal") }}</a>
-    <a href="/{{ section }}?tab=evo" class="rounded-full px-4 py-2 font-bold transition-colors {% if tab == "evo" %}bg-primary text-foreground{% else %}border-2 border-secondary/50 text-secondary{% endif %}">{{ ctx.l.t("treasure_tab_evolved") }}</a>
+    <a href="/{{ section }}" class="rounded-full px-4 py-2 font-bold transition-colors {% if tab == " all" %}bg-primary
+        text-foreground{% else %}border-2 border-secondary/50 text-secondary{% endif %}">{{ ctx.l.t("treasure_tab_all")
+        }}</a>
+    <a href="/{{ section }}?tab=normal" class="rounded-full px-4 py-2 font-bold transition-colors {% if tab == " normal"
+        %}bg-primary text-foreground{% else %}border-2 border-secondary/50 text-secondary{% endif %}">{{
+        ctx.l.t("treasure_tab_normal") }}</a>
+    <a href="/{{ section }}?tab=evo" class="rounded-full px-4 py-2 font-bold transition-colors {% if tab == " evo"
+        %}bg-primary text-foreground{% else %}border-2 border-secondary/50 text-secondary{% endif %}">{{
+        ctx.l.t("treasure_tab_evolved") }}</a>
 </div>
 {% endif %}
 
@@ -41,9 +50,11 @@
             {% endif %}
         </span>
         {% match e.image %}{% when Some with (img) %}
-        <img src="/static/img/episodes/{{ img }}" alt="{{ e.name }}" loading="lazy" decoding="async" class="h-24 w-full object-contain" />
+        <img src="/static/img/episodes/{{ img }}" alt="{{ e.name }}" loading="lazy" decoding="async"
+            class="h-24 w-full object-contain" />
         {% when None %}
-        <span class="h-24 w-full flex items-center justify-center text-[10px] font-label uppercase text-foreground-muted">
+        <span
+            class="h-24 w-full flex items-center justify-center text-[10px] font-label uppercase text-foreground-muted">
             {{ ctx.l.t("episodes") }}</span>
         {% endmatch %}
         <span class="card-title">{{ e.name }}</span>
@@ -51,7 +62,8 @@
         <span class="text-xs text-primary">{{ ctx.stars_label(e.stars) }}</span>
         {% endif %}
         <span class="card-meta">
-            {{ e.stage_count }} {{ ctx.l.t("stages_label") }} &middot; {{ e.quest_count }} {{ ctx.l.t("quests_label") }} &middot; {{ e.relic_count }} {{ ctx.l.t("relics_label") }}
+            {{ e.stage_count }} {{ ctx.l.t("stages_label") }} &middot; {{ e.quest_count }} {{ ctx.l.t("quests_label") }}
+            &middot; {{ e.relic_count }} {{ ctx.l.t("relics_label") }}
         </span>
         {% if !e.entry_cost.is_empty() %}
         <span class="card-meta">{{ ctx.l.t("entry_cost_label") }}: {{ e.entry_cost }}</span>
@@ -63,12 +75,14 @@
 {% else if section == "ingredients" %}
 <div class="catalog-grid">
     {% for i in ingredients %}
-    <a href="/ingredients/{{ i.id }}" hx-boost="true" data-cr-card data-name="{{ i.name }}" data-name-en="{{ i.en_name }}"
-        class="entity-card">
+    <a href="/ingredients/{{ i.id }}" hx-boost="true" data-cr-card data-name="{{ i.name }}"
+        data-name-en="{{ i.en_name }}" class="entity-card">
         {% match i.image %}{% when Some with (img) %}
-        <img src="/static/img/ingredients/{{ img }}" alt="{{ i.name }}" loading="lazy" decoding="async" class="h-20 w-full object-contain" />
+        <img src="/static/img/ingredients/{{ img }}" alt="{{ i.name }}" loading="lazy" decoding="async"
+            class="h-20 w-full object-contain" />
         {% when None %}
-        <span class="h-20 w-full flex items-center justify-center text-[10px] font-label uppercase text-foreground-muted">
+        <span
+            class="h-20 w-full flex items-center justify-center text-[10px] font-label uppercase text-foreground-muted">
             {{ ctx.l.t("ingredients") }}</span>
         {% endmatch %}
         {% if i.grade.is_some() || !ctx.episode_short(i.drop_episode_id).is_empty() %}
@@ -77,7 +91,8 @@
             <span class="{{ ctx.grade_badge_cls(i.grade) }}">{{ ctx.grade_label_int(i.grade) }}</span>
             {% endif %}
             {% if !ctx.episode_short(i.drop_episode_id).is_empty() %}
-            <span class="{{ ctx.episode_badge_cls(i.drop_episode_id) }}">{{ ctx.episode_short(i.drop_episode_id) }}</span>
+            <span class="{{ ctx.episode_badge_cls(i.drop_episode_id) }}">{{ ctx.episode_short(i.drop_episode_id)
+                }}</span>
             {% endif %}
         </div>
         {% endif %}
@@ -95,9 +110,11 @@
     <a href="/jellies/{{ j.id }}" hx-boost="true" data-cr-card data-name="{{ j.name }}" data-name-en="{{ j.en_name }}"
         class="entity-card">
         {% match j.image %}{% when Some with (img) %}
-        <img src="/static/img/jellies/{{ img }}" alt="{{ j.name }}" loading="lazy" decoding="async" class="h-20 w-full object-contain" />
+        <img src="/static/img/jellies/{{ img }}" alt="{{ j.name }}" loading="lazy" decoding="async"
+            class="h-20 w-full object-contain" />
         {% when None %}
-        <span class="h-20 w-full flex items-center justify-center text-[10px] font-label uppercase text-foreground-muted">
+        <span
+            class="h-20 w-full flex items-center justify-center text-[10px] font-label uppercase text-foreground-muted">
             {{ ctx.l.t("jellies") }}</span>
         {% endmatch %}
         <span class="card-title">{{ j.name }}</span>
@@ -112,13 +129,16 @@
     <div data-cr-card data-name="{{ s.name }}" data-name-en="{{ s.en_name }}" class="entity-card">
         <div class="relative w-full flex justify-center">
             {% match s.image %}{% when Some with (img) %}
-            <img src="/static/img/skins/{{ img }}" alt="{{ s.name }}" loading="lazy" decoding="async" class="h-24 object-contain" />
+            <img src="/static/img/skins/{{ img }}" alt="{{ s.name }}" loading="lazy" decoding="async"
+                class="h-24 object-contain" />
             {% when None %}
-            <span class="h-24 w-full flex items-center justify-center text-[10px] font-label uppercase text-foreground-muted">
+            <span
+                class="h-24 w-full flex items-center justify-center text-[10px] font-label uppercase text-foreground-muted">
                 {{ ctx.l.t("skins") }}</span>
             {% endmatch %}
             {% if s.collab %}
-            <span class="absolute top-0 right-0 text-[10px] font-bold uppercase bg-accent text-on-accent rounded-full px-2 py-0.5">
+            <span
+                class="absolute top-0 right-0 text-[10px] font-bold uppercase bg-accent text-on-accent rounded-full px-2 py-0.5">
                 {{ ctx.l.t("collab_label") }}</span>
             {% endif %}
         </div>
@@ -130,8 +150,8 @@
         <span class="text-[10px] font-bold text-accent uppercase">{{ ctx.grade_label_int(s.grade) }}</span>
         {% endif %}
         {% if !s.owner_name.is_empty() %}
-        {% if s.owner_id > 0 %}<a href="/{{ s.owner_section }}/{{ s.owner_id }}" hx-boost="true"
-            class="pill-primary">{{ ctx.l.t("skin_for_label") }} {{ s.owner_name }}</a>
+        {% if s.owner_id > 0 %}<a href="/{{ s.owner_section }}/{{ s.owner_id }}" hx-boost="true" class="pill-primary">{{
+            ctx.l.t("skin_for_label") }} {{ s.owner_name }}</a>
         {% else %}<span class="pill-primary">{{ ctx.l.t("skin_for_label") }} {{ s.owner_name }}</span>{% endif %}
         {% endif %}
     </div>
@@ -142,7 +162,8 @@
 {% for g in relic_groups %}
 <section class="max-w-screen-2xl mx-auto px-8 mt-10">
     {% if !g.episode_name.is_empty() %}
-    <h2 class="section-title"><a href="/episodes/{{ g.episode_id }}" hx-boost="true" class="hover:text-primary">{{ ctx.l.t("relic_set_label") }} &middot; {{ g.episode_name }}</a></h2>
+    <h2 class="section-title"><a href="/episodes/{{ g.episode_id }}" hx-boost="true" class="hover:text-primary">{{
+            ctx.l.t("relic_set_label") }} &middot; {{ g.episode_name }}</a></h2>
     {% else %}
     <h2 class="text-xl font-headline font-bold text-accent mb-4">{{ ctx.l.t("event_relics_label") }}</h2>
     {% endif %}
@@ -150,9 +171,11 @@
         {% for r in g.relics %}
         <div data-cr-card data-name="{{ r.name }}" data-name-en="{{ r.en_name }}" class="entity-card">
             {% match r.image %}{% when Some with (img) %}
-            <img src="/static/img/relics/{{ img }}" alt="{{ r.name }}" loading="lazy" decoding="async" class="h-20 w-full object-contain" />
+            <img src="/static/img/relics/{{ img }}" alt="{{ r.name }}" loading="lazy" decoding="async"
+                class="h-20 w-full object-contain" />
             {% when None %}
-            <span class="h-20 w-full flex items-center justify-center text-[10px] font-label uppercase text-foreground-muted">
+            <span
+                class="h-20 w-full flex items-center justify-center text-[10px] font-label uppercase text-foreground-muted">
                 {{ ctx.l.t("relics_label") }}</span>
             {% endmatch %}
             <a href="/relics/{{ r.id }}" hx-boost="true" class="card-title">{{ r.name }}</a>

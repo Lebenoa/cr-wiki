@@ -64,7 +64,7 @@
         <div class="mt-6 grid grid-cols-2 lg:grid-cols-4 gap-4">
             <label class="flex flex-col gap-1 text-xs font-label uppercase text-foreground-muted">
                 {{ ctx.l.t("build_ep_label") }}
-                <select name="ep" class="filter-input">
+                <select name="ep" class="filter-input lg:w-full">
                     <option value="">{{ ctx.l.t("none_option") }}</option>
                     {% for n in [1, 2, 3, 4, 5, 6, 7] %}
                     <option value="{{ n }}">EP {{ n }}</option>
@@ -76,15 +76,15 @@
             </label>
             <label class="flex flex-col gap-1 text-xs font-label uppercase text-foreground-muted">
                 {{ ctx.l.t("build_score_label") }}
-                <input type="number" name="score" min="0" class="filter-input" value="{{ prefill.score_value() }}" />
+                <input type="number" name="score" min="0" class="filter-input lg:w-full" value="{{ prefill.score_value() }}" />
             </label>
             <label class="flex flex-col gap-1 text-xs font-label uppercase text-foreground-muted">
                 {{ ctx.l.t("build_coin_label") }}
-                <input type="number" name="coin" min="0" class="filter-input" value="{{ prefill.coin_value() }}" />
+                <input type="number" name="coin" min="0" class="filter-input lg:w-full" value="{{ prefill.coin_value() }}" />
             </label>
             <label class="flex flex-col gap-1 text-xs font-label uppercase text-foreground-muted">
                 {{ ctx.l.t("build_time_label") }}
-                <input type="number" name="time" min="0" class="filter-input" value="{{ prefill.time_value() }}" />
+                <input type="number" name="time" min="0" class="filter-input lg:w-full" value="{{ prefill.time_value() }}" />
             </label>
         </div>
 

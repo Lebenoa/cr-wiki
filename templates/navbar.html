@@ -1,10 +1,10 @@
 <nav class="sticky top-0 z-50 flex items-center justify-between gap-6 px-8 py-4 bg-background max-md:gap-2 max-md:px-4">
     <div class="flex min-w-0 items-center gap-8">
-        <a href="/" class="flex min-w-0 items-center gap-2 font-headline text-2xl text-primary max-md:text-base">
-            <img src="/static/favicon.avif" alt="" class="size-8 rounded" onerror="this.remove()" />
-            COOKIE//ARCHIVE
+        <a href="/" class="flex min-w-0 items-center gap-2 font-headline text-2xl text-primary max-lg:text-base">
+            <img src="/static/favicon.avif" alt="" class="size-8 shrink-0 rounded" onerror="this.remove()" />
+            <span class="truncate max-[399px]:hidden">COOKIE//ARCHIVE</span>
         </a>
-        <div class="hidden md:flex gap-8 items-center">
+        <div class="hidden lg:flex gap-6 xl:gap-8 items-center">
             <button type="button" id="wiki-trigger" class="{{ ctx.wiki_class() }} flex items-center gap-1"
                 popovertarget="wiki-dropdown">
                 {{ ctx.l.t("wiki") }}
@@ -26,8 +26,8 @@
         </div>
     </div>
 
-    <div class="flex shrink-0 items-center gap-6 max-md:gap-3">
-        <button id="search-toggle" type="button" class="btn-secondary size-12 md:hidden" aria-label="{{ ctx.l.t("
+    <div class="flex shrink-0 items-center gap-6 max-lg:gap-2">
+        <button id="search-toggle" type="button" class="btn-secondary size-12 lg:hidden" aria-label="{{ ctx.l.t("
             navbar_search_toggle") }}" aria-expanded="false">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -36,8 +36,8 @@
             </svg>
         </button>
         <div id="search-box"
-            class="md:block md:flex-none md:w-56 lg:w-72 hidden transition-all transition-discrete duration-300 max-md:absolute max-md:inset-y-0 max-md:left-12 max-md:right-0 max-md:z-20 max-md:bg-background max-md:px-2 max-md:items-center max-md:not-[.hidden]:flex max-md:opacity-0 max-md:-translate-y-2 max-md:not-[.hidden]:opacity-100 max-md:not-[.hidden]:translate-y-0 max-md:not-[.hidden]:starting:opacity-0 max-md:not-[.hidden]:starting:-translate-y-2">
-            <form class="relative max-md:flex-1" action="/search" method="get" hx-boost="true">
+            class="lg:block lg:flex-none lg:w-52 xl:w-72 hidden transition-all transition-discrete duration-300 max-lg:absolute max-lg:inset-y-0 max-lg:left-12 max-lg:right-0 max-lg:z-20 max-lg:bg-background max-lg:px-2 max-lg:items-center max-lg:not-[.hidden]:flex max-lg:opacity-0 max-lg:-translate-y-2 max-lg:not-[.hidden]:opacity-100 max-lg:not-[.hidden]:translate-y-0 max-lg:not-[.hidden]:starting:opacity-0 max-lg:not-[.hidden]:starting:-translate-y-2">
+            <form class="relative max-lg:flex-1" action="/search" method="get" hx-boost="true">
                 <span class="absolute left-4 top-1/2 -translate-y-1/2 text-foreground-muted">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
                         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -64,7 +64,7 @@
             </div>
         </div>
 
-        <button type="button" class="btn-primary size-12 md:hidden" popovertarget="mobile-nav" aria-label="{{ ctx.l.t("
+        <button type="button" class="btn-primary size-12 lg:hidden" popovertarget="mobile-nav" aria-label="{{ ctx.l.t("
             wiki") }}">&#9776;</button>
         <div id="mobile-nav" popover
             class="p-4 m-bs-1 inline-64 bg-background text-foreground rounded border border-accent transition-discrete transition-all duration-300 flex-col gap-2 hidden popover-open:flex">
@@ -206,11 +206,11 @@
             const results = document.getElementById('search-results');
             const indicator = document.getElementById('search-loading');
             if (!btn || !box || !input || !results || !indicator) return;
-            // the collapsible state only exists below md: on desktop the box is
-            // always visible (md:block) even though the hidden class stays in
+            // the collapsible state only exists below lg: on desktop the box is
+            // always visible (lg:block) even though the hidden class stays in
             // the markup, so isOpen() must not gate desktop behavior
             function isMobile() {
-                return window.matchMedia('(max-width: 767px)').matches;
+                return window.matchMedia('(max-width: 1023px)').matches;
             }
             function isOpen() {
                 return !box.classList.contains('hidden');
@@ -220,7 +220,7 @@
                 results.classList.remove('flex');
             }
             function setOpen(open) {
-                // 'hidden' is the single source of truth; the max-md:not-[.hidden]
+                // 'hidden' is the single source of truth; the max-lg:not-[.hidden]
                 // variants show the box while it lacks the class
                 box.classList.toggle('hidden', !open);
                 btn.classList.toggle('hidden', open);

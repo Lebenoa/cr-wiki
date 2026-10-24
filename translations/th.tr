@@ -847,8 +847,17 @@ builds_page_title
 build_detail_page_title
 รายละเอียดบิลด์ | Classic/FanWiki
 -----
-build_back_list
-กลับไปรายการบิลด์
+build_detail_meta_title
+{subject} บิลด์ {episode} #{id} | Classic/FanWiki
+-----
+build_detail_subject_fallback
+บิลด์ชุมชน
+-----
+build_detail_meta_description
+บิลด์ CookieRun: Classic #{id}: {loadout} {episode}
+-----
+seo_next_page
+หน้าถัดไป
 -----
 build_intro
 จัดชุด: คุกกี้ 1 ตัว สัตว์เลี้ยง 1 ตัว และสมบัติ 3 ชิ้น คอมโบจะแสดงอัตโนมัติ

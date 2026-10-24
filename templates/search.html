@@ -1,12 +1,15 @@
 {% extends "base.html" %}
 {% import "title.html" as t %}
-{% block title %}{{ t::tags(ctx.page_title("search_page_title"), ctx.meta_description(), ctx.social_image()) }}{% endblock %}
+{% block title %}{{ t::tags(ctx.page_title("search_page_title"), ctx.meta_description(), ctx.social_image()) }}{%
+endblock %}
+{% block robots %}
+<meta name="robots" content="noindex, follow" />{% endblock %}
 {% block content %}
 <section class="page-shell">
     <h1 class="page-title">{{ ctx.l.t("search_page_title") }}</h1>
     <form class="filter-bar" method="get" action="/search">
-        <input type="search" name="q" value="{{ q }}" class="filter-input"
-            placeholder="{{ ctx.l.t("navbar_search_placeholder") }}" />
+        <input type="search" name="q" value="{{ q }}" class="filter-input" placeholder="{{ ctx.l.t("
+            navbar_search_placeholder") }}" />
     </form>
     {% if q.is_empty() %}
     <p class="text-center text-foreground-muted my-12">{{ ctx.l.t("search_hint") }}</p>

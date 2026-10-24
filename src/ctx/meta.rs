@@ -8,6 +8,33 @@ use parking_lot::Mutex;
 
 use super::Ctx;
 impl Ctx {
+    /// Serialize breadcrumb tuples for safe embedding in a JSON-LD script.
+    pub fn breadcrumb_json(&self, items: &[(String, Option<String>)]) -> String {
+        let item_list = items
+            .iter()
+            .enumerate()
+            .map(|(index, (name, url))| {
+                let mut item = serde_json::Map::new();
+                item.insert(
+                    "@type".to_string(),
+                    serde_json::Value::String("ListItem".to_string()),
+                );
+                item.insert("position".to_string(), serde_json::Value::from(index + 1));
+                item.insert("name".to_string(), serde_json::Value::String(name.clone()));
+                if let Some(url) = url {
+                    item.insert("item".to_string(), serde_json::Value::String(url.clone()));
+                }
+                serde_json::Value::Object(item)
+            })
+            .collect::<Vec<_>>();
+        let value = serde_json::json!({
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            "itemListElement": item_list,
+        });
+        value.to_string().replace('<', "\\u003c")
+    }
+
     /// A page title with the site name appended.
     pub fn page_title(&self, key: &str) -> String {
         crate::chrome::page_title(&self.l, key)
@@ -193,5 +220,28 @@ mod tests {
         assert_eq!(dims::get("static/img/cookies/other.png"), None);
 
         std::fs::remove_dir_all(&dir).expect("cleanup");
+    }
+    #[test]
+    fn breadcrumb_json_preserves_script_sensitive_values() {
+        let values = [
+            (
+                "quote \" & ampersand \\ newline\n</script>".to_string(),
+                Some("https://example.test/a?x=\"&y=\\\nz".to_string()),
+            ),
+            ("current </script>".to_string(), None),
+        ];
+        let ctx = crate::testutil::test_ctx("en");
+        let rendered = ctx.breadcrumb_json(&values);
+        assert!(!rendered.contains("</script>"));
+        let parsed: serde_json::Value = serde_json::from_str(&rendered).expect("valid JSON-LD");
+        assert_eq!(parsed["itemListElement"][0]["name"], values[0].0);
+        assert_eq!(
+            parsed["itemListElement"][0]["item"],
+            values[0].1.as_deref().unwrap()
+        );
+        assert_eq!(parsed["itemListElement"][0]["position"], 1);
+        assert_eq!(parsed["itemListElement"][1]["name"], values[1].0);
+        assert_eq!(parsed["itemListElement"][1]["position"], 2);
+        assert!(parsed["itemListElement"][1].get("item").is_none());
     }
 }

@@ -148,6 +148,13 @@ Locale, URL/query, site URL, user/admin state and htmx variants are isolated.
 Templates/translations refresh on process restart. Bulk imports that disable
 database events require restarting the app to discard retained pages.
 
+Catalog, build, and news pagination provides crawlable links alongside htmx
+loading. Canonical and hreflang URLs retain page numbers and supported listing
+filters, omit tracking parameters, and normalize page one to the base listing.
+Build details use loadout-specific metadata; news uses its summary and Article
+JSON-LD. Breadcrumb JSON-LD is serialized with script-safe escaping. Search is
+crawlable but marked `noindex, follow` so engines can observe its exclusion.
+
 ## Configuration
 
 `Config.toml` loads from the working directory (gitignored; copy `Config.example.toml`). Invalid TOML or values stop startup with field-specific errors. An absent file uses defaults, but a valid SurrealDB URL, namespace, and database are required.

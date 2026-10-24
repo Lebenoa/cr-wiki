@@ -160,6 +160,16 @@ Run from the repo root:
   against that live server, without it they skip with a notice. Point it at a
   scratch namespace/database — never at data you cannot lose; the tests only
   read, but a misconfigured URL is still a live server.
+- Layout is a browser's business, not a markup assertion's:
+  `routes::tests::no_page_scrolls_sideways` renders the pages the router can
+  answer without a database into `target/overflow/` and `tools/overflow_check.mjs`
+  measures each at 320, 768 and 1024px in headless Chromium (Playwright's
+  cached copy, then Chrome, then Edge; `CR_BROWSER` names one explicitly,
+  `CR_OVERFLOW_WIDTHS` changes the widths). A page that scrolls sideways at
+  any of them fails the test with the boxes responsible. It skips with a
+  notice when bun or a browser is missing, the way the database tests skip
+  without `CR_SURREAL_URL`; the script also measures any directory of saved
+  pages, which is how a surface the no-DB set cannot reach gets covered.
 - Coverage expectation: high on validation paths and state transitions —
   including the denial branches (wrong password, cross-user edits, bad
   upload extensions), not just happy paths.

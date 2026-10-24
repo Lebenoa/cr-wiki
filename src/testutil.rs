@@ -14,6 +14,7 @@ pub fn test_ctx(lang: &str) -> Ctx {
         l: crate::i18n::Loc::new(lang),
         lang: lang.to_string(),
         path: "/".into(),
+        query: String::new(),
         site_url: "http://localhost:6785".into(),
         // UTC unless a test overrides it: `Ctx { tz_offset: 420, ..
         // test_ctx("en") }` is how a zone-dependent render is pinned
