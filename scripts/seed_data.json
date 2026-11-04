@@ -563,6 +563,24 @@
    "grade": 4,
    "image": "mango_sticky_rice_cookie.png",
    "release_date": "2026-08-27T00:00:00Z"
+  },
+  {
+   "cookie_id": 95,
+   "grade": 5,
+   "image": "firebird_cookie.png",
+   "release_date": "2026-09-30T00:00:00Z"
+  },
+  {
+   "cookie_id": 96,
+   "grade": 4,
+   "image": "mango_cookie.png",
+   "release_date": "2026-09-30T00:00:00Z"
+  },
+  {
+   "cookie_id": 97,
+   "grade": 4,
+   "image": "ube_ice_cream_cookie.png",
+   "release_date": "2026-10-28T00:00:00Z"
   }
  ],
  "cookie_translation": [
@@ -2633,6 +2651,72 @@
    "power_plus": "",
    "power_plus_requirement": "",
    "unlock_goal": "Have Pet: [[pet:101]]"
+  },
+  {
+   "cookie_translation_id": 189,
+   "owner_id": 95,
+   "lang": "en",
+   "name": "Firebird Cookie",
+   "abilities": "Periodically spouts fire to turn Jellies into Flame Jellies and create additional Flame Jellies. When the gauge is full, transforms into a firebird and blasts forward, turning surrounding Jellies into Flame Jellies. Revives once when HP is depleted for a final Firebird Blast.",
+   "description": "Among the noble guardians protecting the four winds, one is known as a notorious troublemaker: Firebird Cookie, Guardian of the South. Rather than fulfilling her role as a guardian, Firebird Cookie is second to none when it comes to causing trouble. Using the need to raise strong Cookies as a pretense, she likes to arbitrarily add spiciness to crops or even turn cool rivers into boiling lava. Judging by these acts alone, it's hard to tell whether she should be called a guardian or a villain. Nevertheless, the reason Firebird Cookie cannot be dismissed is that she performs great feats at decisive moments! Thanks to this, she has firmly held the position of the Guardian of the South for a long time.\n\nLike the allure of spicy food that makes you want to keep eating it even knowing you'll regret it the next day, you'll end up keeping this bewitching Cookie by your side even though you know it's a headache!",
+   "power_plus": "",
+   "power_plus_requirement": "",
+   "unlock_goal": "Gather 20 Firebird Cookie's Soulstones"
+  },
+  {
+   "cookie_translation_id": 190,
+   "owner_id": 95,
+   "lang": "th",
+   "name": "คุกกี้ฟีนิกซ์",
+   "abilities": "พ่นไฟออกมาเป็นระยะเพื่อเปลี่ยนเยลลี่ให้เป็นเยลลี่เปลวไฟและสร้างเยลลี่เปลวไฟเพิ่มเติม เมื่อเกจเต็มจะแปลงร่างเป็นนกไฟและพุ่งทะยานไปข้างหน้า เปลี่ยนเยลลี่รอบตัวให้เป็นเยลลี่เปลวไฟ และเมื่อพลังชีวิตหมดจะฟื้นคืนชีพได้หนึ่งครั้งเพื่อปล่อย Firebird Blast ครั้งสุดท้าย",
+   "description": "ในบรรดาผู้พิทักษ์ผู้สูงศักดิ์ที่คุ้มครองลมทั้งสี่ทิศ มีผู้หนึ่งที่ขึ้นชื่อเรื่องการก่อเรื่องไม่หยุดหย่อน นั่นคือคุกกี้ฟีนิกซ์ ผู้พิทักษ์ทิศใต้ แทนที่จะทำหน้าที่ผู้พิทักษ์ให้สมบูรณ์ คุกกี้ฟีนิกซ์กลับไม่มีใครเทียบได้ในเรื่องการสร้างความวุ่นวาย เธออ้างว่าต้องการสร้างคุกกี้ให้แข็งแกร่ง จึงชอบเติมความเผ็ดลงในพืชผลตามอำเภอใจ หรือถึงขั้นเปลี่ยนแม่น้ำที่เย็นสบายให้กลายเป็นลาวาเดือด ถ้าดูจากพฤติกรรมเพียงเท่านี้ ก็แทบแยกไม่ออกว่าเธอควรถูกเรียกว่าผู้พิทักษ์หรือตัวร้ายกันแน่ แต่เหตุผลที่ไล่คุกกี้ฟีนิกซ์ออกไม่ได้ก็คือ เธอมักสร้างวีรกรรมครั้งใหญ่ในยามคับขัน ด้วยเหตุนี้เธอจึงยึดตำแหน่งผู้พิทักษ์ทิศใต้ไว้ได้อย่างมั่นคงมาอย่างยาวนาน\n\nดั่งเสน่ห์ของอาหารรสเผ็ดที่ทำให้อยากกินต่อแม้รู้ว่าวันรุ่งขึ้นจะต้องทรมาน คุณก็จะอดเก็บคุกกี้แสนเย้ายวนนี้ไว้ข้างกายไม่ได้ แม้รู้ว่าต้องปวดหัวแน่ ๆ ก็ตาม!",
+   "power_plus": "",
+   "power_plus_requirement": "",
+   "unlock_goal": "รวบรวมหินวิญญาณของคุกกี้ฟีนิกซ์ 20 ชิ้น"
+  },
+  {
+   "cookie_translation_id": 191,
+   "owner_id": 96,
+   "lang": "en",
+   "name": "Mango Cookie",
+   "abilities": "Periodically rides the waves on the Mango Canoe and creates XP Jellies. Rowing the canoe causes HP to drop faster.",
+   "description": "The sun glistens above the serene palm trees of the Tropical Soda Archipelago. Once you arrive, Mango Cookie will give you a cheerful, hearty welcome making you feel right at home! With ripe mangoes mixed straight into the dough, Mango Cookie is pure-spirited and tenderhearted. Whether it's spending time along the emerald coasts or exploring the islands with his canoe, Mango Cookie makes sure to enjoy life to the fullest. When the sun reaches its peak, sometimes he'll hang up his hammock underneath the shade of the palm trees and take a relaxing nap. When Cookies visit the archipelago, Mango Cookie can't help becoming a hyper chatterbox. Mangoes will ripen by the time he runs out of stories to tell!",
+   "power_plus": "",
+   "power_plus_requirement": "",
+   "unlock_goal": "Add 199 friends"
+  },
+  {
+   "cookie_translation_id": 192,
+   "owner_id": 96,
+   "lang": "th",
+   "name": "คุกกี้มะม่วง",
+   "abilities": "ขี่คลื่นด้วยเรือแคนูมะม่วงเป็นระยะและสร้างเยลลี่ XP การพายเรือแคนูทำให้พลังชีวิตลดลงเร็วขึ้น",
+   "description": "แสงอาทิตย์ส่องประกายเหนือยอดปาล์มอันเงียบสงบของหมู่เกาะโทรปิคอลโซดา เมื่อมาถึงที่นั่น คุกกี้มะม่วงจะต้อนรับคุณอย่างร่าเริงและอบอุ่นจนรู้สึกเหมือนอยู่บ้าน! ด้วยมะม่วงสุกที่ผสมลงในเนื้อแป้งโดยตรง คุกกี้มะม่วงจึงมีจิตใจบริสุทธิ์และอ่อนโยน ไม่ว่าจะใช้เวลาริมชายฝั่งสีมรกตหรือออกสำรวจเกาะต่าง ๆ ด้วยเรือแคนู คุกกี้มะม่วงก็ใช้ชีวิตอย่างเต็มที่เสมอ เมื่อดวงอาทิตย์ขึ้นถึงจุดสูงสุด บางครั้งเขาจะผูกเปลใต้ร่มเงาต้นปาล์มและงีบพักผ่อนอย่างสบายใจ เมื่อมีคุกกี้มาเยือนหมู่เกาะ คุกกี้มะม่วงก็อดเป็นคนช่างพูดขึ้นมาไม่ได้ กว่าจะเล่าเรื่องจบ มะม่วงก็คงสุกพอดี!",
+   "power_plus": "",
+   "power_plus_requirement": "",
+   "unlock_goal": "เพิ่มเพื่อน 199 คน"
+  },
+  {
+   "cookie_translation_id": 193,
+   "owner_id": 97,
+   "lang": "en",
+   "name": "Ube Ice Cream Cookie",
+   "abilities": "After gathering a certain number of Like Jellies, Ube Ice Cream Cookie's photo feed is activated. During this, she skates faster and Ube Ice Cream Jellies are created each time she picks up a photo. (Up to 45 photos can appear.)",
+   "description": "Ube Ice Cream Cookie is made with purple Ube and creamy milk. As one of the hottest influencers on social media, she dazzles with her unique and sophisticated skating performance. She's such a sensation that every single one of her posts goes viral. But she isn't just in it for the fame. Her true goal is to convey her message that those Cookies who love themselves always shine brightest.",
+   "power_plus": "",
+   "power_plus_requirement": "",
+   "unlock_goal": "Upgrade 60 Treasures to +9"
+  },
+  {
+   "cookie_translation_id": 194,
+   "owner_id": 97,
+   "lang": "th",
+   "name": "คุกกี้ไอศกรีมยูเบ",
+   "abilities": "เมื่อเก็บเยลลี่หัวใจถูกใจได้ครบตามจำนวนหนึ่ง ฟีดรูปของคุกกี้ไอศกรีมยูเบจะเปิดขึ้น ในช่วงนั้นเธอจะสเก็ตเร็วขึ้นและมีเยลลี่ไอศกรีมยูเบเกิดขึ้นทุกครั้งที่เก็บรูป (มีรูปปรากฏได้สูงสุด 45 รูป)",
+   "description": "คุกกี้ไอศกรีมยูเบทำจากมันม่วงสีม่วงสดผสมกับนมเนื้อเนียน ในฐานะหนึ่งในอินฟลูเอนเซอร์ที่ร้อนแรงที่สุดบนโซเชียลมีเดีย เธอเปล่งประกายด้วยการแสดงสเก็ตที่โดดเด่นและมีสไตล์ จนทุกโพสต์ของเธอกลายเป็นไวรัล แต่เธอไม่ได้ทำเพื่อชื่อเสียงเพียงอย่างเดียว เป้าหมายที่แท้จริงของเธอคือการส่งสารว่าคุกกี้ที่รักตัวเองจะเปล่งประกายได้สว่างที่สุดเสมอ",
+   "power_plus": "",
+   "power_plus_requirement": "",
+   "unlock_goal": "อัปเกรดสมบัติ 60 ชิ้นให้ถึง +9"
   }
  ],
  "pet": [
@@ -3241,6 +3325,24 @@
    "image": "mango_roll.png",
    "grade": 4,
    "release_date": "1970-01-01T00:00:00Z"
+  },
+  {
+   "pet_id": 102,
+   "image": "cheese_wrap_chick.png",
+   "grade": 4,
+   "release_date": "2026-09-30T00:00:00Z"
+  },
+  {
+   "pet_id": 103,
+   "image": "mango_toucan.png",
+   "grade": 4,
+   "release_date": "2026-09-30T00:00:00Z"
+  },
+  {
+   "pet_id": 104,
+   "image": "dj_ube_gelato.png",
+   "grade": 4,
+   "release_date": "2026-10-28T00:00:00Z"
   }
  ],
  "pet_translation": [
@@ -4859,6 +4961,54 @@
    "name": "Mango Roll",
    "abilities": "Periodically generates a Mango Blast Jelly. Eating it turns obstacles into Mango Jellies. (Amount of converted Mango Jellies capped.)",
    "description": "Made by shaping glutinous rice into a round shape and arranging ripe mangoes around it like flower petals. Perhaps because it was born on a beach filled with happy laughter, its perpetually beaming smile is its most charming feature. Thanks to the Mango Roll, it always looks as if the summer sun is floating right next to the [[cookie:94]]."
+  },
+  {
+   "pet_translation_id": 203,
+   "pet_id": 102,
+   "lang": "en",
+   "name": "Cheese Wrap Chick",
+   "abilities": "Summons Cheese Wrap Minions to crush obstacles and create Cheese Feather Jellies.",
+   "description": ""
+  },
+  {
+   "pet_translation_id": 204,
+   "pet_id": 102,
+   "lang": "th",
+   "name": "ลูกเจี๊ยบชีสแรป",
+   "abilities": "เรียกสมุนชีสแรปออกมาบดขยี้สิ่งกีดขวางและสร้างเยลลี่ขนนกชีส",
+   "description": ""
+  },
+  {
+   "pet_translation_id": 205,
+   "pet_id": 103,
+   "lang": "en",
+   "name": "Mango Toucan",
+   "abilities": "Flies ahead, destroying obstacles and creating XP Jellies.",
+   "description": ""
+  },
+  {
+   "pet_translation_id": 206,
+   "pet_id": 103,
+   "lang": "th",
+   "name": "นกโทแคนมะม่วง",
+   "abilities": "บินนำไปข้างหน้า ทำลายสิ่งกีดขวางและสร้างเยลลี่ XP",
+   "description": ""
+  },
+  {
+   "pet_translation_id": 207,
+   "pet_id": 104,
+   "lang": "en",
+   "name": "DJ Ube Gelato",
+   "abilities": "Grants a magnet effect, slower HP drain, and bonus points.",
+   "description": ""
+  },
+  {
+   "pet_translation_id": 208,
+   "pet_id": 104,
+   "lang": "th",
+   "name": "ดีเจเจลาโตยูเบ",
+   "abilities": "มอบเอฟเฟกต์ดูดเยลลี่ การสูญเสียพลังชีวิตที่ช้าลง และคะแนนโบนัส",
+   "description": ""
   }
  ],
  "effect": [
@@ -6163,6 +6313,42 @@
   },
   {
    "effect_id": 434
+  },
+  {
+   "effect_id": 435
+  },
+  {
+   "effect_id": 436
+  },
+  {
+   "effect_id": 437
+  },
+  {
+   "effect_id": 438
+  },
+  {
+   "effect_id": 439
+  },
+  {
+   "effect_id": 440
+  },
+  {
+   "effect_id": 441
+  },
+  {
+   "effect_id": 442
+  },
+  {
+   "effect_id": 443
+  },
+  {
+   "effect_id": 444
+  },
+  {
+   "effect_id": 445
+  },
+  {
+   "effect_id": 446
   }
  ],
  "effect_translation": [
@@ -12241,6 +12427,174 @@
    "lang": "th",
    "name": "Skull Lotus Jelly Bonus, -12% HP drain",
    "description": "Skull Lotus Jelly Bonus, -12% HP drain"
+  },
+  {
+   "effect_translation_id": 869,
+   "effect_id": 435,
+   "lang": "en",
+   "name": "+15% Coins, +15% XP",
+   "description": "+15% Coins, +15% XP"
+  },
+  {
+   "effect_translation_id": 870,
+   "effect_id": 435,
+   "lang": "th",
+   "name": "+15% Coins, +15% XP",
+   "description": "+15% Coins, +15% XP"
+  },
+  {
+   "effect_translation_id": 871,
+   "effect_id": 436,
+   "lang": "en",
+   "name": "Jelly Bonus, -7% HP drain",
+   "description": "Jelly Bonus, -7% HP drain"
+  },
+  {
+   "effect_translation_id": 872,
+   "effect_id": 436,
+   "lang": "th",
+   "name": "Jelly Bonus, -7% HP drain",
+   "description": "Jelly Bonus, -7% HP drain"
+  },
+  {
+   "effect_translation_id": 873,
+   "effect_id": 437,
+   "lang": "en",
+   "name": "Adds 500~1,000 Flame Jelly points",
+   "description": "Adds 500~1,000 Flame Jelly points"
+  },
+  {
+   "effect_translation_id": 874,
+   "effect_id": 437,
+   "lang": "th",
+   "name": "เพิ่มคะแนนเยลลี่เปลวไฟ 500~1,000 คะแนน",
+   "description": "เพิ่มคะแนนเยลลี่เปลวไฟ 500~1,000 คะแนน"
+  },
+  {
+   "effect_translation_id": 875,
+   "effect_id": 438,
+   "lang": "en",
+   "name": "Super Mini Magnetism",
+   "description": "Super Mini Magnetism"
+  },
+  {
+   "effect_translation_id": 876,
+   "effect_id": 438,
+   "lang": "th",
+   "name": "พลังแม่เหล็กจิ๋วพิเศษ",
+   "description": "พลังแม่เหล็กจิ๋วพิเศษ"
+  },
+  {
+   "effect_translation_id": 877,
+   "effect_id": 439,
+   "lang": "en",
+   "name": "Dash at light speed for 0.8 seconds upon collision + EXP Party (activates once)",
+   "description": "Dash at light speed for 0.8 seconds upon collision + EXP Party (activates once)"
+  },
+  {
+   "effect_translation_id": 878,
+   "effect_id": 439,
+   "lang": "th",
+   "name": "เมื่อชนจะพุ่งตัวด้วยความเร็วแสงเป็นเวลา 0.8 วินาที + ปาร์ตี้ EXP (ทำงาน 1 ครั้ง)",
+   "description": "เมื่อชนจะพุ่งตัวด้วยความเร็วแสงเป็นเวลา 0.8 วินาที + ปาร์ตี้ EXP (ทำงาน 1 ครั้ง)"
+  },
+  {
+   "effect_translation_id": 879,
+   "effect_id": 440,
+   "lang": "en",
+   "name": "2~7% EXP bonus",
+   "description": "2~7% EXP bonus"
+  },
+  {
+   "effect_translation_id": 880,
+   "effect_id": 440,
+   "lang": "th",
+   "name": "โบนัส EXP 2~7%",
+   "description": "โบนัส EXP 2~7%"
+  },
+  {
+   "effect_translation_id": 881,
+   "effect_id": 441,
+   "lang": "en",
+   "name": "Energy Drain 4~5% slow",
+   "description": "Energy Drain 4~5% slow"
+  },
+  {
+   "effect_translation_id": 882,
+   "effect_id": 441,
+   "lang": "th",
+   "name": "การลดลงของพลังชีวิตช้าลง 4~5%",
+   "description": "การลดลงของพลังชีวิตช้าลง 4~5%"
+  },
+  {
+   "effect_translation_id": 883,
+   "effect_id": 442,
+   "lang": "en",
+   "name": "Adds 450~650 Feather Jelly points",
+   "description": "Adds 450~650 Feather Jelly points"
+  },
+  {
+   "effect_translation_id": 884,
+   "effect_id": 442,
+   "lang": "th",
+   "name": "เพิ่มคะแนนเยลลี่ขนนก 450~650 คะแนน",
+   "description": "เพิ่มคะแนนเยลลี่ขนนก 450~650 คะแนน"
+  },
+  {
+   "effect_translation_id": 885,
+   "effect_id": 443,
+   "lang": "en",
+   "name": "Gain 1 EXP per 150 Coins at the end of the game",
+   "description": "Gain 1 EXP per 150 Coins at the end of the game"
+  },
+  {
+   "effect_translation_id": 886,
+   "effect_id": 443,
+   "lang": "th",
+   "name": "เมื่อจบเกม จะได้รับ 1 EXP ต่อทุกๆ 150 คอยน์",
+   "description": "เมื่อจบเกม จะได้รับ 1 EXP ต่อทุกๆ 150 คอยน์"
+  },
+  {
+   "effect_translation_id": 887,
+   "effect_id": 444,
+   "lang": "en",
+   "name": "6~8% EXP bonus",
+   "description": "6~8% EXP bonus"
+  },
+  {
+   "effect_translation_id": 888,
+   "effect_id": 444,
+   "lang": "th",
+   "name": "โบนัส EXP 6~8%",
+   "description": "โบนัส EXP 6~8%"
+  },
+  {
+   "effect_translation_id": 889,
+   "effect_id": 445,
+   "lang": "en",
+   "name": "Adds 220~400 points to all Jellies",
+   "description": "Adds 220~400 points to all Jellies"
+  },
+  {
+   "effect_translation_id": 890,
+   "effect_id": 445,
+   "lang": "th",
+   "name": "เพิ่มคะแนนเยลลี่ทั้งหมด 220~400 คะแนน",
+   "description": "เพิ่มคะแนนเยลลี่ทั้งหมด 220~400 คะแนน"
+  },
+  {
+   "effect_translation_id": 891,
+   "effect_id": 446,
+   "lang": "en",
+   "name": "2~4% slower Energy Drain",
+   "description": "2~4% slower Energy Drain"
+  },
+  {
+   "effect_translation_id": 892,
+   "effect_id": 446,
+   "lang": "th",
+   "name": "การลดลงของพลังชีวิตช้าลง 2~4%",
+   "description": "การลดลงของพลังชีวิตช้าลง 2~4%"
   }
  ],
  "treasure_effect": [
@@ -22341,6 +22695,66 @@
    "effect_id": 320,
    "state": "blessed",
    "treasure_effect_id": 1683
+  },
+  {
+   "treasure_id": 874,
+   "effect_id": 437,
+   "state": "normal",
+   "treasure_effect_id": 1684
+  },
+  {
+   "treasure_id": 874,
+   "effect_id": 438,
+   "state": "normal",
+   "treasure_effect_id": 1685
+  },
+  {
+   "treasure_id": 875,
+   "effect_id": 439,
+   "state": "normal",
+   "treasure_effect_id": 1686
+  },
+  {
+   "treasure_id": 875,
+   "effect_id": 440,
+   "state": "normal",
+   "treasure_effect_id": 1687
+  },
+  {
+   "treasure_id": 876,
+   "effect_id": 441,
+   "state": "normal",
+   "treasure_effect_id": 1688
+  },
+  {
+   "treasure_id": 876,
+   "effect_id": 442,
+   "state": "normal",
+   "treasure_effect_id": 1689
+  },
+  {
+   "treasure_id": 877,
+   "effect_id": 443,
+   "state": "normal",
+   "treasure_effect_id": 1690
+  },
+  {
+   "treasure_id": 877,
+   "effect_id": 444,
+   "state": "normal",
+   "treasure_effect_id": 1691
+  },
+  {
+   "treasure_id": 878,
+   "effect_id": 445,
+   "state": "normal",
+   "treasure_effect_id": 1692
+  },
+  {
+   "treasure_id": 878,
+   "effect_id": 446,
+   "state": "normal",
+   "treasure_effect_id": 1693
   }
  ],
  "treasure_translation": [
@@ -34565,6 +34979,76 @@
    "lang": "th",
    "name": "Yellow Whirl Donut",
    "description": "โดนัทบิดเกลียวอัดแน่นด้วยไซรัปเข้มข้นในทุกชั้น ลองชิมคำเดียวแล้วจะเลิกไม่ได้\n* คำเตือน: หากขายหรือสกัดเทรเชอร์ชิ้นนี้ จะไม่สามารถได้รับอีกเลย"
+  },
+  {
+   "treasure_translation_id": 1747,
+   "treasure_id": 874,
+   "lang": "en",
+   "name": "Flame Tail Feather",
+   "description": ""
+  },
+  {
+   "treasure_translation_id": 1748,
+   "treasure_id": 874,
+   "lang": "th",
+   "name": "ขนหางเปลวไฟ",
+   "description": ""
+  },
+  {
+   "treasure_translation_id": 1749,
+   "treasure_id": 875,
+   "lang": "en",
+   "name": "Mango Knife",
+   "description": ""
+  },
+  {
+   "treasure_translation_id": 1750,
+   "treasure_id": 875,
+   "lang": "th",
+   "name": "มีดมะม่วง",
+   "description": ""
+  },
+  {
+   "treasure_translation_id": 1751,
+   "treasure_id": 876,
+   "lang": "en",
+   "name": "Spice Extinguisher",
+   "description": ""
+  },
+  {
+   "treasure_translation_id": 1752,
+   "treasure_id": 876,
+   "lang": "th",
+   "name": "ที่ดับความเผ็ด",
+   "description": ""
+  },
+  {
+   "treasure_translation_id": 1753,
+   "treasure_id": 877,
+   "lang": "en",
+   "name": "Apple Mango Jelly",
+   "description": ""
+  },
+  {
+   "treasure_translation_id": 1754,
+   "treasure_id": 877,
+   "lang": "th",
+   "name": "เยลลี่แอปเปิลมะม่วง",
+   "description": ""
+  },
+  {
+   "treasure_translation_id": 1755,
+   "treasure_id": 878,
+   "lang": "en",
+   "name": "Retro Style Camera",
+   "description": ""
+  },
+  {
+   "treasure_translation_id": 1756,
+   "treasure_id": 878,
+   "lang": "th",
+   "name": "กล้องสไตล์ย้อนยุค",
+   "description": ""
   }
  ],
  "combi_bonus": [
@@ -35315,6 +35799,20 @@
    "cookie_id": 94,
    "pet_id": 101,
    "effect_id": 348,
+   "is_hidden": false
+  },
+  {
+   "id": 108,
+   "cookie_id": 96,
+   "pet_id": 103,
+   "effect_id": 435,
+   "is_hidden": false
+  },
+  {
+   "id": 109,
+   "cookie_id": 97,
+   "pet_id": 104,
+   "effect_id": 436,
    "is_hidden": false
   }
  ],
@@ -47540,6 +48038,76 @@
    "source": "draw",
    "sub": "With upgrades, 2-4 Pit Lifts or Revives with 32 HP",
    "release_date": "1970-01-01T00:00:00Z"
+  },
+  {
+   "treasure_id": 874,
+   "image": "flame_tail_feather.png",
+   "grade": 4,
+   "base_treasure_id": null,
+   "unlock_cookie_id": 95,
+   "unlock_pet_id": null,
+   "is_evolved": false,
+   "is_power_plus": false,
+   "family": "cookie",
+   "source": "cookie_upgrade",
+   "sub": "With upgrades, Adds 500~1,000 Flame Jelly Points and Super Mini Magnetism",
+   "release_date": "2026-09-30T00:00:00Z"
+  },
+  {
+   "treasure_id": 875,
+   "image": "mango_knife.png",
+   "grade": 4,
+   "base_treasure_id": null,
+   "unlock_cookie_id": 96,
+   "unlock_pet_id": null,
+   "is_evolved": false,
+   "is_power_plus": false,
+   "family": "cookie",
+   "source": "cookie_upgrade",
+   "sub": "With upgrades, dashes at light speed on collision, EXP Party and 2-7% EXP bonus",
+   "release_date": "2026-09-30T00:00:00Z"
+  },
+  {
+   "treasure_id": 876,
+   "image": "spice_extinguisher.png",
+   "grade": 4,
+   "base_treasure_id": null,
+   "unlock_cookie_id": null,
+   "unlock_pet_id": 102,
+   "is_evolved": false,
+   "is_power_plus": false,
+   "family": "pet",
+   "source": "pet_draw",
+   "sub": "With upgrades, 4-5% slower Energy Drain and 450-650 Feather Jelly points",
+   "release_date": "2026-09-30T00:00:00Z"
+  },
+  {
+   "treasure_id": 877,
+   "image": "apple_mango_jelly.png",
+   "grade": 4,
+   "base_treasure_id": null,
+   "unlock_cookie_id": null,
+   "unlock_pet_id": 103,
+   "is_evolved": false,
+   "is_power_plus": false,
+   "family": "pet",
+   "source": "pet_draw",
+   "sub": "With upgrades, 1 EXP per 150 Coins at the end of the game and 6-8% EXP bonus",
+   "release_date": "2026-09-30T00:00:00Z"
+  },
+  {
+   "treasure_id": 878,
+   "image": "retro_style_camera.png",
+   "grade": 4,
+   "base_treasure_id": null,
+   "unlock_cookie_id": 97,
+   "unlock_pet_id": null,
+   "is_evolved": false,
+   "is_power_plus": false,
+   "family": "cookie",
+   "source": "cookie_upgrade",
+   "sub": "With upgrades, 220-400 points for all Jellies and 2-4% slower Energy Drain",
+   "release_date": "2026-10-28T00:00:00Z"
   }
  ],
  "treasure_level": [
@@ -181606,6 +182174,806 @@
    "effect_id": 320,
    "state": "blessed",
    "values": "3"
+  },
+  {
+   "treasure_level_id": 16759,
+   "treasure_id": 874,
+   "level": 0,
+   "effect_id": 437,
+   "state": "normal",
+   "values": ""
+  },
+  {
+   "treasure_level_id": 16760,
+   "treasure_id": 874,
+   "level": 1,
+   "effect_id": 437,
+   "state": "normal",
+   "values": ""
+  },
+  {
+   "treasure_level_id": 16761,
+   "treasure_id": 874,
+   "level": 2,
+   "effect_id": 437,
+   "state": "normal",
+   "values": ""
+  },
+  {
+   "treasure_level_id": 16762,
+   "treasure_id": 874,
+   "level": 3,
+   "effect_id": 437,
+   "state": "normal",
+   "values": ""
+  },
+  {
+   "treasure_level_id": 16763,
+   "treasure_id": 874,
+   "level": 4,
+   "effect_id": 437,
+   "state": "normal",
+   "values": ""
+  },
+  {
+   "treasure_level_id": 16764,
+   "treasure_id": 874,
+   "level": 5,
+   "effect_id": 437,
+   "state": "normal",
+   "values": ""
+  },
+  {
+   "treasure_level_id": 16765,
+   "treasure_id": 874,
+   "level": 6,
+   "effect_id": 437,
+   "state": "normal",
+   "values": ""
+  },
+  {
+   "treasure_level_id": 16766,
+   "treasure_id": 874,
+   "level": 7,
+   "effect_id": 437,
+   "state": "normal",
+   "values": ""
+  },
+  {
+   "treasure_level_id": 16767,
+   "treasure_id": 874,
+   "level": 8,
+   "effect_id": 437,
+   "state": "normal",
+   "values": ""
+  },
+  {
+   "treasure_level_id": 16768,
+   "treasure_id": 874,
+   "level": 9,
+   "effect_id": 437,
+   "state": "normal",
+   "values": ""
+  },
+  {
+   "treasure_level_id": 16769,
+   "treasure_id": 874,
+   "level": 0,
+   "effect_id": 438,
+   "state": "normal",
+   "values": ""
+  },
+  {
+   "treasure_level_id": 16770,
+   "treasure_id": 874,
+   "level": 1,
+   "effect_id": 438,
+   "state": "normal",
+   "values": ""
+  },
+  {
+   "treasure_level_id": 16771,
+   "treasure_id": 874,
+   "level": 2,
+   "effect_id": 438,
+   "state": "normal",
+   "values": ""
+  },
+  {
+   "treasure_level_id": 16772,
+   "treasure_id": 874,
+   "level": 3,
+   "effect_id": 438,
+   "state": "normal",
+   "values": ""
+  },
+  {
+   "treasure_level_id": 16773,
+   "treasure_id": 874,
+   "level": 4,
+   "effect_id": 438,
+   "state": "normal",
+   "values": ""
+  },
+  {
+   "treasure_level_id": 16774,
+   "treasure_id": 874,
+   "level": 5,
+   "effect_id": 438,
+   "state": "normal",
+   "values": ""
+  },
+  {
+   "treasure_level_id": 16775,
+   "treasure_id": 874,
+   "level": 6,
+   "effect_id": 438,
+   "state": "normal",
+   "values": ""
+  },
+  {
+   "treasure_level_id": 16776,
+   "treasure_id": 874,
+   "level": 7,
+   "effect_id": 438,
+   "state": "normal",
+   "values": ""
+  },
+  {
+   "treasure_level_id": 16777,
+   "treasure_id": 874,
+   "level": 8,
+   "effect_id": 438,
+   "state": "normal",
+   "values": ""
+  },
+  {
+   "treasure_level_id": 16778,
+   "treasure_id": 874,
+   "level": 9,
+   "effect_id": 438,
+   "state": "normal",
+   "values": ""
+  },
+  {
+   "treasure_level_id": 16779,
+   "treasure_id": 875,
+   "level": 0,
+   "effect_id": 439,
+   "state": "normal",
+   "values": ""
+  },
+  {
+   "treasure_level_id": 16780,
+   "treasure_id": 875,
+   "level": 1,
+   "effect_id": 439,
+   "state": "normal",
+   "values": ""
+  },
+  {
+   "treasure_level_id": 16781,
+   "treasure_id": 875,
+   "level": 2,
+   "effect_id": 439,
+   "state": "normal",
+   "values": ""
+  },
+  {
+   "treasure_level_id": 16782,
+   "treasure_id": 875,
+   "level": 3,
+   "effect_id": 439,
+   "state": "normal",
+   "values": ""
+  },
+  {
+   "treasure_level_id": 16783,
+   "treasure_id": 875,
+   "level": 4,
+   "effect_id": 439,
+   "state": "normal",
+   "values": ""
+  },
+  {
+   "treasure_level_id": 16784,
+   "treasure_id": 875,
+   "level": 5,
+   "effect_id": 439,
+   "state": "normal",
+   "values": ""
+  },
+  {
+   "treasure_level_id": 16785,
+   "treasure_id": 875,
+   "level": 6,
+   "effect_id": 439,
+   "state": "normal",
+   "values": ""
+  },
+  {
+   "treasure_level_id": 16786,
+   "treasure_id": 875,
+   "level": 7,
+   "effect_id": 439,
+   "state": "normal",
+   "values": ""
+  },
+  {
+   "treasure_level_id": 16787,
+   "treasure_id": 875,
+   "level": 8,
+   "effect_id": 439,
+   "state": "normal",
+   "values": ""
+  },
+  {
+   "treasure_level_id": 16788,
+   "treasure_id": 875,
+   "level": 9,
+   "effect_id": 439,
+   "state": "normal",
+   "values": ""
+  },
+  {
+   "treasure_level_id": 16789,
+   "treasure_id": 875,
+   "level": 0,
+   "effect_id": 440,
+   "state": "normal",
+   "values": ""
+  },
+  {
+   "treasure_level_id": 16790,
+   "treasure_id": 875,
+   "level": 1,
+   "effect_id": 440,
+   "state": "normal",
+   "values": ""
+  },
+  {
+   "treasure_level_id": 16791,
+   "treasure_id": 875,
+   "level": 2,
+   "effect_id": 440,
+   "state": "normal",
+   "values": ""
+  },
+  {
+   "treasure_level_id": 16792,
+   "treasure_id": 875,
+   "level": 3,
+   "effect_id": 440,
+   "state": "normal",
+   "values": ""
+  },
+  {
+   "treasure_level_id": 16793,
+   "treasure_id": 875,
+   "level": 4,
+   "effect_id": 440,
+   "state": "normal",
+   "values": ""
+  },
+  {
+   "treasure_level_id": 16794,
+   "treasure_id": 875,
+   "level": 5,
+   "effect_id": 440,
+   "state": "normal",
+   "values": ""
+  },
+  {
+   "treasure_level_id": 16795,
+   "treasure_id": 875,
+   "level": 6,
+   "effect_id": 440,
+   "state": "normal",
+   "values": ""
+  },
+  {
+   "treasure_level_id": 16796,
+   "treasure_id": 875,
+   "level": 7,
+   "effect_id": 440,
+   "state": "normal",
+   "values": ""
+  },
+  {
+   "treasure_level_id": 16797,
+   "treasure_id": 875,
+   "level": 8,
+   "effect_id": 440,
+   "state": "normal",
+   "values": ""
+  },
+  {
+   "treasure_level_id": 16798,
+   "treasure_id": 875,
+   "level": 9,
+   "effect_id": 440,
+   "state": "normal",
+   "values": ""
+  },
+  {
+   "treasure_level_id": 16799,
+   "treasure_id": 876,
+   "level": 0,
+   "effect_id": 441,
+   "state": "normal",
+   "values": ""
+  },
+  {
+   "treasure_level_id": 16800,
+   "treasure_id": 876,
+   "level": 1,
+   "effect_id": 441,
+   "state": "normal",
+   "values": ""
+  },
+  {
+   "treasure_level_id": 16801,
+   "treasure_id": 876,
+   "level": 2,
+   "effect_id": 441,
+   "state": "normal",
+   "values": ""
+  },
+  {
+   "treasure_level_id": 16802,
+   "treasure_id": 876,
+   "level": 3,
+   "effect_id": 441,
+   "state": "normal",
+   "values": ""
+  },
+  {
+   "treasure_level_id": 16803,
+   "treasure_id": 876,
+   "level": 4,
+   "effect_id": 441,
+   "state": "normal",
+   "values": ""
+  },
+  {
+   "treasure_level_id": 16804,
+   "treasure_id": 876,
+   "level": 5,
+   "effect_id": 441,
+   "state": "normal",
+   "values": ""
+  },
+  {
+   "treasure_level_id": 16805,
+   "treasure_id": 876,
+   "level": 6,
+   "effect_id": 441,
+   "state": "normal",
+   "values": ""
+  },
+  {
+   "treasure_level_id": 16806,
+   "treasure_id": 876,
+   "level": 7,
+   "effect_id": 441,
+   "state": "normal",
+   "values": ""
+  },
+  {
+   "treasure_level_id": 16807,
+   "treasure_id": 876,
+   "level": 8,
+   "effect_id": 441,
+   "state": "normal",
+   "values": ""
+  },
+  {
+   "treasure_level_id": 16808,
+   "treasure_id": 876,
+   "level": 9,
+   "effect_id": 441,
+   "state": "normal",
+   "values": ""
+  },
+  {
+   "treasure_level_id": 16809,
+   "treasure_id": 876,
+   "level": 0,
+   "effect_id": 442,
+   "state": "normal",
+   "values": ""
+  },
+  {
+   "treasure_level_id": 16810,
+   "treasure_id": 876,
+   "level": 1,
+   "effect_id": 442,
+   "state": "normal",
+   "values": ""
+  },
+  {
+   "treasure_level_id": 16811,
+   "treasure_id": 876,
+   "level": 2,
+   "effect_id": 442,
+   "state": "normal",
+   "values": ""
+  },
+  {
+   "treasure_level_id": 16812,
+   "treasure_id": 876,
+   "level": 3,
+   "effect_id": 442,
+   "state": "normal",
+   "values": ""
+  },
+  {
+   "treasure_level_id": 16813,
+   "treasure_id": 876,
+   "level": 4,
+   "effect_id": 442,
+   "state": "normal",
+   "values": ""
+  },
+  {
+   "treasure_level_id": 16814,
+   "treasure_id": 876,
+   "level": 5,
+   "effect_id": 442,
+   "state": "normal",
+   "values": ""
+  },
+  {
+   "treasure_level_id": 16815,
+   "treasure_id": 876,
+   "level": 6,
+   "effect_id": 442,
+   "state": "normal",
+   "values": ""
+  },
+  {
+   "treasure_level_id": 16816,
+   "treasure_id": 876,
+   "level": 7,
+   "effect_id": 442,
+   "state": "normal",
+   "values": ""
+  },
+  {
+   "treasure_level_id": 16817,
+   "treasure_id": 876,
+   "level": 8,
+   "effect_id": 442,
+   "state": "normal",
+   "values": ""
+  },
+  {
+   "treasure_level_id": 16818,
+   "treasure_id": 876,
+   "level": 9,
+   "effect_id": 442,
+   "state": "normal",
+   "values": ""
+  },
+  {
+   "treasure_level_id": 16819,
+   "treasure_id": 877,
+   "level": 0,
+   "effect_id": 443,
+   "state": "normal",
+   "values": ""
+  },
+  {
+   "treasure_level_id": 16820,
+   "treasure_id": 877,
+   "level": 1,
+   "effect_id": 443,
+   "state": "normal",
+   "values": ""
+  },
+  {
+   "treasure_level_id": 16821,
+   "treasure_id": 877,
+   "level": 2,
+   "effect_id": 443,
+   "state": "normal",
+   "values": ""
+  },
+  {
+   "treasure_level_id": 16822,
+   "treasure_id": 877,
+   "level": 3,
+   "effect_id": 443,
+   "state": "normal",
+   "values": ""
+  },
+  {
+   "treasure_level_id": 16823,
+   "treasure_id": 877,
+   "level": 4,
+   "effect_id": 443,
+   "state": "normal",
+   "values": ""
+  },
+  {
+   "treasure_level_id": 16824,
+   "treasure_id": 877,
+   "level": 5,
+   "effect_id": 443,
+   "state": "normal",
+   "values": ""
+  },
+  {
+   "treasure_level_id": 16825,
+   "treasure_id": 877,
+   "level": 6,
+   "effect_id": 443,
+   "state": "normal",
+   "values": ""
+  },
+  {
+   "treasure_level_id": 16826,
+   "treasure_id": 877,
+   "level": 7,
+   "effect_id": 443,
+   "state": "normal",
+   "values": ""
+  },
+  {
+   "treasure_level_id": 16827,
+   "treasure_id": 877,
+   "level": 8,
+   "effect_id": 443,
+   "state": "normal",
+   "values": ""
+  },
+  {
+   "treasure_level_id": 16828,
+   "treasure_id": 877,
+   "level": 9,
+   "effect_id": 443,
+   "state": "normal",
+   "values": ""
+  },
+  {
+   "treasure_level_id": 16829,
+   "treasure_id": 877,
+   "level": 0,
+   "effect_id": 444,
+   "state": "normal",
+   "values": ""
+  },
+  {
+   "treasure_level_id": 16830,
+   "treasure_id": 877,
+   "level": 1,
+   "effect_id": 444,
+   "state": "normal",
+   "values": ""
+  },
+  {
+   "treasure_level_id": 16831,
+   "treasure_id": 877,
+   "level": 2,
+   "effect_id": 444,
+   "state": "normal",
+   "values": ""
+  },
+  {
+   "treasure_level_id": 16832,
+   "treasure_id": 877,
+   "level": 3,
+   "effect_id": 444,
+   "state": "normal",
+   "values": ""
+  },
+  {
+   "treasure_level_id": 16833,
+   "treasure_id": 877,
+   "level": 4,
+   "effect_id": 444,
+   "state": "normal",
+   "values": ""
+  },
+  {
+   "treasure_level_id": 16834,
+   "treasure_id": 877,
+   "level": 5,
+   "effect_id": 444,
+   "state": "normal",
+   "values": ""
+  },
+  {
+   "treasure_level_id": 16835,
+   "treasure_id": 877,
+   "level": 6,
+   "effect_id": 444,
+   "state": "normal",
+   "values": ""
+  },
+  {
+   "treasure_level_id": 16836,
+   "treasure_id": 877,
+   "level": 7,
+   "effect_id": 444,
+   "state": "normal",
+   "values": ""
+  },
+  {
+   "treasure_level_id": 16837,
+   "treasure_id": 877,
+   "level": 8,
+   "effect_id": 444,
+   "state": "normal",
+   "values": ""
+  },
+  {
+   "treasure_level_id": 16838,
+   "treasure_id": 877,
+   "level": 9,
+   "effect_id": 444,
+   "state": "normal",
+   "values": ""
+  },
+  {
+   "treasure_level_id": 16839,
+   "treasure_id": 878,
+   "level": 0,
+   "effect_id": 445,
+   "state": "normal",
+   "values": ""
+  },
+  {
+   "treasure_level_id": 16840,
+   "treasure_id": 878,
+   "level": 1,
+   "effect_id": 445,
+   "state": "normal",
+   "values": ""
+  },
+  {
+   "treasure_level_id": 16841,
+   "treasure_id": 878,
+   "level": 2,
+   "effect_id": 445,
+   "state": "normal",
+   "values": ""
+  },
+  {
+   "treasure_level_id": 16842,
+   "treasure_id": 878,
+   "level": 3,
+   "effect_id": 445,
+   "state": "normal",
+   "values": ""
+  },
+  {
+   "treasure_level_id": 16843,
+   "treasure_id": 878,
+   "level": 4,
+   "effect_id": 445,
+   "state": "normal",
+   "values": ""
+  },
+  {
+   "treasure_level_id": 16844,
+   "treasure_id": 878,
+   "level": 5,
+   "effect_id": 445,
+   "state": "normal",
+   "values": ""
+  },
+  {
+   "treasure_level_id": 16845,
+   "treasure_id": 878,
+   "level": 6,
+   "effect_id": 445,
+   "state": "normal",
+   "values": ""
+  },
+  {
+   "treasure_level_id": 16846,
+   "treasure_id": 878,
+   "level": 7,
+   "effect_id": 445,
+   "state": "normal",
+   "values": ""
+  },
+  {
+   "treasure_level_id": 16847,
+   "treasure_id": 878,
+   "level": 8,
+   "effect_id": 445,
+   "state": "normal",
+   "values": ""
+  },
+  {
+   "treasure_level_id": 16848,
+   "treasure_id": 878,
+   "level": 9,
+   "effect_id": 445,
+   "state": "normal",
+   "values": ""
+  },
+  {
+   "treasure_level_id": 16849,
+   "treasure_id": 878,
+   "level": 0,
+   "effect_id": 446,
+   "state": "normal",
+   "values": ""
+  },
+  {
+   "treasure_level_id": 16850,
+   "treasure_id": 878,
+   "level": 1,
+   "effect_id": 446,
+   "state": "normal",
+   "values": ""
+  },
+  {
+   "treasure_level_id": 16851,
+   "treasure_id": 878,
+   "level": 2,
+   "effect_id": 446,
+   "state": "normal",
+   "values": ""
+  },
+  {
+   "treasure_level_id": 16852,
+   "treasure_id": 878,
+   "level": 3,
+   "effect_id": 446,
+   "state": "normal",
+   "values": ""
+  },
+  {
+   "treasure_level_id": 16853,
+   "treasure_id": 878,
+   "level": 4,
+   "effect_id": 446,
+   "state": "normal",
+   "values": ""
+  },
+  {
+   "treasure_level_id": 16854,
+   "treasure_id": 878,
+   "level": 5,
+   "effect_id": 446,
+   "state": "normal",
+   "values": ""
+  },
+  {
+   "treasure_level_id": 16855,
+   "treasure_id": 878,
+   "level": 6,
+   "effect_id": 446,
+   "state": "normal",
+   "values": ""
+  },
+  {
+   "treasure_level_id": 16856,
+   "treasure_id": 878,
+   "level": 7,
+   "effect_id": 446,
+   "state": "normal",
+   "values": ""
+  },
+  {
+   "treasure_level_id": 16857,
+   "treasure_id": 878,
+   "level": 8,
+   "effect_id": 446,
+   "state": "normal",
+   "values": ""
+  },
+  {
+   "treasure_level_id": 16858,
+   "treasure_id": 878,
+   "level": 9,
+   "effect_id": 446,
+   "state": "normal",
+   "values": ""
   }
  ],
  "relic": [
