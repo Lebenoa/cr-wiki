@@ -6349,6 +6349,9 @@
   },
   {
    "effect_id": 446
+  },
+  {
+   "effect_id": 447
   }
  ],
  "effect_translation": [
@@ -12595,6 +12598,20 @@
    "lang": "th",
    "name": "การลดลงของพลังชีวิตช้าลง 2~4%",
    "description": "การลดลงของพลังชีวิตช้าลง 2~4%"
+  },
+  {
+   "effect_translation_id": 893,
+   "effect_id": 447,
+   "lang": "en",
+   "name": "Flame Jelly Points, -12% HP drain",
+   "description": "Flame Jelly Points, -12% HP drain"
+  },
+  {
+   "effect_translation_id": 894,
+   "effect_id": 447,
+   "lang": "th",
+   "name": "Flame Jelly Points, -12% HP drain",
+   "description": "Flame Jelly Points, -12% HP drain"
   }
  ],
  "treasure_effect": [
@@ -35813,6 +35830,13 @@
    "cookie_id": 97,
    "pet_id": 104,
    "effect_id": 436,
+   "is_hidden": false
+  },
+  {
+   "id": 110,
+   "cookie_id": 95,
+   "pet_id": 102,
+   "effect_id": 447,
    "is_hidden": false
   }
  ],
