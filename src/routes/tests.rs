@@ -1007,7 +1007,9 @@ async fn every_verified_action_renders_its_widget() {
     //
     // The reset form is not here: it only renders for a pending token, which
     // the database-free router cannot mint, so it is checked against its
-    // template instead (see the fallback below).
+    // template instead (see the fallback below). `auth::password`'s gated
+    // `a_pending_token_renders_the_form_with_its_widget` covers it properly
+    // when `CR_SURREAL_URL` is set.
     let routable = [
         ("login", "/login"),
         ("register", "/register"),

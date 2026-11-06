@@ -183,10 +183,18 @@ pub async fn reset_form(ctx: Ctx, Query(q): Query<AuthQuery>) -> Result<Response
     // checked before the form is shown: typing a new password into a dead link
     // wastes the visitor's time and fails anyway
     let pending = !token.is_empty() && db::reset_token_pending(&state.db, &token).await?;
+    Ok(reset_page(ctx, &token, pending))
+}
+
+/// The page for a token whose state has already been read: the form while the
+/// link is still good, the notice saying why there is none otherwise. Split out
+/// of the handler so the DB-gated test can drive the branch it takes without a
+/// request, and without the shared state that only `main` can install.
+fn reset_page(ctx: Ctx, token: &str, pending: bool) -> Response {
     if pending {
-        Ok(render_reset(ctx, &token, ""))
+        render_reset(ctx, token, "")
     } else {
-        Ok(render_reset(ctx, "", "reset_password_invalid"))
+        render_reset(ctx, "", "reset_password_invalid")
     }
 }
 
@@ -600,5 +608,94 @@ mod tests {
             .expect("hash");
         assert_ne!(hash, again, "salt must be fresh per hash");
         assert!(!session::verify_password(&pool, "correct horse", "not-a-hash").await);
+    }
+
+    /// The reset form is the only place a `reset_password` token can come from,
+    /// and the release verifier refuses a tokenless POST — so a link that is
+    /// still pending has to render the form with its widget, while a spent link
+    /// has to offer no form at all. Both shapes are driven here through the same
+    /// helper the handler calls, against a token the database really holds.
+    #[tokio::test]
+    async fn a_pending_token_renders_the_form_with_its_widget() {
+        let Some(pool) = live_db().await else {
+            eprintln!("skip: CR_SURREAL_URL not set");
+            return;
+        };
+        let username = "cr_reset_widget_probe";
+        drop_probe_user(&pool, username).await;
+        let hash = session::hash_password(&pool, "old password")
+            .await
+            .expect("hash");
+        let user = db::create_user(&pool, username, &hash, None, None)
+            .await
+            .expect("create")
+            .expect("created");
+        drop_probe_tokens(&pool, user.id).await;
+
+        let token = reset_token();
+        db::issue_reset_token(&pool, user.id, &token, RESET_TTL_SECS)
+            .await
+            .expect("issue");
+        // the same read the handler makes before it shows anything
+        let pending = db::reset_token_pending(&pool, &token)
+            .await
+            .expect("pending");
+        assert!(pending, "a fresh token is pending");
+
+        let ctx = crate::testutil::test_ctx("en");
+        let dead_link = ctx.l.t("reset_password_invalid").to_string();
+        let page = body(reset_page(ctx.clone(), &token, pending)).await;
+        assert!(
+            page.contains("class=\"cf-turnstile\""),
+            "the reset form renders no widget, so a release build has no token to accept"
+        );
+        assert!(
+            page.contains("data-action=\"reset_password\""),
+            "the widget's action has to be the one the route verifies"
+        );
+        assert!(
+            page.contains(&format!("data-sitekey=\"{}\"", ctx.turnstile_sitekey())),
+            "the widget would render without the site key"
+        );
+        assert!(page.contains("data-callback=\"crTurnstileToken\""));
+        assert!(page.contains("data-form-guard-hint"));
+        assert!(
+            page.contains(&format!("value=\"{token}\"")),
+            "the form has to carry the link's token back"
+        );
+        assert!(
+            !page.contains(dead_link.as_str()),
+            "a live link is not the dead-link notice"
+        );
+
+        // spending the link turns the form into the notice, and no widget is
+        // left behind for a challenge that could never be submitted
+        assert_eq!(
+            db::consume_reset_token(&pool, &token)
+                .await
+                .expect("consume"),
+            Some(user.id)
+        );
+        let pending = db::reset_token_pending(&pool, &token)
+            .await
+            .expect("pending");
+        assert!(!pending, "a spent token is not pending");
+        let dead = body(reset_page(ctx, &token, pending)).await;
+        assert!(
+            !dead.contains("class=\"cf-turnstile\""),
+            "a dead link must not offer a widget"
+        );
+        assert!(dead.contains(dead_link.as_str()), "a dead link has to say so");
+
+        drop_probe_tokens(&pool, user.id).await;
+        drop_probe_user(&pool, username).await;
+    }
+
+    /// A response body, for the assertions above.
+    async fn body(response: Response) -> String {
+        let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+            .await
+            .expect("body");
+        String::from_utf8(bytes.to_vec()).expect("utf8")
     }
 }
