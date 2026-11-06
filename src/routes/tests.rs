@@ -905,3 +905,266 @@ async fn no_page_scrolls_sideways() {
         ),
     }
 }
+
+/// The submission guard's contract is a sequence of painted states, not a
+/// response: a form with a Turnstile widget has to be locked until the widget
+/// hands back a token, open once it does, and locked again — but no longer
+/// busy — after the submission comes back refused. Reading the script cannot
+/// see any of that, and the ordering bug this guards (disabling the submitter
+/// inside the submit event, which makes htmx drop the request entirely) is
+/// invisible in the served HTML.
+///
+/// So `tools/form_guard_check.mjs` loads the real `static/js/form_guard.js`
+/// into a fixture page carrying the markup the templates emit and drives it in
+/// a headless Chromium, replaying the events htmx 4 dispatches in the order a
+/// failed request produces them.
+///
+/// Skips with a notice when bun or a browser is missing (the script answers 2),
+/// the way the database tests skip without `CR_SURREAL_URL`.
+#[test]
+fn form_guard_locks_until_a_token_lands() {
+    let output = std::process::Command::new("bun")
+        .arg("tools/form_guard_check.mjs")
+        .arg("--static")
+        .arg("static")
+        .output();
+    let output = match output {
+        Ok(output) => output,
+        Err(e) => {
+            eprintln!("skip: cannot run bun to drive the form guard ({e})");
+            return;
+        }
+    };
+    println!("{}", String::from_utf8_lossy(&output.stdout));
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    match output.status.code() {
+        Some(0) => {}
+        // the script's own "nothing to run it in" answer: no browser here
+        Some(2) => eprintln!("skip: {}", stderr.trim()),
+        code => panic!(
+            "the form guard's state machine regressed ({code:?}):\n{stderr}\n{}",
+            String::from_utf8_lossy(&output.stdout)
+        ),
+    }
+}
+
+/// The build form is the only place a build token can come from, and the
+/// release verifier refuses a tokenless POST: a form with no widget works all
+/// through development, where `verify` returns true, and then rejects every
+/// submission once the binary is built for release.
+///
+/// The `data-action` also has to stay equal to the name
+/// `planner::write::create` hands `turnstile::verify` — a token minted for a
+/// different action is refused, so a rename on either side silently closes the
+/// form.
+#[tokio::test]
+async fn build_form_carries_the_bot_check() {
+    state();
+    let res = get("/builds/new").await;
+    assert_eq!(res.status(), StatusCode::OK);
+    let html = text(res).await;
+    assert!(
+        html.contains("class=\"cf-turnstile\""),
+        "the build form renders no widget, so a release build has no token to send"
+    );
+    assert!(
+        html.contains("data-sitekey=\""),
+        "the widget would render without a site key"
+    );
+    assert!(
+        html.contains("data-action=\"build\""),
+        "the widget's action must match turnstile::verify(.., \"build\")"
+    );
+    assert!(
+        html.contains("data-callback=\"crTurnstileToken\""),
+        "the widget's callback is what unlocks the submit button"
+    );
+    assert!(
+        html.contains("data-turnstile-timeout=\""),
+        "the guard has no failure line to fall back to"
+    );
+    assert!(
+        html.contains("data-form-guard-hint"),
+        "a locked button needs a status line saying why"
+    );
+}
+
+/// A Turnstile token is only accepted when the widget that minted it carried
+/// the same `action` the route checks, so a form rendered without its widget —
+/// or with the wrong action — is closed to everyone in a release build while
+/// development never notices, because the check is skipped there.
+///
+/// The actions are read out of `src/` instead of being listed here, so a new
+/// check cannot ship uncovered: verifying a sixth action fails this test until
+/// its page is added to the table below, and the table then asserts that the
+/// page actually renders the matching widget.
+#[tokio::test]
+async fn every_verified_action_renders_its_widget() {
+    state();
+    // The page hosting each action's form. An action verified in `src/` and
+    // missing here fails, and so does an entry nothing verifies any more — the
+    // second is what keeps this table from quietly describing an old site.
+    //
+    // The reset form is not here: it only renders for a pending token, which
+    // the database-free router cannot mint, so it is checked against its
+    // template instead (see the fallback below).
+    let routable = [
+        ("login", "/login"),
+        ("register", "/register"),
+        ("forgot_password", "/forgot-password"),
+        ("build", "/builds/new"),
+    ];
+
+    let verified = verified_actions();
+    // Pinned both ways round: a new check fails here until its page is added
+    // below, and a check the scan stops seeing fails instead of quietly losing
+    // the coverage it used to have.
+    let expected = [
+        "build",
+        "forgot_password",
+        "login",
+        "register",
+        "reset_password",
+    ];
+    let found: Vec<&str> = verified.iter().map(String::as_str).collect();
+    assert_eq!(
+        found, expected,
+        "a Turnstile action was added or removed — cover its page in this test, with the widget it renders"
+    );
+
+    for action in &verified {
+        let Some((_, uri)) = routable.iter().find(|(a, _)| a == action) else {
+            assert!(
+                template_renders(action),
+                "action {action:?} is verified, but no page here and no template carries a \
+                 cf-turnstile widget with data-action=\"{action}\" — nobody can mint a token for it, \
+                 so a release build refuses every submission"
+            );
+            continue;
+        };
+        let res = get(uri).await;
+        assert_eq!(res.status(), StatusCode::OK, "{uri} renders for {action:?}");
+        let html = text(res).await;
+        assert!(
+            html.contains("class=\"cf-turnstile\""),
+            "{uri} verifies {action:?} but renders no widget, so a release build has no token to accept"
+        );
+        assert!(
+            html.contains(&format!("data-action=\"{action}\"")),
+            "{uri} renders a widget whose data-action is not {action:?}, so its token is minted \
+             for a form the server will not accept"
+        );
+        assert!(
+            html.contains("data-callback=\"crTurnstileToken\""),
+            "{uri}: the widget's callback is what unlocks the submit button"
+        );
+        assert!(
+            html.contains("data-turnstile-timeout=\""),
+            "{uri}: the guard has no failure line to fall back to"
+        );
+        assert!(
+            html.contains("data-form-guard-hint"),
+            "{uri}: a locked button needs a status line saying why"
+        );
+    }
+}
+
+/// The action names the code verifies, read from its Turnstile call sites.
+///
+/// They are single-line calls ending in `.await`, which is what makes a scan
+/// safe here without a parser; a call split across lines would drop out of the
+/// list, and the stale-entry half of the test above fails rather than letting
+/// that pass silently.
+fn verified_actions() -> Vec<String> {
+    let mut actions = Vec::new();
+    for file in rust_sources(std::path::Path::new("src")) {
+        let source = std::fs::read_to_string(&file).expect("source");
+        for line in source.lines() {
+            let line = line.trim_start();
+            // a commented-out check is not a check
+            if line.starts_with("//") {
+                continue;
+            }
+            // Look for the call in the code rather than in its literals: the
+            // quoted spans are blanked first, so this scan's own strings cannot
+            // match it.
+            let mut code_only = String::with_capacity(line.len());
+            let mut quoted = false;
+            for c in line.chars() {
+                if c == '"' {
+                    quoted = !quoted;
+                } else if !quoted {
+                    code_only.push(c);
+                }
+            }
+            if !code_only.contains("turnstile::verify(") || !code_only.contains(".await") {
+                continue;
+            }
+            // the action is the last quoted literal on the call: the config and
+            // the submitted token come before it
+            let quoted: Vec<&str> = line.split('"').skip(1).step_by(2).collect();
+            let action = quoted
+                .into_iter()
+                .filter(|span| is_action(span))
+                .next_back();
+            assert!(
+                action.is_some(),
+                "no action literal in this Turnstile check: {line}"
+            );
+            if let Some(action) = action {
+                actions.push(action.to_string());
+            }
+        }
+    }
+    actions.sort();
+    actions.dedup();
+    actions
+}
+
+/// An action name is a plain identifier, which is what keeps a stray quoted
+/// string in the call's neighbourhood from being read as one.
+fn is_action(span: &str) -> bool {
+    !span.is_empty()
+        && span.len() <= 32
+        && span
+            .chars()
+            .all(|c| c.is_ascii_lowercase() || c == '_')
+}
+
+fn rust_sources(dir: &std::path::Path) -> Vec<std::path::PathBuf> {
+    let mut found = Vec::new();
+    let mut stack = vec![dir.to_path_buf()];
+    while let Some(dir) = stack.pop() {
+        let Ok(entries) = std::fs::read_dir(&dir) else {
+            continue;
+        };
+        for entry in entries.flatten() {
+            let path = entry.path();
+            if path.is_dir() {
+                stack.push(path);
+            } else if path.extension().and_then(|e| e.to_str()) == Some("rs") {
+                found.push(path);
+            }
+        }
+    }
+    found
+}
+
+/// Whether a template renders a widget naming this action. This is the check
+/// for a form that cannot be rendered here — the reset form only appears for a
+/// token the database has to be holding.
+fn template_renders(action: &str) -> bool {
+    let widget = format!("data-action=\"{action}\"");
+    let Ok(entries) = std::fs::read_dir("templates") else {
+        return false;
+    };
+    entries.flatten().any(|entry| {
+        let path = entry.path();
+        if path.extension().and_then(|e| e.to_str()) != Some("html") {
+            return false;
+        }
+        std::fs::read_to_string(&path).is_ok_and(|text| {
+            text.contains("class=\"cf-turnstile\"") && text.contains(&widget)
+        })
+    })
+}

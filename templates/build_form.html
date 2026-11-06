@@ -11,7 +11,8 @@
     {% match build %}{% when Some with (b) %}
     <form method="post" action="/builds/{{ b.id }}/edit" class="mt-8">
     {% when None %}
-    <form method="post" action="/builds/new" class="mt-8">
+    <form method="post" action="/builds/new" class="mt-8"
+        data-turnstile-timeout="{{ ctx.l.t("turnstile_form_failed") }}">
     {% endmatch %}
         <input type="hidden" name="cookie" id="sel-cookie" value="{{ prefill.cookie }}" />
         <input type="hidden" name="c2" id="sel-cookie2" value="{{ prefill.cookie2 }}" />
@@ -112,7 +113,15 @@
         </label>
         {% endif %}
 
-        <button type="submit" class="btn-primary mt-8">{{ ctx.l.t("build_submit_button") }}</button>
+        {% if build.is_none() %}
+        <div class="cf-turnstile" data-sitekey="{{ ctx.turnstile_sitekey() }}" data-action="build"
+            data-callback="crTurnstileToken" data-expired-callback="crTurnstileSpent"
+            data-error-callback="crTurnstileError"></div>
+        <p class="text-xs text-center text-foreground-muted" role="status" data-form-guard-hint hidden>{{
+            ctx.l.t("turnstile_checking") }}</p>
+        {% endif %}
+        <button type="submit"
+            class="btn-primary mt-8 disabled:cursor-not-allowed disabled:opacity-60">{{ ctx.l.t("build_submit_button") }}</button>
     </form>
 </section>
 

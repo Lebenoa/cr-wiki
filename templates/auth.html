@@ -9,7 +9,8 @@
         <p class="font-body text-lg text-secondary">{{ ctx.l.t("lets_register_message") }}</p>
     </div>
     <form class="space-y-5" method="post" action="/{{ mode }}" hx-post="/{{ mode }}" hx-target="#form-error"
-        hx-swap="innerHTML" hx-disable="find button[type=submit]">
+        hx-swap="innerHTML" hx-disable="find button[type=submit]"
+        data-turnstile-timeout="{{ ctx.l.t("turnstile_form_failed") }}">
         <div id="form-error">
             {% if !error.is_empty() %}
             <p class="text-error text-center">{{ ctx.l.t(error.as_str()) }}</p>
@@ -111,9 +112,13 @@
                 the <a class="text-primary hover:underline" href="#">Protocols of Service</a></label>
         </div>
         {% endif %}
-        <div class="cf-turnstile" data-sitekey="{{ ctx.turnstile_sitekey() }}" data-action="{{ mode }}"></div>
+        <div class="cf-turnstile" data-sitekey="{{ ctx.turnstile_sitekey() }}" data-action="{{ mode }}"
+            data-callback="crTurnstileToken" data-expired-callback="crTurnstileSpent"
+            data-error-callback="crTurnstileError"></div>
+        <p class="text-xs text-center text-foreground-muted" role="status" data-form-guard-hint hidden>{{
+            ctx.l.t("turnstile_checking") }}</p>
         <button type="submit"
-            class="w-full relative bg-primary hover:bg-primary/90 text-foreground font-headline py-4 rounded-xl shadow-lg transition-all active:scale-[0.98] neon-glow flex items-center justify-center gap-2 group">
+            class="w-full relative bg-primary hover:bg-primary/90 text-foreground font-headline py-4 rounded-xl shadow-lg transition-all active:scale-[0.98] neon-glow flex items-center justify-center gap-2 group disabled:cursor-not-allowed disabled:opacity-60">
             <span class="htmx-indicator absolute inset-0 flex items-center justify-center gap-2" role="status">
                 <svg class="size-5 animate-spin" xmlns="http://www.w3.org/2000/svg" width="24" height="24"
                     viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"

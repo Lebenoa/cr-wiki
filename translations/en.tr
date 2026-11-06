@@ -475,6 +475,9 @@ The normal treasure this evolved form upgrades from
 turnstile_form_failed
 Bot check failed — please try again
 -----
+turnstile_checking
+Verifying that you're human…
+-----
 state_normal
 Normal
 -----

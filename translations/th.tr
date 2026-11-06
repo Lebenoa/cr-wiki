@@ -475,6 +475,9 @@ base_treasure_hint
 turnstile_form_failed
 การตรวจสอบบอตล้มเหลว กรุณาลองอีกครั้ง
 -----
+turnstile_checking
+กำลังตรวจสอบว่าคุณเป็นมนุษย์…
+-----
 state_normal
 ธรรมดา
 -----
