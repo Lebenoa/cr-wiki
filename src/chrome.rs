@@ -82,7 +82,8 @@ pub fn nav_section_active(path: &str, section: &str) -> bool {
 /// The navbar entry's classes, active or not — the same two class lists
 /// `nav_link` builds in `app.v`.
 pub fn nav_class(path: &str, section: &str) -> &'static str {
-    if nav_section_active(path, section) {
+    // Same template-split whitespace as i18n::t — see the comment there.
+    if nav_section_active(path, section.trim()) {
         "font-semibold text-center text-primary border-b-2 border-primary pb-1 transition-all duration-1000"
     } else {
         "font-medium text-center text-foreground-muted hover:text-primary transition-all duration-1000"
