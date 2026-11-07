@@ -181,12 +181,12 @@ impl NewsAdminPage {
 }
 
 /// The authoring form, flattened to plain fields so the template never has to
-/// match an `Option` for each input; `post_id` is 0 for a new post.
+/// match an `Option` for each input; `post_id` is empty for a new post.
 #[derive(Template)]
 #[template(path = "news_form.html")]
 struct NewsFormPage {
     ctx: Ctx,
-    post_id: i64,
+    post_id: String,
     title: String,
     summary: String,
     body: String,
@@ -202,7 +202,7 @@ struct NewsFormPage {
 
 impl NewsFormPage {
     fn is_edit(&self) -> bool {
-        self.post_id > 0
+        !self.post_id.is_empty()
     }
 
     fn timezone_label(&self) -> String {
@@ -520,9 +520,9 @@ fn feed_entry(ctx: &Ctx, post: &NewsFeedItem, rendered: &str) -> crate::feed::It
     }
 }
 
-pub async fn show(ctx: Ctx, Path(id): Path<i64>) -> Result<Response, AppError> {
+pub async fn show(ctx: Ctx, Path(id): Path<String>) -> Result<Response, AppError> {
     let state = crate::state::state();
-    let found = news::select_post(&state.db, &ctx.lang, now_unix(), id).await?;
+    let found = news::select_post(&state.db, &ctx.lang, now_unix(), &id).await?;
     let Some(post) = found else {
         return Ok(errors::not_found(ctx));
     };
@@ -567,13 +567,13 @@ pub async fn new_form(ctx: Ctx, q: Query<CommonQuery>) -> Response {
     news_form(ctx, None, lang, String::new())
 }
 
-pub async fn edit_form(ctx: Ctx, q: Query<CommonQuery>, Path(id): Path<i64>) -> Response {
+pub async fn edit_form(ctx: Ctx, q: Query<CommonQuery>, Path(id): Path<String>) -> Response {
     if !ctx.is_admin() {
         return errors::not_found(ctx);
     }
     let state = crate::state::state();
     let lang = edit_lang(&q, &ctx);
-    let found = match news::select_edit(&state.db, &lang, id).await {
+    let found = match news::select_edit(&state.db, &lang, &id).await {
         Ok(found) => found,
         Err(e) => {
             tracing::error!("news edit load {id}: {e}");
@@ -591,7 +591,7 @@ fn news_form(ctx: Ctx, post: Option<&NewsEdit>, edit_lang: String, error: String
     let (post_id, title, summary, body, thumbnail, published, featured, published_date) =
         match &post {
             Some(p) => (
-                p.id,
+                p.id.clone(),
                 p.text.title.clone(),
                 p.text.summary.clone(),
                 p.text.body.clone(),
@@ -601,7 +601,7 @@ fn news_form(ctx: Ctx, post: Option<&NewsEdit>, edit_lang: String, error: String
                 p.published_input(ctx.tz_offset),
             ),
             None => (
-                0,
+                String::new(),
                 String::new(),
                 String::new(),
                 String::new(),
@@ -611,7 +611,7 @@ fn news_form(ctx: Ctx, post: Option<&NewsEdit>, edit_lang: String, error: String
                 crate::time::format_local_datetime(now_unix(), ctx.tz_offset),
             ),
         };
-    let (title_key, save_key) = if post_id > 0 {
+    let (title_key, save_key) = if !post_id.is_empty() {
         ("news_edit_page_title", "news_save_button")
     } else {
         ("news_new_page_title", "news_create_button")
@@ -645,25 +645,30 @@ pub async fn create(ctx: Ctx, Form(form): Form<NewsForm>) -> Result<Response, Ap
     let state = crate::state::state();
     let lang = form_lang(&form, &ctx);
     let author = ctx.username();
-    let user_id = ctx.user.as_ref().map_or(0, |u| u.id);
+    let user_id = ctx.user.as_ref().map(|u| u.id.clone());
     if form.title.trim().is_empty() {
         let response = news_form(ctx, None, lang, "news_error_title".to_string());
         return Ok((axum::http::StatusCode::BAD_REQUEST, response).into_response());
     }
     let draft = draft_from(&form, 0, ctx.tz_offset);
     match news::insert_post(&state.db, &lang, &draft, &author, user_id, now_unix()).await {
-        Ok(id) if id > 0 => Ok(Redirect::to("/admin/news").into_response()),
-        Ok(_) => Ok(server_error_form(ctx, 0, lang, &form, "news_error_save")),
+        Ok(_) => Ok(Redirect::to("/admin/news").into_response()),
         Err(e) => {
             tracing::error!("news insert failed: {e}");
-            Ok(server_error_form(ctx, 0, lang, &form, "news_error_save"))
+            Ok(server_error_form(
+                ctx,
+                String::new(),
+                lang,
+                &form,
+                "news_error_save",
+            ))
         }
     }
 }
 
 pub async fn update(
     ctx: Ctx,
-    Path(id): Path<i64>,
+    Path(id): Path<String>,
     Form(form): Form<NewsForm>,
 ) -> Result<Response, AppError> {
     if !ctx.is_admin() {
@@ -671,7 +676,7 @@ pub async fn update(
     }
     let state = crate::state::state();
     let lang = form_lang(&form, &ctx);
-    let existing = news::select_edit(&state.db, &lang, id).await?;
+    let existing = news::select_edit(&state.db, &lang, &id).await?;
     let Some(existing) = existing else {
         return Ok(errors::not_found(ctx));
     };
@@ -683,7 +688,7 @@ pub async fn update(
             .into_response());
     }
     let draft = draft_from(&form, existing.published_at, ctx.tz_offset);
-    match news::update_post(&state.db, &lang, id, &draft, now_unix()).await {
+    match news::update_post(&state.db, &lang, &id, &draft, now_unix()).await {
         Ok(_) => Ok(Redirect::to("/admin/news").into_response()),
         Err(e) => {
             tracing::error!("news update {id} failed: {e}");
@@ -697,7 +702,7 @@ pub async fn update(
 /// a failed save.
 fn server_error_form(
     ctx: Ctx,
-    post_id: i64,
+    post_id: String,
     lang: String,
     form: &NewsForm,
     error: &str,
@@ -725,7 +730,7 @@ fn server_error_form(
 
 pub async fn set_published(
     ctx: Ctx,
-    Path(id): Path<i64>,
+    Path(id): Path<String>,
     Form(form): Form<PublishForm>,
 ) -> Response {
     if !ctx.is_admin() {
@@ -733,7 +738,7 @@ pub async fn set_published(
     }
     let state = crate::state::state();
     let published = form.published.as_deref() == Some("true");
-    if let Err(e) = news::set_published(&state.db, id, published).await {
+    if let Err(e) = news::set_published(&state.db, &id, published).await {
         tracing::error!("news publish toggle {id}: {e}");
     }
     Redirect::to("/admin/news").into_response()
@@ -839,12 +844,12 @@ pub async fn upload_thumbnail(ctx: Ctx, mut form: Multipart) -> Response {
         .into_response()
 }
 
-pub async fn delete(ctx: Ctx, Path(id): Path<i64>) -> Response {
+pub async fn delete(ctx: Ctx, Path(id): Path<String>) -> Response {
     if !ctx.is_admin() {
         return errors::not_found(ctx);
     }
     let state = crate::state::state();
-    if let Err(e) = news::delete_post(&state.db, id).await {
+    if let Err(e) = news::delete_post(&state.db, &id).await {
         tracing::error!("news delete {id}: {e}");
     }
     Redirect::to("/admin/news").into_response()
@@ -926,7 +931,7 @@ mod tests {
             let instant = resolve_published_at(&chosen, 0, offset);
             assert_eq!(instant, expected);
             let edit = NewsEdit {
-                id: 7,
+                id: "7".into(),
                 published: true,
                 published_at: instant,
                 featured: false,
@@ -971,7 +976,7 @@ mod tests {
         let html = NewsDetailPage {
             ctx: crate::testutil::test_ctx("en"),
             post: crate::news::NewsPost {
-                id: 1,
+                id: "1".into(),
                 title: "<script>alert(1)</script>".into(),
                 author: "a".into(),
                 ..Default::default()
@@ -1071,7 +1076,7 @@ mod tests {
 
     fn card(id: i64, title: &str, published: bool) -> NewsCard {
         NewsCard {
-            id,
+            id: id.to_string(),
             title: title.to_string(),
             summary: "S".into(),
             thumbnail: String::new(),
@@ -1174,7 +1179,7 @@ mod tests {
             published_at: now,
             featured: false,
         };
-        let id = news::insert_post(&db, "en", &draft, "tester", 0, now)
+        let id = news::insert_post(&db, "en", &draft, "tester", None, now)
             .await
             .expect("insert");
         // a second post released into the future: queued, so the feed is not
@@ -1184,7 +1189,7 @@ mod tests {
             published_at: now + 86_400,
             ..draft.clone()
         };
-        let later = news::insert_post(&db, "en", &queued, "tester", 0, now)
+        let later = news::insert_post(&db, "en", &queued, "tester", None, 0)
             .await
             .expect("insert queued");
 
@@ -1221,8 +1226,8 @@ mod tests {
             "the article stays escaped: {doc}"
         );
 
-        news::delete_post(&db, id).await.unwrap();
-        news::delete_post(&db, later).await.unwrap();
+        news::delete_post(&db, &id).await.unwrap();
+        news::delete_post(&db, &later).await.unwrap();
     }
 
     /// A subscriber that already holds the feed, end to end over real data:
@@ -1246,7 +1251,7 @@ mod tests {
             published_at: now,
             featured: false,
         };
-        let id = news::insert_post(&db, "en", &draft, "tester", 0, now)
+        let id = news::insert_post(&db, "en", &draft, "tester", None, now)
             .await
             .expect("insert");
 
@@ -1313,7 +1318,7 @@ mod tests {
         let stale = document(&headers(&[("if-none-match", "\"0-0000000000000000\"")]));
         assert_eq!(stale.status(), 200);
 
-        news::delete_post(&db, id).await.unwrap();
+        news::delete_post(&db, &id).await.unwrap();
     }
 
     /// The request headers for the composition above, built the way axum hands
@@ -1353,7 +1358,7 @@ mod tests {
 
     fn feed_post(id: i64, title: &str, body: &str) -> NewsFeedItem {
         NewsFeedItem {
-            id,
+            id: id.to_string(),
             title: title.to_string(),
             summary: "S".into(),
             body: body.to_string(),
@@ -1461,7 +1466,7 @@ mod tests {
         crate::i18n::load("translations");
         let blank = NewsFormPage {
             ctx: crate::testutil::test_ctx("en"),
-            post_id: 0,
+            post_id: String::new(),
             title: String::new(),
             summary: String::new(),
             body: String::new(),
@@ -1485,7 +1490,7 @@ mod tests {
         assert!(html.contains("keeps the post hidden"), "{html}");
 
         let editing = NewsFormPage {
-            post_id: 7,
+            post_id: "7".into(),
             ..blank
         };
         let html = editing.render().expect("renders");
@@ -1512,14 +1517,14 @@ mod tests {
             published_at: at,
             featured: false,
         };
-        let first = news::insert_post(&db, "en", &draft("First", now), "t", 0, now)
+        let first = news::insert_post(&db, "en", &draft("First", now), "t", None, now)
             .await
             .expect("insert");
         // flag it: the hero now answers with it
         news::update_post(
             &db,
             "en",
-            first,
+            &first,
             &news::NewsDraft {
                 featured: true,
                 ..draft("First", now)
@@ -1529,16 +1534,16 @@ mod tests {
         .await
         .expect("flag");
         let hero = news::select_featured(&db, "en", now).await.unwrap();
-        assert_eq!(hero.map(|p| p.id), Some(first));
+        assert_eq!(hero.map(|p| p.id), Some(first.clone()));
 
         // a second post flagged later takes the flag away from the first
-        let second = news::insert_post(&db, "en", &draft("Second", now), "t", 0, now)
+        let second = news::insert_post(&db, "en", &draft("Second", now), "t", None, now)
             .await
             .expect("insert");
         news::update_post(
             &db,
             "en",
-            second,
+            &second,
             &news::NewsDraft {
                 featured: true,
                 ..draft("Second", now)
@@ -1548,7 +1553,7 @@ mod tests {
         .await
         .expect("flag");
         let hero = news::select_featured(&db, "en", now).await.unwrap();
-        assert_eq!(hero.map(|p| p.id), Some(second));
+        assert_eq!(hero.map(|p| p.id), Some(second.clone()));
         // the archive list (include_featured = true, the select_published
         // default) still shows both posts; the teaser variant hides only
         // the featured one
@@ -1579,7 +1584,7 @@ mod tests {
                 ..draft("Later", now + 86_400)
             },
             "t",
-            0,
+            None,
             now,
         )
         .await

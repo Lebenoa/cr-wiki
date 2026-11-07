@@ -47,9 +47,9 @@ pub async fn new_form(ctx: Ctx) -> Response {
 
 /// The prefilled edit form. 404 rather than 403 for someone else's build,
 /// matching the V routes: whether a build exists is not worth revealing.
-pub async fn edit_form(ctx: Ctx, Path(id): Path<i64>) -> Result<Response, AppError> {
+pub async fn edit_form(ctx: Ctx, Path(id): Path<String>) -> Result<Response, AppError> {
     let state = crate::state::state();
-    let Some(build) = load_owned(state, &ctx, id).await? else {
+    let Some(build) = load_owned(state, &ctx, &id).await? else {
         return Ok(errors::not_found(ctx));
     };
     Ok(page(ctx, Some(build), ""))

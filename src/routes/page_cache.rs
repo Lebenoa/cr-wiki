@@ -17,7 +17,7 @@ pub struct Key {
     site_url: String,
     htmx: bool,
     boosted: bool,
-    user_id: Option<i64>,
+    user_id: Option<String>,
     username: Option<String>,
     user_is_admin: bool,
     is_admin: bool,
@@ -33,7 +33,7 @@ impl Key {
             site_url: ctx.site_url.clone(),
             htmx: ctx.htmx,
             boosted: ctx.boosted,
-            user_id: ctx.user.as_ref().map(|u| u.id),
+            user_id: ctx.user.as_ref().map(|u| u.id.clone()),
             username: ctx.user.as_ref().map(|u| u.username.clone()),
             user_is_admin: ctx.user.as_ref().is_some_and(|u| u.is_admin),
             is_admin: ctx.is_admin(),
@@ -249,20 +249,20 @@ mod tests {
         assert_ne!(base, Key::new(&ctx, "/a"));
         ctx.lang = crate::i18n::DEFAULT_LANG.to_string();
         ctx.user = Some(crate::session::SessionUser {
-            id: 41,
+            id: "41".into(),
             username: "alice".into(),
             is_admin: false,
         });
         let signed_in = Key::new(&ctx, "/a");
         assert_ne!(base, signed_in);
         ctx.user = Some(crate::session::SessionUser {
-            id: 42,
+            id: "42".into(),
             username: "alice".into(),
             is_admin: false,
         });
         assert_ne!(signed_in, Key::new(&ctx, "/a"));
         ctx.user = Some(crate::session::SessionUser {
-            id: 41,
+            id: "41".into(),
             username: "alice".into(),
             is_admin: true,
         });

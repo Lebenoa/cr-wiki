@@ -9,7 +9,7 @@ use crate::db::{cards_by_ids, Card, Db};
 /// One build as the list and detail pages render it.
 #[derive(Debug, Clone, Default)]
 pub struct BuildCard {
-    pub id: i64,
+    pub id: String,
     pub cookie: Option<Card>,
     pub cookie2: Option<Card>,
     pub pet: Option<Card>,
@@ -29,7 +29,7 @@ pub struct BuildCard {
     pub youtube_url: String,
     /// stamped onto the record on insert; edits never touch it
     pub author: String,
-    pub user_id: i64,
+    pub user_id: String,
     /// anonymous builds expire; signed-in ones do not
     pub is_anon: bool,
     pub expires_in_h: i64,
@@ -116,7 +116,7 @@ use crate::time::now_unix;
 #[derive(Debug, Clone, Default, SurrealValue)]
 #[surreal(default)]
 struct BuildRow {
-    id: i64,
+    id: String,
     cookie_id: i64,
     cookie2_id: Option<i64>,
     pet_id: i64,
@@ -141,7 +141,7 @@ struct BuildRow {
     description: String,
     youtube_url: String,
     author: String,
-    user_id: i64,
+    user_id: String,
     expires_at: Option<i64>,
 }
 
@@ -219,7 +219,10 @@ pub async fn select_builds(
     } else {
         format!(" AND {where_sql}")
     };
-    select_where(db, lang, &where_sql, sort, author, limit, offset).await
+    select_where(
+        db, lang, &where_sql, sort, author, limit, offset, None, None,
+    )
+    .await
 }
 
 /// The shared body: a WHERE fragment the callers assemble, then the batched
@@ -238,6 +241,8 @@ async fn select_where(
     author: &str,
     limit: i64,
     offset: i64,
+    filter_id: Option<&str>,
+    filter_user: Option<&str>,
 ) -> crate::db::Result<Vec<BuildCard>> {
     let now = now_unix();
 
@@ -291,6 +296,12 @@ async fn select_where(
         )
     };
     let mut q = db.query(&sql).bind(("now", now));
+    if let Some(bid) = filter_id {
+        q = q.bind(("bid", bid.to_string()));
+    }
+    if let Some(uid) = filter_user {
+        q = q.bind(("uid", surrealdb::types::RecordId::new("user", uid)));
+    }
     if !author.is_empty() {
         q = q.bind(("author", author.to_string()));
     }
@@ -300,24 +311,23 @@ async fn select_where(
         #[derive(Default, SurrealValue)]
         #[surreal(default)]
         struct CountRow {
-            bid: i64,
+            bid: String,
             c: i64,
         }
         let counts: Vec<CountRow> = db
             .query(
-                "SELECT (IF type::is_record(build_id) THEN record::id(build_id) ELSE build_id END)
-                        AS bid, count() AS c
+                "SELECT record::id(build_id) AS bid, count() AS c
                    FROM review
                   WHERE verified = true
                   GROUP BY bid",
             )
             .await?
             .take(0)?;
-        let by_build: std::collections::HashMap<i64, i64> =
+        let by_build: std::collections::HashMap<String, i64> =
             counts.into_iter().map(|c| (c.bid, c.c)).collect();
         rows.sort_by(|a, b| {
-            let av = by_build.get(&a.id).copied().unwrap_or(0);
-            let bv = by_build.get(&b.id).copied().unwrap_or(0);
+            let av = by_build.get(a.id.as_str()).copied().unwrap_or(0);
+            let bv = by_build.get(b.id.as_str()).copied().unwrap_or(0);
             bv.cmp(&av).then(b.id.cmp(&a.id))
         });
         let start = usize::try_from(offset.max(0)).unwrap_or(0).min(rows.len());
@@ -375,15 +385,17 @@ fn push_id(list: &mut Vec<i64>, id: i64) {
 
 /// One build by id, through the same query so the expiry rule cannot drift:
 /// an expired anonymous build is simply not found.
-pub async fn select_build(db: &Db, lang: &str, id: i64) -> crate::db::Result<Option<BuildCard>> {
+pub async fn select_build(db: &Db, lang: &str, id: &str) -> crate::db::Result<Option<BuildCard>> {
     let found = select_where(
         db,
         lang,
-        &format!(" AND record::id(id) = {id}"),
+        " AND record::id(id) = $bid",
         "latest",
         "",
         1,
         0,
+        Some(id),
+        None,
     )
     .await?;
     Ok(found.into_iter().next())
@@ -395,16 +407,18 @@ pub async fn select_build(db: &Db, lang: &str, id: i64) -> crate::db::Result<Opt
 pub async fn select_by_user(
     db: &Db,
     lang: &str,
-    user_id: i64,
+    user_id: &str,
 ) -> crate::db::Result<Vec<BuildCard>> {
     select_where(
         db,
         lang,
-        &format!(" AND user_id = {user_id}"),
+        " AND user = $uid",
         "latest",
         "",
         1000,
         0,
+        None,
+        Some(user_id),
     )
     .await
 }
@@ -422,7 +436,7 @@ pub struct NewBuild {
     pub changes: BuildChanges,
     /// stamped onto the record on insert; edits never touch it
     pub author: String,
-    pub user_id: i64,
+    pub user_id: String,
     /// unix seconds for an anonymous build, None for a permanent one
     pub expires_at: Option<i64>,
 }
@@ -497,18 +511,16 @@ fn build_sets(b: &BuildChanges) -> String {
 /// Inserts a build and returns its id. A failed write is an `Err`, never a
 /// silent 0: the route logs the cause and answers 500 instead of pretending
 /// the save happened.
-pub async fn insert_build(db: &Db, b: &NewBuild) -> crate::db::Result<i64> {
-    // allocate and insert in one message: the id comes from the build
-    // sequence (seed.surql / db::ensure_sequences), the CREATE consumes it
+pub async fn insert_build(db: &Db, b: &NewBuild) -> crate::db::Result<String> {
+    // no explicit id: SurrealDB mints a random record id, so build urls and
+    // the review keys that pair with them cannot be enumerated
     let sql = format!(
-        "LET $id = sequence::nextval('build_seq'); \
-         CREATE type::record('build', $id) SET {}, created_at = {now},
+        "CREATE build SET {}, created_at = {now},
             tag = $tags,
             description = $desc, youtube_url = $yt,
-            author = $author, user_id = {uid}, expires_at = $exp; \
-         RETURN $id;",
+            author = $author, user = $uid, expires_at = $exp; \
+         RETURN record::id(id) AS id;",
         build_sets(&b.changes),
-        uid = b.user_id,
         now = now_unix(),
     );
     // an explicit 0 reads back as "permanent" everywhere the expiry rule looks;
@@ -523,22 +535,26 @@ pub async fn insert_build(db: &Db, b: &NewBuild) -> crate::db::Result<i64> {
         // build stored NONE and read back with an empty author; the field
         // had to be `#[allow(dead_code)]` to compile. Bound now.
         .bind(("author", b.author.clone()))
+        .bind((
+            "uid",
+            (b.user_id != "0").then(|| surrealdb::types::RecordId::new("user", b.user_id.clone())),
+        ))
         .bind(("exp", exp))
         .await?
         .check()?;
     let id = res
-        .take::<Option<i64>>(2)?
+        .take::<Option<String>>(0)?
         .ok_or_else(|| surrealdb::Error::internal("build insert returned no id".to_string()))?;
     Ok(id)
 }
 
-pub async fn delete_build(db: &Db, id: i64) -> crate::db::Result<()> {
-    db.query("DELETE review WHERE build_id = $id")
-        .bind(("id", id))
+pub async fn delete_build(db: &Db, id: &str) -> crate::db::Result<()> {
+    db.query("DELETE review WHERE record::id(build_id) = $id")
+        .bind(("id", id.to_string()))
         .await?
         .check()?;
     db.query("DELETE type::record(\"build\", $id)")
-        .bind(("id", id))
+        .bind(("id", id.to_string()))
         .await?
         .check()?;
     Ok(())
@@ -547,7 +563,7 @@ pub async fn delete_build(db: &Db, id: i64) -> crate::db::Result<()> {
 /// Updates a build in place. Takes [`BuildChanges`] — the insert-only
 /// fields (author, owner, expiry) are not representable here, so an edit
 /// cannot turn an anonymous build permanent or change who owns it.
-pub async fn update_build(db: &Db, id: i64, b: &BuildChanges) -> crate::db::Result<()> {
+pub async fn update_build(db: &Db, id: &str, b: &BuildChanges) -> crate::db::Result<()> {
     let sql = format!(
         "UPDATE build:{id} SET {},
             tag = $tags, description = $desc, youtube_url = $yt",
@@ -564,7 +580,7 @@ pub async fn update_build(db: &Db, id: i64, b: &BuildChanges) -> crate::db::Resu
 
 /// The verify tallies on a build: how many people confirmed it works and how
 /// many reported an issue.
-pub async fn review_counts(db: &Db, build_id: i64) -> crate::db::Result<(i64, i64)> {
+pub async fn review_counts(db: &Db, build_id: &str) -> crate::db::Result<(i64, i64)> {
     #[derive(Default, SurrealValue)]
     #[surreal(default)]
     struct Group {
@@ -575,7 +591,7 @@ pub async fn review_counts(db: &Db, build_id: i64) -> crate::db::Result<(i64, i6
         .query(
             "SELECT verified, count() AS count FROM review WHERE build_id = $id GROUP BY verified",
         )
-        .bind(("id", build_id))
+        .bind(("id", build_id.to_string()))
         .await?
         .take(0)?;
     let mut ok = 0i64;
@@ -595,20 +611,33 @@ pub async fn review_counts(db: &Db, build_id: i64) -> crate::db::Result<(i64, i6
 /// rather than a second vote.
 pub async fn upsert_review(
     db: &Db,
-    build_id: i64,
-    user_id: i64,
+    build_id: &str,
+    user_id: &str,
     verified: bool,
     reason: &str,
 ) -> crate::db::Result<()> {
     let now = now_unix();
     let verified = i64::from(verified);
-    let sql = format!(
-        "UPSERT review:[{build_id},{user_id}] SET
-            build_id = {build_id}, user_id = {user_id}, verified = {verified},
-            reason = $reason, updated_at = {now}",
-    );
-    db.query(&sql)
+    // the record id IS the (build, user) pair, so this is an upsert by
+    // construction rather than a second vote; the fields keep the link
+    // records the aggregate queries read
+    let sql = "UPSERT type::record('review', [$b, $u]) SET \
+            build_id = $brec, user_id = $urec, verified = $verified, \
+            reason = $reason, updated_at = $now";
+    db.query(sql)
+        .bind(("b", build_id.to_string()))
+        .bind(("u", user_id.to_string()))
+        .bind((
+            "brec",
+            surrealdb::types::RecordId::new("build", build_id.to_string()),
+        ))
+        .bind((
+            "urec",
+            surrealdb::types::RecordId::new("user", user_id.to_string()),
+        ))
+        .bind(("verified", verified))
         .bind(("reason", reason.to_string()))
+        .bind(("now", now))
         .await?
         .check()?;
     Ok(())
@@ -627,7 +656,7 @@ mod tests {
     #[test]
     fn build_row_reads_its_projection() {
         let mut o = Object::new();
-        o.insert("id", 42i64);
+        o.insert("id", "42".to_string());
         o.insert("cookie_id", 1i64);
         o.insert("pet_id", 2i64);
         o.insert("treasure1_id", 3i64);
@@ -651,11 +680,11 @@ mod tests {
         o.insert("description", "d");
         o.insert("youtube_url", "");
         o.insert("author", "a");
-        o.insert("user_id", 0i64);
+        o.insert("user_id", "".to_string());
         o.insert("expires_at", 7_300i64);
         let row = BuildRow::from_value(Value::Object(o)).expect("decodes");
         let card = row.into_card(50);
-        assert_eq!(card.id, 42);
+        assert_eq!(card.id, "42");
         assert_eq!(card.time_label(), "1:01");
         assert_eq!(card.tags, vec!["score".to_string(), "coin".to_string()]);
         assert!(card.is_anon);

@@ -46,13 +46,13 @@ pub async fn create(ctx: Ctx, Form(form): Form<BuildForm>) -> Result<Response, A
             .into_response());
     }
 
-    let user_id = ctx.user.as_ref().map_or(0, |u| u.id);
+    let user_id = ctx.user.as_ref().map_or(String::new(), |u| u.id.clone());
     let author = ctx.user.as_ref().map_or_else(
         || form.author.clone().unwrap_or_default(),
         |u| u.username.clone(),
     );
     // an anonymous build expires; a signed-in one does not
-    let expires_at = if user_id > 0 {
+    let expires_at = if !user_id.is_empty() {
         None
     } else {
         Some(now_unix().saturating_add(ANON_TTL_SECS))
@@ -64,15 +64,8 @@ pub async fn create(ctx: Ctx, Form(form): Form<BuildForm>) -> Result<Response, A
     };
 
     // a failed save keeps the filled-in form and says so; the cause itself
-    // reaches the log, which a bare Ok(0) never did
+    // reaches the log
     let created = match builds::insert_build(&state.db, &record).await {
-        Ok(0) => {
-            return Ok((
-                StatusCode::INTERNAL_SERVER_ERROR,
-                page(ctx, None, "build_error_save"),
-            )
-                .into_response())
-        }
         Ok(id) => id,
         Err(e) => {
             tracing::error!("insert build failed: {e}");
@@ -88,11 +81,11 @@ pub async fn create(ctx: Ctx, Form(form): Form<BuildForm>) -> Result<Response, A
 
 pub async fn update(
     ctx: Ctx,
-    Path(id): Path<i64>,
+    Path(id): Path<String>,
     Form(form): Form<BuildForm>,
 ) -> Result<Response, AppError> {
     let state = crate::state::state();
-    let Some(existing) = load_owned(state, &ctx, id).await? else {
+    let Some(existing) = load_owned(state, &ctx, &id).await? else {
         return Ok(errors::not_found(ctx));
     };
     let (ep, ep_special) = parse_ep(form.ep.as_deref().unwrap_or(""));
@@ -120,13 +113,13 @@ pub async fn update(
             return Ok((StatusCode::BAD_REQUEST, page(ctx, Some(existing), key)).into_response())
         }
     };
-    builds::update_build(&state.db, id, &changes).await?;
+    builds::update_build(&state.db, &id, &changes).await?;
     Ok(Redirect::to(&format!("/builds/{id}")).into_response())
 }
 
-pub async fn delete(ctx: Ctx, Path(id): Path<i64>) -> Result<Response, AppError> {
+pub async fn delete(ctx: Ctx, Path(id): Path<String>) -> Result<Response, AppError> {
     let state = crate::state::state();
-    let found = builds::select_build(&state.db, &ctx.lang, id).await?;
+    let found = builds::select_build(&state.db, &ctx.lang, &id).await?;
 
     let Some(build) = found else {
         return Ok(errors::not_found(ctx));
@@ -136,7 +129,7 @@ pub async fn delete(ctx: Ctx, Path(id): Path<i64>) -> Result<Response, AppError>
     if !can_edit(&ctx, &build) {
         return Ok(errors::not_found(ctx));
     }
-    builds::delete_build(&state.db, id).await?;
+    builds::delete_build(&state.db, &id).await?;
     Ok(Redirect::to("/builds").into_response())
 }
 
@@ -144,9 +137,9 @@ pub async fn delete(ctx: Ctx, Path(id): Path<i64>) -> Result<Response, AppError>
 pub(super) async fn load_owned(
     state: &AppState,
     ctx: &Ctx,
-    id: i64,
+    id: &str,
 ) -> Result<Option<BuildCard>, AppError> {
-    let found = builds::select_build(&state.db, &ctx.lang, id).await?;
+    let found = builds::select_build(&state.db, &ctx.lang, &id).await?;
     let Some(found) = found else {
         return Ok(None);
     };
@@ -160,5 +153,5 @@ fn can_edit(ctx: &Ctx, build: &BuildCard) -> bool {
         || ctx
             .user
             .as_ref()
-            .is_some_and(|u| build.user_id > 0 && build.user_id == u.id)
+            .is_some_and(|u| !build.user_id.is_empty() && build.user_id == u.id)
 }

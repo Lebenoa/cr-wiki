@@ -175,8 +175,8 @@ async fn account_for_google(db: &db::Db, identity: &Identity) -> Result<GoogleOu
                 );
                 return Ok(GoogleOutcome::Refused("conflict"));
             }
-            db::link_user_google(db, existing.id, &identity.sub).await?;
-            tracing::info!(user_id = existing.id, "google: linked an existing account");
+            db::link_user_google(db, &existing.id, &identity.sub).await?;
+            tracing::info!(user_id = %existing.id, "google: linked an existing account");
             return Ok(GoogleOutcome::Account(existing));
         }
     }
@@ -418,7 +418,7 @@ mod tests {
                 .await
                 .expect("lookup")
                 .map(|u| u.id),
-            Some(created.id)
+            Some(created.id.clone())
         );
 
         let again = expect_account(
@@ -473,7 +473,7 @@ mod tests {
 
         // a third subject on that same verified address is refused: the
         // account already belongs to somebody
-        db::link_user_google(&pool, existing.id, "someone-elses-subject")
+        db::link_user_google(&pool, &existing.id, "someone-elses-subject")
             .await
             .expect("relink");
         let conflict = Identity {

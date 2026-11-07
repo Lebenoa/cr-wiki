@@ -245,8 +245,8 @@ pub async fn reset(ctx: Ctx, Form(form): Form<ResetForm>) -> Result<Response, Ap
             ));
         }
     };
-    db::set_user_password(&state.db, user_id, &hash).await?;
-    if let Some(user) = db::find_user_by_id(&state.db, user_id).await? {
+    db::set_user_password(&state.db, &user_id, &hash).await?;
+    if let Some(user) = db::find_user_by_id(&state.db, &user_id).await? {
         if let Some(email) = user.email.as_deref() {
             if let Err(e) = send_security_notice(
                 &ctx,
@@ -263,7 +263,7 @@ pub async fn reset(ctx: Ctx, Form(form): Form<ResetForm>) -> Result<Response, Ap
     }
     // a reset is the moment to assume the old password is known to somebody
     // else, so every session it opened ends here
-    state.sessions.end_all_for(user_id);
+    state.sessions.end_all_for(&user_id);
     tracing::info!(user_id, "password reset completed");
     Ok(navigation_response(&ctx, RESET_DONE_PATH))
 }
@@ -277,7 +277,7 @@ async fn send_reset_mail(
     user: &db::User,
     email: &str,
 ) -> Result<(), AppError> {
-    if db::reset_requested_within(&state.db, user.id, RESET_THROTTLE_SECS).await? {
+    if db::reset_requested_within(&state.db, &user.id, RESET_THROTTLE_SECS).await? {
         tracing::info!(
             user_id = user.id,
             "reset asked for again inside the throttle window; not re-sending"
@@ -299,7 +299,7 @@ async fn send_reset_mail(
     };
     // stored before the send: the link has to work the moment it lands, and a
     // token whose mail never arrived simply expires
-    db::issue_reset_token(&state.db, user.id, &token, RESET_TTL_SECS).await?;
+    db::issue_reset_token(&state.db, &user.id, &token, RESET_TTL_SECS).await?;
     let mail = crate::mail::Mail {
         subject,
         text,
@@ -381,9 +381,9 @@ mod tests {
     /// A probe user's reset rows outlive the user row, so the token helper
     /// cleans them too: a leftover token would point at an id that no longer
     /// exists and linger in whatever namespace the tests ran against.
-    async fn drop_probe_tokens(pool: &crate::db::Db, user_id: i64) {
+    async fn drop_probe_tokens(pool: &crate::db::Db, user_id: &str) {
         pool.query("DELETE password_reset WHERE user = type::record('user', $u)")
-            .bind(("u", user_id))
+            .bind(("u", user_id.to_string()))
             .await
             .expect("token cleanup");
     }
@@ -409,7 +409,7 @@ mod tests {
             .await
             .expect("create")
             .expect("created");
-        drop_probe_tokens(&pool, user.id).await;
+        drop_probe_tokens(&pool, &user.id).await;
 
         // the lookup ignores case, and an address nobody uses answers None
         // exactly like a row that never carried one
@@ -418,7 +418,7 @@ mod tests {
                 .await
                 .expect("lookup")
                 .map(|u| u.id),
-            Some(user.id)
+            Some(user.id.clone())
         );
         assert!(db::find_user_by_email(&pool, "nobody@example.com")
             .await
@@ -426,14 +426,14 @@ mod tests {
             .is_none());
 
         let token = reset_token();
-        db::issue_reset_token(&pool, user.id, &token, RESET_TTL_SECS)
+        db::issue_reset_token(&pool, &user.id, &token, RESET_TTL_SECS)
             .await
             .expect("issue");
         assert!(db::reset_token_pending(&pool, &token)
             .await
             .expect("pending"));
         assert!(
-            db::reset_requested_within(&pool, user.id, RESET_THROTTLE_SECS)
+            db::reset_requested_within(&pool, &user.id, RESET_THROTTLE_SECS)
                 .await
                 .expect("throttle"),
             "the row the throttle reads is the one just written"
@@ -443,7 +443,7 @@ mod tests {
             db::consume_reset_token(&pool, &token)
                 .await
                 .expect("consume"),
-            Some(user.id)
+            Some(user.id.clone())
         );
         assert!(!db::reset_token_pending(&pool, &token)
             .await
@@ -458,7 +458,7 @@ mod tests {
 
         // an expired token is refused the same way a spent one is
         let stale = reset_token();
-        db::issue_reset_token(&pool, user.id, &stale, -1)
+        db::issue_reset_token(&pool, &user.id, &stale, -1)
             .await
             .expect("issue stale");
         assert!(!db::reset_token_pending(&pool, &stale)
@@ -474,10 +474,10 @@ mod tests {
         // asking again kills the previous link rather than leaving two live
         let first = reset_token();
         let second = reset_token();
-        db::issue_reset_token(&pool, user.id, &first, RESET_TTL_SECS)
+        db::issue_reset_token(&pool, &user.id, &first, RESET_TTL_SECS)
             .await
             .expect("issue first");
-        db::issue_reset_token(&pool, user.id, &second, RESET_TTL_SECS)
+        db::issue_reset_token(&pool, &user.id, &second, RESET_TTL_SECS)
             .await
             .expect("issue second");
         assert!(!db::reset_token_pending(&pool, &first)
@@ -492,7 +492,7 @@ mod tests {
         let new_hash = session::hash_password(&pool, "brand new password")
             .await
             .expect("hash");
-        db::set_user_password(&pool, user.id, &new_hash)
+        db::set_user_password(&pool, &user.id, &new_hash)
             .await
             .expect("set");
         assert_eq!(
@@ -506,7 +506,7 @@ mod tests {
         assert!(session::verify_password(&pool, "brand new password", &after.password).await);
         assert!(!session::verify_password(&pool, "old password", &after.password).await);
 
-        drop_probe_tokens(&pool, user.id).await;
+        drop_probe_tokens(&pool, &user.id).await;
         drop_probe_user(&pool, username).await;
         assert!(db::find_user(&pool, username)
             .await
@@ -630,10 +630,10 @@ mod tests {
             .await
             .expect("create")
             .expect("created");
-        drop_probe_tokens(&pool, user.id).await;
+        drop_probe_tokens(&pool, &user.id).await;
 
         let token = reset_token();
-        db::issue_reset_token(&pool, user.id, &token, RESET_TTL_SECS)
+        db::issue_reset_token(&pool, &user.id, &token, RESET_TTL_SECS)
             .await
             .expect("issue");
         // the same read the handler makes before it shows anything
@@ -674,7 +674,7 @@ mod tests {
             db::consume_reset_token(&pool, &token)
                 .await
                 .expect("consume"),
-            Some(user.id)
+            Some(user.id.clone())
         );
         let pending = db::reset_token_pending(&pool, &token)
             .await
@@ -690,7 +690,7 @@ mod tests {
             "a dead link has to say so"
         );
 
-        drop_probe_tokens(&pool, user.id).await;
+        drop_probe_tokens(&pool, &user.id).await;
         drop_probe_user(&pool, username).await;
     }
 
@@ -727,13 +727,13 @@ mod tests {
         let live = crate::builds::NewBuild {
             changes: changes.clone(),
             author: username.to_string(),
-            user_id: user.id,
+            user_id: user.id.clone(),
             expires_at: None,
         };
         let dying = crate::builds::NewBuild {
             changes,
             author: username.to_string(),
-            user_id: user.id,
+            user_id: user.id.clone(),
             // an hour from now is not live enough to race the test clock:
             // an hour AGO is definitively spent
             expires_at: Some(crate::time::now_unix() - 3600),

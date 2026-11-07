@@ -35,7 +35,7 @@ async fn build_queries_and_labels() {
             .await
             .is_ok()
     );
-    assert!(builds::select_build(&pool, "en", 999_999)
+    assert!(builds::select_build(&pool, "en", "999999")
         .await
         .unwrap()
         .is_none());

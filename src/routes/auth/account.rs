@@ -144,7 +144,7 @@ pub async fn update_account_email(
         }
     }
     let old_email = account.email.clone();
-    db::set_user_email(&state.db, account.id, email).await?;
+    db::set_user_email(&state.db, &account.id, email).await?;
     if let Some(old) = old_email
         .as_deref()
         .filter(|old| !email.is_some_and(|new| old.eq_ignore_ascii_case(new)))
@@ -216,7 +216,7 @@ mod tests {
         let account = |google: bool| {
             let mut ctx = crate::testutil::test_ctx("en");
             ctx.user = Some(crate::session::SessionUser {
-                id: 1,
+                id: "1".into(),
                 username: "tester".into(),
                 is_admin: false,
             });

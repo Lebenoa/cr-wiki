@@ -44,7 +44,7 @@ pub struct PostText {
 /// One card in the public list and the admin dashboard.
 #[derive(Debug, Clone, Default)]
 pub struct NewsCard {
-    pub id: i64,
+    pub id: String,
     pub title: String,
     pub summary: String,
     /// this locale's thumbnail filename, empty when the locale has none —
@@ -123,7 +123,7 @@ impl NewsCard {
 /// document, however old the post.
 #[derive(Debug, Clone, Default)]
 pub struct NewsFeedItem {
-    pub id: i64,
+    pub id: String,
     pub title: String,
     pub summary: String,
     pub body: String,
@@ -142,7 +142,7 @@ impl NewsFeedItem {
 /// One post as the public detail page renders it.
 #[derive(Debug, Clone, Default)]
 pub struct NewsPost {
-    pub id: i64,
+    pub id: String,
     pub title: String,
     pub summary: String,
     pub body: String,
@@ -165,7 +165,7 @@ impl NewsPost {
 /// the locale's own text or the first save would overwrite it).
 #[derive(Debug, Clone, Default)]
 pub struct NewsEdit {
-    pub id: i64,
+    pub id: String,
     pub published: bool,
     pub published_at: i64,
     pub featured: bool,
@@ -203,7 +203,7 @@ const PROJECTION: &str = "SELECT record::id(id) AS id,\n\
 #[derive(Debug, Clone, Default, SurrealValue)]
 #[surreal(default)]
 struct CardRow {
-    id: i64,
+    id: String,
     title: String,
     summary: String,
     thumbnail: String,
@@ -305,7 +305,7 @@ pub async fn select_featured(db: &Db, lang: &str, now: i64) -> Result<Option<New
     #[derive(Debug, Clone, Default, SurrealValue)]
     #[surreal(default)]
     struct PostRow {
-        id: i64,
+        id: String,
         title: String,
         summary: String,
         body: String,
@@ -350,7 +350,7 @@ pub async fn select_feed(db: &Db, lang: &str, now: i64, limit: i64) -> Result<Ve
     #[derive(Debug, Clone, Default, SurrealValue)]
     #[surreal(default)]
     struct FeedRow {
-        id: i64,
+        id: String,
         title: String,
         summary: String,
         body: String,
@@ -390,11 +390,11 @@ pub async fn select_feed(db: &Db, lang: &str, now: i64, limit: i64) -> Result<Ve
 /// One post by id that a visitor may read at `now`, for the public detail page.
 /// A draft, and a queued post that has not come due, read as absent — only the
 /// authoring form reaches those, so a scheduled post's url is not a leak.
-pub async fn select_post(db: &Db, lang: &str, now: i64, id: i64) -> Result<Option<NewsPost>> {
+pub async fn select_post(db: &Db, lang: &str, now: i64, id: &str) -> Result<Option<NewsPost>> {
     #[derive(Debug, Clone, Default, SurrealValue)]
     #[surreal(default)]
     struct PostRow {
-        id: i64,
+        id: String,
         title: String,
         summary: String,
         body: String,
@@ -414,7 +414,7 @@ pub async fn select_post(db: &Db, lang: &str, now: i64, id: i64) -> Result<Optio
              AND published_at <= $now",
         )
         .bind(("lang", lang.to_string()))
-        .bind(("id", id))
+        .bind(("id", id.to_string()))
         .bind(("now", now))
         .await?
         .take(0)?;
@@ -431,11 +431,11 @@ pub async fn select_post(db: &Db, lang: &str, now: i64, id: i64) -> Result<Optio
 
 /// One post for the authoring form, whether published or a draft, with the
 /// edited locale's own (un-fallback) text.
-pub async fn select_edit(db: &Db, lang: &str, id: i64) -> Result<Option<NewsEdit>> {
+pub async fn select_edit(db: &Db, lang: &str, id: &str) -> Result<Option<NewsEdit>> {
     #[derive(Debug, Clone, Default, SurrealValue)]
     #[surreal(default)]
     struct EditRow {
-        id: i64,
+        id: String,
         published: bool,
         published_at: i64,
         featured: bool,
@@ -449,7 +449,7 @@ pub async fn select_edit(db: &Db, lang: &str, id: i64) -> Result<Option<NewsEdit
             "SELECT record::id(id) AS id, published, published_at, featured, tr FROM news \
              WHERE record::id(id) = $id",
         )
-        .bind(("id", id))
+        .bind(("id", id.to_string()))
         .await?
         .take(0)?;
     Ok(rows.into_iter().next().map(|r| {
@@ -501,11 +501,11 @@ pub async fn newest_publication(db: &Db, now: i64) -> Result<Option<i64>> {
 
 /// The ids of every post live at `now`, for the sitemap: a queued post's url
 /// must not be advertised before its page exists.
-pub async fn published_ids(db: &Db, now: i64) -> Result<Vec<i64>> {
+pub async fn published_ids(db: &Db, now: i64) -> Result<Vec<String>> {
     #[derive(Debug, Clone, Default, SurrealValue)]
     #[surreal(default)]
     struct IdRow {
-        id: i64,
+        id: String,
     }
     let rows: Vec<IdRow> = db
         .query(
@@ -526,28 +526,32 @@ pub async fn insert_post(
     lang: &str,
     draft: &NewsDraft,
     author: &str,
-    user_id: i64,
+    user_id: Option<String>,
     now: i64,
-) -> Result<i64> {
+) -> Result<String> {
+    // no explicit id: SurrealDB mints a random record id — post urls are
+    // opaque, and the sitemap/feed never enumerate them by position
     let mut res = db
         .query(
-            "LET $id = sequence::nextval('news_seq'); \
-             CREATE type::record('news', $id) SET \
+            "CREATE news SET \
                 published = $published, published_at = $published_at, \
                 created_at = $now, updated_at = $now, \
-                author = $author, user_id = $uid, featured = $featured; \
-             RETURN $id;",
+                author = $author, user = $uid, featured = $featured; \
+             RETURN record::id(id) AS id;",
         )
         .bind(("published", draft.published))
         .bind(("published_at", draft.published_at))
         .bind(("now", now))
         .bind(("author", author.to_string()))
-        .bind(("uid", user_id))
+        .bind((
+            "uid",
+            user_id.map(|id| surrealdb::types::RecordId::new("user", id)),
+        ))
         .bind(("featured", draft.featured))
         .await?
         .check()?;
     let id = res
-        .take::<Option<i64>>(2)?
+        .take::<Option<String>>(0)?
         .ok_or_else(|| surrealdb::Error::internal("news insert returned no id".to_string()))?;
     if draft.featured {
         // "live" is the row's own state against the same clock the reads
@@ -555,9 +559,9 @@ pub async fn insert_post(
         // moment, and a fixed test date must not silently become "past"
         // because the wall clock moved.
         let live = draft.published && draft.published_at <= now;
-        clear_other_featured(db, id, live).await?;
+        clear_other_featured(db, &id, live).await?;
     }
-    write_locale(db, id, lang, draft).await?;
+    write_locale(db, &id, lang, draft).await?;
     Ok(id)
 }
 
@@ -572,7 +576,7 @@ pub async fn insert_post(
 /// the homepage hero never flickers empty between a queued post's creation
 /// and its reveal. The queued flag takes over on time by itself — the reads
 /// order by `published_at DESC`, and the queued post is the newer one.
-async fn clear_other_featured(db: &Db, keep: i64, keep_live: bool) -> Result<()> {
+async fn clear_other_featured(db: &Db, keep: &str, keep_live: bool) -> Result<()> {
     if !keep_live {
         return Ok(());
     }
@@ -581,7 +585,7 @@ async fn clear_other_featured(db: &Db, keep: i64, keep_live: bool) -> Result<()>
          WHERE featured = true AND record::id(id) != $keep \
          AND published = true AND published_at <= $now",
     )
-    .bind(("keep", keep))
+    .bind(("keep", keep.to_string()))
     .bind(("now", now_unix()))
     .await?
     .check()?;
@@ -592,7 +596,7 @@ async fn clear_other_featured(db: &Db, keep: i64, keep_live: bool) -> Result<()>
 pub async fn update_post(
     db: &Db,
     lang: &str,
-    id: i64,
+    id: &str,
     draft: &NewsDraft,
     now: i64,
 ) -> Result<bool> {
@@ -601,7 +605,7 @@ pub async fn update_post(
             published = $published, published_at = $published_at, updated_at = $now, \
             featured = $featured",
     )
-    .bind(("id", id))
+    .bind(("id", id.to_string()))
     .bind(("published", draft.published))
     .bind(("published_at", draft.published_at))
     .bind(("now", now))
@@ -610,16 +614,16 @@ pub async fn update_post(
     .check()?;
     if draft.featured {
         let live = draft.published && draft.published_at <= now;
-        clear_other_featured(db, id, live).await?;
+        clear_other_featured(db, &id, live).await?;
     }
-    write_locale(db, id, lang, draft).await?;
+    write_locale(db, &id, lang, draft).await?;
     Ok(true)
 }
 
 /// Flips one post's published state, stamping the first publication date when
 /// it had none. The old date is read in the same message, so a draft going
 /// live gets `now` exactly once.
-pub async fn set_published(db: &Db, id: i64, published: bool) -> Result<()> {
+pub async fn set_published(db: &Db, id: &str, published: bool) -> Result<()> {
     db.query(
         "LET $old = (SELECT published_at FROM type::record('news', $id))[0].published_at ?? 0; \
          UPDATE type::record('news', $id) SET \
@@ -627,7 +631,7 @@ pub async fn set_published(db: &Db, id: i64, published: bool) -> Result<()> {
             published_at = IF $p AND $old = 0 THEN $now ELSE $old END, \
             updated_at = $now;",
     )
-    .bind(("id", id))
+    .bind(("id", id.to_string()))
     .bind(("p", published))
     .bind(("now", now_unix()))
     .await?
@@ -636,9 +640,9 @@ pub async fn set_published(db: &Db, id: i64, published: bool) -> Result<()> {
 }
 
 /// Removes a post and its text.
-pub async fn delete_post(db: &Db, id: i64) -> Result<()> {
+pub async fn delete_post(db: &Db, id: &str) -> Result<()> {
     db.query("DELETE type::record('news', $id)")
-        .bind(("id", id))
+        .bind(("id", id.to_string()))
         .await?
         .check()?;
     Ok(())
@@ -646,7 +650,7 @@ pub async fn delete_post(db: &Db, id: i64) -> Result<()> {
 
 /// Upserts one language's text INSIDE the nested tr object, mirroring the
 /// catalog editor: the other locales are read back and written unchanged.
-async fn write_locale(db: &Db, id: i64, lang: &str, draft: &NewsDraft) -> Result<()> {
+async fn write_locale(db: &Db, id: &str, lang: &str, draft: &NewsDraft) -> Result<()> {
     // `Option` is load-bearing, not tidiness: a `SELECT tr` on a record that
     // has no text yet returns an explicit `tr: NONE`, and a bare map field
     // then fails to decode ("Expected object, got none") — which made the
@@ -659,7 +663,7 @@ async fn write_locale(db: &Db, id: i64, lang: &str, draft: &NewsDraft) -> Result
     }
     let mut wrap: TrWrap = db
         .query("SELECT tr FROM type::record('news', $id)")
-        .bind(("id", id))
+        .bind(("id", id.to_string()))
         .await?
         .take::<Vec<TrWrap>>(0)?
         .pop()
@@ -675,7 +679,7 @@ async fn write_locale(db: &Db, id: i64, lang: &str, draft: &NewsDraft) -> Result
         },
     );
     db.query("UPDATE type::record('news', $id) SET tr = $tr")
-        .bind(("id", id))
+        .bind(("id", id.to_string()))
         .bind(("tr", map))
         .await?
         .check()?;
@@ -728,10 +732,10 @@ mod tests {
             published_at: 0,
             featured: false,
         };
-        let id = insert_post(&db, "en", &draft, "tester", 7, NOW)
+        let id = insert_post(&db, "en", &draft, "tester", Some("7".into()), NOW)
             .await
             .expect("insert");
-        assert!(id > 0, "the sequence hands out a real id");
+        assert!(!id.is_empty(), "the row got a real record id");
 
         // a draft is invisible to every public read
         assert!(select_published(&db, "en", NOW, 10, 0)
@@ -756,31 +760,31 @@ mod tests {
             published_at: 1_792_108_800,
             featured: false,
         };
-        update_post(&db, "th", id, &edit, NOW)
+        update_post(&db, "th", &id, &edit, NOW)
             .await
             .expect("update th");
-        let en = select_edit(&db, "en", id).await.unwrap().expect("exists");
+        let en = select_edit(&db, "en", &id).await.unwrap().expect("exists");
         assert_eq!(en.text.title, "Hello", "English survives a Thai edit");
-        let th = select_edit(&db, "th", id).await.unwrap().expect("exists");
+        let th = select_edit(&db, "th", &id).await.unwrap().expect("exists");
         assert_eq!(th.text.title, "สวัสดี");
         // a locale with no text of its own is empty for editing (no fallback)
-        let fr = select_edit(&db, "fr", id).await.unwrap().expect("exists");
+        let fr = select_edit(&db, "fr", &id).await.unwrap().expect("exists");
         assert!(fr.text.title.is_empty());
 
         // publishing reveals it, and the public read falls back to English
-        set_published(&db, id, true).await.unwrap();
+        set_published(&db, &id, true).await.unwrap();
         let public = select_published(&db, "en", NOW, 10, 0).await.unwrap();
         assert_eq!(public.len(), 1);
         assert_eq!(public[0].title, "Hello");
-        assert_eq!(published_ids(&db, NOW).await.unwrap(), vec![id]);
-        let posted = select_post(&db, "th", NOW, id)
+        assert_eq!(published_ids(&db, NOW).await.unwrap(), vec![id.clone()]);
+        let posted = select_post(&db, "th", NOW, &id)
             .await
             .unwrap()
             .expect("published");
         assert_eq!(posted.title, "สวัสดี");
         assert_eq!(posted.date_label(0), "2026-10-16");
         assert_eq!(
-            select_post(&db, "fr", NOW, id)
+            select_post(&db, "fr", NOW, &id)
                 .await
                 .unwrap()
                 .expect("fallback")
@@ -820,24 +824,24 @@ mod tests {
             published_at: 0,
             ..draft.clone()
         };
-        let id2 = insert_post(&db, "en", &second, "tester", 0, NOW)
+        let id2 = insert_post(&db, "en", &second, "tester", None, NOW)
             .await
             .unwrap();
-        set_published(&db, id2, true).await.unwrap();
-        let p2 = select_post(&db, "en", now_unix(), id2)
+        set_published(&db, &id2, true).await.unwrap();
+        let p2 = select_post(&db, "en", now_unix(), &id2)
             .await
             .unwrap()
             .expect("published");
         assert!(p2.published_at > 1_700_000_000, "stamped now");
         // and unpublishing keeps that date rather than clearing it
-        set_published(&db, id2, false).await.unwrap();
-        let back = select_edit(&db, "en", id2).await.unwrap().expect("exists");
+        set_published(&db, &id2, false).await.unwrap();
+        let back = select_edit(&db, "en", &id2).await.unwrap().expect("exists");
         assert!(back.published_at > 1_700_000_000);
         assert!(!back.published);
 
-        delete_post(&db, id).await.unwrap();
-        delete_post(&db, id2).await.unwrap();
-        assert!(select_post(&db, "en", NOW, id).await.unwrap().is_none());
+        delete_post(&db, &id).await.unwrap();
+        delete_post(&db, &id2).await.unwrap();
+        assert!(select_post(&db, "en", NOW, &id).await.unwrap().is_none());
         assert!(select_all(&db, "en").await.unwrap().is_empty());
     }
 
@@ -902,7 +906,7 @@ mod tests {
             published_at: SOON,
             featured: false,
         };
-        let id = insert_post(&db, "en", &queued, "tester", 0, NOW)
+        let id = insert_post(&db, "en", &queued, "tester", None, NOW)
             .await
             .unwrap();
 
@@ -913,7 +917,7 @@ mod tests {
             .unwrap()
             .is_empty());
         assert!(select_feed(&db, "en", NOW, 50).await.unwrap().is_empty());
-        assert!(select_post(&db, "en", NOW, id).await.unwrap().is_none());
+        assert!(select_post(&db, "en", NOW, &id).await.unwrap().is_none());
         assert!(published_ids(&db, NOW).await.unwrap().is_empty());
         assert_eq!(
             newest_publication(&db, NOW).await.unwrap(),
@@ -930,12 +934,12 @@ mod tests {
 
         // the second before is still queued; the date itself is live, which is
         // the inclusive boundary every public read shares
-        assert!(select_post(&db, "en", JUST_BEFORE, id)
+        assert!(select_post(&db, "en", JUST_BEFORE, &id)
             .await
             .unwrap()
             .is_none());
         assert_eq!(
-            select_post(&db, "en", SOON, id)
+            select_post(&db, "en", SOON, &id)
                 .await
                 .unwrap()
                 .expect("due")
@@ -952,7 +956,7 @@ mod tests {
         let due = select_feed(&db, "en", SOON, 50).await.unwrap();
         assert_eq!(due.len(), 1, "the feed reveals it with everything else");
         assert_eq!(due[0].title, "Queued");
-        assert_eq!(published_ids(&db, SOON).await.unwrap(), vec![id]);
+        assert_eq!(published_ids(&db, SOON).await.unwrap(), vec![id.clone()]);
         assert_eq!(
             newest_publication(&db, SOON).await.unwrap(),
             Some(SOON),
@@ -961,13 +965,13 @@ mod tests {
 
         // publishing a draft with no date is still immediate: the clock only
         // ever hides a post whose author dated it ahead
-        set_published(&db, id, false).await.unwrap();
-        assert!(select_post(&db, "en", SOON, id).await.unwrap().is_none());
-        let back = select_edit(&db, "en", id).await.unwrap().expect("exists");
+        set_published(&db, &id, false).await.unwrap();
+        assert!(select_post(&db, "en", SOON, &id).await.unwrap().is_none());
+        let back = select_edit(&db, "en", &id).await.unwrap().expect("exists");
         assert!(!back.published, "unpublishing keeps the queued date");
         assert_eq!(back.published_at, SOON);
 
-        delete_post(&db, id).await.unwrap();
+        delete_post(&db, &id).await.unwrap();
     }
 
     /// The same opt-in, for the catalog editor: creating a brand-new entity
@@ -1004,7 +1008,7 @@ mod tests {
             "Scratch Cookie"
         );
         db.query("DELETE type::record('cookie', $id)")
-            .bind(("id", id))
+            .bind(("id", id.to_string()))
             .await
             .unwrap()
             .check()
@@ -1040,7 +1044,7 @@ mod tests {
     #[test]
     fn card_row_reads_the_news_projection() {
         let mut o = Object::new();
-        o.insert("id", 12i64);
+        o.insert("id", "12".to_string());
         o.insert("title", "Launch");
         o.insert("summary", "s");
         o.insert("published", true);
@@ -1049,7 +1053,7 @@ mod tests {
         o.insert("author", "GingerBrave");
         let row = CardRow::from_value(Value::Object(o)).expect("decodes");
         let card = NewsCard::from(row);
-        assert_eq!(card.id, 12);
+        assert_eq!(card.id, "12");
         assert_eq!(card.title, "Launch");
         assert!(card.published);
         assert_eq!(card.date_label(0), "2026-10-16");
@@ -1092,7 +1096,7 @@ mod tests {
         assert_eq!(card.date_label(-480), "2026-10-15");
 
         let edit = NewsEdit {
-            id: 1,
+            id: "1".into(),
             published: true,
             published_at: LOCAL_DAY_START,
             featured: false,

@@ -163,7 +163,7 @@ pub(super) fn record_from(
     ep_special: i64,
     tags: Vec<String>,
     author: String,
-    user_id: i64,
+    user_id: String,
     expires_at: Option<i64>,
 ) -> Result<builds::NewBuild, &'static str> {
     Ok(builds::NewBuild {

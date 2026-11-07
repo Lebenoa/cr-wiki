@@ -60,25 +60,31 @@ struct ProfileUser {
 /// Signed in → own profile; otherwise the sign-in page, because the link
 /// that leads here only exists for signed-in visitors anyway.
 async fn me(ctx: Ctx) -> Response {
-    let Some(user_id) = ctx.user.as_ref().map(|user| user.id) else {
+    let Some(user_id) = ctx.user.as_ref().map(|user| user.id.clone()) else {
         return axum::response::Redirect::to("/login").into_response();
     };
-    profile(ctx, user_id).await
+    profile(ctx, &user_id).await
 }
 
 /// The `{id}` handler, `pub(crate)` so the DB-gated tests can drive it
 /// against a live server — the router test's unconnected handle cannot tell
 /// a missing row from an outage.
 pub(crate) async fn by_id(ctx: Ctx, Path(id): Path<String>) -> Response {
-    // a non-numeric id is a path no profile route could have minted —
-    // exactly what the 404 page is for
-    let Ok(numeric) = id.parse::<i64>() else {
+    // SurrealDB's default record ids are 20 lowercase alphanumeric chars
+    // (observed: `ym2jt6pq32n349v1hn1u`); anything else is a path no profile
+    // route could have minted — exactly what the 404 page is for, answered
+    // without touching the database
+    let well_formed = id.len() == 20
+        && id
+            .bytes()
+            .all(|b| b.is_ascii_lowercase() || b.is_ascii_digit());
+    if !well_formed {
         return errors::not_found(ctx);
-    };
-    profile(ctx, numeric).await
+    }
+    profile(ctx, &id).await
 }
 
-async fn profile(ctx: Ctx, id: i64) -> Response {
+async fn profile(ctx: Ctx, id: &str) -> Response {
     let state = crate::state::state();
     // a database outage is not a missing user: 500, not 404 — the 404 page
     // would read as "this account never existed" to a visitor and a crawler

@@ -207,8 +207,10 @@ async fn ensure_sequences(db: &Db) -> Result<()> {
         .iter()
         .filter(|s| s.editable())
         .map(|s| s.table())
-        .chain(["user", "build"])
     {
+        // user, build and news carry SurrealDB's random default record ids —
+        // their pages are public and must not be enumerable — so no sequence
+        // is defined for them
         // `writeln!` over `push_str(&format!..)`: nothing to reallocate twice
         let _ = writeln!(query, "DEFINE SEQUENCE IF NOT EXISTS {table}_seq START 1;");
     }
@@ -219,15 +221,11 @@ async fn ensure_sequences(db: &Db) -> Result<()> {
 /// Defines the news table and its id sequence. Created on connect rather
 /// than left to the seed: a database that predates the news surface still has
 /// to serve it, and `IF NOT EXISTS` leaves a seeded one alone. The table is
-/// schemaless like `user`, and the sequence starts past nothing because news
-/// rows are only ever created by the app.
+/// schemaless like `user`; news rows are only ever created by the app.
 async fn ensure_news_schema(db: &Db) -> Result<()> {
-    db.query(
-        "DEFINE TABLE IF NOT EXISTS news SCHEMALESS; \
-         DEFINE SEQUENCE IF NOT EXISTS news_seq START 1;",
-    )
-    .await?
-    .check()?;
+    db.query("DEFINE TABLE IF NOT EXISTS news SCHEMALESS;")
+        .await?
+        .check()?;
     Ok(())
 }
 

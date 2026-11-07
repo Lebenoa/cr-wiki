@@ -8,7 +8,9 @@ use super::{Db, Result};
 /// A user row, for the session layer.
 #[derive(Debug, Clone)]
 pub struct User {
-    pub id: i64,
+    /// the random record id SurrealDB minted at creation — opaque, so the
+    /// public profile URL cannot be enumerated
+    pub id: String,
     pub username: String,
     pub password: String,
     pub is_admin: bool,
@@ -42,7 +44,7 @@ fn user_from_row(r: UserRow) -> User {
 #[derive(Default, SurrealValue)]
 #[surreal(default)]
 struct UserRow {
-    id: i64,
+    id: String,
     username: String,
     password: String,
     is_admin: bool,
@@ -76,13 +78,12 @@ pub async fn create_user(
     email: Option<&str>,
     google_sub: Option<&str>,
 ) -> Result<Option<User>> {
+    // no explicit id: SurrealDB mints a random record id, which is the point
+    // — account ids must not be enumerable (the profile page is public)
     let mut res = db
-        .query(
-            "LET $id = sequence::nextval('user_seq'); \
-             CREATE type::record('user', $id) SET username = $u, password = $p, email = $e, \
+        .query("CREATE user SET username = $u, password = $p, email = $e, \
                  google_sub = $g, is_admin = false, created_at = time::unix(); \
-             RETURN $id;",
-        )
+             RETURN record::id(id) AS id;")
         .bind(("u", username.to_string()))
         .bind(("p", password_hash.to_string()))
         .bind(("e", email.map(str::to_string)))
@@ -97,7 +98,7 @@ pub async fn create_user(
         return Err(e);
     }
     let id = res
-        .take::<Option<i64>>(2)?
+        .take::<Option<String>>(0)?
         .ok_or_else(|| surrealdb::Error::internal("user insert returned no id".to_string()))?;
     Ok(Some(User {
         id,
@@ -164,12 +165,12 @@ pub async fn find_user_by_google_sub(db: &Db, sub: &str) -> Result<Option<User>>
 /// password account whose address Google verified into one that signs in
 /// either way. Written once, on the sign-in that discovered the match; the
 /// password stays as it was, so both routes in keep working.
-pub async fn link_user_google(db: &Db, user_id: i64, sub: &str) -> Result<()> {
+pub async fn link_user_google(db: &Db, user_id: &str, sub: &str) -> Result<()> {
     if sub.is_empty() {
         return Ok(());
     }
     db.query("UPDATE type::record('user', $u) SET google_sub = $s")
-        .bind(("u", user_id))
+        .bind(("u", user_id.to_string()))
         .bind(("s", sub.to_string()))
         .await?
         .check()?;
@@ -177,12 +178,12 @@ pub async fn link_user_google(db: &Db, user_id: i64, sub: &str) -> Result<()> {
 }
 
 /// Reads a user by its stable record id for post-reset security notifications.
-pub async fn find_user_by_id(db: &Db, user_id: i64) -> Result<Option<User>> {
+pub async fn find_user_by_id(db: &Db, user_id: &str) -> Result<Option<User>> {
     let mut rows: Vec<UserRow> = db
         .query(format!(
             "SELECT {USER_COLUMNS} FROM type::record('user', $u) LIMIT 1"
         ))
-        .bind(("u", user_id))
+        .bind(("u", user_id.to_string()))
         .await?
         .take(0)?;
     Ok(rows.pop().map(user_from_row))
@@ -191,9 +192,9 @@ pub async fn find_user_by_id(db: &Db, user_id: i64) -> Result<Option<User>> {
 /// Replaces or clears the recovery address on one account. An empty value
 /// removes the optional field; non-empty addresses are normalized by the
 /// caller and checked against the existing case-insensitive lookup.
-pub async fn set_user_email(db: &Db, user_id: i64, email: Option<&str>) -> Result<()> {
+pub async fn set_user_email(db: &Db, user_id: &str, email: Option<&str>) -> Result<()> {
     db.query("UPDATE type::record('user', $u) SET email = $e")
-        .bind(("u", user_id))
+        .bind(("u", user_id.to_string()))
         .bind(("e", email.map(str::to_string)))
         .await?
         .check()?;
@@ -204,13 +205,13 @@ pub async fn set_user_email(db: &Db, user_id: i64, email: Option<&str>) -> Resul
 /// lives here rather than in a counter: the row it reads is the one the last
 /// request wrote, so a restart cannot lose it and a second node cannot hold a
 /// different idea of it.
-pub async fn reset_requested_within(db: &Db, user_id: i64, window_secs: i64) -> Result<bool> {
+pub async fn reset_requested_within(db: &Db, user_id: &str, window_secs: i64) -> Result<bool> {
     let rows: Vec<bool> = db
         .query(
             "SELECT VALUE created_at > time::unix() - $w FROM password_reset \
               WHERE user = type::record('user', $u) LIMIT 1",
         )
-        .bind(("u", user_id))
+        .bind(("u", user_id.to_string()))
         .bind(("w", window_secs))
         .await?
         .take(0)?;
@@ -224,7 +225,7 @@ pub async fn reset_requested_within(db: &Db, user_id: i64, window_secs: i64) -> 
 /// The plaintext token is bound as a parameter and hashed by `SurrealDB`
 /// (`crypto::sha256`), so only the digest is ever written down — a leaked row
 /// cannot be turned back into a working link.
-pub async fn issue_reset_token(db: &Db, user_id: i64, token: &str, ttl_secs: i64) -> Result<()> {
+pub async fn issue_reset_token(db: &Db, user_id: &str, token: &str, ttl_secs: i64) -> Result<()> {
     db.query(
         "DELETE password_reset WHERE user = type::record('user', $u); \
          CREATE password_reset SET user = type::record('user', $u), \
@@ -232,7 +233,7 @@ pub async fn issue_reset_token(db: &Db, user_id: i64, token: &str, ttl_secs: i64
              created_at = time::unix(), \
              expires = time::unix() + $ttl;",
     )
-    .bind(("u", user_id))
+    .bind(("u", user_id.to_string()))
     .bind(("t", token.to_string()))
     .bind(("ttl", ttl_secs))
     .await?
@@ -262,7 +263,7 @@ pub async fn reset_token_pending(db: &Db, token: &str) -> Result<bool> {
 /// attempts cannot both win. An expired token matches nothing and the empty
 /// array maps to an empty list rather than an error — `record::id` refuses
 /// `NONE`, which is why the id is projected inside the map.
-pub async fn consume_reset_token(db: &Db, token: &str) -> Result<Option<i64>> {
+pub async fn consume_reset_token(db: &Db, token: &str) -> Result<Option<String>> {
     let mut res = db
         .query(
             "LET $rows = DELETE password_reset \
@@ -271,16 +272,16 @@ pub async fn consume_reset_token(db: &Db, token: &str) -> Result<Option<i64>> {
         )
         .bind(("t", token.to_string()))
         .await?;
-    let ids = res.take::<Vec<i64>>(1)?;
+    let ids = res.take::<Vec<String>>(1)?;
     Ok(ids.into_iter().next())
 }
 
 /// Overwrites a user's password hash. The caller revokes that user's sessions
 /// itself: a reset is the moment to assume the old password leaked, so every
 /// device signed in with it has to be signed out.
-pub async fn set_user_password(db: &Db, user_id: i64, password_hash: &str) -> Result<()> {
+pub async fn set_user_password(db: &Db, user_id: &str, password_hash: &str) -> Result<()> {
     db.query("UPDATE type::record('user', $u) SET password = $p")
-        .bind(("u", user_id))
+        .bind(("u", user_id.to_string()))
         .bind(("p", password_hash.to_string()))
         .await?
         .check()?;
@@ -297,7 +298,7 @@ mod tests {
     #[test]
     fn user_row_reads_credentials_and_flag() {
         let mut o = Object::new();
-        o.insert("id", 1i64);
+        o.insert("id", "1".to_string());
         o.insert("username", "admin");
         o.insert("password", "$argon2id$v=19$fake");
         o.insert("is_admin", true);

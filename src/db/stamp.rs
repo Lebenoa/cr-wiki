@@ -261,12 +261,19 @@ mod tests {
             published: true,
             published_at: now_unix(),
         };
-        let id = crate::news::insert_post(&db, "en", &draft, "tester", 0, crate::time::now_unix())
-            .await
-            .unwrap();
+        let id = crate::news::insert_post(
+            &db,
+            "en",
+            &draft,
+            "tester",
+            Some("u".into()),
+            crate::time::now_unix(),
+        )
+        .await
+        .unwrap();
         assert!(change_stamp(&db, &FEED_SOURCES).await.unwrap() > Some(1));
         assert!(change_stamp(&db, &sitemap_sources()).await.unwrap() > Some(1));
-        crate::news::delete_post(&db, id).await.unwrap();
+        crate::news::delete_post(&db, &id).await.unwrap();
         db.query("DELETE cookie; DELETE change_stamp;")
             .await
             .unwrap()

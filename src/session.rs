@@ -12,9 +12,9 @@ pub const SESSION_COOKIE: &str = "CRSESSID";
 
 #[derive(Debug, Clone)]
 pub struct SessionUser {
-    /// stamped onto a build once the planner lands (see PORTING.md)
-    #[allow(dead_code)]
-    pub id: i64,
+    /// stamped onto a build once the planner lands (see PORTING.md); the
+    /// random record id string, not a sequence number
+    pub id: String,
     pub username: String,
     pub is_admin: bool,
 }
@@ -82,7 +82,7 @@ impl Sessions {
     /// account menu's revoke-all action, not by logout: logout ends only
     /// the current session (`end`), so multi-device sign-in survives until
     /// the owner explicitly revokes everywhere.
-    pub fn end_all_for(&self, user_id: i64) {
+    pub fn end_all_for(&self, user_id: &str) {
         self.lock().retain(|_, e| e.user.id != user_id);
     }
 }
@@ -147,7 +147,7 @@ mod tests {
     fn sessions_round_trip() {
         let sessions = Sessions::new();
         let key = sessions.start(SessionUser {
-            id: 7,
+            id: "7".into(),
             username: "tester".into(),
             is_admin: true,
         });

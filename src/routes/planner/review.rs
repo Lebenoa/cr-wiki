@@ -22,20 +22,20 @@ pub struct VerifyForm {
 /// cannot vote, so there is nothing to rate-limit per identity.
 pub async fn verify(
     ctx: Ctx,
-    Path(id): Path<i64>,
+    Path(id): Path<String>,
     Form(form): Form<VerifyForm>,
 ) -> Result<Response, AppError> {
     let state = crate::state::state();
-    let Some(user) = ctx.user.as_ref().map(|u| u.id) else {
+    let Some(user) = ctx.user.as_ref().map(|u| u.id.clone()) else {
         return Ok((StatusCode::FORBIDDEN, "sign in to verify").into_response());
     };
-    let exists = builds::select_build(&state.db, &ctx.lang, id).await?;
+    let exists = builds::select_build(&state.db, &ctx.lang, &id).await?;
     if exists.is_none() {
         return Ok(errors::not_found(ctx));
     }
 
     let ok = form.verified.as_deref() == Some("1");
     let reason = form.reason.clone().unwrap_or_default();
-    builds::upsert_review(&state.db, id, user, ok, &reason).await?;
+    builds::upsert_review(&state.db, &id, &user, ok, &reason).await?;
     Ok(Redirect::to(&format!("/builds/{id}")).into_response())
 }

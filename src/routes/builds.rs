@@ -172,14 +172,14 @@ pub async fn list(ctx: Ctx, q: Query<CommonQuery>) -> Result<Html<String>, AppEr
     ))
 }
 
-pub async fn show(ctx: Ctx, Path(id): Path<i64>) -> Result<Response, AppError> {
+pub async fn show(ctx: Ctx, Path(id): Path<String>) -> Result<Response, AppError> {
     let state = crate::state::state();
-    let found = builds::select_build(&state.db, &ctx.lang, id).await?;
+    let found = builds::select_build(&state.db, &ctx.lang, &id).await?;
 
     let Some(build) = found else {
         return Ok(super::errors::not_found(ctx));
     };
-    let (verified, issues) = builds::review_counts(&state.db, id).await?;
+    let (verified, issues) = builds::review_counts(&state.db, &id).await?;
     let mut memo = crate::richtext::LinkCache::new();
     let description_html =
         crate::richtext::render_with(&state.db, &ctx.lang, &build.description, &mut memo, None)

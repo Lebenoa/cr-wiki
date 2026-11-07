@@ -513,7 +513,7 @@ pub async fn revoke_sessions(headers: HeaderMap) -> Response {
     let state = crate::state::state();
     if let Some(key) = crate::ctx::cookie(&headers, SESSION_COOKIE) {
         if let Some(user) = state.sessions.get(&key) {
-            state.sessions.end_all_for(user.id);
+            state.sessions.end_all_for(&user.id);
         }
     }
     let mut res = Redirect::to("/").into_response();
