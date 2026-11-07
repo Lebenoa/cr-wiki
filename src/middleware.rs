@@ -48,6 +48,31 @@ pub async fn context(mut req: Request, next: Next) -> Response {
 /// widget's script, iframe and token requests all live on
 /// `challenges.cloudflare.com`; gate those and auth fails closed in
 /// release builds, where the widget is actually enforced).
+///
+/// When `[images]` is configured, its origin joins `img-src`: the news
+/// artwork lives on the image host, and a policy without it blocks every
+/// banner (the browser console names exactly this violation). The origin is
+/// config-derived, so the policy is built per state rather than static.
+fn csp() -> String {
+    let mut img_src = "img-src 'self' data: https://challenges.cloudflare.com".to_string();
+    let images = crate::state::state().cfg.images.origin();
+    if !images.is_empty() {
+        img_src.push(' ');
+        img_src.push_str(images);
+    }
+    format!(
+        "default-src 'self'; \
+         script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com; \
+         style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; \
+         {img_src}; \
+         font-src 'self' https://fonts.gstatic.com; \
+         connect-src 'self' https://challenges.cloudflare.com; \
+         frame-src https://challenges.cloudflare.com; \
+         object-src 'none'; base-uri 'self'; \
+         form-action 'self'; frame-ancestors 'none'",
+    )
+}
+
 pub async fn security_headers(req: Request, next: Next) -> Response {
     let mut res = next.run(req).await;
     let headers = res.headers_mut();
@@ -63,20 +88,9 @@ pub async fn security_headers(req: Request, next: Next) -> Response {
         header::REFERRER_POLICY,
         HeaderValue::from_static("strict-origin-when-cross-origin"),
     );
-    headers.insert(
-        header::CONTENT_SECURITY_POLICY,
-        HeaderValue::from_static(
-            "default-src 'self'; \
-             script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com; \
-             style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; \
-             img-src 'self' data: https://challenges.cloudflare.com; \
-             font-src 'self' https://fonts.gstatic.com; \
-             connect-src 'self' https://challenges.cloudflare.com; \
-             frame-src https://challenges.cloudflare.com; \
-             object-src 'none'; base-uri 'self'; \
-             form-action 'self'; frame-ancestors 'none'",
-        ),
-    );
+    if let Ok(v) = HeaderValue::from_str(&csp()) {
+        headers.insert(header::CONTENT_SECURITY_POLICY, v);
+    }
     res
 }
 
