@@ -33,8 +33,12 @@ endblock %}
         </label>
         <label class="flex flex-col gap-1 text-xs font-label uppercase text-foreground-muted">
             {{ ctx.l.t("news_thumbnail_label") }}
-            <input type="text" name="thumbnail" value="{{ thumbnail }}" class="filter-input w-full"
-                placeholder="banner.png" />
+            <div class="flex flex-wrap items-center gap-2">
+                <input type="text" name="thumbnail" value="{{ thumbnail }}" class="filter-input flex-1 min-w-40"
+                    placeholder="banner.png" />
+                <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" data-thumbnail-upload
+                    class="text-xs" />
+            </div>
             <span class="normal-case text-xs text-foreground-muted">{{ ctx.l.t("news_thumbnail_hint") }}</span>
         </label>
         <div class="flex flex-col gap-1">
@@ -68,4 +72,5 @@ endblock %}
     </form>
 </section>
 <script src="/static/js/richtext.js" defer></script>
+<script src="/static/js/news_thumbnail.js" defer></script>
 {% endblock %}

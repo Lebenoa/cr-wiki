@@ -14,6 +14,7 @@ pub struct Config {
     pub ratelimit: RateLimit,
     pub email: Email,
     pub google: Google,
+    pub images: ImageHost,
 }
 
 impl Default for Config {
@@ -27,7 +28,32 @@ impl Default for Config {
             ratelimit: RateLimit::default(),
             email: Email::default(),
             google: Google::default(),
+            images: ImageHost::default(),
         }
+    }
+}
+
+/// The external image host (image.lebenoa.com): a `discord-images` service
+/// that stores uploads as Discord attachments and serves them back through
+/// its `/proxy/` route. Unconfigured — `base_url` empty — means the wiki
+/// keeps storing images on its own disk, and every remote-upload caller
+/// treats that as "feature off" rather than an error.
+#[derive(Debug, Clone, Default, Deserialize)]
+#[serde(default)]
+pub struct ImageHost {
+    /// Absolute origin of the image host, e.g. `https://image.lebenoa.com`.
+    /// No trailing slash: the client builds URLs by appending paths.
+    pub base_url: String,
+}
+
+impl ImageHost {
+    pub fn is_configured(&self) -> bool {
+        !self.base_url.trim().is_empty()
+    }
+
+    /// The origin without a trailing slash, ready to append a path.
+    pub fn origin(&self) -> &str {
+        self.base_url.trim().trim_end_matches('/')
     }
 }
 
@@ -228,6 +254,18 @@ impl Config {
             })
         {
             errors.push("[email] site_url must be an absolute http:// or https:// URL".to_string());
+        }
+        if !self.images.base_url.is_empty()
+            && self
+                .images
+                .base_url
+                .parse::<reqwest::Url>()
+                .map_or(true, |url| {
+                    !matches!(url.scheme(), "http" | "https") || url.host_str().is_none()
+                })
+        {
+            errors
+                .push("[images] base_url must be an absolute http:// or https:// URL".to_string());
         }
         let google = &self.google;
         let google_partial = !google.client_id.is_empty() || !google.client_secret.is_empty();

@@ -1190,6 +1190,7 @@
 .min-h-screen{min-height:100vh;}
 .min-w-0{min-width:calc(var(--spacing) * 0);}
 .min-w-4{min-width:calc(var(--spacing) * 4);}
+.min-w-40{min-width:calc(var(--spacing) * 40);}
 .min-w-max{min-width:max-content;}
 .w-\[240px\]{width:240px;}
 .w-\[3\.3rem\]{width:3.3rem;}

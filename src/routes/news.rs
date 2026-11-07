@@ -12,15 +12,18 @@
 //! and the list's next page are lazy htmx fragments.
 
 use askama::Template;
-use axum::extract::{Path, Query};
-use axum::http::HeaderMap;
+use axum::extract::{DefaultBodyLimit, Multipart, Path, Query};
+use axum::http::{HeaderMap, StatusCode};
 use axum::response::{Html, IntoResponse, Redirect, Response};
 use axum::routing::{get, post};
 use axum::Form;
+use axum::Json;
 use axum::Router;
 use serde::Deserialize;
+use serde_json::json;
 
 use crate::ctx::Ctx;
+use crate::imagehost;
 use crate::news::{self, NewsCard, NewsDraft, NewsEdit, NewsFeedItem};
 use crate::time::now_unix;
 
@@ -58,6 +61,12 @@ pub fn routes() -> Router {
         .route("/admin/news/{id}/edit", get(edit_form).post(update))
         .route("/admin/news/{id}/delete", post(delete))
         .route("/admin/news/{id}/publish", post(set_published))
+        .route(
+            "/admin/news/upload-thumbnail",
+            post(upload_thumbnail).layer(DefaultBodyLimit::max(
+                imagehost::MAX_BYTES.saturating_add(64 * 1024),
+            )),
+        )
 }
 
 #[derive(Template)]
@@ -108,11 +117,20 @@ struct NewsDetailPage {
 }
 
 impl NewsDetailPage {
-    /// The /static/img/news/ URL of this locale's thumbnail, or None — the
-    /// image is per-locale artwork, never fallen back to another language's.
+    /// This locale's thumbnail, or None — the image is per-locale artwork,
+    /// never fallen back to another language's. The value is a bare name:
+    /// against the image host's /proxy/ route when `[images]` is configured
+    /// (uploads live there), else the local /static/img/news/ directory the
+    /// pre-host thumbnails were written to.
     fn thumbnail_src(&self) -> Option<String> {
         let name = self.post.thumbnail.trim();
-        (!name.is_empty()).then(|| format!("/static/img/news/{name}"))
+        (!name.is_empty()).then(|| {
+            if crate::state::state().cfg.images.is_configured() {
+                imagehost::served_url(crate::state::state().cfg.images.origin(), name)
+            } else {
+                format!("/static/img/news/{name}")
+            }
+        })
     }
 
     fn description(&self) -> String {
@@ -717,6 +735,106 @@ pub async fn set_published(
         tracing::error!("news publish toggle {id}: {e}");
     }
     Redirect::to("/admin/news").into_response()
+}
+
+/// `POST /admin/news/upload-thumbnail` — the authoring form's file picker
+/// uploads here; the bytes are forwarded to the image host
+/// (`[images] base_url`) and the returned vanity drops into the form's
+/// `thumbnail` field, which the detail page already resolves against the
+/// host. Answers JSON so the page never reloads mid-edit.
+///
+/// When the image host is not configured (`[images] base_url` empty) the
+/// endpoint answers 404 — the form's file input is the only caller and
+/// templates show it only when the host is up.
+pub async fn upload_thumbnail(ctx: Ctx, mut form: Multipart) -> Response {
+    if !ctx.is_admin() {
+        return (StatusCode::NOT_FOUND, "not found").into_response();
+    }
+    while let Ok(Some(field)) = form.next_field().await {
+        if field.name() != Some("image") {
+            continue;
+        }
+        let content_type = field.content_type().unwrap_or_default().to_string();
+        let Some(ext) = crate::upload::extension_for(&content_type) else {
+            return (
+                StatusCode::UNSUPPORTED_MEDIA_TYPE,
+                Json(json!({ "error": "unsupported image type" })),
+            )
+                .into_response();
+        };
+        // the name comes off the field before bytes() consumes it
+        let raw_name = field.file_name().unwrap_or("").to_string();
+        let Ok(bytes) = field.bytes().await else {
+            return (
+                StatusCode::BAD_REQUEST,
+                Json(json!({ "error": "could not read upload" })),
+            )
+                .into_response();
+        };
+        if bytes.is_empty() || bytes.len() > imagehost::MAX_BYTES {
+            return (
+                StatusCode::PAYLOAD_TOO_LARGE,
+                Json(json!({ "error": "image too large" })),
+            )
+                .into_response();
+        }
+        // the declared Content-Type is client input: verify the bytes are
+        // actually the image format they claim before shipping them upstream
+        if crate::upload::sniff_image(&bytes) != Some(ext) {
+            return (
+                StatusCode::UNSUPPORTED_MEDIA_TYPE,
+                Json(json!({ "error": "file content does not match its type" })),
+            )
+                .into_response();
+        }
+
+        // the vanity is the sanitized submitted name, or the upload's unix
+        // time when none was given — same rule the host itself applies to
+        // unnamed uploads (message id), just friendlier
+        let stem = crate::upload::safe_stem(&raw_name);
+        let vanity = if stem.is_empty() {
+            format!("news-{}", now_unix())
+        } else {
+            format!("{stem}-{}", now_unix())
+        };
+
+        match imagehost::upload(&vanity, &content_type, &bytes).await {
+            Ok(url) => {
+                return Json(json!({
+                    "image": vanity,
+                    "url": url,
+                }))
+                .into_response();
+            }
+            Err(imagehost::UploadError::NotConfigured) => {
+                return (
+                    StatusCode::NOT_FOUND,
+                    Json(json!({ "error": "image host not configured" })),
+                )
+                    .into_response();
+            }
+            Err(imagehost::UploadError::TooLarge) => {
+                return (
+                    StatusCode::PAYLOAD_TOO_LARGE,
+                    Json(json!({ "error": "image too large" })),
+                )
+                    .into_response();
+            }
+            Err(e) => {
+                tracing::warn!("news thumbnail upload: {e}");
+                return (
+                    StatusCode::BAD_GATEWAY,
+                    Json(json!({ "error": "image host refused the upload" })),
+                )
+                    .into_response();
+            }
+        }
+    }
+    (
+        StatusCode::BAD_REQUEST,
+        Json(json!({ "error": "no image field" })),
+    )
+        .into_response()
 }
 
 pub async fn delete(ctx: Ctx, Path(id): Path<i64>) -> Response {

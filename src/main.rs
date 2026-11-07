@@ -11,6 +11,7 @@ mod db;
 mod feed;
 mod grade;
 mod i18n;
+mod imagehost;
 mod mail;
 mod middleware;
 mod news;
