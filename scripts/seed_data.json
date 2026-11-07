@@ -819,12 +819,12 @@
    "cookie_translation_id": 22,
    "owner_id": 11,
    "lang": "th",
-   "name": "Skater Cookie",
-   "abilities": "Faster base speed (up to 35%)",
-   "description": "The secret to Skater Cookie's speed and boarding skills lies in the special elasticity of his Cat Tail Candy Cane Board. Inseparable from his 2009 limited edition board, he even sleeps on it too! Not everyone can handle Skater Cookie's speed, but if you dare, prepare for a sweet ride. Warning: Once you get a taste of Skater Cookie's speed, other Cookies may feel a bit slow.",
+   "name": "คุกกี้สเก็ตบอร์ด",
+   "abilities": "ความเร็วพื้นฐานเร็วขึ้น (สูงสุดถึง 35%)",
+   "description": "ความลับของความเร็วและฝีเท้าสเก็ตบอร์ดของคุกกี้สเก็ตบอร์ดอยู่ที่ความยืดหยุ่นพิเศษของกระดานเท้าแคนดีเคนหางแมว คู่หูติดกันมาตั้งแต่กระดานรุ่นลิมิเต็ดปี 2009 จนถึงกับนอนหลับบนมันด้วย! ไม่ใช่ทุกคนจะรับความเร็วของคุกกี้สเก็ตบอร์ดได้ ถ้ากล้าก็เตรียมตัวพบกับการโต้คลื่นอันหวานฉ่ำเถอะ คำเตือน: พอได้ลิ้มรสความเร็วของคุกกี้สเก็ตบอร์ดแล้ว คุกกี้อื่นจะดูช้าไปเพียบ",
    "power_plus": "",
    "power_plus_requirement": "",
-   "unlock_goal": "Reach 300,000 points"
+   "unlock_goal": "ทำคะแนนถึง 300,000 แต้ม"
   },
   {
    "cookie_translation_id": 23,
@@ -1589,12 +1589,12 @@
    "cookie_translation_id": 92,
    "owner_id": 46,
    "lang": "th",
-   "name": "Red Pepper Cookie",
-   "abilities": "Small chance of crushing obstacles on collision instead of taking damage. When his rage gauge is filled, he's on fire and crushes all obstacles. Revives out of sheer willpower after running out of HP once. Earns extra Crush Points. (Leveling up increases the amount of HP on Revive.)",
-   "description": "Whole chunks of spicy peppers were added to the dough to make Red Pepper Cookie. His biggest desire is to become the toughest Muay Thai fighter in the world. To do so, Red Pepper can spend days and nights training in the most unthinkable conditions. He even refused to leave the oven to make his body hard as stone! He's now got quite a tan, which goes perfectly with his fiery charisma. Red Pepper Cookie considers his hairstyle a symbol of his strong will and dedication, so he has no plans to change it.",
+   "name": "คุกกี้พริกแดง",
+   "abilities": "มีโอกาสเล็กน้อยที่จะบดสิ่งกีดขวางเมื่อปะทะแทนการสูญเสียพลังชีวิต เมื่อมาตรวัดความเดือดเต็ม เขาจะร้อนแรงขึ้นและบดสิ่งกีดขวางได้ทุกชิ้น ฟื้นคืนชีพด้วยพลังเจตจำนงสุดประลัยหลังพลังชีวิตหมดหนึ่งครั้ง ได้คะแนนบดพิเศษ (เลเวลที่สูงขึ้นจะเพิ่มพลังชีวิตตอนฟื้นคืนชีพ)",
+   "description": "คุกกี้พริกแดงถือกำเนิดจากการคลุกเคล้าเนื้อแป้งด้วยชิ้นพริกเผ็ดร้อนทั้งชิ้น ความปรารถนาอันยิ่งใหญ่ที่สุดของเขาคือการเป็นนักมวยไทยที่ฝีมือร้ายกาจที่สุดในโลก เพื่อเป้าหมายนี้ เขาขอฝึกฝนกลางวันกลางคืนในสภาพที่ใคร ๆ ก็คิดไม่ถึง เขาถึงกับปฏิเสธที่จะออกจากเตาเพื่อให้ร่างกายแข็งเกรียมเหมือนศิลา! ตอนนี้ผิวของเขากลายเป็นสีแทนอย่างเห็นได้ชัด กลมกลืนไปกับเสน่ห์เพลิงระอุของเขา คุกกี้พริกแดงถือว่าทรงผมของตนเป็นสัญลักษณ์ของเจตจำนงและความมุ่งมั่นอันแรงกล้า จึงไม่มีแผนจะเปลี่ยนมันเป็นอย่างอื่น",
    "power_plus": "",
    "power_plus_requirement": "",
-   "unlock_goal": "Have 30 S Treasures"
+   "unlock_goal": "มี สมบัติอันดับ S 30 ชิ้น"
   },
   {
    "cookie_translation_id": 93,
@@ -3438,9 +3438,9 @@
    "pet_translation_id": 12,
    "pet_id": 6,
    "lang": "th",
-   "name": "Merry Hat",
-   "abilities": "Periodically creates a Silver Coin worth 5 regular Coins.",
-   "description": "Contrary to the rumors, Merry Hat can actually be found surprisingly easily during the busy holiday season. Just visit while the owner's distracted and quietly take one before anyone notices."
+   "name": "หมวกแห่งความยินดี",
+   "abilities": "สร้างเหรียญเงิน (มูลค่า 5 เหรียญธรรมดา) เป็นระยะ",
+   "description": "ไม่ว่าข่าวลือจะว่าอย่างไร จริง ๆ แล้วหาหมวกแห่งความยินดีเจอได้ง่ายอย่างน่าประหลาดใจในช่วงเทศกาลที่คึกคัก เพียงแค่แวะมาตอนเจ้าของไม่อยู่ในความสนใจ แล้วหยิบหมวกออกไปเงียบ ๆ ก่อนที่ใครจะทันสังเกต"
   },
   {
    "pet_translation_id": 13,
@@ -3550,9 +3550,9 @@
    "pet_translation_id": 26,
    "pet_id": 13,
    "lang": "th",
-   "name": "Giggle Bomb",
-   "abilities": "Periodically charges ahead to cause explosions that turn obstacles into Coins.",
-   "description": "At first glance, it just looks like an ordinary black cannonball. But once [[cookie:16]]'s bomb gets fired up enough, it blasts straight through any obstacles in the way. The way it scrunches up its face before exploding does look suspiciously like it's about to fart... though honestly, the result is just as satisfying."
+   "name": "ระเบิดหัวเราะ",
+   "abilities": "พุ่งไปข้างหน้าเป็นระยะเพื่อจุดระเบิดเปลี่ยนสิ่งกีดขวางให้เป็นเหรียญ",
+   "description": "ตามแรกเห็นก็ดูเหมือนลูกกระสุนดำธรรมดา ๆ นั่นเอง แต่พอระเบิดของ [[cookie:16]]ถูกจุดฟืนจนร้อนขึ้นพอตัว มันก็พุ่งทะลุสิ่งกีดขวางใด ๆ ที่ขวางทาง ท่าที่มันหุบหน้าก่อนระเบิดนั้นดูเหมือนกำลังจะท้องเสียเหลือเกิน... จริง ๆ แล้วผลลัพธ์ก็ฟินไม่แพ้กัน"
   },
   {
    "pet_translation_id": 27,
@@ -3662,9 +3662,9 @@
    "pet_translation_id": 40,
    "pet_id": 20,
    "lang": "th",
-   "name": "Wishing Star",
-   "abilities": "Revives the Cookie upon collapse.",
-   "description": "[[cookie:12]] somehow arrived from the oven already holding this mysterious little thing. How? Why? No one seems to know..."
+   "name": "ดาวที่ปรารถนา",
+   "abilities": "ชุบชีวิตคุกกี้เมื่อล้มลง",
+   "description": "[[cookie:12]]บังเอิญเดินออกมาจากเตาพร้อมสิ่งลี้ลับเล็ก ๆ ชิ้นนี้ตั้งแต่แรก อย่างไร? เพราะอะไร? ไม่มีใครทราบ..."
   },
   {
    "pet_translation_id": 41,
@@ -3678,9 +3678,9 @@
    "pet_translation_id": 42,
    "pet_id": 21,
    "lang": "th",
-   "name": "Dumbbell Twins",
-   "abilities": "Periodically creates a Giant Jelly.",
-   "description": "These dumbbells were twins from the very beginning—and they're even used as ingredients for creating that signature [[cookie:15]] strength. Thanks to the Giant Jellies they create, even ordinary Cookies can enjoy a little taste of muscles themselves."
+   "name": "ฝาแฝดดัมเบล",
+   "abilities": "สร้างเยลลี่ยักษ์เป็นระยะ",
+   "description": "ดัมเบลคู่นี้เป็นฝาแฝดกันมาตั้งแต่แรก และยังถูกใช้เป็นส่วนผสมสร้างพลังอันเลื่องชื่อของ [[cookie:15]]ด้วย ด้วยเยลลี่ยักษ์ที่มันสร้างให้ คุกกี้ธรรมดา ๆ ก็ลิ้มรสกล้ามเนื้อได้บ้างตามกัน"
   },
   {
    "pet_translation_id": 43,
@@ -3790,9 +3790,9 @@
    "pet_translation_id": 56,
    "pet_id": 28,
    "lang": "th",
-   "name": "Windy",
-   "abilities": "Moves ahead to gather Jellies. (Cannot gather Jellies unaffected by magnetic effects.)",
-   "description": "A playful little breeze that drifts through the riverside fields on clear sunny days. Carrying just a hint of cool moisture, it leaves anything it touches feeling wonderfully refreshed. It's hard to spot with your eyes alone, though—sometimes you have to close them and simply feel it."
+   "name": "สายลมเมาะ",
+   "abilities": "เคลื่อนไปข้างหน้าเพื่อเก็บเยลลี่ (ไม่เก็บเยลลี่ที่ไม่ได้รับผลจากสนามแม่เหล็ก)",
+   "description": "สายลมเล่นซนน้อย ๆ ที่ล่องลอยผ่านทุ่งริมน้ำในวันแดดใส เชื้อความเย็นชื้นบาง ๆ มากับตัว สิ่งใดที่มันสัมผัสจะรู้สึกสดชื่นเย็นเยิ้ม แต่หาด้วยตาเปล่ายากนัก บางทีต้องหลับตาลงแล้วใช้ใจสัมผัสแทน"
   },
   {
    "pet_translation_id": 57,
@@ -3902,9 +3902,9 @@
    "pet_translation_id": 70,
    "pet_id": 35,
    "lang": "th",
-   "name": "Yule Log Cake",
-   "abilities": "Periodically creates an Alphabet Giant Jelly that grants Giant and one random missing Bonus Time Alphabet Jelly.",
-   "description": "A tree with branches made of chocolate, found only in the Witch's Forest, gets sweeter every winter and always stays a bit frozen. A piece of the chocolate branch makes the world's best Christmas roll cake!"
+   "name": "เค้กยูลอก",
+   "abilities": "สร้างเยลลี่อักษรยักษ์ที่ให้สถานะยักษ์และเยลลี่อักษร Bonus Time ที่ขาดหายไปหนึ่งแบบสุ่มเป็นระยะ",
+   "description": "ต้นไม้ที่มีกิ่งก้านเป็นช็อกโกแลต พบได้เฉพาะในป่าแม่มด ยิ่งผ่านฤดูหนาวไปทุกปีก็ยิ่งหวานขึ้น และยังคงแข็งตัวเย็นเยิบเสมอ เพียงแง้มช็อกโกแลตจากกิ่งไม้นี้ก็ทำเค้กยูลอกคริสต์มาสที่อร่อยที่สุดในโลกได้!"
   },
   {
    "pet_translation_id": 71,
@@ -4334,9 +4334,9 @@
    "pet_translation_id": 124,
    "pet_id": 62,
    "lang": "th",
-   "name": "Platinum Drop",
-   "abilities": "Periodically creates a Platinum Coin worth 70 Coins. Grants 1 Pit Lift.",
-   "description": "Once upon a time, a shiny meteorite fell from the sky, and from it emerged an incredibly precious Pet of pure platinum. Platinum Drop will definitely make you happy and rich. Or vice versa!"
+   "name": "แพลทินัมดรอป",
+   "abilities": "สร้างเหรียญแพลทินัม (มูลค่า 70 เหรียญ) เป็นระยะ ให้ยกขึ้นจากหลุม 1 ครั้ง",
+   "description": "กาลครั้งหนึ่งนานมาแล้ว อุกกาบาตเปล่งประกายได้ตกจากฟากฟ้า และสัตว์เลี้ยงล้ำค่าที่สุดที่เคยมี ก็ปรากฏตัวออกมาจากมันโดยเป็นแพลทินัมบริสุทธิ์ แพลทินัมดรอปจะทำให้คุณมีความสุขและร่ำรวยอย่างแน่นอน หรือไม่ก็กลับกัน!"
   },
   {
    "pet_translation_id": 125,
@@ -4382,9 +4382,9 @@
    "pet_translation_id": 130,
    "pet_id": 65,
    "lang": "th",
-   "name": "Wave Drop",
-   "abilities": "Periodically creates a Frozen Bear Jelly Party Potion.",
-   "description": "At the top of the Tower of Frozen Waves, a drop fell from the frozen ice. This Pet gives new strength to the Cookies with its mystical and clear aura."
+   "name": "เวฟดรอป",
+   "abilities": "สร้างน้ำยาปาร์ตี้เยลลี่หมีเยือกแข็งเป็นระยะ",
+   "description": "บนยอดหอคอยคลื่นเยือกแข็ง หยดน้ำหนึ่งหยดได้หลุดร่วงจากน้ำแข็ง สัตว์เลี้ยงนี้มอบพลังใหม่แก่เหล่าคุกกี้ด้วยออร่าอันแจ่มใสและลี้ลับ"
   },
   {
    "pet_translation_id": 131,
@@ -4414,9 +4414,9 @@
    "pet_translation_id": 134,
    "pet_id": 67,
    "lang": "th",
-   "name": "Uncooling Teacup",
-   "abilities": "Grants Crush Points when crushing obstacles. Slows HP drain.",
-   "description": "This pet is a very special gift received by [[cookie:56]]. One well-known story claims that before his tea cools, [[cookie:56]] can quickly destroy every obstacle that lies in his path. But, shhh... the secret to this trick is that this pet is self-heating."
+   "name": "ถ้วยชาอุ่นร้อน",
+   "abilities": "ให้คะแนนบดเมื่อบดสิ่งกีดขวาง และพลังชีวิตลดลงช้าลง",
+   "description": "สัตว์เลี้ยงนี้เป็นของขวัญพิเศษที่ [[cookie:56]]ได้รับ นิทานที่เล่าขานกันว่า ก่อนที่ชาของ [[cookie:56]]จะเย็นลง เขาสามารถบดสิ่งกีดขวางทุกชิ้นที่ขวางทางได้อย่างรวดเร็ว แต่ชชช... ความลับของท่านี้คือสัตว์เลี้ยงตัวนี้ให้ความร้อนกับตัวเองได้"
   },
   {
    "pet_translation_id": 135,
@@ -4574,9 +4574,9 @@
    "pet_translation_id": 154,
    "pet_id": 77,
    "lang": "th",
-   "name": "Banana Lion",
-   "abilities": "Periodically fires a Banana Face to destroy obstacles and create Coins along its trajectory.",
-   "description": "The star attraction of the circus is, without a doubt, Banana Lion's famous \"sawing in half\" act! Though the more you watch it... the less it feels like an illusion."
+   "name": "ไลออนกล้วย",
+   "abilities": "ยิงหน้ากล้วยเป็นระยะเพื่อทำลายสิ่งกีดขวางและสร้างเหรียญตลอดเส้นทาง",
+   "description": "แสตมดวงดาวของคณะละครสัตว์โดยไม่ต้องสงสัย คือโชว์เลื่องชื่อของไลออนกล้วย การเลื่อยตัวเป็นสองครึ่ง! แต่ยิ่งดูก็ยิ่งรู้สึก... ว่ามันไม่เหมือนมายากลเท่าไรนัก"
   },
   {
    "pet_translation_id": 155,
@@ -4622,9 +4622,9 @@
    "pet_translation_id": 160,
    "pet_id": 80,
    "lang": "th",
-   "name": "Tiny Cake Hound",
-   "abilities": "Grants Speed Points based on running speed and periodically creates a Strawberry Potion.",
-   "description": "A Cake Hound that is so energetic that no one has ever seen its feet touch the ground."
+   "name": "หมาไห้เค้กจิ๋ว",
+   "abilities": "ให้คะแนนความเร็วตามความเร็วในการวิ่ง และสร้างน้ำยาสตรอเบอร์รีเป็นระยะ",
+   "description": "เจ้าหมาไห้เค้กที่เต็มเปี่ยมด้วยพลังจนไม่มีใครเคยเห็นอุ้งเท้าแตะพื้นเลยสักครั้ง"
   },
   {
    "pet_translation_id": 161,
@@ -4638,9 +4638,9 @@
    "pet_translation_id": 162,
    "pet_id": 81,
    "lang": "th",
-   "name": "Tiny Tabla",
-   "abilities": "Periodically moves ahead to crush obstacles and turn nearby Jellies into Honey Bun Jellies. Slows HP drain while the skill is active.",
-   "description": "[[cookie:72]] met this little drum at her first Holi, and the two have been together ever since. Tiny Tabla loves performing with [[cookie:72]] more than anything in the world!"
+   "name": "ตะกร้อจิ๋ว",
+   "abilities": "เคลื่อนไปข้างหน้าเป็นระยะเพื่อบดสิ่งกีดขวางและเปลี่ยนเยลลี่รอบ ๆ ให้เป็นเยลลี่ฮันนี่บัน พลังชีวิตลดลงช้าลงขณะใช้ทักษะ",
+   "description": "[[cookie:72]]ได้พบกับกลองตัวน้อยนี้ในวันโหลครั้งแรก และทั้งสองก็อยู่ด้วยกันมาตั้งแต่นั้น ตะกร้อจิ๋วจะรื่นเริงที่สุดเมื่อได้แสดงโชว์ร่วมกับ [[cookie:72]]!"
   },
   {
    "pet_translation_id": 163,
@@ -4814,9 +4814,9 @@
    "pet_translation_id": 184,
    "pet_id": 92,
    "lang": "th",
-   "name": "Chronicles of Run",
-   "abilities": "Periodically records a journal and grants bonus points based on the number of points earned. Then creates a Yellow Bear Jelly Party and restores HP. Grants one more score when the Cookie collapses and reveals the top 5 records of the run.",
-   "description": "Chronicles of Run always dreamed of recording the tales of the Cookies it admired most—and as fate would have it, it found [[cookie:83]]. Ever since, it's stayed faithfully by the lonely hero's side, quietly looking after the feelings no one else notices. And because the world deserves to know every step of [[cookie:83]]'s legendary journey, Chronicles of Run proudly reads its finest entries aloud for all to hear."
+   "name": "พงศาวดารคุกกี้",
+   "abilities": "บันทึกสมุดจดเป็นระยะและให้คะแนนพิเศษตามจำนวนคะแนนที่ทำได้ จากนั้นสร้างปาร์ตี้เยลลี่หมีเหลืองและฟื้นฟูพลังชีวิต ให้คะแนนเพิ่มเมื่อคุกกี้ล้มลง และเผย 5 สถิติสูงสุดของการวิ่ง",
+   "description": "พงศาวดารคุกกี้ฝันว่าได้บันทึกเรื่องราวของเหล่าคุกกี้ที่มันชื่นชมมากที่สุด และโชคชะตาก็พาให้มันพบกับ [[cookie:83]] นับตั้งแต่นั้น มันจึงอยู่เคียงข้างวีรบุรุษผู้โดดเดี่ยวอย่างภักดี คอยเฝ้ามองความรู้สึกที่ไม่มีใครสังเกตเห็นอย่างเงียบ ๆ และเพราะโลกสมควรได้รู้ทุกก้าวของการเดินทางอันเลื่องชื่อของ [[cookie:83]] พงศาวดารคุกกี้จึงภาคภูมิอ่านสมุดบันทึกช่วงเจริญสุดของมันให้ทุกคนได้ฟัง"
   },
   {
    "pet_translation_id": 185,
@@ -4910,9 +4910,9 @@
    "pet_translation_id": 196,
    "pet_id": 98,
    "lang": "th",
-   "name": "White Dragon Horsie",
-   "abilities": "Periodically changes into dragon form and charges ahead to turn Jellies into Pine Powder Jellies and restore HP.",
-   "description": "Originally raised as the third son of the Dragon King, he was turned into a dragon horse as punishment for a transgression. [[cookie:90]] took pity on it bouncing around on its curled tail and gave it pine needle wings. Every once in a while, the seal is broken and it regains its original dragon form for a little while, but quickly reverts to its cuter self."
+   "name": "มังกรม้าขาว",
+   "abilities": "เปลี่ยนร่างเป็นมังกรเป็นระยะแล้วพุ่งไปข้างหน้าเปลี่ยนเยลลี่ให้เป็นเยลลี่ผงสนและฟื้นฟูพลังชีวิต",
+   "description": "เดิมทีถูกเลี้ยงดูเป็นบุตรองค์ที่สามของราชามังกร ก่อนถูกลงทัณฑ์ให้กลายเป็นม้ามังกร [[cookie:90]]สงสารมันที่เด้งดึ๋งไปมาบนหางที่ม้วนงอ จึงมอบปีกเป็นเกล็ดสนให้ บางครั้งคาถาผนึกก็แตก มันจึงกลับคืนร่างมังกรเดิมได้ชั่วคราว แต่ไม่นานก็กลับไปเป็นตัวน้อยน่ารักเหมือนเดิม"
   },
   {
    "pet_translation_id": 197,
