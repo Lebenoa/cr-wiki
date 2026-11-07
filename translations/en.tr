@@ -1391,7 +1391,7 @@ news_body_label
 Body
 -----
 news_article_hint
-Blank lines separate paragraphs. Start a line with #, ## or ### for a heading, or - for a list. Use [[cookie:12]] to link an entity.
+Blank lines separate paragraphs. Start a line with #, ## or ### for a heading, or - for a list. Use [[cookie:12]] to link an entity, **text** for bold, *text* for italic.
 -----
 news_publish_label
 Published

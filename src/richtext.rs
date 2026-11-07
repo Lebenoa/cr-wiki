@@ -11,6 +11,7 @@
 //! text. Ported from `app/richtext.v`.
 
 use std::collections::HashMap;
+use std::future::Future;
 
 use crate::db::{self, Db};
 
@@ -113,8 +114,31 @@ async fn render_inline(
     cache: &mut LinkCache,
     self_ref: Option<(&'static str, i64)>,
 ) -> String {
+    render_inline_inner(db, lang, raw, cache, self_ref).await
+}
+
+/// The body of [`render_inline`], boxed so the emphasis recursion (bold
+/// containing italic containing…, each at most a marker's width deeper)
+/// compiles: a recursive async fn has an infinitely sized future otherwise.
+fn render_inline_inner<'a>(
+    db: &'a Db,
+    lang: &'a str,
+    raw: &'a str,
+    cache: &'a mut LinkCache,
+    self_ref: Option<(&'static str, i64)>,
+) -> std::pin::Pin<Box<dyn Future<Output = String> + Send + 'a>> {
+    Box::pin(async move { render_inline_body(db, lang, raw, cache, self_ref).await })
+}
+
+async fn render_inline_body(
+    db: &Db,
+    lang: &str,
+    raw: &str,
+    cache: &mut LinkCache,
+    self_ref: Option<(&'static str, i64)>,
+) -> String {
     // the overwhelming majority of fields carry no markup at all
-    if !raw.contains("[[") && !raw.contains("{color:") {
+    if !raw.contains("[[") && !raw.contains("{color:") && !raw.contains('*') {
         return escape(raw);
     }
     let chars: Vec<char> = raw.chars().collect();
@@ -169,6 +193,37 @@ async fn render_inline(
                         out.push_str(&escape(&name));
                         out.push_str("</span></a>");
                         i = end.saturating_add(2);
+                        continue;
+                    }
+                }
+            }
+        }
+        if chars.get(i) == Some(&'*') {
+            // **strong**: scanned before *em* so the longer marker wins
+            if chars.get(i.saturating_add(1)) == Some(&'*') {
+                if let Some(end) = find(&chars, i.saturating_add(2), "**") {
+                    let inner = slice(&chars, i.saturating_add(2), end);
+                    if !inner.is_empty() {
+                        out.push_str("<strong>");
+                        out.push_str(&render_inline(db, lang, &inner, cache, self_ref).await);
+                        out.push_str("</strong>");
+                        i = end.saturating_add(2);
+                        continue;
+                    }
+                }
+            } else {
+                // *em*: the closing marker must not be another '*' (that is
+                // the start of a ** pair, not this run's end)
+                if let Some(end) = find(&chars, i.saturating_add(1), "*") {
+                    let inner = slice(&chars, i.saturating_add(1), end);
+                    if !inner.is_empty()
+                        && !inner.starts_with('*')
+                        && chars.get(end.saturating_add(1)) != Some(&'*')
+                    {
+                        out.push_str("<em>");
+                        out.push_str(&render_inline(db, lang, &inner, cache, self_ref).await);
+                        out.push_str("</em>");
+                        i = end.saturating_add(1);
                         continue;
                     }
                 }
@@ -345,7 +400,10 @@ fn heading_of(line: &str) -> Option<Block> {
         return None;
     }
     // # -> h2, ## -> h3, ### -> h4: h1 is the article's own title
-    Some(Block::Heading(u8::try_from(hashes).ok()?.saturating_add(1), text.to_string()))
+    Some(Block::Heading(
+        u8::try_from(hashes).ok()?.saturating_add(1),
+        text.to_string(),
+    ))
 }
 
 fn bullet_of(line: &str) -> Option<String> {
@@ -415,8 +473,14 @@ mod tests {
     /// break out of the attribute.
     #[test]
     fn escaping_and_colour_guard_hold() {
-        assert_eq!(escape("<img src=x onerror=1>"), "&lt;img src=x onerror=1&gt;");
-        assert_eq!(escape("a & b 'c' \"d\""), "a &amp; b &#39;c&#39; &quot;d&quot;");
+        assert_eq!(
+            escape("<img src=x onerror=1>"),
+            "&lt;img src=x onerror=1&gt;"
+        );
+        assert_eq!(
+            escape("a & b 'c' \"d\""),
+            "a &amp; b &#39;c&#39; &quot;d&quot;"
+        );
         assert!(valid_color("#f00"));
         assert!(valid_color("rgb(1, 2, 3)"));
         assert!(!valid_color("red\" onclick=\"x"));
@@ -429,9 +493,77 @@ mod tests {
     #[test]
     fn near_misses_stay_paragraphs() {
         assert!(split_blocks("   \n\n").is_empty());
-        assert!(matches!(split_blocks("#nospace").as_slice(), [Block::Paragraph(t)] if t == "#nospace"));
-        assert!(matches!(split_blocks("#### four").as_slice(), [Block::Paragraph(t)] if t == "#### four"));
+        assert!(
+            matches!(split_blocks("#nospace").as_slice(), [Block::Paragraph(t)] if t == "#nospace")
+        );
+        assert!(
+            matches!(split_blocks("#### four").as_slice(), [Block::Paragraph(t)] if t == "#### four")
+        );
         // a bullet run interrupted by a plain line is one paragraph
-        assert!(matches!(split_blocks("- a\nplain").as_slice(), [Block::Paragraph(_)]));
+        assert!(matches!(
+            split_blocks("- a\nplain").as_slice(),
+            [Block::Paragraph(_)]
+        ));
+    }
+
+    /// The emphasis renderer's db handle: entity resolution inside emphasis
+    /// needs one, and the same env-gated scratch server the news tests use
+    /// serves. None means the tests skip with a notice, the way every
+    /// server-backed suite behaves without `CR_SURREAL_URL`.
+    async fn scratch() -> Option<crate::db::Db> {
+        let url = std::env::var("CR_SURREAL_URL").ok()?;
+        let user = std::env::var("SURREAL_USER").unwrap_or_else(|_| "root".into());
+        let pass = std::env::var("SURREAL_PASS").unwrap_or_default();
+        match crate::db::connect_url(
+            &url,
+            "cookierun_richtext",
+            "cookierun_richtext",
+            &user,
+            &pass,
+        )
+        .await
+        {
+            Ok(db) => Some(db),
+            Err(e) => {
+                eprintln!("skip: CR_SURREAL_URL is set but unusable ({e})");
+                None
+            }
+        }
+    }
+
+    /// `**bold**` and `*italic*` render as emphasis and nest; multiplication,
+    /// unmatched markers and empty runs stay literal, and pasted markup
+    /// inside an emphasis is still escaped.
+    #[tokio::test]
+    async fn emphasis_renders_and_does_not_leak() {
+        let Some(db) = scratch().await else {
+            eprintln!("skip: set CR_SURREAL_URL to run the emphasis tests");
+            return;
+        };
+        let db = &db;
+        let mut cache = LinkCache::new();
+        let cases: &[(&str, &str)] = &[
+            (
+                "**bold** and *slanted*",
+                "<strong>bold</strong> and <em>slanted</em>",
+            ),
+            // nested: bold containing italic
+            (
+                "**big *small* end**",
+                "<strong>big <em>small</em> end</strong>",
+            ),
+            // multiplication and near-misses stay literal
+            ("2*3=6", "2*3=6"),
+            ("a ** b", "a ** b"),
+            ("**", "**"),
+            ("****", "****"),
+            ("* ", "* "),
+            // escaping still applies inside emphasis
+            ("**<x>**", "<strong>&lt;x&gt;</strong>"),
+        ];
+        for (src, want) in cases {
+            let html = render_inline(&db, "en", src, &mut cache, None).await;
+            assert_eq!(html, *want, "{src:?}");
+        }
     }
 }
