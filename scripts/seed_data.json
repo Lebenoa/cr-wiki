@@ -2645,12 +2645,12 @@
    "cookie_translation_id": 188,
    "owner_id": 94,
    "lang": "th",
-   "name": "Mango Sticky Rice Cookie",
-   "abilities": "Races swiftly on a surfboard during Blast. While windsurfing, the score for all Jellies increases. (Counts as a riding skill.)",
-   "description": "Mango Sticky Rice Cookie was made using glutinous rice simmered in sweet coconut milk and topped with bright yellow mango. As a skilled windsurfer, she always rides the breezy wind across the Coconut Milk Sea. Her favorite thing is the mango-colored sun sparkling on the ocean! If you ever wonder where she might be, she's probably cutting through the waves toward that sun with a refreshing smile on her face.",
+   "name": "คุกกี้ข้าวเหนียวมะม่วง",
+   "abilities": "ซิ่งไปอย่างรวดเร็วบนกระดานโต้คลื่นระหว่าง Blast ระหว่างที่เล่นเซิร์ฟทวินจูนแล้ว คะแนนของเยลลี่ทั้งหมดจะเพิ่มขึ้น (นับเป็นทักษะการขี่)",
+   "description": "คุกกี้ข้าวเหนียวมะม่วงถือกำเนิดจากข้าวเหนียวตุ๋นในกะทิหวานมัน พร้อมมะม่วงสุกสีเหลืองอร่ามวางเป็นหน้า ในฐานะนักเซิร์ฟผู้ชำนาญ เธอผ่อนคลายไปกับสายลมอ่อนข้ามทะเลนมกะทิเสมอ สิ่งที่เธอโปรดปรานที่สุดคือดวงอาทิตย์สีมะม่วงที่ระยิบระยับบนผืนมหาสมุทร! ถ้าสงสัยว่าตอนนี้เธออยู่ที่ไหน ลองมองไปทางคลื่นที่เธอพุ่งฝ่าไปหาดวงอาทิตย์ด้วยรอยยิ้มสดชื่นดูสิ",
    "power_plus": "",
    "power_plus_requirement": "",
-   "unlock_goal": "Have Pet: [[pet:101]]"
+   "unlock_goal": "ครอบครองสัตว์เลี้ยง [[pet:101]]"
   },
   {
    "cookie_translation_id": 189,
@@ -4958,9 +4958,9 @@
    "pet_translation_id": 202,
    "pet_id": 101,
    "lang": "th",
-   "name": "Mango Roll",
-   "abilities": "Periodically generates a Mango Blast Jelly. Eating it turns obstacles into Mango Jellies. (Amount of converted Mango Jellies capped.)",
-   "description": "Made by shaping glutinous rice into a round shape and arranging ripe mangoes around it like flower petals. Perhaps because it was born on a beach filled with happy laughter, its perpetually beaming smile is its most charming feature. Thanks to the Mango Roll, it always looks as if the summer sun is floating right next to the [[cookie:94]]."
+   "name": "โรลมะม่วง",
+   "abilities": "สร้างเยลลี่ Mango Blast เป็นระยะ เมื่อกินแล้วสิ่งกีดขวางจะกลายเป็นเยลลี่ Mango (จำนวนเยลลี่ Mango ที่เปลี่ยนได้มีขีดจำกัด)",
+   "description": "เกิดจากการปั้นข้าวเหนียวให้กลม แล้วจัดมะม่วงสุกวางรอบตัวเหมือนกลีบดอกไม้ บางทีอาจเพราะเกิดบนชายหาดที่เต็มไปด้วยเสียงหัวเราะอันแสนสุข รอยยิ้มระรื่นตลอดเวลาจึงเป็นเสน่ห์ที่โดดเด่นที่สุด ด้วยโรลมะม่วง ทุกอย่างดูเหมือนดวงอาทิตย์ฤดูร้อนลอยอยู่ข้าง ๆ [[cookie:94]] เสมอ"
   },
   {
    "pet_translation_id": 203,
