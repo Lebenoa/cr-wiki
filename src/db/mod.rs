@@ -261,10 +261,9 @@ pub mod users;
 /// never names a submodule.
 pub use admin::{insert_entity, update_entity};
 pub use catalog::{
-    cards_by_ids, latest_releases, select_cookies, select_episode_list, select_ingredient_list,
-    select_jelly_list, select_pets, select_relic_groups, select_simple, select_skin_list,
-    select_treasures, sitemap_entries, EpisodeList, IngredientList, JellyList, RelicGroup,
-    SectionCard, SkinList,
+    cards_by_ids, select_cookies, select_episode_list, select_ingredient_list, select_jelly_list,
+    select_pets, select_relic_groups, select_simple, select_skin_list, select_treasures,
+    sitemap_entries, EpisodeList, IngredientList, JellyList, RelicGroup, SkinList,
 };
 pub use combi::{
     combi_bonuses, combi_edit_rows, combi_partner_ids, delete_combi, entity_link, names_for,

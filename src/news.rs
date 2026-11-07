@@ -44,9 +44,6 @@ pub struct NewsCard {
     pub published_at: i64,
     pub updated_at: i64,
     pub author: String,
-    /// Whether this post should occupy the homepage's featured hero. At most
-    /// one post may carry it; the writes below enforce the exclusivity.
-    pub featured: bool,
 }
 
 /// What a post is doing at a given moment. The two stored control fields
@@ -209,7 +206,6 @@ impl From<CardRow> for NewsCard {
             published_at: r.published_at,
             updated_at: r.updated_at,
             author: r.author,
-            featured: r.featured,
         }
     }
 }
@@ -723,7 +719,9 @@ mod tests {
             published_at: 1_792_108_800,
             featured: false,
         };
-        update_post(&db, "th", id, &edit, NOW).await.expect("update th");
+        update_post(&db, "th", id, &edit, NOW)
+            .await
+            .expect("update th");
         let en = select_edit(&db, "en", id).await.unwrap().expect("exists");
         assert_eq!(en.text.title, "Hello", "English survives a Thai edit");
         let th = select_edit(&db, "th", id).await.unwrap().expect("exists");
@@ -785,7 +783,9 @@ mod tests {
             published_at: 0,
             ..draft.clone()
         };
-        let id2 = insert_post(&db, "en", &second, "tester", 0, NOW).await.unwrap();
+        let id2 = insert_post(&db, "en", &second, "tester", 0, NOW)
+            .await
+            .unwrap();
         set_published(&db, id2, true).await.unwrap();
         let p2 = select_post(&db, "en", now_unix(), id2)
             .await
@@ -864,7 +864,9 @@ mod tests {
             published_at: SOON,
             featured: false,
         };
-        let id = insert_post(&db, "en", &queued, "tester", 0, NOW).await.unwrap();
+        let id = insert_post(&db, "en", &queued, "tester", 0, NOW)
+            .await
+            .unwrap();
 
         // before its moment: absent from every public read, the sitemap
         // included, so its url is not a leak

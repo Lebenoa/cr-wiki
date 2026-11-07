@@ -1099,8 +1099,7 @@
 .gap-y-0\.5{row-gap:calc(var(--spacing) * 0.5);}
 .gap-y-1{row-gap:calc(var(--spacing) * 1);}
 .gap-y-2{row-gap:calc(var(--spacing) * 2);}
-.grid,
-[grid=""]{display:grid;}
+.grid{display:grid;}
 .row-0{grid-row:0;}
 .row-1{grid-row:1;}
 .row-2{grid-row:2;}
@@ -1349,8 +1348,7 @@
 .justify-self-end{justify-self:end;}
 .justify-self-center{justify-self:center;}
 .place-items-center{place-items:center;}
-.absolute,
-[absolute=""]{position:absolute;}
+.absolute{position:absolute;}
 .fixed,
 [fixed=""]{position:fixed;}
 .relative{position:relative;}
