@@ -95,7 +95,7 @@ ctx.social_image()) }}{% endblock %}
             </div>
             <div class="lg:col-span-8">
                 <div id="index-featured"
-                    class="relative group overflow-hidden rounded-[2rem] bg-surface h-full flex flex-col md:flex-row shadow-2xl border-2 border-secondary/20"
+                    class="relative group overflow-hidden rounded-[2rem] bg-surface h-full flex flex-col md:flex-row shadow-2xl border-2 border-secondary/20 transition-all duration-300 group-hover:border-secondary/60 group-hover:-translate-y-1"
                     hx-get="/news/featured" hx-trigger="load" hx-swap="innerHTML">
                     {% include "index_featured_static.html" %}
                 </div>
