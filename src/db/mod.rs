@@ -260,11 +260,11 @@ pub mod users;
 /// The read/write surface the rest of the crate uses, re-exported so a caller
 /// never names a submodule.
 pub use admin::{insert_entity, update_entity};
-pub use stamp::{catalog_revision, change_stamp, sitemap_sources, FEED_SOURCES};
 pub use catalog::{
-    cards_by_ids, select_cookies, select_episode_list, select_ingredient_list, select_jelly_list,
-    select_pets, select_relic_groups, select_simple, select_skin_list, select_treasures,
-    sitemap_entries, EpisodeList, IngredientList, JellyList, RelicGroup, SkinList,
+    cards_by_ids, latest_releases, select_cookies, select_episode_list, select_ingredient_list,
+    select_jelly_list, select_pets, select_relic_groups, select_simple, select_skin_list,
+    select_treasures, sitemap_entries, EpisodeList, IngredientList, JellyList, RelicGroup,
+    SectionCard, SkinList,
 };
 pub use combi::{
     combi_bonuses, combi_edit_rows, combi_partner_ids, delete_combi, entity_link, names_for,
@@ -279,6 +279,7 @@ pub use detail::{
 pub use episodes::{episode_extras, EpisodeDetail};
 pub use gacha::{select_gacha, GachaPool};
 pub use search::search;
+pub use stamp::{catalog_revision, change_stamp, sitemap_sources, FEED_SOURCES};
 pub use types::{tr, Card, Detail, Kind};
 pub use users::{
     consume_reset_token, create_user, find_user, find_user_by_email, find_user_by_google_sub,

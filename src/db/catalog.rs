@@ -123,6 +123,88 @@ pub async fn select_simple(db: &Db, lang: &str, kind: &str) -> Result<Vec<Card>>
     cards(db, lang, section, "", " ORDER BY id", None, "").await
 }
 
+/// One card tagged with the section it came from, as the homepage's
+/// "latest releases" strip links it: the href's first segment is the
+/// section, so the card needs its origin to build a correct link.
+#[derive(Debug, Clone)]
+pub struct SectionCard {
+    pub card: Card,
+    pub section: Section,
+}
+
+/// The newest releases across the three dated sections, newest release day
+/// first, id as the tie-break. Each section contributes up to `per_section`
+/// of its own newest rows before the merge, so one section with many
+/// same-day rows cannot crowd the others out of the strip entirely.
+pub async fn latest_releases(
+    db: &Db,
+    lang: &str,
+    total: usize,
+    per_section: usize,
+) -> Result<Vec<SectionCard>> {
+    // A dedicated row, not the shared `CardRow`: the merge key is the release
+    // date, which the card projection never carries because no grid shows it.
+    #[derive(Debug, Default, SurrealValue)]
+    #[surreal(default)]
+    struct ReleaseRow {
+        id: i64,
+        name: String,
+        en_name: String,
+        image: Option<String>,
+        grade: Option<i64>,
+        is_evolved: bool,
+        release_date: i64,
+    }
+
+    let mut merged: Vec<(i64, i64, SectionCard)> = Vec::new();
+    for section in [Section::Cookies, Section::Pets, Section::Treasures] {
+        let kind = Kind::of(section);
+        // newest known release_date first — the same ordering rule the
+        // section's own grid uses (`release_date <= 0` sorts last), id as
+        // the tie-break so the strip is stable across requests
+        let sql = format!(
+            "SELECT record::id(id) AS id, image{extra},
+                    {name} AS name, tr.en.name AS en_name,
+                    release_date, (release_date <= 0) AS date_unknown
+               FROM type::table($tb)
+              WHERE (tr.en.name != NONE OR tr[$lang].name != NONE)
+              ORDER BY date_unknown ASC, release_date DESC, id DESC
+              LIMIT {per_section}",
+            name = tr("name"),
+            extra = if kind.graded { ", grade" } else { "" },
+        );
+        let rows: Vec<ReleaseRow> = db
+            .query(&sql)
+            .bind(("lang", lang.to_string()))
+            .bind(("tb", kind.table.to_string()))
+            .await?
+            .take(0)?;
+        merged.extend(rows.into_iter().map(|r| {
+            (
+                r.release_date,
+                r.id,
+                SectionCard {
+                    card: Card {
+                        id: r.id,
+                        name: r.name,
+                        en_name: r.en_name,
+                        image: r.image,
+                        grade: r.grade,
+                        is_evolved: r.is_evolved,
+                    },
+                    section,
+                },
+            )
+        }));
+    }
+    merged.sort_unstable_by(|a, b| b.0.cmp(&a.0).then(b.1.cmp(&a.1)));
+    Ok(merged
+        .into_iter()
+        .map(|(_, _, sc)| sc)
+        .take(total)
+        .collect())
+}
+
 // --- the five simple catalogs' own views ----------------------------------
 //
 // The shared `Card` projection carries what a cookie card needs. Episodes,

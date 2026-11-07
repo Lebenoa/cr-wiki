@@ -1,5 +1,29 @@
+{% if !releases.is_empty() %}
+<div class="grid grid-cols-3 gap-3 mb-6">
+    {% for s in releases %}
+    <a href="/{{ s.section.as_str() }}/{{ s.card.id }}"
+        class="rounded-2xl border-2 border-primary/20 bg-surface/50 p-3 hover:border-primary/50 transition-colors flex flex-col items-center gap-2 text-center">
+        {% match s.card.image %}
+        {% when Some with (img) %}
+        <img src="/static/img/{{ s.section.as_str() }}/{{ img }}" alt="{{ s.card.name }}" loading="lazy"
+            decoding="async" class="h-14 w-full object-contain">
+        {% when None %}
+        <span
+            class="h-14 w-full flex items-center justify-center text-[10px] font-label uppercase text-foreground-muted">{{
+            s.section.as_str() }}</span>
+        {% endmatch %}
+        <span class="text-xs font-bold text-on-surface leading-tight">{{ s.card.name }}</span>
+        {% if let Some(g) = s.card.grade %}
+        <span class="text-[10px] font-bold text-accent uppercase">{{ ctx.grade_label_int(&s.card.grade) }}</span>
+        {% endif %}
+    </a>
+    {% endfor %}
+</div>
+{% endif %}
 {% if posts.is_empty() %}
+{% if releases.is_empty() %}
 <p class="text-center text-sm text-foreground-muted">{{ ctx.l.t("news_unavailable") }}</p>
+{% endif %}
 {% else %}
 {% for p in posts %}
 <a href="/news/{{ p.id }}"
@@ -11,5 +35,6 @@
     {% endif %}
 </a>
 {% endfor %}
-<a href="/news" class="self-center text-xs font-label uppercase text-primary hover:text-accent transition-colors">{{ ctx.l.t("news_view_all") }}</a>
+<a href="/news" class="self-center text-xs font-label uppercase text-primary hover:text-accent transition-colors">{{
+    ctx.l.t("news_view_all") }}</a>
 {% endif %}

@@ -1099,7 +1099,8 @@
 .gap-y-0\.5{row-gap:calc(var(--spacing) * 0.5);}
 .gap-y-1{row-gap:calc(var(--spacing) * 1);}
 .gap-y-2{row-gap:calc(var(--spacing) * 2);}
-.grid{display:grid;}
+.grid,
+[grid=""]{display:grid;}
 .row-0{grid-row:0;}
 .row-1{grid-row:1;}
 .row-2{grid-row:2;}
@@ -1286,7 +1287,6 @@
 .shadow-\[inset_0_1px_0_var\(--primary-highlight\)\,inset_0_-1px_0_var\(--primary-shade\)\,0_1px_2px_rgba\(0\,0\,0\,0\.5\)\]{--un-shadow:inset 0 1px 0 var(--primary-highlight),inset 0 -1px 0 var(--primary-shade),0 1px 2px rgba(0,0,0,0.5);box-shadow:var(--un-inset-shadow), var(--un-inset-ring-shadow), var(--un-ring-offset-shadow), var(--un-ring-shadow), var(--un-shadow);}
 .shadow-2xl{--un-shadow:0 25px 50px -12px var(--un-shadow-color, rgb(0 0 0 / 0.25));box-shadow:var(--un-inset-shadow), var(--un-inset-ring-shadow), var(--un-ring-offset-shadow), var(--un-ring-shadow), var(--un-shadow);}
 .shadow-lg{--un-shadow:0 10px 15px -3px var(--un-shadow-color, rgb(0 0 0 / 0.1)),0 4px 6px -4px var(--un-shadow-color, rgb(0 0 0 / 0.1));box-shadow:var(--un-inset-shadow), var(--un-inset-ring-shadow), var(--un-ring-offset-shadow), var(--un-ring-shadow), var(--un-shadow);}
-.shadow-md{--un-shadow:0 4px 6px -1px var(--un-shadow-color, rgb(0 0 0 / 0.1)),0 2px 4px -2px var(--un-shadow-color, rgb(0 0 0 / 0.1));box-shadow:var(--un-inset-shadow), var(--un-inset-ring-shadow), var(--un-ring-offset-shadow), var(--un-ring-shadow), var(--un-shadow);}
 .shadow-xl{--un-shadow:0 20px 25px -5px var(--un-shadow-color, rgb(0 0 0 / 0.1)),0 8px 10px -6px var(--un-shadow-color, rgb(0 0 0 / 0.1));box-shadow:var(--un-inset-shadow), var(--un-inset-ring-shadow), var(--un-ring-offset-shadow), var(--un-ring-shadow), var(--un-shadow);}
 .-translate-y-1\/2{--un-translate-y:-50%;translate:var(--un-translate-x) var(--un-translate-y);}
 .group:hover .group-hover\:-translate-x-1{--un-translate-x:calc(var(--spacing) * -1);translate:var(--un-translate-x) var(--un-translate-y);}
@@ -1349,7 +1349,8 @@
 .justify-self-end{justify-self:end;}
 .justify-self-center{justify-self:center;}
 .place-items-center{place-items:center;}
-.absolute{position:absolute;}
+.absolute,
+[absolute=""]{position:absolute;}
 .fixed,
 [fixed=""]{position:fixed;}
 .relative{position:relative;}

@@ -21,6 +21,7 @@ use axum::Router;
 use serde::Deserialize;
 
 use crate::ctx::Ctx;
+use crate::db;
 use crate::news::{self, NewsCard, NewsDraft, NewsEdit, NewsFeedItem};
 use crate::time::now_unix;
 
@@ -29,6 +30,11 @@ use super::CommonQuery;
 
 /// Posts the index teaser shows.
 const TEASER_LIMIT: i64 = 3;
+
+/// Releases the index teaser shows above the posts: enough to fill the
+/// Fresh column's grid (3 sections x 4 candidates merged down) without
+/// turning the homepage into a second catalog page.
+const LATEST_RELEASES: usize = 6;
 
 /// Posts the feed carries. A subscriber wants the recent window, not the
 /// archive: a feed that grows without bound is one every reader re-downloads
@@ -80,6 +86,10 @@ struct NewsCards {
 struct NewsLatest {
     ctx: Ctx,
     posts: Vec<NewsCard>,
+    /// the newest catalog releases (cookies, pets, treasures), shown above
+    /// the posts — the homepage's "fresh" strip is releases first, editorials
+    /// second
+    releases: Vec<db::SectionCard>,
 }
 
 #[derive(Template)]
@@ -294,19 +304,25 @@ pub async fn list(ctx: Ctx, q: Query<CommonQuery>) -> Result<Html<String>, AppEr
     ))
 }
 
-/// The index teaser fragment: the newest few published posts. Fetched by htmx
-/// with `hx-trigger="load"` so the landing page itself stays free of database
-/// work; a direct (non-htmx) visit is sent to the list.
+/// The index teaser fragment: the newest catalog releases and the newest few
+/// published posts. Fetched by htmx with `hx-trigger="load"` so the landing
+/// page itself stays free of database work; a direct (non-htmx) visit is sent
+/// to the list.
 pub async fn latest(ctx: Ctx) -> Result<Response, AppError> {
     if !ctx.is_fragment() {
         return Ok(Redirect::to("/news").into_response());
     }
     let state = crate::state::state();
     let posts = news::select_published(&state.db, &ctx.lang, now_unix(), TEASER_LIMIT, 0).await?;
+    let releases = db::latest_releases(&state.db, &ctx.lang, LATEST_RELEASES, 4).await?;
     Ok(Html(
-        NewsLatest { ctx, posts }
-            .render()
-            .unwrap_or_else(|e| format!("template error: {e}")),
+        NewsLatest {
+            ctx,
+            posts,
+            releases,
+        }
+        .render()
+        .unwrap_or_else(|e| format!("template error: {e}")),
     )
     .into_response())
 }
@@ -842,13 +858,33 @@ mod tests {
         assert!(!dash.contains("href=\"/news/11\""), "{dash}");
         assert!(!dash.contains("href=\"/news/9\""), "{dash}");
 
+        let releases = vec![db::SectionCard {
+            card: crate::db::Card {
+                id: 94,
+                name: "Mango Sticky Rice Cookie".into(),
+                en_name: "Mango Sticky Rice Cookie".into(),
+                image: Some("mango_sticky_rice_cookie.png".into()),
+                grade: Some(4),
+                is_evolved: false,
+            },
+            section: crate::section::Section::Cookies,
+        }];
         let teaser = NewsLatest {
             ctx: crate::testutil::test_ctx("en"),
             posts: vec![card(1, "Fresh", true)],
+            releases,
         }
         .render()
         .expect("teaser render");
         assert!(teaser.contains("View all news"), "{teaser}");
+        assert!(
+            teaser.contains("href=\"/cookies/94\""),
+            "the release card links through its section: {teaser}"
+        );
+        assert!(
+            teaser.contains("/static/img/cookies/mango_sticky_rice_cookie.png"),
+            "the release card's image sits under the section dir: {teaser}"
+        );
     }
 
     /// The feed's central claim, end to end against a real server: an entry's
