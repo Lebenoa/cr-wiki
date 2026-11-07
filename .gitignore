@@ -21,6 +21,7 @@ logs/
 .freebuff/
 .serena/
 .zcode/
+.cloud-attachments/
 *.iml
 
 # ENV

@@ -1,54 +1,44 @@
 {% import "title.html" as t %}
-<div class="md:w-1/2 relative min-h-[300px] overflow-hidden">
-    {% match featured %}
-    {% when Some with (post) %}
-    {% if let Some(src) = self.thumbnail_src() %}
-    <div class="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105"
-        style="background-image: url('{{ src }}');"></div>
-    {% else %}
-    <div class="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105"
-        style="background-image: url('/static/img/landscape.jpg');"></div>
-    {% endif %}
-    {% when None %}
-    <div class="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105"
-        style="background-image: url('/static/img/landscape.jpg');"></div>
-    {% endmatch %}
-    <div class="absolute inset-0 bg-gradient-to-r from-transparent to-surface/95"></div>
-</div>
-<div class="md:w-1/2 p-10 flex flex-col justify-center relative">
-    <span
-        class="inline-block px-4 py-1 bg-primary text-on-primary text-[10px] font-bold rounded-full mb-4 w-fit font-label uppercase">
-        {{ ctx.l.t("index_featured_label") }}</span>
-    {% match featured %}
-    {% when Some with (post) %}
-    <h2 class="font-headline text-3xl mb-4 text-on-surface font-extrabold leading-tight uppercase">
-        {{ post.title }}</h2>
-    <p class="text-foreground-muted mb-8 leading-relaxed text-sm">
-        {{ post.summary }}</p>
-    <a href="/news/{{ post.id }}"
-        class="bg-primary text-on-primary px-10 py-4 rounded-full font-bold uppercase tracking-widest text-xs font-label hover:bg-primary/90 transition-all self-start flex items-center gap-3 shadow-xl hover:-translate-y-1">
-        {{ ctx.l.t("index_featured_cta") }}
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
-            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M4 19.5v-15A2 2 0 0 1 6 2h14v20H6a2 2 0 0 1-2-2z" />
-            <path d="M8 7h8" />
-            <path d="M8 11h8" />
-        </svg>
-    </a>
-    {% when None %}
-    <h2 class="font-headline text-3xl mb-4 text-on-surface font-extrabold leading-tight uppercase">
-        {{ ctx.l.t("index_featured_fallback_title") }}</h2>
-    <p class="text-foreground-muted mb-8 leading-relaxed text-sm">
-        {{ ctx.l.t("index_featured_fallback_desc") }}</p>
-    <a href="/news"
-        class="bg-primary text-on-primary px-10 py-4 rounded-full font-bold uppercase tracking-widest text-xs font-label hover:bg-primary/90 transition-all self-start flex items-center gap-3 shadow-xl hover:-translate-y-1">
-        {{ ctx.l.t("index_featured_fallback_cta") }}
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
-            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M4 19.5v-15A2 2 0 0 1 6 2h14v20H6a2 2 0 0 1-2-2z" />
-            <path d="M8 7h8" />
-            <path d="M8 11h8" />
-        </svg>
-    </a>
-    {% endmatch %}
-</div>
+{% match featured %}
+{% when Some with (post) %}
+<a href="/news/{{ post.id }}" class="flex w-full grow flex-col md:flex-row cursor-pointer">
+    <div class="md:w-1/2 relative min-h-[300px] overflow-hidden">
+        {% if let Some(src) = self.thumbnail_src() %}
+        <div class="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105"
+            style="background-image: url('{{ src }}');"></div>
+        {% else %}
+        <div class="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105"
+            style="background-image: url('/static/img/landscape.jpg');"></div>
+        {% endif %}
+        <div class="absolute inset-0 bg-gradient-to-r from-transparent to-surface/95"></div>
+    </div>
+    <div class="md:w-1/2 p-10 flex flex-col justify-center relative">
+        <span
+            class="inline-block px-4 py-1 bg-primary text-on-primary text-[10px] font-bold rounded-full mb-4 w-fit font-label uppercase">
+            {{ ctx.l.t("index_featured_label") }}</span>
+        <h2
+            class="font-headline text-3xl mb-4 uppercase font-extrabold leading-tight text-on-surface group-hover:text-primary transition-colors">
+            {{ post.title }}</h2>
+        <p class="text-foreground-muted mb-8 leading-relaxed text-sm">
+            {{ post.summary }}</p>
+    </div>
+</a>
+{% when None %}
+<a href="/news" class="flex w-full grow flex-col md:flex-row cursor-pointer">
+    <div class="md:w-1/2 relative min-h-[300px] overflow-hidden">
+        <div class="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105"
+            style="background-image: url('/static/img/landscape.jpg');"></div>
+        <div class="absolute inset-0 bg-gradient-to-r from-transparent to-surface/95"></div>
+    </div>
+    <div class="md:w-1/2 p-10 flex flex-col justify-center relative">
+        <span
+            class="inline-block px-4 py-1 bg-primary text-on-primary text-[10px] font-bold rounded-full mb-4 w-fit font-label uppercase">
+            {{ ctx.l.t("index_featured_label") }}</span>
+        <h2
+            class="font-headline text-3xl mb-4 uppercase font-extrabold leading-tight text-on-surface group-hover:text-primary transition-colors">
+            {{ ctx.l.t("index_featured_fallback_title") }}</h2>
+        <p class="text-foreground-muted mb-8 leading-relaxed text-sm">
+            {{ ctx.l.t("index_featured_fallback_desc") }}</p>
+    </div>
+</a>
+{% endmatch %}
