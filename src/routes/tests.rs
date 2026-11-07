@@ -60,6 +60,25 @@ async fn non_db_routes_answer_through_the_middleware_order() {
 }
 
 #[tokio::test]
+async fn profile_routes_reject_signed_out_and_invalid_users() {
+    state();
+    let res = get("/profile/me").await;
+    assert_eq!(res.status(), StatusCode::SEE_OTHER);
+    assert_eq!(
+        res.headers().get(axum::http::header::LOCATION).unwrap(),
+        "/login"
+    );
+
+    let res = get("/profile/abc").await;
+    assert_eq!(res.status(), StatusCode::NOT_FOUND);
+
+    // "no such user" needs a database to ask — the unconnected handle this
+    // router-test state carries cannot tell a missing row from an outage,
+    // so the unknown-id case is covered by the gated tests in the auth
+    // module (a probe user's profile, and a 404 for a dead id).
+}
+
+#[tokio::test]
 async fn settings_are_public_but_account_changes_require_a_session() {
     state();
     let res = get("/settings").await;
@@ -1126,11 +1145,7 @@ fn verified_actions() -> Vec<String> {
 /// An action name is a plain identifier, which is what keeps a stray quoted
 /// string in the call's neighbourhood from being read as one.
 fn is_action(span: &str) -> bool {
-    !span.is_empty()
-        && span.len() <= 32
-        && span
-            .chars()
-            .all(|c| c.is_ascii_lowercase() || c == '_')
+    !span.is_empty() && span.len() <= 32 && span.chars().all(|c| c.is_ascii_lowercase() || c == '_')
 }
 
 fn rust_sources(dir: &std::path::Path) -> Vec<std::path::PathBuf> {
@@ -1165,8 +1180,7 @@ fn template_renders(action: &str) -> bool {
         if path.extension().and_then(|e| e.to_str()) != Some("html") {
             return false;
         }
-        std::fs::read_to_string(&path).is_ok_and(|text| {
-            text.contains("class=\"cf-turnstile\"") && text.contains(&widget)
-        })
+        std::fs::read_to_string(&path)
+            .is_ok_and(|text| text.contains("class=\"cf-turnstile\"") && text.contains(&widget))
     })
 }

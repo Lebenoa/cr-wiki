@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% import "title.html" as t %}
+{% block title %}{{ t::tags(ctx.page_title("profile_title"), ctx.meta_description(), ctx.social_image()) }}{% endblock %}
+{% block content %}
+<main class="mx-auto w-full max-w-5xl px-4 py-8 md:px-8 md:py-14">
+    <header class="mb-10 border-b border-primary/20 pb-8">
+        <div class="mb-4 h-1 w-16 rounded-full bg-primary"></div>
+        <div class="flex items-center gap-5">
+            <span class="flex size-16 shrink-0 items-center justify-center rounded-full bg-primary text-2xl font-bold text-background" aria-hidden="true">{{ initial }}</span>
+            <div class="min-w-0">
+                <h1 class="font-headline font-bold text-4xl text-foreground tracking-tight">{{ user.username }}</h1>
+                {% if let Some(joined_day) = joined %}<p class="mt-2 text-sm text-foreground-muted">{{ ctx.l.t("profile_joined") }} {{ joined_day }}</p>{% endif %}
+                {% if user.google_linked %}<span class="mt-2 inline-flex rounded-full border border-primary/30 px-3 py-1 text-xs text-foreground-muted">{{ ctx.l.t("profile_google") }}</span>{% endif %}
+            </div>
+        </div>
+    </header>
+    <section aria-labelledby="profile-builds-heading">
+        <h2 id="profile-builds-heading" class="mb-5 font-headline text-2xl font-bold text-foreground">{{ ctx.l.t("profile_builds") }}</h2>
+        {% if builds.is_empty() %}
+        <p class="text-center text-foreground-muted py-12">{{ ctx.l.t("profile_no_builds") }}</p>
+        {% else %}
+        <div class="flex flex-col gap-3">
+            {% let next_page = 0 %}
+            {% include "build_cards.html" %}
+        </div>
+        {% endif %}
+    </section>
+</main>
+{% endblock %}

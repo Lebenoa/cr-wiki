@@ -17,11 +17,15 @@ pub struct User {
     /// `None` for password accounts; `Some` also disables the password form's
     /// usefulness — see the account email page.
     pub google_sub: Option<String>,
+    /// `time::unix()` seconds stamped at insert; 0 when the row predates the
+    /// column, which the profile page renders as "no joined line".
+    pub created_at: i64,
 }
 
 /// The columns every user lookup reads, so the three finders cannot drift
 /// apart and hand out a half-populated row.
-const USER_COLUMNS: &str = "record::id(id) AS id, username, password, is_admin, email, google_sub";
+const USER_COLUMNS: &str =
+    "record::id(id) AS id, username, password, is_admin, email, google_sub, created_at";
 
 fn user_from_row(r: UserRow) -> User {
     User {
@@ -31,6 +35,7 @@ fn user_from_row(r: UserRow) -> User {
         is_admin: r.is_admin,
         email: r.email,
         google_sub: r.google_sub,
+        created_at: r.created_at.unwrap_or(0),
     }
 }
 
@@ -43,6 +48,7 @@ struct UserRow {
     is_admin: bool,
     email: Option<String>,
     google_sub: Option<String>,
+    created_at: Option<i64>,
 }
 
 pub async fn find_user(db: &Db, username: &str) -> Result<Option<User>> {
@@ -100,6 +106,7 @@ pub async fn create_user(
         is_admin: false,
         email: email.map(str::to_string),
         google_sub: google_sub.map(str::to_string),
+        created_at: crate::time::now_unix(),
     }))
 }
 

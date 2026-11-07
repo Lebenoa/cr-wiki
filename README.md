@@ -117,6 +117,7 @@ sudo systemctl restart cookierun                    # sessions are in-memory
 | GET/POST | `/login`, `/register`, `/forgot-password`, `/reset-password`; POST `/logout` | Auth |
 | GET | `/auth/google`, `/auth/google/callback` | Sign in with Google (404 unless `[google]` is configured) |
 | GET/POST | `/settings` | Appearance and language for all visitors; recovery email and session controls for signed-in users |
+| GET | `/profile/me`, `/profile/:id` | Public profile: avatar initial, joined day, and the account's live builds (`/profile/me` redirects guests to `/login`) |
 | GET | `/api/available-langs` | Languages (HTML partial for HTMX, JSON otherwise) |
 | GET | `/api/richtext-names` | Linkable entity names for rich-text autocomplete |
 | POST | `/api/set-lang` | Set language cookie and redirect back |
@@ -130,8 +131,9 @@ saving changes are not automatic.
 
 `/settings` groups Appearance, Language, and Account in a responsive category
 sidebar. Guests can change browser-local preferences; signed-in users can also
-manage recovery email and sessions. The account dropdown retains quick access
-to the same controls. Recovery-email changes still require the current password.
+manage recovery email and sessions. The account dropdown links the signed-in
+visitor's public profile (`/profile/me`), Settings, and Log out. Recovery-email
+changes still require the current password.
 The optional Cyberpunk theme uses a near-black navy palette with blue and violet
 accents. Select it from Settings or the account dropdown; it is also available as
 a custom-theme base. Existing saved theme selections remain unchanged.

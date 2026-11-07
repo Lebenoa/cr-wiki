@@ -31,6 +31,7 @@ pub mod news;
 mod page_cache;
 pub mod picker;
 pub mod planner;
+pub mod profile;
 pub mod uploads;
 
 /// Router assembly in one function: every surface contributes its own table
@@ -49,6 +50,10 @@ pub fn router() -> Router {
         .merge(planner::routes())
         .merge(builds::routes())
         .merge(auth::routes())
+        // before the catalog captures, though /profile is not a section —
+        // explicit so the static /profile/me segment keeps winning over the
+        // {id} capture regardless of what sections exist
+        .merge(profile::routes())
         .merge(admin::routes())
         .merge(uploads::routes())
         .merge(catalog::routes())

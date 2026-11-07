@@ -685,7 +685,10 @@ mod tests {
             !dead.contains("class=\"cf-turnstile\""),
             "a dead link must not offer a widget"
         );
-        assert!(dead.contains(dead_link.as_str()), "a dead link has to say so");
+        assert!(
+            dead.contains(dead_link.as_str()),
+            "a dead link has to say so"
+        );
 
         drop_probe_tokens(&pool, user.id).await;
         drop_probe_user(&pool, username).await;
@@ -697,5 +700,90 @@ mod tests {
             .await
             .expect("body");
         String::from_utf8(bytes.to_vec()).expect("utf8")
+    }
+
+    /// The profile page renders from the database's own answer: a real user
+    /// with two live builds shows both, and an expired anonymous build the
+    /// same user owns never shows — the same expiry rule every other build
+    /// reader applies. The unknown-id 404 rides the same handler, so it is
+    /// asserted here against a live server too, where "missing" is
+    /// distinguishable from "the database is down".
+    #[tokio::test]
+    async fn profile_renders_only_live_builds_of_a_real_user() {
+        let Some(pool) = live_db().await else {
+            eprintln!("skip: CR_SURREAL_URL not set");
+            return;
+        };
+        let username = "cr_profile_probe";
+        drop_probe_user(&pool, username).await;
+        let hash = session::hash_password(&pool, "old password")
+            .await
+            .expect("hash");
+        let user = db::create_user(&pool, username, &hash, None, None)
+            .await
+            .expect("create")
+            .expect("created");
+        let changes = crate::builds::BuildChanges::default();
+        let live = crate::builds::NewBuild {
+            changes: changes.clone(),
+            author: username.to_string(),
+            user_id: user.id,
+            expires_at: None,
+        };
+        let dying = crate::builds::NewBuild {
+            changes,
+            author: username.to_string(),
+            user_id: user.id,
+            // an hour from now is not live enough to race the test clock:
+            // an hour AGO is definitively spent
+            expires_at: Some(crate::time::now_unix() - 3600),
+        };
+        let b1 = crate::builds::insert_build(&pool, &live)
+            .await
+            .expect("insert live");
+        let b2 = crate::builds::insert_build(&pool, &live)
+            .await
+            .expect("insert second");
+        crate::builds::insert_build(&pool, &dying)
+            .await
+            .expect("insert expired");
+
+        let page = body(
+            crate::routes::profile::by_id(
+                crate::testutil::test_ctx("en"),
+                axum::extract::Path(user.id.to_string()),
+            )
+            .await,
+        )
+        .await;
+        assert!(
+            page.contains(username),
+            "the profile shows the account's name: {}",
+            &page[..page.len().min(400)]
+        );
+        assert!(
+            page.contains(&format!("/builds/{b1}")) && page.contains(&format!("/builds/{b2}")),
+            "both live builds link from the profile: {page}"
+        );
+        assert!(
+            !page.contains("not-yet"),
+            "an expired build is not listed: {page}"
+        );
+
+        // an id nothing owns is a 404, not a 500: "missing" is only
+        // distinguishable with a database to ask
+        let res = crate::routes::profile::by_id(
+            crate::testutil::test_ctx("en"),
+            axum::extract::Path("999999".to_string()),
+        )
+        .await;
+        assert_eq!(res.status(), StatusCode::NOT_FOUND);
+
+        // build rows outlive the user probe, so clean them explicitly
+        pool.query("DELETE build WHERE user_id = $u")
+            .bind(("u", user.id))
+            .await
+            .expect("build cleanup");
+        drop_probe_user(&pool, username).await;
     }
 }

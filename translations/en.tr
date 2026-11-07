@@ -1,5 +1,20 @@
 theme_cyberpunk
 Cyberpunk
+profile_title
+Profile
+-----
+profile_joined
+Joined
+-----
+profile_builds
+Builds
+-----
+profile_no_builds
+No builds yet
+-----
+profile_google
+Google-linked
+-----
 -----
 settings_title
 Settings

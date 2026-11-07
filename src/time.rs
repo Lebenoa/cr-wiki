@@ -312,6 +312,30 @@ fn zone_offset(token: Option<&str>) -> Option<i64> {
 #[cfg_attr(test, allow(clippy::unwrap_used, clippy::expect_used, clippy::panic))]
 mod tests {
     use super::*;
+    use crate::routes::profile::{initial, joined_day};
+
+    /// The profile page's joined line: a stamped row reads back as the day it
+    /// was created in the site's zone; a row from before the column existed
+    /// (0) renders nothing rather than 1970-01-01.
+    #[test]
+    fn joined_day_hides_rows_without_a_timestamp() {
+        // 2026-11-06 10:00 UTC, Bangkok +7h → the same civil day. 17:00 UTC
+        // is already the 7th in Bangkok: the offset is applied before the day
+        // is cut, never after.
+        assert_eq!(joined_day(1_793_962_800, 420), Some("2026-11-06".into()));
+        assert_eq!(joined_day(1_793_988_000, 420), Some("2026-11-07".into()));
+        assert_eq!(joined_day(0, 420), None);
+        assert_eq!(joined_day(-5, 420), None);
+    }
+
+    /// The avatar circle: the username's first character — a missing or
+    /// empty name renders the fallback, not an empty circle.
+    #[test]
+    fn avatar_initial_is_the_first_character() {
+        assert_eq!(initial("AliceKisaragi"), "A");
+        assert_eq!(initial("อัลเทอร์"), "อ");
+        assert_eq!(initial(""), "?");
+    }
 
     /// The feed timestamp is a real RFC 2822 date — weekday included, since a
     /// wrong or missing one is what makes a reader misplace an item.

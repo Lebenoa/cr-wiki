@@ -389,6 +389,26 @@ pub async fn select_build(db: &Db, lang: &str, id: i64) -> crate::db::Result<Opt
     Ok(found.into_iter().next())
 }
 
+/// Every live build one user owns, newest first — the profile page's list.
+/// The same expiry rule as every other reader, so an expired anonymous build
+/// the user still owns never shows; signed-in builds never expire.
+pub async fn select_by_user(
+    db: &Db,
+    lang: &str,
+    user_id: i64,
+) -> crate::db::Result<Vec<BuildCard>> {
+    select_where(
+        db,
+        lang,
+        &format!(" AND user_id = {user_id}"),
+        "latest",
+        "",
+        1000,
+        0,
+    )
+    .await
+}
+
 /// A build about to be written. Separate from `BuildCard` because that one
 /// carries resolved entities for rendering, while this carries the ids the
 /// row actually stores.
@@ -410,7 +430,7 @@ pub struct NewBuild {
 /// The fields an edit may change: the loadout and the free-text prose. No
 /// author, owner or expiry — an edit must not turn an anonymous build
 /// permanent or change who owns it, and the type says so.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct BuildChanges {
     pub cookie: i64,
     pub cookie2: Option<i64>,

@@ -1,5 +1,20 @@
 theme_cyberpunk
 ไซเบอร์พังก์
+profile_title
+โปรไฟล์
+-----
+profile_joined
+เข้าร่วมเมื่อ
+-----
+profile_builds
+บิลด์
+-----
+profile_no_builds
+ยังไม่มีบิลด์
+-----
+profile_google
+เชื่อมต่อกับ Google
+-----
 -----
 settings_title
 การตั้งค่า
