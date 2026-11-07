@@ -333,7 +333,10 @@ pub async fn latest(ctx: Ctx) -> Result<Response, AppError> {
         return Ok(Redirect::to("/news").into_response());
     }
     let state = crate::state::state();
-    let posts = news::select_published(&state.db, &ctx.lang, now_unix(), TEASER_LIMIT, 0).await?;
+    // the hero already shows the featured post; the teaser lists the rest
+    let posts =
+        news::select_published_filtered(&state.db, &ctx.lang, now_unix(), TEASER_LIMIT, 0, false)
+            .await?;
     let releases = db::latest_releases(&state.db, &ctx.lang, LATEST_RELEASES, 4).await?;
     Ok(Html(
         NewsLatest {
@@ -609,7 +612,7 @@ pub async fn create(ctx: Ctx, Form(form): Form<NewsForm>) -> Result<Response, Ap
         return Ok((axum::http::StatusCode::BAD_REQUEST, response).into_response());
     }
     let draft = draft_from(&form, 0, ctx.tz_offset);
-    match news::insert_post(&state.db, &lang, &draft, &author, user_id).await {
+    match news::insert_post(&state.db, &lang, &draft, &author, user_id, now_unix()).await {
         Ok(id) if id > 0 => Ok(Redirect::to("/admin/news").into_response()),
         Ok(_) => Ok(server_error_form(ctx, 0, lang, &form, "news_error_save")),
         Err(e) => {
@@ -641,7 +644,7 @@ pub async fn update(
             .into_response());
     }
     let draft = draft_from(&form, existing.published_at, ctx.tz_offset);
-    match news::update_post(&state.db, &lang, id, &draft).await {
+    match news::update_post(&state.db, &lang, id, &draft, now_unix()).await {
         Ok(_) => Ok(Redirect::to("/admin/news").into_response()),
         Err(e) => {
             tracing::error!("news update {id} failed: {e}");
@@ -955,7 +958,7 @@ mod tests {
             published_at: now,
             featured: false,
         };
-        let id = news::insert_post(&db, "en", &draft, "tester", 0)
+        let id = news::insert_post(&db, "en", &draft, "tester", 0, now)
             .await
             .expect("insert");
         // a second post released into the future: queued, so the feed is not
@@ -965,7 +968,7 @@ mod tests {
             published_at: now + 86_400,
             ..draft.clone()
         };
-        let later = news::insert_post(&db, "en", &queued, "tester", 0)
+        let later = news::insert_post(&db, "en", &queued, "tester", 0, now)
             .await
             .expect("insert queued");
 
@@ -1026,7 +1029,7 @@ mod tests {
             published_at: now,
             featured: false,
         };
-        let id = news::insert_post(&db, "en", &draft, "tester", 0)
+        let id = news::insert_post(&db, "en", &draft, "tester", 0, now)
             .await
             .expect("insert");
 
@@ -1290,7 +1293,7 @@ mod tests {
             published_at: at,
             featured: false,
         };
-        let first = news::insert_post(&db, "en", &draft("First", now), "t", 0)
+        let first = news::insert_post(&db, "en", &draft("First", now), "t", 0, now)
             .await
             .expect("insert");
         // flag it: the hero now answers with it
@@ -1302,6 +1305,7 @@ mod tests {
                 featured: true,
                 ..draft("First", now)
             },
+            now,
         )
         .await
         .expect("flag");
@@ -1309,7 +1313,7 @@ mod tests {
         assert_eq!(hero.map(|p| p.id), Some(first));
 
         // a second post flagged later takes the flag away from the first
-        let second = news::insert_post(&db, "en", &draft("Second", now), "t", 0)
+        let second = news::insert_post(&db, "en", &draft("Second", now), "t", 0, now)
             .await
             .expect("insert");
         news::update_post(
@@ -1320,18 +1324,29 @@ mod tests {
                 featured: true,
                 ..draft("Second", now)
             },
+            now,
         )
         .await
         .expect("flag");
         let hero = news::select_featured(&db, "en", now).await.unwrap();
         assert_eq!(hero.map(|p| p.id), Some(second));
-        let first_card = news::select_published(&db, "en", now, 10, 0).await.unwrap();
+        // the archive list (include_featured = true, the select_published
+        // default) still shows both posts; the teaser variant hides only
+        // the featured one
+        let archive = news::select_published(&db, "en", now, 10, 0).await.unwrap();
         assert!(
-            first_card.iter().any(|c| c.id == first),
+            archive.iter().any(|c| c.id == first) && archive.iter().any(|c| c.id == second),
+            "the archive lists every live post, featured or not"
+        );
+        let teaser = news::select_published_filtered(&db, "en", now, 10, 0, false)
+            .await
+            .unwrap();
+        assert!(
+            teaser.iter().any(|c| c.id == first),
             "the demoted post is still listed as a normal post"
         );
         assert!(
-            first_card.iter().all(|c| c.id != second),
+            teaser.iter().all(|c| c.id != second),
             "the featured post is not also in the teaser list"
         );
 
@@ -1346,6 +1361,7 @@ mod tests {
             },
             "t",
             0,
+            now,
         )
         .await
         .expect("insert queued");

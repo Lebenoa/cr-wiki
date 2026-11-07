@@ -260,7 +260,7 @@ mod tests {
             published: true,
             published_at: now_unix(),
         };
-        let id = crate::news::insert_post(&db, "en", &draft, "tester", 0)
+        let id = crate::news::insert_post(&db, "en", &draft, "tester", 0, crate::time::now_unix())
             .await
             .unwrap();
         assert!(change_stamp(&db, &FEED_SOURCES).await.unwrap() > Some(1));

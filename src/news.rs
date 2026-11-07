@@ -230,13 +230,30 @@ pub async fn select_published(
     limit: i64,
     offset: i64,
 ) -> Result<Vec<NewsCard>> {
+    select_published_filtered(db, lang, now, limit, offset, true).await
+}
+
+/// [`select_published`] with control over whether a featured post appears.
+/// The homepage teaser hides it (the hero already shows it, so listing it
+/// again reads as a duplicate), while the archive list, the feed and the
+/// sitemap include it — a visitor scanning /news must still find the one
+/// post on a quiet day.
+pub async fn select_published_filtered(
+    db: &Db,
+    lang: &str,
+    now: i64,
+    limit: i64,
+    offset: i64,
+    include_featured: bool,
+) -> Result<Vec<NewsCard>> {
     let sql = format!(
-        "{PROJECTION}  FROM news\n WHERE published = true AND published_at <= $now AND featured != true\n ORDER BY published_at DESC, id DESC\n LIMIT {limit} START {offset}"
+        "{PROJECTION}  FROM news\n WHERE published = true AND published_at <= $now AND (featured != true OR $featured)\n ORDER BY published_at DESC, id DESC\n LIMIT {limit} START {offset}"
     );
     let rows: Vec<CardRow> = db
         .query(&sql)
         .bind(("lang", lang.to_string()))
         .bind(("now", now))
+        .bind(("featured", include_featured))
         .await?
         .take(0)?;
     Ok(rows.into_iter().map(NewsCard::from).collect())
@@ -480,8 +497,8 @@ pub async fn insert_post(
     draft: &NewsDraft,
     author: &str,
     user_id: i64,
+    now: i64,
 ) -> Result<i64> {
-    let now = now_unix();
     let mut res = db
         .query(
             "LET $id = sequence::nextval('news_seq'); \
@@ -503,7 +520,12 @@ pub async fn insert_post(
         .take::<Option<i64>>(2)?
         .ok_or_else(|| surrealdb::Error::internal("news insert returned no id".to_string()))?;
     if draft.featured {
-        clear_other_featured(db, id).await?;
+        // "live" is the row's own state against the same clock the reads
+        // use: a queued post must never demote the live hero before its
+        // moment, and a fixed test date must not silently become "past"
+        // because the wall clock moved.
+        let live = draft.published && draft.published_at <= now;
+        clear_other_featured(db, id, live).await?;
     }
     write_locale(db, id, lang, draft).await?;
     Ok(id)
@@ -513,16 +535,37 @@ pub async fn insert_post(
 /// row that still carries it. Called after the write that (re)points the
 /// flag, so a crash between the two leaves at worst two featured rows —
 /// and the reads above still answer with the newest one.
-async fn clear_other_featured(db: &Db, keep: i64) -> Result<()> {
-    db.query("UPDATE news SET featured = false WHERE featured = true AND record::id(id) != $keep")
-        .bind(("keep", keep))
-        .await?
-        .check()?;
+///
+/// A queued post can also carry the flag (an author schedules the next
+/// featured piece), but it must not demote the live one before its moment:
+/// when the incoming row is still queued, no live holder loses the flag, so
+/// the homepage hero never flickers empty between a queued post's creation
+/// and its reveal. The queued flag takes over on time by itself — the reads
+/// order by `published_at DESC`, and the queued post is the newer one.
+async fn clear_other_featured(db: &Db, keep: i64, keep_live: bool) -> Result<()> {
+    if !keep_live {
+        return Ok(());
+    }
+    db.query(
+        "UPDATE news SET featured = false \
+         WHERE featured = true AND record::id(id) != $keep \
+         AND published = true AND published_at <= $now",
+    )
+    .bind(("keep", keep))
+    .bind(("now", now_unix()))
+    .await?
+    .check()?;
     Ok(())
 }
 
 /// Updates a post's control fields and its `lang` text.
-pub async fn update_post(db: &Db, lang: &str, id: i64, draft: &NewsDraft) -> Result<bool> {
+pub async fn update_post(
+    db: &Db,
+    lang: &str,
+    id: i64,
+    draft: &NewsDraft,
+    now: i64,
+) -> Result<bool> {
     db.query(
         "UPDATE type::record('news', $id) SET \
             published = $published, published_at = $published_at, updated_at = $now, \
@@ -531,12 +574,13 @@ pub async fn update_post(db: &Db, lang: &str, id: i64, draft: &NewsDraft) -> Res
     .bind(("id", id))
     .bind(("published", draft.published))
     .bind(("published_at", draft.published_at))
-    .bind(("now", now_unix()))
+    .bind(("now", now))
     .bind(("featured", draft.featured))
     .await?
     .check()?;
     if draft.featured {
-        clear_other_featured(db, id).await?;
+        let live = draft.published && draft.published_at <= now;
+        clear_other_featured(db, id, live).await?;
     }
     write_locale(db, id, lang, draft).await?;
     Ok(true)
@@ -652,7 +696,7 @@ mod tests {
             published_at: 0,
             featured: false,
         };
-        let id = insert_post(&db, "en", &draft, "tester", 7)
+        let id = insert_post(&db, "en", &draft, "tester", 7, NOW)
             .await
             .expect("insert");
         assert!(id > 0, "the sequence hands out a real id");
@@ -679,7 +723,7 @@ mod tests {
             published_at: 1_792_108_800,
             featured: false,
         };
-        update_post(&db, "th", id, &edit).await.expect("update th");
+        update_post(&db, "th", id, &edit, NOW).await.expect("update th");
         let en = select_edit(&db, "en", id).await.unwrap().expect("exists");
         assert_eq!(en.text.title, "Hello", "English survives a Thai edit");
         let th = select_edit(&db, "th", id).await.unwrap().expect("exists");
@@ -741,7 +785,7 @@ mod tests {
             published_at: 0,
             ..draft.clone()
         };
-        let id2 = insert_post(&db, "en", &second, "tester", 0).await.unwrap();
+        let id2 = insert_post(&db, "en", &second, "tester", 0, NOW).await.unwrap();
         set_published(&db, id2, true).await.unwrap();
         let p2 = select_post(&db, "en", now_unix(), id2)
             .await
@@ -820,7 +864,7 @@ mod tests {
             published_at: SOON,
             featured: false,
         };
-        let id = insert_post(&db, "en", &queued, "tester", 0).await.unwrap();
+        let id = insert_post(&db, "en", &queued, "tester", 0, NOW).await.unwrap();
 
         // before its moment: absent from every public read, the sitemap
         // included, so its url is not a leak
