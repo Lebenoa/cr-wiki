@@ -47,6 +47,10 @@ pub struct NewsCard {
     pub id: i64,
     pub title: String,
     pub summary: String,
+    /// this locale's thumbnail filename, empty when the locale has none —
+    /// the same per-locale rule the detail page applies; lists show the
+    /// artwork they were written with, never another language's
+    pub thumbnail: String,
     pub published: bool,
     pub published_at: i64,
     pub updated_at: i64,
@@ -193,6 +197,7 @@ pub struct NewsDraft {
 const PROJECTION: &str = "SELECT record::id(id) AS id,\n\
         (tr[$lang].title ?? tr.en.title ?? '') AS title,\n\
         (tr[$lang].summary ?? tr.en.summary ?? '') AS summary,\n\
+        (tr[$lang].thumbnail ?? '') AS thumbnail,\n\
         published, published_at, updated_at, author, featured\n";
 
 #[derive(Debug, Clone, Default, SurrealValue)]
@@ -201,11 +206,21 @@ struct CardRow {
     id: i64,
     title: String,
     summary: String,
+    thumbnail: String,
     published: bool,
     published_at: i64,
     updated_at: i64,
     author: String,
     featured: bool,
+}
+
+impl NewsCard {
+    /// The URL a list card shows this post's artwork at, via the shared
+    /// imagehost rule (host proxy when configured, local dir otherwise).
+    /// Askama calls it directly from the templates.
+    pub fn thumbnail_src(&self) -> Option<String> {
+        crate::imagehost::resolve(&self.thumbnail)
+    }
 }
 
 impl From<CardRow> for NewsCard {
@@ -214,6 +229,7 @@ impl From<CardRow> for NewsCard {
             id: r.id,
             title: r.title,
             summary: r.summary,
+            thumbnail: r.thumbnail,
             published: r.published,
             published_at: r.published_at,
             updated_at: r.updated_at,
@@ -303,6 +319,7 @@ pub async fn select_featured(db: &Db, lang: &str, now: i64) -> Result<Option<New
              (tr[$lang].title ?? tr.en.title ?? '') AS title,\n\
              (tr[$lang].summary ?? tr.en.summary ?? '') AS summary,\n\
              (tr[$lang].body ?? tr.en.body ?? '') AS body,\n\
+             (tr[$lang].thumbnail ?? '') AS thumbnail,\n\
              published_at, author\n\
              FROM news WHERE featured = true AND published = true \
              AND published_at <= $now\n\

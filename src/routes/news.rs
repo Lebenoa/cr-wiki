@@ -107,6 +107,17 @@ struct NewsFeatured {
     featured: Option<news::NewsPost>,
 }
 
+impl NewsFeatured {
+    /// The hero's image-half background: this locale's thumbnail when the
+    /// featured post carries one, else the landscape placeholder. Resolution
+    /// (image host vs local disk) is [`imagehost::resolve`]'s one rule.
+    fn thumbnail_src(&self) -> Option<String> {
+        self.featured
+            .as_ref()
+            .and_then(|p| imagehost::resolve(&p.thumbnail))
+    }
+}
+
 #[derive(Template)]
 #[template(path = "news_detail.html")]
 struct NewsDetailPage {
@@ -118,19 +129,10 @@ struct NewsDetailPage {
 
 impl NewsDetailPage {
     /// This locale's thumbnail, or None — the image is per-locale artwork,
-    /// never fallen back to another language's. The value is a bare name:
-    /// against the image host's /proxy/ route when `[images]` is configured
-    /// (uploads live there), else the local /static/img/news/ directory the
-    /// pre-host thumbnails were written to.
+    /// never fallen back to another language's. Resolution (image host vs the
+    /// local pre-host directory) is [`imagehost::resolve`]'s one rule.
     fn thumbnail_src(&self) -> Option<String> {
-        let name = self.post.thumbnail.trim();
-        (!name.is_empty()).then(|| {
-            if crate::state::state().cfg.images.is_configured() {
-                imagehost::served_url(crate::state::state().cfg.images.origin(), name)
-            } else {
-                format!("/static/img/news/{name}")
-            }
-        })
+        imagehost::resolve(&self.post.thumbnail)
     }
 
     fn description(&self) -> String {
@@ -994,11 +996,85 @@ mod tests {
         );
     }
 
+    /// Thumbnails render where they were requested: the list card shows its
+    /// artwork above the title, and the hero's image half points its
+    /// background at the featured post's banner. No thumbnail anywhere —
+    /// local or host — means no img, per the per-locale no-fallback rule.
+    #[test]
+    fn thumbnails_render_on_list_and_hero() {
+        crate::i18n::load("translations");
+        // resolve() reads the shared config; install the inert instance the
+        // router tests use. First instance wins, so the config must carry the
+        // same google credential the router tests' own init would install —
+        // the google flow tests run later in the process and read it.
+        let mut cfg = crate::config::Config::default();
+        cfg.google.client_id = "test-client-id.apps.googleusercontent.com".into();
+        cfg.google.client_secret = "test-client-secret".into();
+        crate::state::init(crate::state::AppState {
+            db: surrealdb::Surreal::init(),
+            limiter: crate::ratelimit::Limiter::new(crate::config::RateLimit::default()),
+            sessions: crate::session::Sessions::new(),
+            oauth_states: crate::oauth::States::new(),
+            cfg,
+        });
+        let mut with = card(1, "Banner", true);
+        with.thumbnail = "banner_en.png".into();
+        let html = NewsPage {
+            ctx: crate::testutil::test_ctx("en"),
+            posts: vec![with.clone()],
+            next_url: String::new(),
+            page: 1,
+        }
+        .render()
+        .expect("renders");
+        assert!(
+            html.contains("/static/img/news/banner_en.png"),
+            "the card resolves the local dir while the host is unconfigured: {html}"
+        );
+        assert!(
+            html.contains("<img src=") && html.contains("aspect-video"),
+            "the card leads with its artwork: {html}"
+        );
+
+        let hero = NewsFeatured {
+            ctx: crate::testutil::test_ctx("en"),
+            featured: Some(news::NewsPost {
+                thumbnail: "banner_en.png".into(),
+                ..Default::default()
+            }),
+        }
+        .render()
+        .expect("renders");
+        assert!(
+            hero.contains("background-image: url('/static/img/news/banner_en.png')"),
+            "the hero's image half carries the thumbnail: {hero}"
+        );
+        assert!(
+            !hero.contains("landscape.jpg"),
+            "no placeholder behind a real banner: {hero}"
+        );
+
+        // a post without one renders neither image nor hero banner
+        let bare = NewsPage {
+            ctx: crate::testutil::test_ctx("en"),
+            posts: vec![card(2, "Bare", true)],
+            next_url: String::new(),
+            page: 1,
+        }
+        .render()
+        .expect("renders");
+        assert!(
+            !bare.contains("img/news/"),
+            "the bare card renders no artwork: {bare}"
+        );
+    }
+
     fn card(id: i64, title: &str, published: bool) -> NewsCard {
         NewsCard {
             id,
             title: title.to_string(),
             summary: "S".into(),
+            thumbnail: String::new(),
             published,
             published_at: 1_792_108_800,
             updated_at: 1_792_108_800,

@@ -35,6 +35,16 @@ struct IndexPage {
     featured: Option<news::NewsPost>,
 }
 
+impl IndexPage {
+    /// The hero's image-half background for the static first paint; the live
+    /// fragment renders its own (same rule) when htmx swaps it in.
+    fn thumbnail_src(&self) -> Option<String> {
+        self.featured
+            .as_ref()
+            .and_then(|p| crate::imagehost::resolve(&p.thumbnail))
+    }
+}
+
 pub async fn index(ctx: Ctx) -> Html<String> {
     let state = crate::state::state();
     let featured = news::select_featured(&state.db, &ctx.lang, crate::time::now_unix())

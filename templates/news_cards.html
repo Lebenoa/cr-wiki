@@ -1,5 +1,11 @@
 {% for p in posts %}
 <li class="rounded-2xl border-2 border-primary/20 bg-surface/50 p-4 hover:border-primary/50 transition-colors">
+    {% if let Some(src) = p.thumbnail_src() %}
+    <a href="/news/{{ p.id }}" class="block mb-3 overflow-hidden rounded-xl">
+        <img src="{{ src }}" alt="{{ p.title }}" loading="lazy" decoding="async"
+            class="w-full aspect-video object-cover">
+    </a>
+    {% endif %}
     <div class="flex flex-wrap items-baseline gap-3">
         <a href="/news/{{ p.id }}"
             class="font-headline text-lg font-bold text-on-surface hover:text-primary transition-colors">{{ p.title

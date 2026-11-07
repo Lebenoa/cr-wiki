@@ -1,7 +1,18 @@
 {% import "title.html" as t %}
 <div class="md:w-1/2 relative min-h-[300px] overflow-hidden">
+    {% match featured %}
+    {% when Some with (post) %}
+    {% if let Some(src) = self.thumbnail_src() %}
+    <div class="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105"
+        style="background-image: url('{{ src }}');"></div>
+    {% else %}
     <div class="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105"
         style="background-image: url('/static/img/landscape.jpg');"></div>
+    {% endif %}
+    {% when None %}
+    <div class="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105"
+        style="background-image: url('/static/img/landscape.jpg');"></div>
+    {% endmatch %}
     <div class="absolute inset-0 bg-gradient-to-r from-transparent to-surface/95"></div>
 </div>
 <div class="md:w-1/2 p-10 flex flex-col justify-center relative">

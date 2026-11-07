@@ -58,6 +58,24 @@ pub fn served_url(base_url: &str, name: &str) -> String {
     format!("{}/proxy/{name}", base_url.trim_end_matches('/'))
 }
 
+/// Resolves a stored bare filename to the URL a page should use: the image
+/// host's `/proxy/` route when `[images]` is configured (uploads live there),
+/// else the local `/static/img/news/` directory the pre-host thumbnails were
+/// written to. None for an empty name — callers hide the image rather than
+/// guess another locale's artwork.
+pub fn resolve(name: &str) -> Option<String> {
+    let name = name.trim();
+    if name.is_empty() {
+        return None;
+    }
+    let state = crate::state::state();
+    if state.cfg.images.is_configured() {
+        Some(served_url(state.cfg.images.origin(), name))
+    } else {
+        Some(format!("/static/img/news/{name}"))
+    }
+}
+
 /// Uploads `bytes` to the image host under `vanity`. The vanity must already
 /// be a safe name — the caller sanitizes (the news thumbnail sanitizer); this
 /// function only transmits.
