@@ -1,11 +1,12 @@
 {% extends "base.html" %}
 {% import "title.html" as t %}
-{% block title %}{{ t::tags(ctx.page_title("index_page_title"), ctx.page_desc("index_page_description"), ctx.social_image()) }}{% endblock %}
+{% block title %}{{ t::tags(ctx.page_title("index_page_title"), ctx.page_desc("index_page_description"),
+ctx.social_image()) }}{% endblock %}
 {% block content %}
 <main class="flex-grow">
     <section class="relative flex items-center justify-center overflow-hidden py-20 min-h-[600px]">
-        <div class="absolute inset-0 bg-cover bg-center"
-            style="background-image: url('/static/img/landscape.jpg');"></div>
+        <div class="absolute inset-0 bg-cover bg-center" style="background-image: url('/static/img/landscape.jpg');">
+        </div>
         <div class="absolute inset-0 bg-gradient-to-t from-surface via-surface/70 to-transparent"></div>
         <div class="relative z-10 text-center">
             <h1 class="font-headline text-5xl md:text-6xl mb-8 font-extrabold drop-shadow-lg">
@@ -74,9 +75,8 @@
             <div class="lg:col-span-4 flex flex-col gap-8">
                 <h2 class="font-headline text-2xl font-bold flex items-center gap-3 text-foreground">
                     <span class="text-primary">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
-                            fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                            stroke-linejoin="round">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path
                                 d="M11 6a13 13 0 0 0 8.4-2.8A1 1 0 0 1 21 4v12a1 1 0 0 1-1.6.8A13 13 0 0 0 11 14H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2z" />
                             <path d="M6 14a12 12 0 0 0 2.4 7.2 2 2 0 0 0 3.2-2.4A8 8 0 0 1 10 14" />
@@ -85,27 +85,9 @@
                     </span>
                     {{ ctx.l.t("index_fresh_title") }}
                 </h2>
-                <div class="flex flex-col gap-4">
-                    <a href="/changelog"
-                        class="bg-surface p-6 rounded-2xl border border-accent/30 hover:border-primary transition-all shadow-md group">
-                        <p class="font-label text-[10px] text-secondary font-bold mb-2 uppercase">
-                            {{ ctx.l.t("index_fresh_item1_date") }}</p>
-                        <h4
-                            class="font-headline font-bold text-lg mb-2 text-on-surface group-hover:text-primary transition-colors">
-                            {{ ctx.l.t("index_fresh_item1_title") }}</h4>
-                        <p class="text-foreground-muted text-sm line-clamp-2">
-                            {{ ctx.l.t("index_fresh_item1_desc") }}</p>
-                    </a>
-                    <a href="/changelog"
-                        class="bg-surface p-6 rounded-2xl border border-accent/30 hover:border-primary transition-all shadow-md group">
-                        <p class="font-label text-[10px] text-secondary font-bold mb-2 uppercase">
-                            {{ ctx.l.t("index_fresh_item2_date") }}</p>
-                        <h4
-                            class="font-headline font-bold text-lg mb-2 text-on-surface group-hover:text-primary transition-colors">
-                            {{ ctx.l.t("index_fresh_item2_title") }}</h4>
-                        <p class="text-foreground-muted text-sm line-clamp-2">
-                            {{ ctx.l.t("index_fresh_item2_desc") }}</p>
-                    </a>
+                <div id="news-latest" class="flex flex-col gap-4" hx-get="/news/latest" hx-trigger="load"
+                    hx-swap="innerHTML">
+                    <p class="text-center text-sm text-foreground-muted">{{ ctx.l.t("news_loading") }}</p>
                 </div>
                 <a href="/changelog"
                     class="w-full py-4 bg-surface rounded-full font-bold text-foreground hover:bg-primary hover:text-black transition-all uppercase tracking-widest text-xs font-label border border-primary/50 text-center">
@@ -123,8 +105,7 @@
                         <span
                             class="inline-block px-4 py-1 bg-primary text-on-primary text-[10px] font-bold rounded-full mb-4 w-fit font-label uppercase">
                             {{ ctx.l.t("index_featured_label") }}</span>
-                        <h2
-                            class="font-headline text-3xl mb-4 text-on-surface font-extrabold leading-tight uppercase">
+                        <h2 class="font-headline text-3xl mb-4 text-on-surface font-extrabold leading-tight uppercase">
                             {{ ctx.l.t("index_featured_title") }}</h2>
                         <p class="text-foreground-muted mb-8 leading-relaxed text-sm">
                             {{ ctx.l.t("index_featured_desc") }}</p>
@@ -142,13 +123,6 @@
                     </div>
                 </div>
             </div>
-        </div>
-    </section>
-    <section class="page-shell max-w-3xl">
-        <h2 class="section-title text-center">{{ ctx.l.t("news_page_header") }}</h2>
-        <div id="news-latest" class="mt-6 flex flex-col gap-3"
-            hx-get="/news/latest" hx-trigger="load" hx-swap="innerHTML">
-            <p class="text-center text-sm text-foreground-muted">{{ ctx.l.t("news_loading") }}</p>
         </div>
     </section>
 </main>

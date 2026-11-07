@@ -177,8 +177,9 @@ async fn news_teaser_redirects_a_direct_visit() {
     assert_eq!(get("/news/latest").await.status(), StatusCode::SEE_OTHER);
 }
 
-/// The landing page renders its news teaser as a lazy htmx GET, so the page
-/// itself stays free of database work, and the navbar carries the link.
+/// The landing page renders its news teaser as a lazy htmx GET inside the
+/// "Fresh from the Oven" column — the only news surface on the page, so the
+/// page itself stays free of database work — and the navbar carries the link.
 #[tokio::test]
 async fn index_lazy_loads_the_news_teaser() {
     state();
@@ -186,6 +187,9 @@ async fn index_lazy_loads_the_news_teaser() {
     assert!(html.contains("id=\"news-latest\""), "{html}");
     assert!(html.contains("hx-get=\"/news/latest\""), "{html}");
     assert!(html.contains("href=\"/news\""), "{html}");
+    // exactly one teaser mount: a second section would be redundant with the
+    // first (both load the same fragment)
+    assert_eq!(html.matches("hx-get=\"/news/latest\"").count(), 1, "{html}");
     // and every page the base template frames advertises the feed, in the
     // locale being read
     assert!(
