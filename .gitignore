@@ -53,3 +53,5 @@ __pycache__/
 *.pyc
 deploy/runtime/
 cookierun-bundle.tar.gz
+dev_out.log
+dev_run.log
