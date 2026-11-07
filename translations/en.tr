@@ -1280,7 +1280,7 @@ index_fresh_archive_link
 View Archive Logs
 -----
 index_featured_label
-Featured Recipe
+Featured
 -----
 index_featured_title
 The Pure Vanilla Chronicles
@@ -1290,6 +1290,18 @@ An exhaustive deep-dive into the history of the First King of the Vanilla Kingdo
 -----
 index_featured_cta
 Start Reading
+-----
+index_featured_fallback_title
+Welcome to the Oven
+-----
+index_featured_fallback_desc
+Guides, deep-dives and update notes from the wiki kitchen — fresh from the community.
+-----
+index_featured_fallback_cta
+Browse the News
+-----
+news_featured_label
+Featured on homepage
 -----
 news_link
 News

@@ -50,6 +50,7 @@ pub fn routes() -> Router {
     Router::new()
         .route("/news", get(list))
         .route("/news/latest", get(latest))
+        .route("/news/featured", get(featured))
         // a static segment, like /news/latest: it is matched before the id
         // capture, so the feed is never read as a post id
         .route("/news/feed.xml", get(feed))
@@ -90,6 +91,17 @@ struct NewsLatest {
     /// the posts — the homepage's "fresh" strip is releases first, editorials
     /// second
     releases: Vec<db::SectionCard>,
+}
+
+/// The featured hero the homepage's right column swaps in. `featured` is the
+/// one flagged post, or None when no live post carries the flag — the
+/// template then renders the evergreen fallback (the same markup the static
+/// homepage includes before htmx answers).
+#[derive(Template)]
+#[template(path = "index_featured_static.html")]
+struct NewsFeatured {
+    ctx: Ctx,
+    featured: Option<news::NewsPost>,
 }
 
 #[derive(Template)]
@@ -158,6 +170,7 @@ struct NewsFormPage {
     summary: String,
     body: String,
     published: bool,
+    featured: bool,
     published_date: String,
     edit_lang: String,
     error: String,
@@ -200,11 +213,17 @@ pub struct NewsForm {
     /// publish, or "keep" on an edit.
     #[serde(default)]
     pub published_date: String,
+    #[serde(default)]
+    pub featured: Option<String>,
 }
 
 impl NewsForm {
     fn is_published(&self) -> bool {
         self.published.as_deref() == Some("true")
+    }
+
+    fn is_featured(&self) -> bool {
+        self.featured.as_deref() == Some("true")
     }
 }
 
@@ -258,6 +277,7 @@ fn draft_from(form: &NewsForm, existing: i64, tz_offset: i64) -> NewsDraft {
         body: form.body.clone(),
         published: form.is_published(),
         published_at: resolve_published_at(form, existing, tz_offset),
+        featured: form.is_featured(),
     }
 }
 
@@ -323,6 +343,27 @@ pub async fn latest(ctx: Ctx) -> Result<Response, AppError> {
         }
         .render()
         .unwrap_or_else(|e| format!("template error: {e}")),
+    )
+    .into_response())
+}
+
+/// The homepage's featured hero, fetched by htmx with `hx-trigger="load"`.
+/// A direct (non-htmx) visit redirects to the post itself — the hero is a
+/// fragment, not a page.
+pub async fn featured(ctx: Ctx) -> Result<Response, AppError> {
+    if !ctx.is_fragment() {
+        let state = crate::state::state();
+        return match news::select_featured(&state.db, &ctx.lang, now_unix()).await? {
+            Some(post) => Ok(Redirect::to(&format!("/news/{}", post.id)).into_response()),
+            None => Ok(Redirect::to("/news").into_response()),
+        };
+    }
+    let state = crate::state::state();
+    let featured = news::select_featured(&state.db, &ctx.lang, now_unix()).await?;
+    Ok(Html(
+        NewsFeatured { ctx, featured }
+            .render()
+            .unwrap_or_else(|e| format!("template error: {e}")),
     )
     .into_response())
 }
@@ -509,13 +550,14 @@ pub async fn edit_form(ctx: Ctx, q: Query<CommonQuery>, Path(id): Path<i64>) -> 
 
 /// Renders the authoring form from either a loaded post or a blank one.
 fn news_form(ctx: Ctx, post: Option<&NewsEdit>, edit_lang: String, error: String) -> Response {
-    let (post_id, title, summary, body, published, published_date) = match &post {
+    let (post_id, title, summary, body, published, featured, published_date) = match &post {
         Some(p) => (
             p.id,
             p.text.title.clone(),
             p.text.summary.clone(),
             p.text.body.clone(),
             p.published,
+            p.featured,
             p.published_input(ctx.tz_offset),
         ),
         None => (
@@ -523,6 +565,7 @@ fn news_form(ctx: Ctx, post: Option<&NewsEdit>, edit_lang: String, error: String
             String::new(),
             String::new(),
             String::new(),
+            false,
             false,
             crate::time::format_local_datetime(now_unix(), ctx.tz_offset),
         ),
@@ -540,6 +583,7 @@ fn news_form(ctx: Ctx, post: Option<&NewsEdit>, edit_lang: String, error: String
             summary,
             body,
             published,
+            featured,
             published_date,
             edit_lang,
             error,
@@ -622,6 +666,7 @@ fn server_error_form(
         // Reopen the submitted instant in the same site timezone.
         published_at: crate::time::parse_local_datetime(&form.published_date, ctx.tz_offset)
             .unwrap_or(0),
+        featured: form.is_featured(),
         text: news::PostText {
             title: form.title.clone(),
             summary: form.summary.clone(),
@@ -676,6 +721,7 @@ mod tests {
             lang: "en".into(),
             published: published.then(|| "true".to_string()),
             published_date: date.to_string(),
+            featured: None,
         }
     }
 
@@ -710,6 +756,7 @@ mod tests {
                 id: 7,
                 published: true,
                 published_at: instant,
+                featured: false,
                 text: news::PostText::default(),
             };
             assert_eq!(edit.published_input(offset), "2026-10-20T01:44:00");
@@ -785,6 +832,7 @@ mod tests {
             published_at: 1_792_108_800,
             updated_at: 1_792_108_800,
             author: "writer".into(),
+            featured: false,
         }
     }
 
@@ -905,6 +953,7 @@ mod tests {
             body: "# Heading\n\nSee this.\n\n- alpha\n- beta".into(),
             published: true,
             published_at: now,
+            featured: false,
         };
         let id = news::insert_post(&db, "en", &draft, "tester", 0)
             .await
@@ -975,6 +1024,7 @@ mod tests {
             body: String::new(),
             published: true,
             published_at: now,
+            featured: false,
         };
         let id = news::insert_post(&db, "en", &draft, "tester", 0)
             .await
@@ -1196,6 +1246,7 @@ mod tests {
             summary: String::new(),
             body: String::new(),
             published: false,
+            featured: false,
             published_date: String::new(),
             edit_lang: "en".into(),
             error: String::new(),
@@ -1218,5 +1269,91 @@ mod tests {
         };
         let html = editing.render().expect("renders");
         assert!(html.contains("action=\"/admin/news/7/edit\""), "{html}");
+    }
+
+    /// The featured flag end to end against a real server: flagging a post
+    /// strips the flag from the previous holder, a queued featured post is
+    /// invisible to the hero until its moment, and the flagged post is not
+    /// also listed in the teaser posts.
+    #[tokio::test]
+    async fn featured_is_exclusive_and_public_filtered() {
+        let Some(db) = scratch_db("featured").await else {
+            return;
+        };
+        db.query("DELETE news;").await.unwrap().check().unwrap();
+        let now = 1_792_108_800; // 2026-10-16
+        let draft = |title: &str, at: i64| news::NewsDraft {
+            title: title.into(),
+            summary: "s".into(),
+            body: String::new(),
+            published: true,
+            published_at: at,
+            featured: false,
+        };
+        let first = news::insert_post(&db, "en", &draft("First", now), "t", 0)
+            .await
+            .expect("insert");
+        // flag it: the hero now answers with it
+        news::update_post(
+            &db,
+            "en",
+            first,
+            &news::NewsDraft {
+                featured: true,
+                ..draft("First", now)
+            },
+        )
+        .await
+        .expect("flag");
+        let hero = news::select_featured(&db, "en", now).await.unwrap();
+        assert_eq!(hero.map(|p| p.id), Some(first));
+
+        // a second post flagged later takes the flag away from the first
+        let second = news::insert_post(&db, "en", &draft("Second", now), "t", 0)
+            .await
+            .expect("insert");
+        news::update_post(
+            &db,
+            "en",
+            second,
+            &news::NewsDraft {
+                featured: true,
+                ..draft("Second", now)
+            },
+        )
+        .await
+        .expect("flag");
+        let hero = news::select_featured(&db, "en", now).await.unwrap();
+        assert_eq!(hero.map(|p| p.id), Some(second));
+        let first_card = news::select_published(&db, "en", now, 10, 0).await.unwrap();
+        assert!(
+            first_card.iter().any(|c| c.id == first),
+            "the demoted post is still listed as a normal post"
+        );
+        assert!(
+            first_card.iter().all(|c| c.id != second),
+            "the featured post is not also in the teaser list"
+        );
+
+        // a queued featured post: the hero stays with the live one until
+        // its moment arrives
+        let queued = news::insert_post(
+            &db,
+            "en",
+            &news::NewsDraft {
+                featured: true,
+                ..draft("Later", now + 86_400)
+            },
+            "t",
+            0,
+        )
+        .await
+        .expect("insert queued");
+        let hero = news::select_featured(&db, "en", now).await.unwrap();
+        assert_eq!(hero.map(|p| p.id), Some(second), "queued stays hidden");
+        let hero = news::select_featured(&db, "en", now + 86_400)
+            .await
+            .unwrap();
+        assert_eq!(hero.map(|p| p.id), Some(queued), "revealed on time");
     }
 }

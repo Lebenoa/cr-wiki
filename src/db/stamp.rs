@@ -253,6 +253,7 @@ mod tests {
         );
         plant(&db, "news", 1).await;
         let draft = crate::news::NewsDraft {
+            featured: false,
             title: "Stamped".into(),
             summary: String::new(),
             body: String::new(),

@@ -44,6 +44,9 @@ pub struct NewsCard {
     pub published_at: i64,
     pub updated_at: i64,
     pub author: String,
+    /// Whether this post should occupy the homepage's featured hero. At most
+    /// one post may carry it; the writes below enforce the exclusivity.
+    pub featured: bool,
 }
 
 /// What a post is doing at a given moment. The two stored control fields
@@ -153,6 +156,7 @@ pub struct NewsEdit {
     pub id: i64,
     pub published: bool,
     pub published_at: i64,
+    pub featured: bool,
     pub text: PostText,
 }
 
@@ -172,6 +176,7 @@ pub struct NewsDraft {
     pub body: String,
     pub published: bool,
     pub published_at: i64,
+    pub featured: bool,
 }
 
 /// What every read projects, one plan for the list, the dashboard and the
@@ -179,7 +184,7 @@ pub struct NewsDraft {
 const PROJECTION: &str = "SELECT record::id(id) AS id,\n\
         (tr[$lang].title ?? tr.en.title ?? '') AS title,\n\
         (tr[$lang].summary ?? tr.en.summary ?? '') AS summary,\n\
-        published, published_at, updated_at, author\n";
+        published, published_at, updated_at, author, featured\n";
 
 #[derive(Debug, Clone, Default, SurrealValue)]
 #[surreal(default)]
@@ -191,6 +196,7 @@ struct CardRow {
     published_at: i64,
     updated_at: i64,
     author: String,
+    featured: bool,
 }
 
 impl From<CardRow> for NewsCard {
@@ -203,6 +209,7 @@ impl From<CardRow> for NewsCard {
             published_at: r.published_at,
             updated_at: r.updated_at,
             author: r.author,
+            featured: r.featured,
         }
     }
 }
@@ -224,7 +231,7 @@ pub async fn select_published(
     offset: i64,
 ) -> Result<Vec<NewsCard>> {
     let sql = format!(
-        "{PROJECTION}  FROM news\n WHERE published = true AND published_at <= $now\n ORDER BY published_at DESC, id DESC\n LIMIT {limit} START {offset}"
+        "{PROJECTION}  FROM news\n WHERE published = true AND published_at <= $now AND featured != true\n ORDER BY published_at DESC, id DESC\n LIMIT {limit} START {offset}"
     );
     let rows: Vec<CardRow> = db
         .query(&sql)
@@ -246,6 +253,47 @@ pub async fn select_all(db: &Db, lang: &str) -> Result<Vec<NewsCard>> {
         .await?
         .take(0)?;
     Ok(rows.into_iter().map(NewsCard::from).collect())
+}
+
+/// The one featured post a visitor may read at `now`, for the homepage's
+/// featured hero. The write path keeps at most one `featured` row, but a
+/// queued or newly flagged post must not surface before its moment, so the
+/// same public filter applies; the newest flagged post wins when history
+/// ever left two behind.
+pub async fn select_featured(db: &Db, lang: &str, now: i64) -> Result<Option<NewsPost>> {
+    #[derive(Debug, Clone, Default, SurrealValue)]
+    #[surreal(default)]
+    struct PostRow {
+        id: i64,
+        title: String,
+        summary: String,
+        body: String,
+        published_at: i64,
+        author: String,
+    }
+    let rows: Vec<PostRow> = db
+        .query(
+            "SELECT record::id(id) AS id,\n\
+             (tr[$lang].title ?? tr.en.title ?? '') AS title,\n\
+             (tr[$lang].summary ?? tr.en.summary ?? '') AS summary,\n\
+             (tr[$lang].body ?? tr.en.body ?? '') AS body,\n\
+             published_at, author\n\
+             FROM news WHERE featured = true AND published = true \
+             AND published_at <= $now\n\
+             ORDER BY published_at DESC, id DESC LIMIT 1",
+        )
+        .bind(("lang", lang.to_string()))
+        .bind(("now", now))
+        .await?
+        .take(0)?;
+    Ok(rows.into_iter().next().map(|r| NewsPost {
+        id: r.id,
+        title: r.title,
+        summary: r.summary,
+        body: r.body,
+        published_at: r.published_at,
+        author: r.author,
+    }))
 }
 
 /// The posts a visitor may read at `now`, bodies included, for the feed: the
@@ -343,6 +391,7 @@ pub async fn select_edit(db: &Db, lang: &str, id: i64) -> Result<Option<NewsEdit
         id: i64,
         published: bool,
         published_at: i64,
+        featured: bool,
         // `Option` because a record that was created without text — or whose
         // first save failed before the nested write — carries `tr: NONE`,
         // which a bare map refuses to decode
@@ -350,7 +399,7 @@ pub async fn select_edit(db: &Db, lang: &str, id: i64) -> Result<Option<NewsEdit
     }
     let rows: Vec<EditRow> = db
         .query(
-            "SELECT record::id(id) AS id, published, published_at, tr FROM news \
+            "SELECT record::id(id) AS id, published, published_at, featured, tr FROM news \
              WHERE record::id(id) = $id",
         )
         .bind(("id", id))
@@ -366,6 +415,7 @@ pub async fn select_edit(db: &Db, lang: &str, id: i64) -> Result<Option<NewsEdit
             id: r.id,
             published: r.published,
             published_at: r.published_at,
+            featured: r.featured,
             text,
         }
     }))
@@ -438,7 +488,7 @@ pub async fn insert_post(
              CREATE type::record('news', $id) SET \
                 published = $published, published_at = $published_at, \
                 created_at = $now, updated_at = $now, \
-                author = $author, user_id = $uid; \
+                author = $author, user_id = $uid, featured = $featured; \
              RETURN $id;",
         )
         .bind(("published", draft.published))
@@ -446,27 +496,48 @@ pub async fn insert_post(
         .bind(("now", now))
         .bind(("author", author.to_string()))
         .bind(("uid", user_id))
+        .bind(("featured", draft.featured))
         .await?
         .check()?;
     let id = res
         .take::<Option<i64>>(2)?
         .ok_or_else(|| surrealdb::Error::internal("news insert returned no id".to_string()))?;
+    if draft.featured {
+        clear_other_featured(db, id).await?;
+    }
     write_locale(db, id, lang, draft).await?;
     Ok(id)
+}
+
+/// Enforces "at most one featured post": strips the flag from every other
+/// row that still carries it. Called after the write that (re)points the
+/// flag, so a crash between the two leaves at worst two featured rows —
+/// and the reads above still answer with the newest one.
+async fn clear_other_featured(db: &Db, keep: i64) -> Result<()> {
+    db.query("UPDATE news SET featured = false WHERE featured = true AND record::id(id) != $keep")
+        .bind(("keep", keep))
+        .await?
+        .check()?;
+    Ok(())
 }
 
 /// Updates a post's control fields and its `lang` text.
 pub async fn update_post(db: &Db, lang: &str, id: i64, draft: &NewsDraft) -> Result<bool> {
     db.query(
         "UPDATE type::record('news', $id) SET \
-            published = $published, published_at = $published_at, updated_at = $now",
+            published = $published, published_at = $published_at, updated_at = $now, \
+            featured = $featured",
     )
     .bind(("id", id))
     .bind(("published", draft.published))
     .bind(("published_at", draft.published_at))
     .bind(("now", now_unix()))
+    .bind(("featured", draft.featured))
     .await?
     .check()?;
+    if draft.featured {
+        clear_other_featured(db, id).await?;
+    }
     write_locale(db, id, lang, draft).await?;
     Ok(true)
 }
@@ -579,6 +650,7 @@ mod tests {
             body: body.into(),
             published: false,
             published_at: 0,
+            featured: false,
         };
         let id = insert_post(&db, "en", &draft, "tester", 7)
             .await
@@ -605,6 +677,7 @@ mod tests {
             body: "เนื้อหา".into(),
             published: true,
             published_at: 1_792_108_800,
+            featured: false,
         };
         update_post(&db, "th", id, &edit).await.expect("update th");
         let en = select_edit(&db, "en", id).await.unwrap().expect("exists");
@@ -745,6 +818,7 @@ mod tests {
             body: String::new(),
             published: true,
             published_at: SOON,
+            featured: false,
         };
         let id = insert_post(&db, "en", &queued, "tester", 0).await.unwrap();
 
@@ -937,6 +1011,7 @@ mod tests {
             id: 1,
             published: true,
             published_at: LOCAL_DAY_START,
+            featured: false,
             text: PostText::default(),
         };
         assert_eq!(edit.published_input(420), "2026-10-16T00:00:00");

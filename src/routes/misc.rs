@@ -11,6 +11,7 @@ use crate::ctx::Ctx;
 use crate::db::{self, Card, GachaPool};
 use crate::grade::Graded;
 use crate::i18n;
+use crate::news;
 
 use super::{errors::AppError, CommonQuery};
 
@@ -29,11 +30,18 @@ pub fn routes() -> Router {
 #[template(path = "index.html")]
 struct IndexPage {
     ctx: Ctx,
+    /// The one featured post, for the static first paint of the hero before
+    /// htmx swaps in the live fragment — None renders the evergreen block.
+    featured: Option<news::NewsPost>,
 }
 
 pub async fn index(ctx: Ctx) -> Html<String> {
+    let state = crate::state::state();
+    let featured = news::select_featured(&state.db, &ctx.lang, crate::time::now_unix())
+        .await
+        .unwrap_or(None);
     Html(
-        IndexPage { ctx }
+        IndexPage { ctx, featured }
             .render()
             .unwrap_or_else(|e| format!("template error: {e}")),
     )

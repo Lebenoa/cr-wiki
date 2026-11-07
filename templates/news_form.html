@@ -44,6 +44,12 @@ endblock %}
                 <span class="text-xs font-label uppercase text-foreground-muted">{{ ctx.l.t("news_publish_label")
                     }}</span>
             </label>
+            <label class="flex cursor-pointer items-center gap-2">
+                <input type="checkbox" name="featured" value="true" class="size-5" {% if featured %}checked{% endif
+                    %} />
+                <span class="text-xs font-label uppercase text-foreground-muted">{{ ctx.l.t("news_featured_label")
+                    }}</span>
+            </label>
             <label class="flex flex-col gap-1 text-xs font-label uppercase text-foreground-muted">
                 {{ ctx.l.t("news_date_label") }}
                 <input type="datetime-local" step="1" name="published_date" value="{{ published_date }}"

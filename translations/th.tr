@@ -1277,7 +1277,7 @@ index_fresh_archive_link
 ดูบันทึกจดหมายเหตุ
 -----
 index_featured_label
-สูตรแนะนำ
+แนะนำ
 -----
 index_featured_title
 จดหมายเหตุ Pure Vanilla
@@ -1287,6 +1287,18 @@ index_featured_desc
 -----
 index_featured_cta
 เริ่มอ่าน
+-----
+index_featured_fallback_title
+ยินดีต้อนรับสู่เตาอบ
+-----
+index_featured_fallback_desc
+บทความ เจาะลึก และบันทึกอัปเดตจากครัวของวิกิ — สดใหม่จากชุมชน
+-----
+index_featured_fallback_cta
+ดูข่าวสารทั้งหมด
+-----
+news_featured_label
+แนะนำหน้าแรก
 -----
 news_link
 ข่าวสาร
