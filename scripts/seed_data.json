@@ -184822,8 +184822,8 @@
    "episode_translation_id": 2,
    "episode_id": 1,
    "lang": "th",
-   "name": "Escape from the Oven",
-   "description": "It's too hot! We need to get out of here! The Cookies' great escape begins here. Jump, slide, run and don't look back!"
+   "name": "หนีจากเตาอบ",
+   "description": "ร้อนเกินไปแล้ว! เราต้องออกจากที่นี่! การหนีทีเด็ดของเหล่าคุกกี้เริ่มต้นที่นี่ กระโดด สไลด์ วิ่ง และอย่ามองข้ามหลัง!"
   },
   {
    "episode_translation_id": 3,
@@ -184836,8 +184836,8 @@
    "episode_translation_id": 4,
    "episode_id": 2,
    "lang": "th",
-   "name": "Primeval Forest",
-   "description": "Finally, the Cookie Kingdom! But it's all in ruins! With a map for adventure in hands, you embark on a journey to restore its former glory!"
+   "name": "ป่าดึกดำบรรพ์",
+   "description": "ในที่สุดก็มาถึงอาณาจักรคุกกี้! แต่ที่นั่นพังทลายซะทั้งหมด! ถือแผนที่การผจญภัยในมือ ออกเดินทางฟื้นฟูความรุ่งเรืองในอดีตกันเถอะ!"
   },
   {
    "episode_translation_id": 5,
@@ -184850,8 +184850,8 @@
    "episode_translation_id": 6,
    "episode_id": 3,
    "lang": "th",
-   "name": "Dragon's Valley",
-   "description": "It's even hotter than inside the oven! Make your way past the land of boiling Lava. Watch out - the ground is shaking!"
+   "name": "หุบเขามังกร",
+   "description": "ร้อนกว่าในเตาอบอีก! ฝ่าดินแดนลาวาเดือดพล่านไปให้พ้น ระวังด้วย — พื้นกำลังสั่นสะเทือน!"
   },
   {
    "episode_translation_id": 7,
@@ -184864,8 +184864,8 @@
    "episode_translation_id": 8,
    "episode_id": 4,
    "lang": "th",
-   "name": "City of Wizards",
-   "description": "You've reached the City of Wizards in search for clues about the Kingdom's fate. But the town is abandoned! And strange objects block your path. Mysterious!"
+   "name": "เมืองแห่งพ่อมด",
+   "description": "คุณมาถึงเมืองแห่งพ่อมดเพื่อตามหาเบาะแศู้นำชะตากรรมของอาณาจักร แต่เมืองนี้ถูกทิ้งร้าง! และสิ่งประหลาดดันขวางทาง ลี้ลับเหลือเกิน!"
   },
   {
    "episode_translation_id": 9,
@@ -184878,8 +184878,8 @@
    "episode_translation_id": 10,
    "episode_id": 5,
    "lang": "th",
-   "name": "Dessert Paradise",
-   "description": "Following a sweet scent across the ocean, our Cookies found the Dessert Paradise - a land in the sky, flowing with the fountain of life! A mysterious and mighty presence is said to live at the top of the giant Tree of Life. Ready to find out?"
+   "name": "สวรรค์ขนมหวาน",
+   "description": "ไล่ตามกลิ่นหอมหวานข้ามมหาสมุทร เหล่าคุกกี้พบสวรรค์ขนมหวาน — ดินแดนบนอากาศที่ไหลลื่นด้วยน้ำพุแห่งชีวิต! ของสิ่งลี้ลับและยิ่งใหญ่บางอย่างกล่าวกันว่าอาศัยอยู่บนยอดต้นไม้แห่งชีวิตยักษ์ พร้อมไปค้นหาหรือยัง?"
   },
   {
    "episode_translation_id": 11,
@@ -184892,8 +184892,8 @@
    "episode_translation_id": 12,
    "episode_id": 6,
    "lang": "th",
-   "name": "Plum Blossom Palace",
-   "description": "At the entrance to an eerie, mystical village, suddenly a gate to the heavens opens up! A trail under blooming plum blossom trees leads... right into the netherworld?! Keep your wits here, or you might never find your way back!"
+   "name": "วังดอกบ๊วย",
+   "description": "ณ ทางเข้าหมู่บ้านลี้ลับอันขนพรึง ประตูสู่สวรรค์ก็เปิดออกขึ้นเฉียบพลัน! เส้นทางใต้ต้นดอกบ๊วยบานสะพรั่งนำไปสู่... โลกคนตาย?! ระวังสติไว้ให้ดี ไม่อย่างนั้นอาจหาทางกลับไม่เจอ!"
   },
   {
    "episode_translation_id": 13,
@@ -184906,8 +184906,8 @@
    "episode_translation_id": 14,
    "episode_id": 7,
    "lang": "th",
-   "name": "Land of Enlightenment",
-   "description": "A mystical land has risen above the sea, out of reach for all but the most courageous and persevering of Cookies. Many trials wait on the daunting and treacherous path to enlightenment, but together we can overcome all!"
+   "name": "ดินแดนแห่งการรู้แจ้ง",
+   "description": "ดินแดนลี้ลับผุดขึ้นเหนือทะเล ไปถึงได้เพียงคุกกี้ผู้กล้าหาญและมุ่งมั่นที่สุดเท่านั้น บนเส้นทางสู่การรู้แจ้งที่เกรียวไกรและอันตราย มีบททดสอบนับไม่ถ้วนรออยู่ แต่ด้วยกันแล้วเราผ่านได้ทั้งหมด!"
   },
   {
    "episode_translation_id": 1001,
@@ -184920,8 +184920,8 @@
    "episode_translation_id": 1002,
    "episode_id": 501,
    "lang": "th",
-   "name": "Island of Coins",
-   "description": "The ghost of Pirate Cookie is surrounded by an eerie aura. That's because he's protecting his hidden treasures. Anything could happen on this island, so be careful."
+   "name": "เกาะเหรียญทอง",
+   "description": "ผีของคุกกี้โจรสลัดล้อมรอบด้วยออร่าอันขนพรึง เพราะเขากำลังปกป้องสมบัติที่ซ่อนเอาไว้ บนเกาะนี้อะไรจะเกิดขึ้นก็ได้ จงระวังตัวไว้"
   },
   {
    "episode_translation_id": 1003,
@@ -184934,8 +184934,8 @@
    "episode_translation_id": 1004,
    "episode_id": 502,
    "lang": "th",
-   "name": "Tower of Frozen Waves",
-   "description": "Far beyond the sea lies a mesmerizing tower that looks like frozen ocean waves. What secrets wait at the top? The higher you climb, the colder it gets. Don't get frozen in place!"
+   "name": "หอคอยคลื่นเยือกแข็ง",
+   "description": "ไกลพ้นขอบทะเลสุดสายตา ตั้งตระหง่านหอคอยที่ดูราวกับคลื่นมหาสมุทรเยือกแข็ง อะไรรออยู่บนยอด? ยิ่งไต่สูง ยิ่งหนาว อย่าให้ตัวเองแข็งติดกับที่สิ!"
   },
   {
    "episode_translation_id": 1005,
@@ -184948,8 +184948,8 @@
    "episode_translation_id": 1006,
    "episode_id": 503,
    "lang": "th",
-   "name": "Mysterious Rabbit Hole",
-   "description": "Once you step into the mysterious Marshmallow Hills, you'd better watch your footing around those rabbit holes. After all, there's no telling where they might lead!"
+   "name": "โพรงกระต่ายลี้ลับ",
+   "description": "เมื่อก้าวเข้าสู่เนินมาร์ชแมลโลลี้ลับ จงระวังเท้าตัวเองให้ดีรอบ ๆ โพรงกระต่ายพวกนั้น เพราะใครจะรู้ว่ามันพาไปไหน!"
   },
   {
    "episode_translation_id": 1201,
@@ -184962,8 +184962,8 @@
    "episode_translation_id": 1202,
    "episode_id": 601,
    "lang": "th",
-   "name": "Coin Palace Rush",
-   "description": "A mysterious palace of gold appeared out of nowhere like a mirage! The Coin Palace sparkles with endless treasure and blinding golden glamour! Don't let all that gold fool you! Charge ahead with your eyes glued to the coins, and you're bound to run into trouble!"
+   "name": "วิ่งวังเหรียญทอง",
+   "description": "วังแห่งทองคำลี้ลับปรากฏตัวขึ้นจากไม่มีอะไรเลยราวกับเมฆลอย! วังเหรียญทองเปล่งประกายด้วยสมบัติไร้ขอบเขตและความอลังการสีทองอันจ้าตา! อย่าให้ทองคำมาหลอกลวง! พุ่งไปข้างหน้าด้วยสายตาที่ติดอยู่กับเหรียญทอง คุณจะเจอเรื่องแน่นอน!"
   },
   {
    "episode_translation_id": 1203,
@@ -184976,8 +184976,8 @@
    "episode_translation_id": 1204,
    "episode_id": 602,
    "lang": "th",
-   "name": "XP-Elixir Workshop",
-   "description": "You discovered a secret alchemy workshop! Grab the XP-Elixirs packed with Star Jellies to grow your experience faster than ever!"
+   "name": "โรงงานน้ำยา XP",
+   "description": "คุณค้นพบโรงงานการเล่นแร่แปรธาตุลับ! คว้าน้ำยา XP ที่แพ็กเต็มไปด้วยเยลลี่ดาว แล้วเติบโตให้เร็วกว่าเดิมที่เคย!"
   },
   {
    "episode_translation_id": 1401,
@@ -231593,8 +231593,8 @@
    "skin_translation_id": 2,
    "skin_id": 1800001,
    "lang": "th",
-   "name": "Celestial Emperor",
-   "description": "Gingerbrave's Celestial Emperor"
+   "name": "จักรพรรดิแห่งฟ้า",
+   "description": "จักรพรรดิแห่งฟ้า ของคุกกี้ผู้กล้าหาญ"
   },
   {
    "skin_translation_id": 3,
@@ -231607,8 +231607,8 @@
    "skin_translation_id": 4,
    "skin_id": 1800002,
    "lang": "th",
-   "name": "Imposing Flame Magistrate",
-   "description": "Fire Spirit Cookie's Imposing Flame Magistrate"
+   "name": "ผู้พิพากษาเปลวเพลิงผู้หาญศักดิ์สิทธิ์",
+   "description": "ผู้พิพากษาเปลวเพลิงผู้หาญศักดิ์สิทธิ์ ของคุกกี้ภูตอัคคี"
   },
   {
    "skin_translation_id": 5,
@@ -231621,8 +231621,8 @@
    "skin_translation_id": 6,
    "skin_id": 1800003,
    "lang": "th",
-   "name": "Veiled Lady of Moonlight",
-   "description": "Moonlight Cookie's Veiled Lady of Moonlight"
+   "name": "นางโผนหลบใต้แสงจันทร์",
+   "description": "นางโผนหลบใต้แสงจันทร์ ของคุกกี้แสงจันทร์"
   },
   {
    "skin_translation_id": 7,
@@ -231635,8 +231635,8 @@
    "skin_translation_id": 8,
    "skin_id": 1800004,
    "lang": "th",
-   "name": "Ethereal Satin",
-   "description": "Ethereal Satin Sea Fairy Cookie"
+   "name": "ซาตินอันเหลือประมาณ",
+   "description": "ซาตินอันเหลือประมาณ ของคุกกี้นางฟ้าทะเล"
   },
   {
    "skin_translation_id": 9,
@@ -231649,8 +231649,8 @@
    "skin_translation_id": 10,
    "skin_id": 1800005,
    "lang": "th",
-   "name": "Windward Marksman",
-   "description": "Windward Marksman Wind Archer Cookie"
+   "name": "นักธนูรับลม",
+   "description": "นักธนูรับลม ของคุกกี้นักธนูแห่งสายลม"
   },
   {
    "skin_translation_id": 11,
@@ -231663,8 +231663,8 @@
    "skin_translation_id": 12,
    "skin_id": 1800006,
    "lang": "th",
-   "name": "Starlight Marshmallow",
-   "description": "Marshmallow Bunny Cookie's Starlight Marshmallow"
+   "name": "มาร์ชแมลโลแสงดาว",
+   "description": "มาร์ชแมลโลแสงดาว ของคุกกี้กระต่ายมาร์ชแมลโลว์"
   },
   {
    "skin_translation_id": 13,
@@ -231677,8 +231677,8 @@
    "skin_translation_id": 14,
    "skin_id": 1800007,
    "lang": "th",
-   "name": "Retro Marshmallow",
-   "description": "Marshmallow Bunny Cookie's Retro Marshmallow"
+   "name": "มาร์ชแมลโลยุคเก่า",
+   "description": "มาร์ชแมลโลยุคเก่า ของคุกกี้กระต่ายมาร์ชแมลโลว์"
   },
   {
    "skin_translation_id": 15,
@@ -231691,8 +231691,8 @@
    "skin_translation_id": 16,
    "skin_id": 1800008,
    "lang": "th",
-   "name": "Dilligent Worker",
-   "description": "GingerBrave's Dilligent Worker"
+   "name": "ผู้กระวนกระวายขวนขวายงาน",
+   "description": "ผู้กระวนกระวายขวนขวายงาน ของคุกกี้ผู้กล้าหาญ"
   },
   {
    "skin_translation_id": 17,
@@ -231705,8 +231705,8 @@
    "skin_translation_id": 18,
    "skin_id": 1800009,
    "lang": "th",
-   "name": "Baekho and the Celestial Sage",
-   "description": "Tiger Lily Cookie's Baekho and the Celestial Sage"
+   "name": "แบ็กโฮกับนักปราชญ์แห่งฟ้า",
+   "description": "แบ็กโฮกับนักปราชญ์แห่งฟ้า ของคุกกี้สาวเจ้าป่า"
   },
   {
    "skin_translation_id": 19,
@@ -231719,8 +231719,8 @@
    "skin_translation_id": 20,
    "skin_id": 1800010,
    "lang": "th",
-   "name": "Netherworld Guide",
-   "description": "Princess Bari Cookie's Netherworld Guide"
+   "name": "ผู้นำทางแดนคนตาย",
+   "description": "ผู้นำทางแดนคนตาย ของคุกกี้เจ้าหญิงบารี"
   },
   {
    "skin_translation_id": 21,
@@ -231733,8 +231733,8 @@
    "skin_translation_id": 22,
    "skin_id": 1800011,
    "lang": "th",
-   "name": "Assorted Jeon Bundle",
-   "description": "Potato Salad Cookie's Assorted Jeon Bundle"
+   "name": "กล่องชุดเจออนรวมมิติ",
+   "description": "กล่องชุดเจออนรวมมิติ ของคุกกี้สลัดมันฝรั่ง"
   },
   {
    "skin_translation_id": 23,
@@ -231747,8 +231747,8 @@
    "skin_translation_id": 24,
    "skin_id": 1800012,
    "lang": "th",
-   "name": "Captain of the Azure Storm",
-   "description": "Admiral Gimbap Cookie's Captain of the Azure Storm"
+   "name": "กัปตันแห่งพายุสีคราม",
+   "description": "กัปตันแห่งพายุสีคราม ของคุกกี้พลเรือเอกคิมบับ"
   },
   {
    "skin_translation_id": 25,
@@ -231761,8 +231761,8 @@
    "skin_translation_id": 26,
    "skin_id": 1800013,
    "lang": "th",
-   "name": "Scholar of the Wind",
-   "description": "Rebel Cookie's Scholar of the Wind"
+   "name": "นักปราชญ์แห่งลม",
+   "description": "นักปราชญ์แห่งลม ของคุกกี้จอมโจรคุณธรรม"
   },
   {
    "skin_translation_id": 27,
@@ -231775,8 +231775,8 @@
    "skin_translation_id": 28,
    "skin_id": 1800014,
    "lang": "th",
-   "name": "Colorful Wedding Hanbok",
-   "description": "Kumiho Cookie's Colorful Wedding Hanbok"
+   "name": "ชุดฮันบกงานแต่งสีสันรื่น",
+   "description": "ชุดฮันบกงานแต่งสีสันรื่น ของคุกกี้จิ้งจอกเก้าหาง"
   },
   {
    "skin_translation_id": 29,
@@ -231789,8 +231789,8 @@
    "skin_translation_id": 30,
    "skin_id": 1800015,
    "lang": "th",
-   "name": "Wax-cracking Squishy",
-   "description": "Potato Salad Cookie's Wax-cracking Squishy"
+   "name": "บีบเยื่อแตกอย่างนุ่มนิล",
+   "description": "บีบเยื่อแตกอย่างนุ่มนิล ของคุกกี้สลัดมันฝรั่ง"
   },
   {
    "skin_translation_id": 31,
@@ -231803,8 +231803,8 @@
    "skin_translation_id": 32,
    "skin_id": 1850001,
    "lang": "th",
-   "name": "Loyal Cute Servant",
-   "description": "Loyal Cute Servant Choco Drop"
+   "name": "ผู้รับใช้น้องน่ารักผู้ภักดี",
+   "description": "ผู้รับใช้น้องน่ารักผู้ภักดี ของช็อกโก้ดรอป"
   }
  ],
  "gacha_pool": [

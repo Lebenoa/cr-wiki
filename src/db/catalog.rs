@@ -374,7 +374,7 @@ pub async fn select_skin_list(db: &Db, lang: &str) -> Result<Vec<SkinList>> {
         "LET $cn = (SELECT record::id(id) AS cid, {cname} AS name FROM cookie);
          LET $pn = (SELECT record::id(id) AS pid, {pname} AS name FROM pet);
          SELECT record::id(id) AS id, image, grade, (collab ?? false) AS collab,
-                (subtitle ?? '') AS subtitle,
+                ({subtitle} ?? subtitle ?? '') AS subtitle,
                 {name} AS name, (tr.en.name ?? '') AS en_name,
                 cookie_id, pet_id,
                 (array::find($cn, |$x| $x.cid = cookie_id).name ?? '') AS cookie_name,
@@ -383,7 +383,10 @@ pub async fn select_skin_list(db: &Db, lang: &str) -> Result<Vec<SkinList>> {
           ORDER BY id",
         name = tr("name"),
         cname = tr("name"),
-        pname = tr("name")
+        pname = tr("name"),
+        // the localized owner attribution lives in skin_translation.description;
+        // the bare `subtitle` column is English-only
+        subtitle = tr("description")
     );
     let rows: Vec<SkinListRow> = db
         .query(&sql)
