@@ -257,6 +257,7 @@ mod tests {
             title: "Stamped".into(),
             summary: String::new(),
             body: String::new(),
+            thumbnail: String::new(),
             published: true,
             published_at: now_unix(),
         };

@@ -1,13 +1,15 @@
 {% extends "base.html" %}
 {% import "title.html" as t %}
-{% block title %}{{ t::tags(ctx.entity_title(post.title.as_str()), self.description(), ctx.social_image()) }}<script type="application/ld+json">{{ self.article_json()|safe }}</script>{% endblock %}
+{% block title %}{{ t::tags(ctx.entity_title(post.title.as_str()), self.description(), ctx.social_image()) }}
+<script type="application/ld+json">{{ self.article_json()|safe }}</script>{% endblock %}
 {% block content %}
 <section class="page-shell max-w-3xl">
     <a href="/news" class="back-link">&larr; {{ ctx.l.t("news_page_header") }}</a>
     <article class="mt-4">
         <header class="text-center">
             <h1 class="page-title">{{ post.title }}</h1>
-            <p class="mt-2 flex flex-wrap items-center justify-center gap-3 text-xs font-label uppercase text-foreground-muted">
+            <p
+                class="mt-2 flex flex-wrap items-center justify-center gap-3 text-xs font-label uppercase text-foreground-muted">
                 <time datetime="{{ post.date_label(ctx.tz()) }}">{{ post.date_label(ctx.tz()) }}</time>
                 {% if !post.author.is_empty() %}
                 <span>{{ ctx.l.t("news_by_author") }} {{ post.author }}</span>
@@ -17,6 +19,10 @@
             <p class="mt-4 text-lg text-foreground-muted leading-relaxed">{{ post.summary }}</p>
             {% endif %}
         </header>
+        {% if let Some(src) = self.thumbnail_src() %}
+        <img src="{{ src }}" alt="{{ post.title }}" class="mt-6 w-full rounded-2xl border border-border" loading="lazy"
+            decoding="async">
+        {% endif %}
         {% if body_html.is_empty() %}
         <p class="mt-8 text-center text-foreground-muted">{{ ctx.l.t("news_empty_body") }}</p>
         {% else %}

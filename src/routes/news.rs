@@ -108,6 +108,13 @@ struct NewsDetailPage {
 }
 
 impl NewsDetailPage {
+    /// The /static/img/news/ URL of this locale's thumbnail, or None — the
+    /// image is per-locale artwork, never fallen back to another language's.
+    fn thumbnail_src(&self) -> Option<String> {
+        let name = self.post.thumbnail.trim();
+        (!name.is_empty()).then(|| format!("/static/img/news/{name}"))
+    }
+
     fn description(&self) -> String {
         if self.post.summary.trim().is_empty() {
             self.ctx.page_desc("news_page_description")
@@ -163,6 +170,7 @@ struct NewsFormPage {
     title: String,
     summary: String,
     body: String,
+    thumbnail: String,
     published: bool,
     featured: bool,
     published_date: String,
@@ -198,6 +206,10 @@ pub struct NewsForm {
     pub summary: String,
     #[serde(default)]
     pub body: String,
+    /// a bare filename under static/img/news/; stripped of any directory
+    /// components so a submitted path cannot point outside it
+    #[serde(default)]
+    pub thumbnail: String,
     /// the locale this submission writes; empty falls back to the viewer's
     #[serde(default)]
     pub lang: String,
@@ -264,11 +276,25 @@ fn resolve_published_at(form: &NewsForm, existing: i64, tz_offset: i64) -> i64 {
     }
 }
 
+/// A thumbnail submission reduces to a bare filename: any directory
+/// components, URL prefix or parent escape is stripped, then re-checked.
+fn thumbnail_filename(raw: &str) -> String {
+    let name = raw.rsplit(['/', '\\']).next().unwrap_or("").trim();
+    if name.is_empty() || name == "." || name == ".." || !name.contains('.') {
+        return String::new();
+    }
+    name.chars()
+        .all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '-' || c == '.')
+        .then(|| name.to_string())
+        .unwrap_or_default()
+}
+
 fn draft_from(form: &NewsForm, existing: i64, tz_offset: i64) -> NewsDraft {
     NewsDraft {
         title: form.title.trim().to_string(),
         summary: form.summary.trim().to_string(),
         body: form.body.clone(),
+        thumbnail: thumbnail_filename(&form.thumbnail),
         published: form.is_published(),
         published_at: resolve_published_at(form, existing, tz_offset),
         featured: form.is_featured(),
@@ -333,8 +359,8 @@ pub async fn latest(ctx: Ctx) -> Result<Response, AppError> {
             .await?;
     Ok(Html(
         NewsLatest { ctx, posts }
-        .render()
-        .unwrap_or_else(|e| format!("template error: {e}")),
+            .render()
+            .unwrap_or_else(|e| format!("template error: {e}")),
     )
     .into_response())
 }
@@ -542,26 +568,29 @@ pub async fn edit_form(ctx: Ctx, q: Query<CommonQuery>, Path(id): Path<i64>) -> 
 
 /// Renders the authoring form from either a loaded post or a blank one.
 fn news_form(ctx: Ctx, post: Option<&NewsEdit>, edit_lang: String, error: String) -> Response {
-    let (post_id, title, summary, body, published, featured, published_date) = match &post {
-        Some(p) => (
-            p.id,
-            p.text.title.clone(),
-            p.text.summary.clone(),
-            p.text.body.clone(),
-            p.published,
-            p.featured,
-            p.published_input(ctx.tz_offset),
-        ),
-        None => (
-            0,
-            String::new(),
-            String::new(),
-            String::new(),
-            false,
-            false,
-            crate::time::format_local_datetime(now_unix(), ctx.tz_offset),
-        ),
-    };
+    let (post_id, title, summary, body, thumbnail, published, featured, published_date) =
+        match &post {
+            Some(p) => (
+                p.id,
+                p.text.title.clone(),
+                p.text.summary.clone(),
+                p.text.body.clone(),
+                p.text.thumbnail.clone(),
+                p.published,
+                p.featured,
+                p.published_input(ctx.tz_offset),
+            ),
+            None => (
+                0,
+                String::new(),
+                String::new(),
+                String::new(),
+                String::new(),
+                false,
+                false,
+                crate::time::format_local_datetime(now_unix(), ctx.tz_offset),
+            ),
+        };
     let (title_key, save_key) = if post_id > 0 {
         ("news_edit_page_title", "news_save_button")
     } else {
@@ -574,6 +603,7 @@ fn news_form(ctx: Ctx, post: Option<&NewsEdit>, edit_lang: String, error: String
             title,
             summary,
             body,
+            thumbnail,
             published,
             featured,
             published_date,
@@ -663,6 +693,7 @@ fn server_error_form(
             title: form.title.clone(),
             summary: form.summary.clone(),
             body: form.body.clone(),
+            thumbnail: String::new(),
         },
     };
     (
@@ -710,11 +741,41 @@ mod tests {
             title: title.to_string(),
             summary: "s".into(),
             body: "b".into(),
+            thumbnail: String::new(),
             lang: "en".into(),
             published: published.then(|| "true".to_string()),
             published_date: date.to_string(),
             featured: None,
         }
+    }
+
+    /// The thumbnail submission reduces to a bare filename: paths, URL
+    /// prefixes, traversal and non-name characters all collapse to "none",
+    /// so nothing a form sends can point outside static/img/news/.
+    #[test]
+    fn thumbnail_submission_is_sanitized() {
+        assert_eq!(thumbnail_filename("banner.png"), "banner.png");
+        assert_eq!(thumbnail_filename("  banner_th.png "), "banner_th.png");
+        assert_eq!(
+            thumbnail_filename("../../etc/passwd"),
+            "",
+            "the stripped remainder fails the character check"
+        );
+        assert_eq!(thumbnail_filename("https://evil.example/x.png"), "x.png");
+        assert_eq!(
+            thumbnail_filename("..%2F..%2Fwin.ini"),
+            "",
+            "URL-encoded escapes carry %, rejected"
+        );
+        assert_eq!(thumbnail_filename(""), "");
+        assert_eq!(thumbnail_filename(".."), "");
+        assert_eq!(thumbnail_filename("."), "");
+        assert_eq!(thumbnail_filename("no_extension"), "");
+        assert_eq!(
+            thumbnail_filename("bad name!.png"),
+            "",
+            "a space or punctuation is rejected outright"
+        );
     }
 
     /// An explicit date wins; a first publish with no date is stamped now; a
@@ -914,6 +975,7 @@ mod tests {
             title: "Launch & more".into(),
             summary: "a teaser".into(),
             body: "# Heading\n\nSee this.\n\n- alpha\n- beta".into(),
+            thumbnail: String::new(),
             published: true,
             published_at: now,
             featured: false,
@@ -985,6 +1047,7 @@ mod tests {
             title: "Launch".into(),
             summary: "a teaser".into(),
             body: String::new(),
+            thumbnail: String::new(),
             published: true,
             published_at: now,
             featured: false,
@@ -1208,6 +1271,7 @@ mod tests {
             title: String::new(),
             summary: String::new(),
             body: String::new(),
+            thumbnail: String::new(),
             published: false,
             featured: false,
             published_date: String::new(),
@@ -1249,6 +1313,7 @@ mod tests {
             title: title.into(),
             summary: "s".into(),
             body: String::new(),
+            thumbnail: String::new(),
             published: true,
             published_at: at,
             featured: false,

@@ -1381,6 +1381,12 @@ news_admin_empty
 news_title_label
 หัวข้อ
 -----
+news_thumbnail_label
+ชื่อไฟล์รูปหัวข้อ
+-----
+news_thumbnail_hint
+ไฟล์ใน static/img/news/ (เช่น banner.png) แยกตามภาษา - เฉพาะหน้าของภาษานี้เท่านั้นที่แสดง เว้นว่างหากไม่มี
+-----
 news_summary_label
 สรุป
 -----

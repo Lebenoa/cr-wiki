@@ -26,12 +26,19 @@ use crate::time::now_unix;
 
 /// One locale's text for a post. Empty strings mean "not translated yet", so
 /// the locale fallback on read fills in the English text.
+///
+/// `thumbnail` is per-locale on purpose: a release banner is written in one
+/// language's artwork, and each locale shows the image made for it. The value
+/// is a bare filename under `static/img/news/`, never a path or URL — the
+/// template prefixes the directory, so nothing a form submits can escape it.
 #[derive(Debug, Clone, Default, SurrealValue)]
 #[surreal(default)]
 pub struct PostText {
     pub title: String,
     pub summary: String,
     pub body: String,
+    #[surreal(default)]
+    pub thumbnail: String,
 }
 
 /// One card in the public list and the admin dashboard.
@@ -135,6 +142,10 @@ pub struct NewsPost {
     pub title: String,
     pub summary: String,
     pub body: String,
+    /// this locale's thumbnail filename, empty when the locale has none —
+    /// the detail page hides the image rather than falling back to another
+    /// locale's artwork
+    pub thumbnail: String,
     pub published_at: i64,
     pub author: String,
 }
@@ -171,6 +182,7 @@ pub struct NewsDraft {
     pub title: String,
     pub summary: String,
     pub body: String,
+    pub thumbnail: String,
     pub published: bool,
     pub published_at: i64,
     pub featured: bool,
@@ -281,6 +293,7 @@ pub async fn select_featured(db: &Db, lang: &str, now: i64) -> Result<Option<New
         title: String,
         summary: String,
         body: String,
+        thumbnail: String,
         published_at: i64,
         author: String,
     }
@@ -304,6 +317,7 @@ pub async fn select_featured(db: &Db, lang: &str, now: i64) -> Result<Option<New
         title: r.title,
         summary: r.summary,
         body: r.body,
+        thumbnail: r.thumbnail,
         published_at: r.published_at,
         author: r.author,
     }))
@@ -367,6 +381,7 @@ pub async fn select_post(db: &Db, lang: &str, now: i64, id: i64) -> Result<Optio
         title: String,
         summary: String,
         body: String,
+        thumbnail: String,
         published_at: i64,
         author: String,
     }
@@ -376,6 +391,7 @@ pub async fn select_post(db: &Db, lang: &str, now: i64, id: i64) -> Result<Optio
              (tr[$lang].title ?? tr.en.title ?? '') AS title,\n\
              (tr[$lang].summary ?? tr.en.summary ?? '') AS summary,\n\
              (tr[$lang].body ?? tr.en.body ?? '') AS body,\n\
+             (tr[$lang].thumbnail ?? '') AS thumbnail,\n\
              published_at, author\n\
              FROM news WHERE record::id(id) = $id AND published = true \
              AND published_at <= $now",
@@ -390,6 +406,7 @@ pub async fn select_post(db: &Db, lang: &str, now: i64, id: i64) -> Result<Optio
         title: r.title,
         summary: r.summary,
         body: r.body,
+        thumbnail: r.thumbnail,
         published_at: r.published_at,
         author: r.author,
     }))
@@ -637,6 +654,7 @@ async fn write_locale(db: &Db, id: i64, lang: &str, draft: &NewsDraft) -> Result
             title: draft.title.trim().to_string(),
             summary: draft.summary.trim().to_string(),
             body: draft.body.clone(),
+            thumbnail: draft.thumbnail.trim().to_string(),
         },
     );
     db.query("UPDATE type::record('news', $id) SET tr = $tr")
@@ -688,6 +706,7 @@ mod tests {
             title: "Hello".into(),
             summary: "short".into(),
             body: body.into(),
+            thumbnail: String::new(),
             published: false,
             published_at: 0,
             featured: false,
@@ -715,6 +734,7 @@ mod tests {
             title: "สวัสดี".into(),
             summary: "สรุป".into(),
             body: "เนื้อหา".into(),
+            thumbnail: "banner_th.png".into(),
             published: true,
             published_at: 1_792_108_800,
             featured: false,
@@ -860,6 +880,7 @@ mod tests {
             title: "Queued".into(),
             summary: "later".into(),
             body: String::new(),
+            thumbnail: String::new(),
             published: true,
             published_at: SOON,
             featured: false,

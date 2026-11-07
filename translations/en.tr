@@ -1384,6 +1384,12 @@ No posts yet. Create the first one.
 news_title_label
 Title
 -----
+news_thumbnail_label
+Thumbnail filename
+-----
+news_thumbnail_hint
+A file under static/img/news/ (e.g. banner.png). Per language - only this language's page shows it. Leave empty for none.
+-----
 news_summary_label
 Summary
 -----

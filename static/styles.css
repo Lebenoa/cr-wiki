@@ -945,6 +945,7 @@
 .border-accent\/40{border-color:color-mix(in srgb, oklch(var(--accent, 0.70 0.18 330)) 40%, transparent);}
 .border-accent\/50{border-color:color-mix(in srgb, oklch(var(--accent, 0.70 0.18 330)) 50%, transparent);}
 .border-amber-400{border-color:color-mix(in srgb, var(--colors-amber-400) var(--un-border-opacity), transparent);}
+.border-border{border-color:color-mix(in srgb, oklch(var(--border, 0.88 0.01 260)) var(--un-border-opacity), transparent);}
 .border-cyan-400{border-color:color-mix(in srgb, var(--colors-cyan-400) var(--un-border-opacity), transparent);}
 .border-emerald-400{border-color:color-mix(in srgb, var(--colors-emerald-400) var(--un-border-opacity), transparent);}
 .border-error\/20{border-color:color-mix(in srgb, oklch(var(--error, 0.62 0.24 25)) 20%, transparent);}

@@ -31,6 +31,12 @@ endblock %}
             {{ ctx.l.t("news_summary_label") }}
             <textarea name="summary" rows="2" class="filter-input w-full">{{ summary }}</textarea>
         </label>
+        <label class="flex flex-col gap-1 text-xs font-label uppercase text-foreground-muted">
+            {{ ctx.l.t("news_thumbnail_label") }}
+            <input type="text" name="thumbnail" value="{{ thumbnail }}" class="filter-input w-full"
+                placeholder="banner.png" />
+            <span class="normal-case text-xs text-foreground-muted">{{ ctx.l.t("news_thumbnail_hint") }}</span>
+        </label>
         <div class="flex flex-col gap-1">
             <span class="text-xs font-label uppercase text-foreground-muted">{{ ctx.l.t("news_body_label") }}</span>
             <textarea name="body" rows="16" class="filter-input w-full" data-richtext="article">{{ body }}</textarea>
