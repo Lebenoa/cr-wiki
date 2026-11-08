@@ -18,6 +18,14 @@ Run from the repo root:
   limiting and Turnstile verification are active, and the loopback admin
   bypass is compiled out (`cfg!(debug_assertions)`). Deployments MUST be
   release builds, or every form submission skips the bot check.
+- **Linux deploy build:** `cargo zigbuild --release --target
+  x86_64-unknown-linux-gnu.2.43` — cross-compiles the deployable binary from
+  this Windows checkout without a Linux toolchain (plain `cargo build
+  --target x86_64-unknown-linux-gnu` fails at `cc-rs` for missing
+  cross-GCC). The `.2.43` suffix pins the glibc version to build against —
+  the binary needs no newer glibc than that at runtime. The result is a
+  normal GNU/Linux ELF matching the Ubuntu deploy host
+  (`~/projects/cr-wiki` on `local-ls`).
 - **Typecheck:** `cargo check` — exit clean before yielding work.
 - **Tests:** `cargo test` (unit tests live beside the code, e.g. in
   `src/main.rs`). Never start a dev server yourself; if one is already
