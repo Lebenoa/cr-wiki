@@ -10,9 +10,10 @@
 
 use serde::Deserialize;
 
-/// 10 MB — the host's own ceiling (`api::TEN_MB` in discord-images). The
-/// upload is rejected here, before the bytes leave the process, when larger.
-pub const MAX_BYTES: usize = 10 * 1024 * 1024;
+/// 20 MB — Discord's attachment ceiling. The upload is rejected here, before
+/// the bytes leave the process, when larger. The image host
+/// (`api::TEN_MB` in discord-images) must allow the same or larger.
+pub const MAX_BYTES: usize = 20 * 1024 * 1024;
 
 #[derive(Debug)]
 pub enum UploadError {
