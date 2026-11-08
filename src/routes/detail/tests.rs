@@ -77,7 +77,7 @@ async fn treasure_links_resolve() {
     assert!(links.has_unlock());
     assert_eq!(links.unlock_section, "pets");
     assert_eq!(links.unlock_id, 77);
-    assert!(!links.unlock_name.is_empty());
+    assert_ne!(links.unlock_name, "");
 
     // relics and skins have detail rows now. Their ids are not 1-based —
     // relics start at 500001 and skins at 1800001 — so the test takes an
@@ -89,7 +89,7 @@ async fn treasure_links_resolve() {
             .await
             .unwrap()
             .unwrap_or_else(|| panic!("{section} {} has no detail", first.id));
-        assert!(!detail.name.is_empty());
+        assert_ne!(detail.name, "");
     }
 }
 
@@ -105,15 +105,15 @@ async fn detail_rows() {
         .await
         .unwrap()
         .expect("cookie 89");
-    assert!(!cookie.name.is_empty());
-    assert!(!cookie.abilities.is_empty());
+    assert_ne!(cookie.name, "");
+    assert_ne!(cookie.abilities, "");
 
     // a treasure has no abilities column, and effects come with ladders
     let treasure = db::select_detail(&pool, "en", "treasures", 317)
         .await
         .unwrap()
         .expect("treasure 317");
-    assert!(treasure.abilities.is_empty());
+    assert_eq!(treasure.abilities, "");
     let effects = db::treasure_effects(&pool, "en", 317).await.unwrap();
     assert!(!effects.is_empty());
     assert!(

@@ -742,7 +742,7 @@ mod tests {
             .await
             .unwrap()
             .is_empty());
-        assert!(published_ids(&db, NOW).await.unwrap().is_empty());
+        assert_eq!(published_ids(&db, NOW).await.unwrap(), Vec::<String>::new());
         let all = select_all(&db, "en").await.unwrap();
         assert_eq!(all.len(), 1);
         assert_eq!(all[0].title, "Hello");
@@ -769,7 +769,7 @@ mod tests {
         assert_eq!(th.text.title, "สวัสดี");
         // a locale with no text of its own is empty for editing (no fallback)
         let fr = select_edit(&db, "fr", &id).await.unwrap().expect("exists");
-        assert!(fr.text.title.is_empty());
+        assert_eq!(fr.text.title, "");
 
         // publishing reveals it, and the public read falls back to English
         set_published(&db, &id, true).await.unwrap();
@@ -918,7 +918,7 @@ mod tests {
             .is_empty());
         assert!(select_feed(&db, "en", NOW, 50).await.unwrap().is_empty());
         assert!(select_post(&db, "en", NOW, &id).await.unwrap().is_none());
-        assert!(published_ids(&db, NOW).await.unwrap().is_empty());
+        assert_eq!(published_ids(&db, NOW).await.unwrap(), Vec::<String>::new());
         assert_eq!(
             newest_publication(&db, NOW).await.unwrap(),
             None,

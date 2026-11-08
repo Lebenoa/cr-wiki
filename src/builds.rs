@@ -680,7 +680,7 @@ mod tests {
         o.insert("description", "d");
         o.insert("youtube_url", "");
         o.insert("author", "a");
-        o.insert("user_id", "".to_string());
+        o.insert("user_id", String::new());
         o.insert("expires_at", 7_300i64);
         let row = BuildRow::from_value(Value::Object(o)).expect("decodes");
         let card = row.into_card(50);

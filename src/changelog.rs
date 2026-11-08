@@ -221,11 +221,14 @@ mod tests {
         assert_eq!(first.kind, "feat");
         assert_eq!(first.scope, "seed");
         assert_eq!(first.subject, "add cookies");
-        assert_eq!(first.body, vec!["First paragraph continues here.", "Second paragraph."]);
+        assert_eq!(
+            first.body,
+            vec!["First paragraph continues here.", "Second paragraph."]
+        );
 
         let second = &entries[1];
         assert_eq!(second.kind, "");
         assert_eq!(second.subject, "subject without a colon");
-        assert!(second.body.is_empty());
+        assert_eq!(second.body, Vec::<String>::new());
     }
 }

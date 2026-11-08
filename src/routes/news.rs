@@ -1412,8 +1412,8 @@ mod tests {
             ..summarized
         };
         let empty = feed_entry(&en, &bare, "");
-        assert!(empty.description.is_empty());
-        assert!(empty.author.is_empty());
+        assert_eq!(empty.description, "");
+        assert_eq!(empty.author, "");
     }
 
     /// The feed's `Last-Modified` is the newest moment it reflects: a later
