@@ -298,9 +298,13 @@ fn resolve_published_at(form: &NewsForm, existing: i64, tz_offset: i64) -> i64 {
 
 /// A thumbnail submission reduces to a bare filename: any directory
 /// components, URL prefix or parent escape is stripped, then re-checked.
+/// Either shape passes: a classic file name with an extension, or the
+/// extensionless vanity the image-host uploader drops into this field
+/// (`stem-<unix>`; requiring a dot would wipe the stored thumbnail on the
+/// next save that leaves the uploaded value untouched).
 fn thumbnail_filename(raw: &str) -> String {
     let name = raw.rsplit(['/', '\\']).next().unwrap_or("").trim();
-    if name.is_empty() || name == "." || name == ".." || !name.contains('.') {
+    if name.is_empty() || name == "." || name == ".." {
         return String::new();
     }
     name.chars()
@@ -883,8 +887,8 @@ mod tests {
         assert_eq!(thumbnail_filename("  banner_th.png "), "banner_th.png");
         assert_eq!(
             thumbnail_filename("../../etc/passwd"),
-            "",
-            "the stripped remainder fails the character check"
+            "passwd",
+            "traversal is stripped to the bare name; no directory survives"
         );
         assert_eq!(thumbnail_filename("https://evil.example/x.png"), "x.png");
         assert_eq!(
@@ -895,7 +899,10 @@ mod tests {
         assert_eq!(thumbnail_filename(""), "");
         assert_eq!(thumbnail_filename(".."), "");
         assert_eq!(thumbnail_filename("."), "");
-        assert_eq!(thumbnail_filename("no_extension"), "");
+        // the image-host uploader's own output: a stem-and-timestamp vanity
+        // with no extension — a save that leaves it must keep it, not wipe it
+        assert_eq!(thumbnail_filename("new_cookies_en"), "new_cookies_en");
+        assert_eq!(thumbnail_filename("news-1794207451"), "news-1794207451");
         assert_eq!(
             thumbnail_filename("bad name!.png"),
             "",
