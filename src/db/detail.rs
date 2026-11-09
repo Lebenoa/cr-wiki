@@ -457,6 +457,7 @@ pub async fn treasure_variant(
            FROM treasure
           WHERE ($evolved AND record::id(id) = $base)
              OR ($evolved = false AND base_treasure_id = $id)
+          ORDER BY id
           LIMIT 1",
         tr_name = tr("name"),
     );
@@ -492,6 +493,7 @@ pub async fn unlocked_treasure(
                 {} AS name
            FROM treasure
           WHERE {col} = $id
+          ORDER BY id
           LIMIT 1",
         tr("name")
     );

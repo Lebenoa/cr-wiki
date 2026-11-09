@@ -293,6 +293,7 @@ async fn search_table(
                     (tr.en.name ?? '') AS en_name
                FROM {table}
               WHERE {}
+              ORDER BY name ASC
               LIMIT {limit}",
             tr("name"),
             contains.join(" OR "),
@@ -403,6 +404,7 @@ async fn fuzzy_word_pass(
                 (tr.en.name ?? '') AS en_name
            FROM {table}
           WHERE {}
+          ORDER BY name ASC
           LIMIT {limit}",
         tr("name"),
         clauses.join(" OR "),

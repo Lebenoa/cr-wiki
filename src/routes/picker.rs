@@ -331,11 +331,11 @@ mod tests {
         let cookies = crate::options::options(&pool, "en", "cookie")
             .await
             .expect("cookie options");
-        assert_eq!(cookies.len(), 94);
+        assert_eq!(cookies.len(), 97);
         let pets = crate::options::options(&pool, "en", "pet")
             .await
             .expect("pet options");
-        assert_eq!(pets.len(), 101, "the two phantom Sotdae pets are gone");
+        assert_eq!(pets.len(), 104, "the two phantom Sotdae pets are gone");
 
         let treasures = crate::options::options(&pool, "en", "treasure")
             .await

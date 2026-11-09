@@ -643,7 +643,7 @@ mod tests {
         assert!(pending, "a fresh token is pending");
 
         let ctx = crate::testutil::test_ctx("en");
-        let dead_link = ctx.l.t("reset_password_invalid").to_string();
+        let dead_link = ctx.l.t("reset_password_invalid").clone();
         let page = body(reset_page(ctx.clone(), &token, pending)).await;
         assert!(
             page.contains("class=\"cf-turnstile\""),
@@ -714,6 +714,21 @@ mod tests {
             eprintln!("skip: CR_SURREAL_URL not set");
             return;
         };
+        // profile::by_id reads the shared state; install the live handle —
+        // `init` is first-wins, so under the full suite an earlier test's
+        // inert instance stays and this test's handler reads that instead
+        // (its asserts then fail loudly rather than silently skipping).
+        // The config mirrors the router tests' install: they run later in
+        // the process and read the Google credential from it.
+        let mut cfg = crate::config::Config::default();
+        cfg.google.client_id = "test-client-id.apps.googleusercontent.com".into();
+        cfg.google.client_secret = "test-client-secret".into();
+        crate::state::init(crate::state::AppState {
+            db: pool.clone(),
+            limiter: crate::ratelimit::Limiter::new(crate::config::RateLimit::default()),
+            oauth_states: crate::oauth::States::new(),
+            cfg,
+        });
         let username = "cr_profile_probe";
         drop_probe_user(&pool, username).await;
         let hash = session::hash_password(&pool, "old password")
@@ -751,7 +766,7 @@ mod tests {
         let page = body(
             crate::routes::profile::by_id(
                 crate::testutil::test_ctx("en"),
-                axum::extract::Path(user.id.to_string()),
+                axum::extract::Path(user.id.clone()),
             )
             .await,
         )

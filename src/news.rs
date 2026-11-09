@@ -518,8 +518,33 @@ pub async fn published_ids(db: &Db, now: i64) -> Result<Vec<String>> {
     Ok(rows.into_iter().map(|r| r.id).collect())
 }
 
+/// Extracts a created row's record id as a plain string from the statement at
+/// `stmt` (a `RETURN AFTER` row carries the raw record id). The helper lives
+/// once because three inserters read back the id the same way.
+fn created_id(res: &mut surrealdb::IndexedResults, stmt: usize, missing: &str) -> Result<String> {
+    #[derive(Debug, Default, SurrealValue)]
+    #[surreal(default)]
+    struct IdRow {
+        id: Option<surrealdb::types::RecordId>,
+    }
+    let rows: Vec<IdRow> = res.take(stmt)?;
+    rows.into_iter()
+        .next()
+        .and_then(|r| r.id)
+        .map(|id| match id.key {
+            surrealdb::types::RecordIdKey::String(s) => Ok(s),
+            surrealdb::types::RecordIdKey::Number(n) => Ok(n.to_string()),
+            surrealdb::types::RecordIdKey::Uuid(u) => Ok(u.to_string()),
+            _ => Err(surrealdb::Error::internal(
+                "created row carried an exotic record id".to_string(),
+            )),
+        })
+        .transpose()?
+        .ok_or_else(|| surrealdb::Error::internal(missing.to_string()))
+}
+
 /// Creates a post and its text for `lang`, returning the new id. The id comes
-/// from the table's sequence (see `db::ensure_news_schema`), allocated and
+/// from the table's sequence (see `db::ensure_app_tables`), allocated and
 /// consumed in one message.
 pub async fn insert_post(
     db: &Db,
@@ -530,14 +555,16 @@ pub async fn insert_post(
     now: i64,
 ) -> Result<String> {
     // no explicit id: SurrealDB mints a random record id — post urls are
-    // opaque, and the sitemap/feed never enumerate them by position
+    // opaque, and the sitemap/feed never enumerate them by position.
+    // `RETURN AFTER`: SurrealDB 4 does not parse a standalone RETURN clause
+    // on CREATE (it did on 3.x)
     let mut res = db
         .query(
             "CREATE news SET \
                 published = $published, published_at = $published_at, \
                 created_at = $now, updated_at = $now, \
-                author = $author, user = $uid, featured = $featured; \
-             RETURN record::id(id) AS id;",
+                author = $author, user = $uid, featured = $featured \
+             RETURN AFTER;",
         )
         .bind(("published", draft.published))
         .bind(("published_at", draft.published_at))
@@ -550,9 +577,8 @@ pub async fn insert_post(
         .bind(("featured", draft.featured))
         .await?
         .check()?;
-    let id = res
-        .take::<Option<String>>(0)?
-        .ok_or_else(|| surrealdb::Error::internal("news insert returned no id".to_string()))?;
+    // the created row's id as a plain string, projected through record::id
+    let id = created_id(&mut res, 0, "news insert returned no id")?;
     if draft.featured {
         // "live" is the row's own state against the same clock the reads
         // use: a queued post must never demote the live hero before its

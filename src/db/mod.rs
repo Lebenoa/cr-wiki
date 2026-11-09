@@ -65,7 +65,7 @@ pub async fn connect_url(
     ensure_search_schema(&db).await?;
     ensure_sequences(&db).await?;
     ensure_reset_schema(&db).await?;
-    ensure_news_schema(&db).await?;
+    ensure_app_tables(&db).await?;
     sessions::ensure_schema(&db).await?;
     stamp::ensure(&db).await?;
     Ok(db)
@@ -219,14 +219,21 @@ async fn ensure_sequences(db: &Db) -> Result<()> {
     Ok(())
 }
 
-/// Defines the news table and its id sequence. Created on connect rather
-/// than left to the seed: a database that predates the news surface still has
-/// to serve it, and `IF NOT EXISTS` leaves a seeded one alone. The table is
-/// schemaless like `user`; news rows are only ever created by the app.
-async fn ensure_news_schema(db: &Db) -> Result<()> {
-    db.query("DEFINE TABLE IF NOT EXISTS news SCHEMALESS;")
-        .await?
-        .check()?;
+/// Defines the news and build tables. Created on connect rather than left to
+/// the seed: a database that predates the surface still has to serve it, and
+/// `IF NOT EXISTS` leaves a seeded one alone. The tables are schemaless like
+/// `user`; their rows are only ever created by the app. On `SurrealDB` 4 a
+/// SELECT against an undefined table is an error (`The table 'x' does not
+/// exist`) where 3.x answered an empty list — an empty deployment must still
+/// render the build list.
+async fn ensure_app_tables(db: &Db) -> Result<()> {
+    db.query(
+        "DEFINE TABLE IF NOT EXISTS news SCHEMALESS; \
+         DEFINE TABLE IF NOT EXISTS build SCHEMALESS; \
+         DEFINE TABLE IF NOT EXISTS review SCHEMALESS;",
+    )
+    .await?
+    .check()?;
     Ok(())
 }
 

@@ -80,10 +80,14 @@ pub async fn create_user(
 ) -> Result<Option<User>> {
     // no explicit id: SurrealDB mints a random record id, which is the point
     // — account ids must not be enumerable (the profile page is public)
+    // `RETURN AFTER`: SurrealDB 4 does not parse a standalone RETURN clause
+    // on CREATE (it did on 3.x); AFTER answers the whole row
     let mut res = db
-        .query("CREATE user SET username = $u, password = $p, email = $e, \
-                 google_sub = $g, is_admin = false, created_at = time::unix(); \
-             RETURN record::id(id) AS id;")
+        .query(
+            "CREATE user SET username = $u, password = $p, email = $e, \
+                 google_sub = $g, is_admin = false, created_at = time::unix() \
+                 RETURN AFTER;",
+        )
         .bind(("u", username.to_string()))
         .bind(("p", password_hash.to_string()))
         .bind(("e", email.map(str::to_string)))
@@ -97,8 +101,27 @@ pub async fn create_user(
         }
         return Err(e);
     }
-    let id = res
-        .take::<Option<String>>(0)?
+    // the `RETURN AFTER` row's id is the raw record id; its key is the
+    // account id string the rest of the app carries
+    #[derive(Debug, Default, surrealdb::types::SurrealValue)]
+    #[surreal(default)]
+    struct IdRow {
+        id: Option<surrealdb::types::RecordId>,
+    }
+    let rows: Vec<IdRow> = res.take(0)?;
+    let id = rows
+        .into_iter()
+        .next()
+        .and_then(|r| r.id)
+        .map(|id| match id.key {
+            surrealdb::types::RecordIdKey::String(s) => Ok(s),
+            surrealdb::types::RecordIdKey::Number(n) => Ok(n.to_string()),
+            surrealdb::types::RecordIdKey::Uuid(u) => Ok(u.to_string()),
+            _ => Err(surrealdb::Error::internal(
+                "user insert returned an exotic record id".to_string(),
+            )),
+        })
+        .transpose()?
         .ok_or_else(|| surrealdb::Error::internal("user insert returned no id".to_string()))?;
     Ok(Some(User {
         id,

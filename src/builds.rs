@@ -132,16 +132,19 @@ struct BuildRow {
     ep: i64,
     ep_special: i64,
     tag: String,
-    boosts: String,
-    boost: String,
+    /// `Option`, not `String`: rows written before the column existed (and
+    /// test residue) carry `NONE` for it, and SurrealDB 4 hands that to the
+    /// SDK as a present-but-null field the plain String would refuse
+    boosts: Option<String>,
+    boost: Option<String>,
     score: i64,
     coin: i64,
     time: i64,
     boxes: i64,
-    description: String,
-    youtube_url: String,
-    author: String,
-    user_id: String,
+    description: Option<String>,
+    youtube_url: Option<String>,
+    author: Option<String>,
+    user_id: Option<String>,
     expires_at: Option<i64>,
 }
 
@@ -152,16 +155,16 @@ impl BuildRow {
             ep: self.ep,
             ep_special: self.ep_special,
             tags: split_list(&self.tag),
-            boosts: split_list(&self.boosts),
-            boost: self.boost,
+            boosts: split_list(self.boosts.as_deref().unwrap_or_default()),
+            boost: self.boost.unwrap_or_default(),
             score: self.score,
             coin: self.coin,
             time_ms: self.time,
             boxes: self.boxes,
-            description: self.description,
-            youtube_url: self.youtube_url,
-            author: self.author,
-            user_id: self.user_id,
+            description: self.description.unwrap_or_default(),
+            youtube_url: self.youtube_url.unwrap_or_default(),
+            author: self.author.unwrap_or_default(),
+            user_id: self.user_id.unwrap_or_default(),
             is_anon: self.expires_at.is_some(),
             expires_in_h: self
                 .expires_at
@@ -518,8 +521,8 @@ pub async fn insert_build(db: &Db, b: &NewBuild) -> crate::db::Result<String> {
         "CREATE build SET {}, created_at = {now},
             tag = $tags,
             description = $desc, youtube_url = $yt,
-            author = $author, user = $uid, expires_at = $exp; \
-         RETURN record::id(id) AS id;",
+            author = $author, user = $uid, expires_at = $exp \
+         RETURN AFTER;",
         build_sets(&b.changes),
         now = now_unix(),
     );
@@ -542,10 +545,38 @@ pub async fn insert_build(db: &Db, b: &NewBuild) -> crate::db::Result<String> {
         .bind(("exp", exp))
         .await?
         .check()?;
-    let id = res
-        .take::<Option<String>>(0)?
-        .ok_or_else(|| surrealdb::Error::internal("build insert returned no id".to_string()))?;
+    let id = created_id(&mut res, 0, "build insert returned no id")?;
     Ok(id)
+}
+
+/// Extracts a created row's record id as a plain string from the statement at
+/// `stmt` (a `RETURN AFTER` row carries the raw record id). Mirrors the
+/// helper in `news.rs`; not shared because the two modules own their query
+/// shapes independently.
+fn created_id(
+    res: &mut surrealdb::IndexedResults,
+    stmt: usize,
+    missing: &str,
+) -> crate::db::Result<String> {
+    #[derive(Debug, Default, SurrealValue)]
+    #[surreal(default)]
+    struct IdRow {
+        id: Option<surrealdb::types::RecordId>,
+    }
+    let rows: Vec<IdRow> = res.take(stmt)?;
+    rows.into_iter()
+        .next()
+        .and_then(|r| r.id)
+        .map(|id| match id.key {
+            surrealdb::types::RecordIdKey::String(s) => Ok(s),
+            surrealdb::types::RecordIdKey::Number(n) => Ok(n.to_string()),
+            surrealdb::types::RecordIdKey::Uuid(u) => Ok(u.to_string()),
+            _ => Err(surrealdb::Error::internal(
+                "created row carried an exotic record id".to_string(),
+            )),
+        })
+        .transpose()?
+        .ok_or_else(|| surrealdb::Error::internal(missing.to_string()))
 }
 
 pub async fn delete_build(db: &Db, id: &str) -> crate::db::Result<()> {
