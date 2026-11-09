@@ -1390,6 +1390,9 @@ news_thumbnail_hint
 news_summary_label
 สรุป
 -----
+build_back_list
+กลับไปหน้าบิลด์
+-----
 news_body_label
 เนื้อหา
 -----

@@ -560,7 +560,7 @@ export default defineConfig({
         "admin-actions": "flex justify-end px-8 max-w-screen-2xl mx-auto",
         "filter-bar": "flex flex-wrap items-center justify-center gap-3 my-6 px-8",
         "filter-input":
-            "bg-surface border-2 border-secondary/50 focus:border-primary focus:ring-2 focus:ring-primary rounded-full py-2 pl-4 pr-6 w-full sm:w-72 transition-all text-sm text-foreground",
+            "bg-surface border-2 border-secondary/50 focus:border-primary focus:ring-2 focus:ring-primary rounded-full py-2 pl-4 pr-6 w-full sm:w-72 transition-all text-sm text-foreground [&:is(textarea)]:rounded-xl [&:is(textarea)]:px-4",
 
         // Catalog grids: one ladder for icon cards, one for the wider episode
         // cards. Nothing else should define its own column counts.
