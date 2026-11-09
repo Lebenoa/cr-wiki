@@ -3,6 +3,8 @@
 //!   `[[cookie:12]]` / `[[pet:5]]` / `[[treasure:9]]`
 //!       a link to that entity, with its sprite ahead of the name. Ids are
 //!       stable and language-independent; the name resolves per request.
+//!   `![alt](https://…)`
+//!       an image; http(s) sources only, both parts required.
 //!   `{color:red}text{/color}`
 //!       a coloured span, the value restricted to characters that cannot
 //!       break out of the attribute.
@@ -130,7 +132,8 @@ async fn render_inline_body(
     self_ref: Option<(&'static str, i64)>,
 ) -> String {
     // the overwhelming majority of fields carry no markup at all
-    if !raw.contains("[[") && !raw.contains("{color:") && !raw.contains('*') {
+    if !raw.contains("[[") && !raw.contains("{color:") && !raw.contains('*') && !raw.contains("![")
+    {
         return escape(raw);
     }
     let chars: Vec<char> = raw.chars().collect();
@@ -188,6 +191,19 @@ async fn render_inline_body(
                         continue;
                     }
                 }
+            }
+        }
+        if chars.get(i) == Some(&'!') && chars.get(i.saturating_add(1)) == Some(&'[') {
+            if let Some((close, src, alt)) = image_at(&chars, i) {
+                out.push_str("<img src=\"");
+                out.push_str(&escape(&src));
+                out.push_str("\" alt=\"");
+                out.push_str(&escape(&alt));
+                out.push_str(
+                    "\" loading=\"lazy\" class=\"mt-4 rounded-2xl border border-border\" />",
+                );
+                i = close;
+                continue;
             }
         }
         if chars.get(i) == Some(&'*') {
@@ -422,6 +438,34 @@ fn starts_at(chars: &[char], at: usize, needle: &str) -> bool {
         .all(|(k, c)| chars.get(at.saturating_add(k)) == Some(&c))
 }
 
+/// An image `![alt](src)` at `at`: returns the index just past the markup,
+/// the source URL and the alt text. http(s) only — the value renders as a
+/// live `src` and HTML escaping does not neutralise a `javascript:` URL that
+/// carries no markup characters; no control bytes, both parts non-empty.
+fn image_at(chars: &[char], at: usize) -> Option<(usize, String, String)> {
+    let alt_end = find(chars, at.saturating_add(2), "]")?;
+    if chars.get(alt_end.saturating_add(1)) != Some(&'(') {
+        return None;
+    }
+    let close = find(chars, alt_end.saturating_add(2), ")")?;
+    let alt = slice(chars, at.saturating_add(2), alt_end);
+    let src = slice(chars, alt_end.saturating_add(2), close);
+    if alt.is_empty() || src.is_empty() {
+        return None;
+    }
+    let lower = src.to_ascii_lowercase();
+    if !(lower.starts_with("http://") || lower.starts_with("https://")) {
+        return None;
+    }
+    if src.len() > 500 || src.bytes().any(|b| b < 0x20 || b == 0x7f) {
+        return None;
+    }
+    if alt.len() > 300 || alt.bytes().any(|b| b < 0x20 || b == 0x7f) {
+        return None;
+    }
+    Some((close.saturating_add(1), src, alt))
+}
+
 fn find(chars: &[char], from: usize, needle: &str) -> Option<usize> {
     let n: Vec<char> = needle.chars().collect();
     let len = n.len();
@@ -559,5 +603,58 @@ mod tests {
         }
     }
 
-}
+    /// `![alt](src)` renders an img; scheme and near-miss guards reject
+    /// everything that is not an http(s) image, and a rejected shape stays
+    /// literal text (escaped).
+    #[tokio::test]
+    async fn images_render_and_reject_unsafe_sources() {
+        let Some(db) = scratch().await else {
+            eprintln!("skip: set CR_SURREAL_URL to run the image tests");
+            return;
+        };
+        let db = &db;
+        let mut cache = LinkCache::new();
+        let ok = render_inline(
+            db,
+            "en",
+            "![a banner](https://example.com/x.png)",
+            &mut cache,
+            None,
+        )
+        .await;
+        assert!(ok.contains("<img src=\"https://example.com/x.png\""));
+        assert!(ok.contains("alt=\"a banner\""));
 
+        // javascript:, data:, relative and schemeless sources stay literal
+        for src in [
+            "![x](javascript:alert(1))",
+            "![x](data:image/png;base64,AAAA)",
+            "![x](/static/img/news/a.png)",
+            "![x](ftp://example.com/a.png)",
+            "![x](https://)",
+            "![x](https://ok.example/a.png",
+            "![](https://ok.example/a.png)",
+            "![alt only]",
+            "![x]()",
+        ] {
+            let html = render_inline(db, "en", src, &mut cache, None).await;
+            assert!(!html.contains("<img"), "{src:?} must not render: {html}");
+            assert!(html.contains("&lt;") || html.contains('['), "{src:?}");
+        }
+
+        // escaping: quotes and angle brackets in either part cannot escape
+        // the attribute
+        let sneaky = render_inline(
+            db,
+            "en",
+            "![a\" onerror=\"x](https://e.com/a.png)",
+            &mut cache,
+            None,
+        )
+        .await;
+        assert!(
+            sneaky.contains("alt=\"a&quot; onerror=&quot;x\""),
+            "{sneaky}"
+        );
+    }
+}
