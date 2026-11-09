@@ -1,6 +1,6 @@
 //! The admin-authored wiki markup in prose fields, rendered to safe HTML.
 //!
-//!   `[[12]]` / `[[cookie:12]]` / `[[pet:5]]` / `[[treasure:9]]`
+//!   `[[cookie:12]]` / `[[pet:5]]` / `[[treasure:9]]`
 //!       a link to that entity, with its sprite ahead of the name. Ids are
 //!       stable and language-independent; the name resolves per request.
 //!   `{color:red}text{/color}`
@@ -43,29 +43,21 @@ fn valid_color(v: &str) -> bool {
         })
 }
 
-/// "pet:5" -> ("pet", 5). A bare "12" is a cookie, mirroring the original
-/// bare-name form. Anything else is not a link and renders as text.
+/// "cookie:12" / "pet:5" / "treasure:9" -> (kind, id). Anything else — an
+/// untyped id included — is not a link and renders as text.
 fn split_ref(inner: &str) -> Option<(&'static str, i64)> {
-    if let Some((prefix, rest)) = inner.split_once(':') {
-        let kind = match prefix.trim().to_ascii_lowercase().as_str() {
-            "cookie" => "cookie",
-            "pet" => "pet",
-            "treasure" => "treasure",
-            _ => return None,
-        };
-        return rest
-            .trim()
-            .parse::<i64>()
-            .ok()
-            .filter(|n| *n > 0)
-            .map(|n| (kind, n));
-    }
-    inner
-        .trim()
+    let (prefix, rest) = inner.split_once(':')?;
+    let kind = match prefix.trim().to_ascii_lowercase().as_str() {
+        "cookie" => "cookie",
+        "pet" => "pet",
+        "treasure" => "treasure",
+        _ => return None,
+    };
+    rest.trim()
         .parse::<i64>()
         .ok()
         .filter(|n| *n > 0)
-        .map(|n| ("cookie", n))
+        .map(|n| (kind, n))
 }
 
 fn section_of(kind: &str) -> &'static str {
@@ -562,8 +554,10 @@ mod tests {
             ("**<x>**", "<strong>&lt;x&gt;</strong>"),
         ];
         for (src, want) in cases {
-            let html = render_inline(&db, "en", src, &mut cache, None).await;
+            let html = render_inline(db, "en", src, &mut cache, None).await;
             assert_eq!(html, *want, "{src:?}");
         }
     }
+
 }
+
