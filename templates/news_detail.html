@@ -30,7 +30,8 @@
         {% endif %}
     </article>
     {% if ctx.is_admin() %}
-    <div class="mt-10 flex justify-center">
+    <div class="mt-10 flex justify-center gap-3">
+        <a href="/admin/news" class="btn-secondary">{{ ctx.l.t("news_manage_button") }}</a>
         <a href="/admin/news/{{ post.id }}/edit" class="btn-secondary">{{ ctx.l.t("news_edit_button") }}</a>
     </div>
     {% endif %}
