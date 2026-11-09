@@ -413,7 +413,7 @@ Some(ctx.url_for(format!("/{}", self.section()).as_str(), ctx.lang.as_str()))), 
     </div>
     {% endif %}
 
-    <script src="/static/js/level_slider.js"></script>
+    <script src="/static/js/level_slider.js?v={{ ctx.deploy_stamp() }}"></script>
     <script>
         (function () {
             var exitTimer = null;

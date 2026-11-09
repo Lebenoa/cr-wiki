@@ -134,7 +134,7 @@
 
 <div id="build-preview" class="mt-6"></div>
 
-<script src="/static/js/richtext.js"></script>
-<script src="/static/js/level_slider.js"></script>
-<script src="/static/js/picker.js"></script>
+<script src="/static/js/richtext.js?v={{ ctx.deploy_stamp() }}"></script>
+<script src="/static/js/level_slider.js?v={{ ctx.deploy_stamp() }}"></script>
+<script src="/static/js/picker.js?v={{ ctx.deploy_stamp() }}"></script>
 {% endblock %}

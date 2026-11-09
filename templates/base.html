@@ -13,11 +13,11 @@
         <link href="{{ ctx.font_css_url() }}" rel="stylesheet" />
     </noscript>
     <meta name="htmx-config" content='{"transitions": true}' />
-    <script src="/static/thirdparty/htmx.js" defer></script>
-    <script src="/static/js/theme.js"></script>
-    <script src="/static/js/theme_editor.js" defer></script>
-    <script src="/static/js/catalog_filter.js" defer></script>
-    <script src="/static/js/form_guard.js"></script>
+    <script src="/static/thirdparty/htmx.js?v={{ ctx.deploy_stamp() }}" defer></script>
+    <script src="/static/js/theme.js?v={{ ctx.deploy_stamp() }}"></script>
+    <script src="/static/js/theme_editor.js?v={{ ctx.deploy_stamp() }}" defer></script>
+    <script src="/static/js/catalog_filter.js?v={{ ctx.deploy_stamp() }}" defer></script>
+    <script src="/static/js/form_guard.js?v={{ ctx.deploy_stamp() }}"></script>
     <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
     {% block title %}{% endblock %}
     <link rel="canonical" href="{{ ctx.canonical_url() }}" />

@@ -71,6 +71,6 @@ endblock %}
         <button type="submit" class="btn-primary">{{ ctx.l.t(save_key.as_str()) }}</button>
     </form>
 </section>
-<script src="/static/js/richtext.js" defer></script>
-<script src="/static/js/news_thumbnail.js" defer></script>
+<script src="/static/js/richtext.js?v={{ ctx.deploy_stamp() }}" defer></script>
+<script src="/static/js/news_thumbnail.js?v={{ ctx.deploy_stamp() }}" defer></script>
 {% endblock %}

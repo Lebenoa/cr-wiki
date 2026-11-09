@@ -261,8 +261,8 @@
     </ul>
     {% endif %}
 </section>
-<script src="/static/js/richtext.js" defer></script>
-<script src="/static/js/admin_upload.js" defer></script>
+<script src="/static/js/richtext.js?v={{ ctx.deploy_stamp() }}" defer></script>
+<script src="/static/js/admin_upload.js?v={{ ctx.deploy_stamp() }}" defer></script>
 <script>
     // the evolved checkbox shows/hides the base-treasure selector, like the
     // old V form: unchecked hides the section and clears a stale base id so
