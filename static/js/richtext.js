@@ -23,7 +23,7 @@
 // The dropdown is position:fixed and placed from getBoundingClientRect()
 // (viewport coordinates); an absolutely-positioned body child would be offset
 // by the page scroll and appear above the field on scrolled pages.
-(function () {
+(function() {
     'use strict';
 
     var KINDS = ['cookie', 'pet', 'treasure'];
@@ -52,15 +52,15 @@
     function loadNames(cb) {
         var mySeq = ++fetchSeq;
         var remaining = KINDS.length;
-        KINDS.forEach(function (kind) {
+        KINDS.forEach(function(kind) {
             fetch('/api/richtext-names?lang=' + encodeURIComponent(langOf()) + '&kind=' + kind)
-                .then(function (r) { return r.json(); })
-                .then(function (a) {
+                .then(function(r) { return r.json(); })
+                .then(function(a) {
                     if (mySeq !== fetchSeq) return; // a newer lang request superseded this one
                     NAMES[kind] = a && Array.isArray(a.names) ? a.names : [];
                     if (--remaining === 0 && cb) cb();
                 })
-                .catch(function () {
+                .catch(function() {
                     if (mySeq !== fetchSeq) return;
                     NAMES[kind] = [];
                     if (--remaining === 0 && cb) cb();
@@ -70,19 +70,17 @@
 
     // ---- markup helpers shared by autocomplete + preview -------------------
 
-    // [[inner]] -> { kind, id }; "pet:5" -> pet + id 5, a bare [[5]] stays a
-    // cookie link (mirroring the server). Names and unknown prefixes are not
-    // refs — authored markup must be language-independent, so only ids link.
+    // mirrors split_ref: "cookie:12" / "pet:5" / "treasure:9" -> { kind, id }.
+    // Anything else — an untyped id included — is not a link and renders as
+    // text. Names are not refs — authored markup must be language-independent,
+    // so only ids link.
     function parseLink(inner) {
-        var t = inner.trim();
-        var m = /^([a-z]+):(\d+)$/i.exec(t);
-        if (m && KINDS.indexOf(m[1].toLowerCase()) !== -1) {
-            return { kind: m[1].toLowerCase(), id: parseInt(m[2], 10) };
-        }
-        if (/^\d+$/.test(t)) {
-            return { kind: 'cookie', id: parseInt(t, 10) };
-        }
-        return null;
+        var i = inner.indexOf(':');
+        if (i === -1) return null;
+        var kind = inner.slice(0, i).trim().toLowerCase();
+        if (KINDS.indexOf(kind) === -1) return null;
+        var id = parseInt(inner.slice(i + 1).trim(), 10);
+        return id > 0 ? { kind: kind, id: id } : null;
     }
 
     // name lists are ordered page-language first (en fallback after), so the
@@ -214,7 +212,7 @@
         ensureBox();
         box.textContent = '';
         current = { textarea: ta, kind: cur.kind, q: cur.q, items: items, active: 0 };
-        items.forEach(function (opt, i) {
+        items.forEach(function(opt, i) {
             var li = document.createElement('div');
             li.className = 'px-4 py-2 cursor-pointer hover:bg-primary/10 text-foreground flex items-center gap-2';
             li.setAttribute('role', 'option');
@@ -228,13 +226,13 @@
                 li.appendChild(span.firstChild);
             }
             li.appendChild(document.createTextNode(opt.name));
-            li.addEventListener('mousedown', function (e) {
+            li.addEventListener('mousedown', function(e) {
                 e.preventDefault(); // keep the textarea focused
                 insert(ta, cur, opt);
             });
             // fallback for synthetic clicks (no mousedown): skip when a real
             // mousedown already inserted (the [[ is then closed, no open query)
-            li.addEventListener('click', function () {
+            li.addEventListener('click', function() {
                 var q2 = openQuery(ta);
                 if (q2 === null) return;
                 insert(ta, q2, opt);
@@ -271,12 +269,14 @@
 
     // ---- live preview -----------------------------------------------------
 
-    // mirrors render_inline: escape first, then [[links]] and {color:...}
+    // mirrors render_inline: escape first, then the scanner — entity links,
+    // ![alt](https://...) images, **strong** / *em*, {color:...} — over the
+    // already-escaped text, with the same guard shapes as the server.
     function renderInline(s) {
         var out = '';
         var i = 0;
         while (i < s.length) {
-            // link: [[id]] or [[kind:id]]
+            // entity link: [[kind:id]]
             if (s[i] === '[' && s[i + 1] === '[') {
                 var end = s.indexOf(']]', i + 2);
                 if (end !== -1) {
@@ -285,13 +285,53 @@
                         var found = findById(parsed.kind, parsed.id);
                         if (found) {
                             out += '<a href="/' + kindPath(parsed.kind) + '/' + found.id +
-                                '" class="font-bold underline decoration-primary decoration-2 underline-offset-4 hover:text-primary transition-colors">' +
+                                '" class="font-bold hover:text-primary transition-colors">' +
                                 thumbHtml(parsed.kind, found) +
-                                escapeHtml(found.name) + '</a>';
+                                '<span class="underline decoration-primary decoration-2 underline-offset-4">' +
+                                escapeHtml(found.name) + '</span></a>';
                             i = end + 2;
                             continue;
                         }
                     }
+                }
+            }
+            // image: ![alt](https://...) — http(s) sources only, both parts
+            // required (mirrors image_at; escaping already neutralised any
+            // markup characters inside the parts)
+            if (s[i] === '!' && s[i + 1] === '[') {
+                var altEnd = s.indexOf(']', i + 2);
+                if (altEnd !== -1 && s[altEnd + 1] === '(') {
+                    var imgClose = s.indexOf(')', altEnd + 2);
+                    if (imgClose !== -1) {
+                        var alt = s.slice(i + 2, altEnd);
+                        var src = s.slice(altEnd + 2, imgClose);
+                        var low = src.toLowerCase();
+                        if (alt !== '' && src !== '' &&
+                            (low.indexOf('http://') === 0 || low.indexOf('https://') === 0) &&
+                            src.length <= 500 && alt.length <= 300) {
+                            out += '<img src="' + src + '" alt="' + alt +
+                                '" loading="lazy" class="mt-4 rounded-2xl border border-border" />';
+                            i = imgClose + 1;
+                            continue;
+                        }
+                    }
+                }
+            }
+            // **strong**: scanned before *em* so the longer marker wins
+            if (s[i] === '*' && s[i + 1] === '*') {
+                var endS = s.indexOf('**', i + 2);
+                if (endS !== -1 && endS > i + 2) {
+                    out += '<strong>' + renderInline(s.slice(i + 2, endS)) + '</strong>';
+                    i = endS + 2;
+                    continue;
+                }
+            } else if (s[i] === '*') {
+                // *em*: the closing marker must not be another '*'
+                var endE = s.indexOf('*', i + 1);
+                if (endE !== -1 && endE > i + 1 && s[i + 1] !== '*' && s[endE + 1] !== '*') {
+                    out += '<em>' + renderInline(s.slice(i + 1, endE)) + '</em>';
+                    i = endE + 1;
+                    continue;
                 }
             }
             // color span: {color:VAL}...{/color}
@@ -319,42 +359,74 @@
     // heading, a bullet/numbered list or a paragraph. The class strings are
     // deliberately identical to src/richtext.rs's, so unocss (which scans
     // both the templates and the Rust sources) generates them.
-    function isBullet(line) { return /^\s*[-*] /.test(line); }
-    function isNumber(line) { return /^\s*\d+\. /.test(line); }
-    function itemText(line) { return line.replace(/^\s*(?:[-*]|\d+\.) /, ''); }
+    function isBullet(line) { return bulletOf(line) !== null; }
+    function isNumber(line) { return numberOf(line) !== null; }
 
     function renderBlocks(s) {
         var lines = s.replace(/\r\n/g, '\n').split('\n');
         var chunks = [];
         var chunk = [];
         function flush() { if (chunk.length) { chunks.push(chunk); chunk = []; } }
-        lines.forEach(function (l) { if (l.trim() === '') flush(); else chunk.push(l.replace(/\s+$/, '')); });
+        lines.forEach(function(l) { if (l.trim() === '') flush(); else chunk.push(l.replace(/\s+$/, '')); });
         flush();
         var html = '';
-        chunks.forEach(function (blk) {
-            var head = /^(#{1,3}) (.*)$/.exec(blk[0]);
-            if (head && blk.length === 1) {
-                var level = Math.min(head[1].length + 1, 4);
+        chunks.forEach(function(blk) {
+            var head = headOf(blk);
+            if (head) {
+                var level = Math.min(head.hashes + 1, 4);
                 var cls = level <= 2
                     ? 'mt-8 mb-3 font-headline text-2xl text-accent'
                     : 'mt-6 mb-2 font-headline text-xl text-accent';
-                html += '<h' + level + ' class="' + cls + '">' + renderInline(head[2]) + '</h' + level + '>';
+                html += '<h' + level + ' class="' + cls + '">' + renderInline(head.text) + '</h' + level + '>';
                 return;
             }
             if (blk.every(isBullet)) {
-                html += list('ul', 'mt-4 list-disc list-inside space-y-1 text-foreground', blk);
+                html += list('ul', 'mt-4 list-disc list-inside space-y-1 text-foreground',
+                    blk.map(bulletOf));
             } else if (blk.every(isNumber)) {
-                html += list('ol', 'mt-4 list-decimal list-inside space-y-1 text-foreground', blk);
+                html += list('ol', 'mt-4 list-decimal list-inside space-y-1 text-foreground',
+                    blk.map(numberOf));
             } else {
-                html += '<p class="mt-4 leading-relaxed text-foreground">' + renderInline(blk.join(' ')) + '</p>';
+                // single newlines stay in the block; the paragraph turns them
+                // into <br /> — a tight wrap, not a paragraph gap (the
+                // server's post-2026-11 newline behavior)
+                html += '<p class="mt-4 leading-relaxed text-foreground">' +
+                    renderInline(blk.join('\n')).replace(/\n/g, '<br />') + '</p>';
             }
         });
         return html;
     }
 
+    // mirrors heading_of: 1-3 hashes, a space after them, non-empty trimmed
+    // text; only considered when the block is a single line
+    function headOf(blk) {
+        if (blk.length !== 1) return null;
+        var m = /^(#{1,3}) (.*)$/.exec(blk[0]);
+        if (!m) return null;
+        var text = m[2].trim();
+        return text === '' ? null : { hashes: m[1].length, text: text };
+    }
+
+    function isBullet(line) { return bulletOf(line) !== null; }
+    function isNumber(line) { return numberOf(line) !== null; }
+
+    // mirrors bullet_of: the "- "/"* " prefix after any indent, trimmed rest
+    function bulletOf(line) {
+        var t = line.replace(/^\s+/, '');
+        var m = /^[-*] (.*)$/.exec(t);
+        return m ? m[1].trim() : null;
+    }
+
+    // mirrors number_of: digits, then ". ", trimmed rest
+    function numberOf(line) {
+        var t = line.replace(/^\s+/, '');
+        var m = /^(\d+)\. (.*)$/.exec(t);
+        return m ? m[2].trim() : null;
+    }
+
     function list(tag, cls, items) {
         var html = '<' + tag + ' class="' + cls + '">';
-        items.forEach(function (it) { html += '<li>' + renderInline(itemText(it)) + '</li>'; });
+        items.forEach(function(it) { html += '<li>' + renderInline(it) + '</li>'; });
         return html + '</' + tag + '>';
     }
 
@@ -388,13 +460,13 @@
         // re-render the previews once the name lists arrive: they are empty
         // during the first paint, so links in pre-filled fields would stay
         // literal until the user typed
-        loadNames(function () { updateAllPreviews(); });
+        loadNames(function() { updateAllPreviews(); });
         var tas = document.querySelectorAll('textarea[data-richtext]');
-        for (var i = 0; i < tas.length; i++) (function (ta) {
-            ta.addEventListener('input', function () { refresh(ta); updatePreview(ta); });
-            ta.addEventListener('keydown', function (e) { onKeydown(ta, e); });
-            ta.addEventListener('click', function () { refresh(ta); });
-            ta.addEventListener('blur', function () { closeBox(); });
+        for (var i = 0; i < tas.length; i++) (function(ta) {
+            ta.addEventListener('input', function() { refresh(ta); updatePreview(ta); });
+            ta.addEventListener('keydown', function(e) { onKeydown(ta, e); });
+            ta.addEventListener('click', function() { refresh(ta); });
+            ta.addEventListener('blur', function() { closeBox(); });
         })(tas[i]);
         updateAllPreviews();
 
@@ -406,7 +478,7 @@
         // close it then (textarea-internal scroll does not bubble to window)
         window.addEventListener('scroll', closeBox);
 
-        document.addEventListener('mousedown', function (e) {
+        document.addEventListener('mousedown', function(e) {
             if (current && !box.contains(e.target) && e.target !== current.textarea) closeBox();
         });
     }
