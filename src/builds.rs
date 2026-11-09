@@ -133,7 +133,7 @@ struct BuildRow {
     ep_special: i64,
     tag: String,
     /// `Option`, not `String`: rows written before the column existed (and
-    /// test residue) carry `NONE` for it, and SurrealDB 4 hands that to the
+    /// test residue) carry `NONE` for it, and `SurrealDB` 4 hands that to the
     /// SDK as a present-but-null field the plain String would refuse
     boosts: Option<String>,
     boost: Option<String>,
@@ -235,7 +235,9 @@ pub async fn select_builds(
 /// an explicit 0 (the insert binds `unwrap_or(0)`), and `IS NONE` never
 /// matches a stored zero — the plain `> $now` test alone would hide every
 /// signed-in author's builds.
-#[allow(clippy::too_many_lines)] // the verified-sort branch is documented inline
+// nine arguments, each one axis a caller actually varies (sort key, page
+// window, the two optional id filters); a struct would just move the list
+#[allow(clippy::too_many_arguments)]
 async fn select_where(
     db: &Db,
     lang: &str,
@@ -250,7 +252,13 @@ async fn select_where(
     let now = now_unix();
 
     // The tie-break on every sort is the id, so paging cannot repeat a row.
+    // sort=verified orders by the event-maintained `verified_count` column
+    // (`db::ensure_app_tables`); its index answers the sort server-side, so
+    // the page window rides the same query — no fetch-all-then-cut in Rust.
+    // The tie-break stays the record id (the string form both id shapes the
+    // table holds project from), matching the other sorts' stability rule.
     let order = match sort {
+        "verified" => "verified_count DESC, id DESC",
         "score" => "score DESC, id DESC",
         "coin" => "coin DESC, id DESC",
         "time" => "time ASC, id DESC",
@@ -264,40 +272,18 @@ async fn select_where(
         " AND author = $author"
     };
 
-    // sort=verified: global ordering needs every matching build's verified
-    // count, so for this one sort the page is cut in Rust, not SQL: fetch
-    // ALL matching rows (community builds are bounded; the default sort
-    // keeps the LIMIT window), sort against counts, slice the window. The
-    // per-build correlated subquery this replaces is re-planned per row on
-    // v3; the `record::id(id)` projection normalizes both storage shapes
-    // the table holds — the record id older rows may carry and the plain
-    // integer `upsert_review` writes.
-    let verified_sort = sort == "verified";
-    let sql = if verified_sort {
-        format!(
-            "SELECT record::id(id) AS id, cookie_id, cookie2_id, pet_id,
-                    treasure1_id, treasure2_id, treasure3_id,
-                    treasure1_blessed, treasure2_blessed, treasure3_blessed,
-                    treasure1_level, treasure2_level, treasure3_level,
-                    ep, ep_special, tag, boosts, boost, score, coin, time, boxes,
-                    description, youtube_url, author, user_id, expires_at, created_at
-               FROM build
-              WHERE (expires_at IS NONE OR expires_at = 0 OR expires_at > $now){author_filter}{filter_sql}"
-        )
-    } else {
-        format!(
-            "SELECT record::id(id) AS id, cookie_id, cookie2_id, pet_id,
-                    treasure1_id, treasure2_id, treasure3_id,
-                    treasure1_blessed, treasure2_blessed, treasure3_blessed,
-                    treasure1_level, treasure2_level, treasure3_level,
-                    ep, ep_special, tag, boosts, boost, score, coin, time, boxes,
-                    description, youtube_url, author, user_id, expires_at, created_at
-               FROM build
-              WHERE (expires_at IS NONE OR expires_at = 0 OR expires_at > $now){author_filter}{filter_sql}
-              ORDER BY {order}
-              LIMIT {limit} START {offset}"
-        )
-    };
+    let sql = format!(
+        "SELECT record::id(id) AS id, cookie_id, cookie2_id, pet_id,
+                treasure1_id, treasure2_id, treasure3_id,
+                treasure1_blessed, treasure2_blessed, treasure3_blessed,
+                treasure1_level, treasure2_level, treasure3_level,
+                ep, ep_special, tag, boosts, boost, score, coin, time, boxes,
+                description, youtube_url, author, user_id, expires_at, created_at
+           FROM build
+          WHERE (expires_at IS NONE OR expires_at = 0 OR expires_at > $now){author_filter}{filter_sql}
+          ORDER BY {order}
+          LIMIT {limit} START {offset}"
+    );
     let mut q = db.query(&sql).bind(("now", now));
     if let Some(bid) = filter_id {
         q = q.bind(("bid", bid.to_string()));
@@ -308,42 +294,7 @@ async fn select_where(
     if !author.is_empty() {
         q = q.bind(("author", author.to_string()));
     }
-    let mut rows: Vec<BuildRow> = q.await?.take(0)?;
-
-    if verified_sort {
-        #[derive(Default, SurrealValue)]
-        #[surreal(default)]
-        struct CountRow {
-            bid: String,
-            c: i64,
-        }
-        let counts: Vec<CountRow> = db
-            .query(
-                "SELECT record::id(build_id) AS bid, count() AS c
-                   FROM review
-                  WHERE verified = true
-                  GROUP BY bid",
-            )
-            .await?
-            .take(0)?;
-        let by_build: std::collections::HashMap<String, i64> =
-            counts.into_iter().map(|c| (c.bid, c.c)).collect();
-        rows.sort_by(|a, b| {
-            let av = by_build.get(a.id.as_str()).copied().unwrap_or(0);
-            let bv = by_build.get(b.id.as_str()).copied().unwrap_or(0);
-            bv.cmp(&av).then(b.id.cmp(&a.id))
-        });
-        let start = usize::try_from(offset.max(0)).unwrap_or(0).min(rows.len());
-        let end = start
-            .saturating_add(usize::try_from(limit.max(0)).unwrap_or(0))
-            .min(rows.len());
-        // start/end are clamped to the row count above, so the window can
-        // only be empty, never out of range — get() keeps that non-panicking
-        // by construction
-        rows = rows
-            .get(start..end)
-            .map_or_else(Vec::new, <[BuildRow]>::to_vec);
-    }
+    let rows: Vec<BuildRow> = q.await?.take(0)?;
 
     // the entities come back in three batched queries rather than one per
     // slot per build, which is what the V lookups do

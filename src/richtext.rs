@@ -152,48 +152,16 @@ async fn render_inline_body(
             if let Some(end) = find(&chars, i.saturating_add(2), "]]") {
                 let inner = slice(&chars, i.saturating_add(2), end);
                 if let Some((kind, id)) = split_ref(&inner) {
-                    let key = format!("{kind}:{id}");
-                    let hit = if let Some(hit) = cache.get(&key) {
-                        hit.clone()
-                    } else {
-                        let v = db::entity_link(db, lang, kind, id).await;
-                        cache.insert(key, v.clone());
-                        v
-                    };
-                    if let Some((name, image)) = hit {
-                        // a reference to the page's own entity: bold, no
-                        // anchor, no sprite — it is this page
-                        if self_ref.is_some_and(|(k, n)| k == kind && n == id) {
-                            out.push_str("<span class=\"font-bold text-primary\">");
-                            out.push_str(&escape(&name));
-                            out.push_str("</span>");
-                            i = end.saturating_add(2);
-                            continue;
-                        }
-                        let dir = section_of(kind);
-                        // the anchor stays a plain inline box: inline-flex
-                        // would make it an atomic inline that cannot break
-                        // across lines, so a long name in a narrow column
-                        // would overflow instead of wrapping
-                        out.push_str("<a href=\"/");
-                        out.push_str(dir);
-                        out.push('/');
-                        out.push_str(&id.to_string());
-                        out.push_str(
-                            "\" class=\"font-bold hover:text-primary transition-colors\">",
+                    if let Some((name, image)) = entity_link_cached(db, lang, cache, kind, id).await
+                    {
+                        emit_entity_link(
+                            &mut out,
+                            kind,
+                            id,
+                            &name,
+                            image.as_deref(),
+                            self_ref.is_some_and(|(k, n)| k == kind && n == id),
                         );
-                        if let Some(img) = image.filter(|s| !s.is_empty()) {
-                            out.push_str("<img src=\"/static/img/");
-                            out.push_str(dir);
-                            out.push('/');
-                            out.push_str(&escape(&img));
-                            out.push_str("\" alt=\"\" loading=\"lazy\" class=\"inline-block size-5 mr-1 object-contain align-text-bottom\" />");
-                        }
-                        // the underline lives on the text, not the anchor: a
-                        // decoration on the anchor is drawn across the sprite
-                        out.push_str("<span class=\"underline decoration-primary decoration-2 underline-offset-4\">");
-                        out.push_str(&escape(&name));
-                        out.push_str("</span></a>");
                         i = end.saturating_add(2);
                         continue;
                     }
@@ -202,13 +170,7 @@ async fn render_inline_body(
         }
         if chars.get(i) == Some(&'!') && chars.get(i.saturating_add(1)) == Some(&'[') {
             if let Some((close, src, alt)) = image_at(&chars, i) {
-                out.push_str("<img src=\"");
-                out.push_str(&escape(&src));
-                out.push_str("\" alt=\"");
-                out.push_str(&escape(&alt));
-                out.push_str(
-                    "\" loading=\"lazy\" class=\"mt-4 rounded-2xl border border-border\" />",
-                );
+                emit_image(&mut out, &src, &alt);
                 i = close;
                 continue;
             }
@@ -242,39 +204,26 @@ async fn render_inline_body(
                         continue;
                     }
                 }
-            } else {
+            } else if let Some(end) = em_close(&chars, i) {
                 // *em*: the closing marker must not be another '*' (that is
                 // the start of a ** pair, not this run's end)
-                if let Some(end) = find(&chars, i.saturating_add(1), "*") {
-                    let inner = slice(&chars, i.saturating_add(1), end);
-                    if !inner.is_empty()
-                        && !inner.starts_with('*')
-                        && chars.get(end.saturating_add(1)) != Some(&'*')
-                    {
-                        out.push_str("<em>");
-                        out.push_str(&render_inline(db, lang, &inner, cache, self_ref).await);
-                        out.push_str("</em>");
-                        i = end.saturating_add(1);
-                        continue;
-                    }
-                }
+                let inner = slice(&chars, i.saturating_add(1), end);
+                out.push_str("<em>");
+                out.push_str(&render_inline(db, lang, &inner, cache, self_ref).await);
+                out.push_str("</em>");
+                i = end.saturating_add(1);
+                continue;
             }
         }
         if chars.get(i) == Some(&'{') && starts_at(&chars, i, "{color:") {
-            if let Some(close) = find(&chars, i.saturating_add(7), "}") {
-                let value = slice(&chars, i.saturating_add(7), close);
-                if valid_color(&value) {
-                    if let Some(end) = find(&chars, close.saturating_add(1), "{/color}") {
-                        let inner = slice(&chars, close.saturating_add(1), end);
-                        out.push_str("<span style=\"color:");
-                        out.push_str(&value);
-                        out.push_str("\">");
-                        out.push_str(&escape(&inner));
-                        out.push_str("</span>");
-                        i = end.saturating_add("{/color}".chars().count());
-                        continue;
-                    }
-                }
+            if let Some((end, value, inner)) = color_span(&chars, i) {
+                out.push_str("<span style=\"color:");
+                out.push_str(&value);
+                out.push_str("\">");
+                out.push_str(&escape(&inner));
+                out.push_str("</span>");
+                i = end;
+                continue;
             }
         }
         // plain characters go straight into the output: routing each one
@@ -291,6 +240,108 @@ async fn render_inline_body(
         i = i.saturating_add(1);
     }
     out
+}
+
+/// One `[[kind:id]]`'s resolved (name, sprite), through the link cache: a
+/// hit answers from the memo, a miss queries the database and stores. Split
+/// out of `render_inline_body` to keep that scanner under clippy's budget.
+async fn entity_link_cached(
+    db: &Db,
+    lang: &str,
+    cache: &mut LinkCache,
+    kind: &str,
+    id: i64,
+) -> Option<(String, Option<String>)> {
+    let key = format!("{kind}:{id}");
+    if let Some(hit) = cache.get(&key) {
+        return hit.clone();
+    }
+    let v = db::entity_link(db, lang, kind, id).await;
+    cache.insert(key, v.clone());
+    v
+}
+
+/// Where a `*em*` run starting at `start` closes, if it closes as an em: the
+/// inner text must be non-empty, must not itself start a `**` pair, and the
+/// character after the closing marker must not be another `*` (that would be
+/// the start of a `**` pair, not this run's end). `None` leaves the `*` to
+/// render as a literal character.
+fn em_close(chars: &[char], start: usize) -> Option<usize> {
+    let end = find(chars, start.saturating_add(1), "*")?;
+    let inner = slice(chars, start.saturating_add(1), end);
+    if inner.is_empty() || inner.starts_with('*') || chars.get(end.saturating_add(1)) == Some(&'*')
+    {
+        return None;
+    }
+    Some(end)
+}
+
+/// Emits one `![alt](src)` as a lazy block image. Split out of
+/// `render_inline_body` to keep that scanner under clippy's line budget.
+fn emit_image(out: &mut String, src: &str, alt: &str) {
+    out.push_str("<img src=\"");
+    out.push_str(&escape(src));
+    out.push_str("\" alt=\"");
+    out.push_str(&escape(alt));
+    out.push_str("\" loading=\"lazy\" class=\"mt-4 rounded-2xl border border-border\" />");
+}
+
+/// Where a `{color:…}…{/color}` span starting at `start` ends, with its
+/// colour value and inner text, when the colour is one the whitelist allows
+/// and the span closes. `None` leaves the `{` to render as a literal.
+fn color_span(chars: &[char], start: usize) -> Option<(usize, String, String)> {
+    let close = find(chars, start.saturating_add(7), "}")?;
+    let value = slice(chars, start.saturating_add(7), close);
+    if !valid_color(&value) {
+        return None;
+    }
+    let end = find(chars, close.saturating_add(1), "{/color}")?;
+    let inner = slice(chars, close.saturating_add(1), end);
+    Some((end.saturating_add("{/color}".chars().count()), value, inner))
+}
+
+/// Emits one resolved `[[kind:id]]` as its anchor (or, when the reference is
+/// the page's own entity, as a highlight). Split out of `render_inline_body`
+/// only to keep that scanner under clippy's line budget: this is the
+/// emission half, the scanner above owns detection and advance.
+fn emit_entity_link(
+    out: &mut String,
+    kind: &str,
+    id: i64,
+    name: &str,
+    image: Option<&str>,
+    is_self: bool,
+) {
+    if is_self {
+        // a reference to the page's own entity: bold, no anchor, no
+        // sprite — it is this page
+        out.push_str("<span class=\"font-bold text-primary\">");
+        out.push_str(&escape(name));
+        out.push_str("</span>");
+        return;
+    }
+    let dir = section_of(kind);
+    // the anchor stays a plain inline box: inline-flex
+    // would make it an atomic inline that cannot break
+    // across lines, so a long name in a narrow column
+    // would overflow instead of wrapping
+    out.push_str("<a href=\"/");
+    out.push_str(dir);
+    out.push('/');
+    out.push_str(&id.to_string());
+    out.push_str("\" class=\"font-bold hover:text-primary transition-colors\">");
+    if let Some(img) = image.filter(|s| !s.is_empty()) {
+        out.push_str("<img src=\"/static/img/");
+        out.push_str(dir);
+        out.push('/');
+        out.push_str(&escape(img));
+        out.push_str("\" alt=\"\" loading=\"lazy\" class=\"inline-block size-5 mr-1 object-contain align-text-bottom\" />");
+    }
+    // the underline lives on the text, not the anchor: a
+    // decoration on the anchor is drawn across the sprite
+    out.push_str("<span class=\"underline decoration-primary decoration-2 underline-offset-4\">");
+    out.push_str(&escape(name));
+    out.push_str("</span></a>");
 }
 
 /// One block of an article body, before inline rendering. News prose is the

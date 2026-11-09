@@ -30,8 +30,7 @@ pub fn initial(username: &str) -> String {
     username
         .chars()
         .next()
-        .map(String::from)
-        .unwrap_or_else(|| "?".to_string())
+        .map_or_else(|| "?".to_string(), String::from)
 }
 
 /// The joined-day line, localized to the site's fixed zone. `None` means the
@@ -76,7 +75,7 @@ pub(crate) async fn by_id(ctx: Ctx, Path(id): Path<String>) -> Response {
     profile(ctx, &id).await
 }
 
-/// Whether `id` has the shape SurrealDB's default record-id generator mints.
+/// Whether `id` has the shape `SurrealDB`'s default record-id generator mints.
 /// The contract is in the server source, not folklore: `CREATE` without an
 /// id takes `RecordIdKey::rand()` (`surrealdb-core` `val/record_id.rs`,
 /// `cnf::ID_CHARS`) — exactly 20 characters from `[0-9a-z]`. Anything else
@@ -87,6 +86,38 @@ fn is_default_record_id(id: &str) -> bool {
         && id
             .bytes()
             .all(|b| b.is_ascii_lowercase() || b.is_ascii_digit())
+}
+
+async fn profile(ctx: Ctx, id: &str) -> Response {
+    let state = crate::state::state();
+    // a database outage is not a missing user: 500, not 404 — the 404 page
+    // would read as "this account never existed" to a visitor and a crawler
+    let Ok(row) = crate::db::find_user_by_id(&state.db, id).await else {
+        return errors::server_error(ctx);
+    };
+    let Some(row) = row else {
+        return errors::not_found(ctx);
+    };
+    let Ok(builds) = builds::select_by_user(&state.db, &ctx.lang, id).await else {
+        return errors::server_error(ctx);
+    };
+    let initial = initial(&row.username);
+    let joined = joined_day(row.created_at, ctx.tz_offset);
+    let page = ProfilePage {
+        user: ProfileUser {
+            username: row.username,
+            google_linked: row.google_sub.is_some(),
+        },
+        builds,
+        ctx,
+        initial,
+        joined,
+    };
+    match page.render() {
+        Ok(html) => Html(html).into_response(),
+        // the same fallback every template render in this tree uses
+        Err(e) => Html(format!("500 unexpected error: {e}")).into_response(),
+    }
 }
 
 #[cfg(test)]
@@ -111,39 +142,5 @@ mod tests {
         assert!(!is_default_record_id("YM2JT6PQ32N349V1HN1U"), "uppercase");
         assert!(!is_default_record_id("../etc/passwd"), "traversal");
         assert!(!is_default_record_id(""), "empty");
-    }
-}
-
-async fn profile(ctx: Ctx, id: &str) -> Response {
-    let state = crate::state::state();
-    // a database outage is not a missing user: 500, not 404 — the 404 page
-    // would read as "this account never existed" to a visitor and a crawler
-    let row = match crate::db::find_user_by_id(&state.db, id).await {
-        Ok(row) => row,
-        Err(_) => return errors::server_error(ctx),
-    };
-    let Some(row) = row else {
-        return errors::not_found(ctx);
-    };
-    let builds = match builds::select_by_user(&state.db, &ctx.lang, id).await {
-        Ok(b) => b,
-        Err(_) => return errors::server_error(ctx),
-    };
-    let initial = initial(&row.username);
-    let joined = joined_day(row.created_at, ctx.tz_offset);
-    let page = ProfilePage {
-        user: ProfileUser {
-            username: row.username,
-            google_linked: row.google_sub.is_some(),
-        },
-        builds,
-        ctx,
-        initial,
-        joined,
-    };
-    match page.render() {
-        Ok(html) => Html(html).into_response(),
-        // the same fallback every template render in this tree uses
-        Err(e) => Html(format!("500 unexpected error: {e}")).into_response(),
     }
 }

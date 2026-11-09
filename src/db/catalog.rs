@@ -169,10 +169,12 @@ pub(super) struct EpisodeListRow {
 pub async fn select_episode_list(db: &Db, lang: &str) -> Result<Vec<EpisodeList>> {
     // The child counts ride along as pre-grouped maps instead of correlated
     // subqueries. On SurrealDB v3 a subquery whose right-hand side mentions
-    // `$parent` is re-planned per outer row and never touches an index, so the
-    // old shape cost a full child-table scan per episode per child kind
-    // (~92 ms against a 13-row episode table with ~3k quests). One grouped
-    // scan per child table plus an in-memory array lookup is ~1 ms total.
+    // `$parent` is re-planned per outer row and never touches an index, so
+    // the old shape cost a full child-table scan per episode per child kind
+    // (~92 ms against a 13-row episode table with ~3k quests). Re-measured on
+    // 4.0: the correlated aggregate still plans a per-row table scan (~0.7 s
+    // at 30k quests) while one grouped scan per child table plus an in-memory
+    // array lookup stays ~1 ms — the shape stays.
     // `record::id(id)` inside the closures reads the row's id before the
     // `record::id(id) AS id` projection shadows it with the plain integer.
     let sql = format!(
@@ -242,9 +244,9 @@ struct IngredientListRow {
 ///
 /// Recipe counts arrive as their own grouped query and are joined in Rust:
 /// a `$parent`-correlated subquery re-plans per row on v3 (~0.4 s for 242
-/// ingredients), and an in-SQL `array::find` join costs ~130 ms because the
-/// closure scan is linear per row. Two scans + a `HashMap` join stay in
-/// single digits.
+/// ingredients) and still does on 4.0, and an in-SQL `array::find` join
+/// costs ~130 ms because the closure scan is linear per row. Two scans + a
+/// `HashMap` join stay in single digits.
 pub async fn select_ingredient_list(db: &Db, lang: &str) -> Result<Vec<IngredientList>> {
     #[derive(Default, SurrealValue)]
     #[surreal(default)]
@@ -367,8 +369,8 @@ struct SkinListRow {
 
 /// Skins in id order; the owner (a cookie or a pet) resolves its own name.
 /// The owner names come from pre-built maps rather than per-row correlated
-/// subqueries — see `select_relic_groups` for why: v3 re-plans a `$parent`
-/// subquery per row, costing a full cookie/pet scan per skin.
+/// subqueries — see `select_relic_groups` for why (v3 re-planned a `$parent`
+/// subquery per row; 4.0 still plans one table scan per row).
 pub async fn select_skin_list(db: &Db, lang: &str) -> Result<Vec<SkinList>> {
     let sql = format!(
         "LET $cn = (SELECT record::id(id) AS cid, {cname} AS name FROM cookie);
@@ -461,10 +463,10 @@ pub async fn select_relic_groups(db: &Db, lang: &str) -> Result<Vec<RelicGroup>>
         name: String,
     }
     // The unlocking cookie's name resolves through one pre-built map (id ->
-    // name) instead of a per-relic correlated subquery: v3 re-plans a
-    // `$parent` subquery per row and never uses an index, so 85 relics cost
-    // ~45 ms of repeated cookie-table scans. The map lookup keeps it <20 ms
-    // (94-row map scanned 85 times) without a second round trip.
+    // name) instead of a per-relic correlated subquery: v3 re-planned a
+    // `$parent` subquery per row (4.0 still plans one table scan per row), so
+    // 85 relics cost ~45 ms of repeated cookie-table scans. The map lookup
+    // keeps it <20 ms (94-row map scanned 85 times) without a second trip.
     let sql = format!(
         "LET $cookie_names = (SELECT record::id(id) AS cid, {cname} AS name FROM cookie);
          SELECT record::id(id) AS id, image, (episode_id ?? 0) AS episode_id,

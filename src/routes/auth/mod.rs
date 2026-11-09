@@ -329,7 +329,7 @@ fn public_base(ctx: &Ctx, cfg: &crate::config::Config) -> String {
 }
 
 /// The registration policy gate, pure so it is testable without a server:
-/// `None` passes, `Some(key)` is the .tr key for the BAD_REQUEST response.
+/// `None` passes, `Some(key)` is the .tr key for the `BAD_REQUEST` response.
 /// One-character accounts are squatting and brute-force bait; the only cost
 /// of a couple of characters is a keystroke, so the floor is cheap. Login
 /// deliberately does not enforce it — old accounts must keep working.

@@ -40,7 +40,7 @@ pub struct Limiter {
 }
 
 /// The idle sweep runs at most this often while the map is past
-/// `sweep_above`. The memory bound is MAX_BUCKETS with oldest-eviction, not
+/// `sweep_above`. The memory bound is `MAX_BUCKETS` with oldest-eviction, not
 /// the sweep, so throttling it costs at most `SWEEP_INTERVAL` of stale idle
 /// buckets — and turns the flood path from O(n)-per-request back to O(1).
 #[cfg_attr(debug_assertions, allow(dead_code))]

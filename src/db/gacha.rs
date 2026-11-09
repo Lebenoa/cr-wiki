@@ -99,9 +99,9 @@ async fn prizes(
           WHERE record::id(id) IN $ids",
         tr("name"),
     );
-    // ints, not "table:42" strings: v3 does not coerce a string to a record
-    // id inside `IN`, so the string form silently matches nothing (the
-    // same shape `cards_by_ids` projects and binds)
+    // ints, not "table:42" strings: a string does not coerce to a record id
+    // inside `IN` on any version (the string form silently matches nothing —
+    // the same shape `cards_by_ids` projects and binds)
     let rows: Vec<PrizeRow> = db
         .query(sql.as_str())
         .bind(("lang", lang.to_string()))

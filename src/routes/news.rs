@@ -33,10 +33,6 @@ use super::CommonQuery;
 /// Posts the index teaser shows.
 const TEASER_LIMIT: i64 = 3;
 
-/// Releases the index teaser shows above the posts: enough to fill the
-/// Fresh column's grid (3 sections x 4 candidates merged down) without
-/// turning the homepage into a second catalog page.
-
 /// Posts the feed carries. A subscriber wants the recent window, not the
 /// archive: a feed that grows without bound is one every reader re-downloads
 /// whole, and the oldest entries are the ones nobody is catching up on. It is
@@ -307,10 +303,14 @@ fn thumbnail_filename(raw: &str) -> String {
     if name.is_empty() || name == "." || name == ".." {
         return String::new();
     }
-    name.chars()
+    if name
+        .chars()
         .all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '-' || c == '.')
-        .then(|| name.to_string())
-        .unwrap_or_default()
+    {
+        name.to_string()
+    } else {
+        String::new()
+    }
 }
 
 fn draft_from(form: &NewsForm, existing: i64, tz_offset: i64) -> NewsDraft {
@@ -615,10 +615,10 @@ fn news_form(ctx: Ctx, post: Option<&NewsEdit>, edit_lang: String, error: String
                 crate::time::format_local_datetime(now_unix(), ctx.tz_offset),
             ),
         };
-    let (title_key, save_key) = if !post_id.is_empty() {
-        ("news_edit_page_title", "news_save_button")
-    } else {
+    let (title_key, save_key) = if post_id.is_empty() {
         ("news_new_page_title", "news_create_button")
+    } else {
+        ("news_edit_page_title", "news_save_button")
     };
     Html(
         NewsFormPage {

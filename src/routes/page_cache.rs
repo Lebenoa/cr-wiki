@@ -10,6 +10,10 @@ use axum::{
 
 use crate::ctx::Ctx;
 
+// five bools, but each is one axis the rendered page genuinely differs on
+// (fragment vs full, htmx boost, admin chrome, google button, locale tz is
+// i64) — an enum per axis would multiply the key space without merging any
+#[allow(clippy::struct_excessive_bools)]
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct Key {
     url: String,

@@ -556,8 +556,8 @@ pub async fn insert_post(
 ) -> Result<String> {
     // no explicit id: SurrealDB mints a random record id — post urls are
     // opaque, and the sitemap/feed never enumerate them by position.
-    // `RETURN AFTER`: SurrealDB 4 does not parse a standalone RETURN clause
-    // on CREATE (it did on 3.x)
+    // `RETURN AFTER` answers the whole created row; a bare `RETURN <field>`
+    // also parses on SurrealDB 4, AFTER just keeps the shape version-agnostic
     let mut res = db
         .query(
             "CREATE news SET \
@@ -640,9 +640,9 @@ pub async fn update_post(
     .check()?;
     if draft.featured {
         let live = draft.published && draft.published_at <= now;
-        clear_other_featured(db, &id, live).await?;
+        clear_other_featured(db, id, live).await?;
     }
-    write_locale(db, &id, lang, draft).await?;
+    write_locale(db, id, lang, draft).await?;
     Ok(true)
 }
 
@@ -741,6 +741,9 @@ mod tests {
     /// part a unit test cannot reach: the nested `tr` merge, the sequence,
     /// and the first-publish date stamp all live in `SurrealQL`.
     #[tokio::test]
+    // one round trip covering insert, edit, publish flip and delete in
+    // order; splitting it would need the earlier steps' state rebuilt per part
+    #[allow(clippy::too_many_lines)]
     async fn authoring_round_trip_in_a_scratch_namespace() {
         let Some(db) = scratch_db("roundtrip").await else {
             return;

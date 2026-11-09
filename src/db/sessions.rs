@@ -73,8 +73,8 @@ pub async fn start(db: &Db, user: &SessionUser) -> Result<String> {
 /// Resolves a session key to its signed-in user. A stale session is deleted
 /// and answers `None` — a token past its TTL must not authenticate anyone,
 /// and deleting it stops the replay the sweep would eventually have caught.
-/// The TTL comparison happens in Rust: Surreal 3.3 drops the row when a
-/// record fetch carries a WHERE, so the clause cannot live in the query.
+/// The TTL comparison happens in Rust so the rule lives once beside the
+/// constant rather than in every query string.
 ///
 /// A transport error also answers `None`: the request renders signed-out
 /// rather than failing, and the next request retries. This is the one store
@@ -103,10 +103,8 @@ pub async fn get(db: &Db, key: &str) -> Option<SessionUser> {
         .ok()?;
     let rows: Vec<Row> = res.take(0).ok()?;
     let row = rows.into_iter().next()?;
-    // a record fetch cannot carry a WHERE in Surreal 3.3 (it filters the
-    // single row out), so the TTL is enforced here: a stale token must not
-    // authenticate anyone, and deleting it stops the replay the sweep would
-    // eventually have caught
+    // a stale token must not authenticate anyone, and deleting it stops the
+    // replay the sweep would eventually have caught
     let issued = row.issued.unwrap_or(0);
     if crate::time::now_unix().saturating_sub(issued) > SESSION_TTL_SECS {
         end(db, key).await;
@@ -120,7 +118,8 @@ pub async fn get(db: &Db, key: &str) -> Option<SessionUser> {
 }
 
 /// Ends one session (logout). A table-scoped DELETE with an id equality
-/// filter: Surreal 3.3 answers NONE for a bare `type::record()` target.
+/// filter keeps the target a bound parameter rather than a literal record
+/// id interpolated into the string.
 pub async fn end(db: &Db, key: &str) {
     if key.is_empty() {
         return;

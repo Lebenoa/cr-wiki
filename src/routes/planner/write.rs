@@ -52,10 +52,10 @@ pub async fn create(ctx: Ctx, Form(form): Form<BuildForm>) -> Result<Response, A
         |u| u.username.clone(),
     );
     // an anonymous build expires; a signed-in one does not
-    let expires_at = if !user_id.is_empty() {
-        None
-    } else {
+    let expires_at = if user_id.is_empty() {
         Some(now_unix().saturating_add(ANON_TTL_SECS))
+    } else {
+        None
     };
 
     let record = match record_from(&form, ep, ep_special, tags, author, user_id, expires_at) {
@@ -139,7 +139,7 @@ pub(super) async fn load_owned(
     ctx: &Ctx,
     id: &str,
 ) -> Result<Option<BuildCard>, AppError> {
-    let found = builds::select_build(&state.db, &ctx.lang, &id).await?;
+    let found = builds::select_build(&state.db, &ctx.lang, id).await?;
     let Some(found) = found else {
         return Ok(None);
     };

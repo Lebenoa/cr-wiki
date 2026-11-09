@@ -165,7 +165,7 @@ mod tests {
     /// Every candidate up to `stem_99` taken must answer Ok(None), never the
     /// occupied `stem_99` — the caller writes whatever comes back, so a
     /// taken name in the return value means a clobbered sprite. The claim is
-    /// also atomic: create_new means a second claim of the same name takes
+    /// also atomic: `create_new` means a second claim of the same name takes
     /// the next slot rather than clobbering the first (the TOCTOU the old
     /// check-then-write had).
     #[test]
@@ -207,7 +207,7 @@ mod tests {
 
     /// The race the reviewers flagged: with a check-then-write, two
     /// concurrent claims could both pass `exists()` and the second write
-    /// would clobber the first. create_new makes the second claimant take
+    /// would clobber the first. `create_new` makes the second claimant take
     /// the next slot, and the first sprite's content survives.
     #[test]
     fn concurrent_write_unique_claims_never_clobber() {

@@ -52,6 +52,9 @@ impl Ctx {
     }
 
     /// A crawlable next page in the current locale and filter sequence.
+    // askama hands template variables to methods by reference; taking the
+    // copy by value would force every template to dereference first
+    #[allow(clippy::trivially_copy_pass_by_ref)]
     pub fn page_url(&self, page: &i64) -> String {
         self.listing_url(&self.lang, Some(*page))
     }
@@ -167,6 +170,9 @@ impl Ctx {
     /// binary's build moment. A fresh deploy answers with a new value, so
     /// edge caches that hold the old asset for its day-long TTL are bypassed
     /// by every page the new binary renders — no cache purge needed.
+    // an associated function would be cleaner, but askama templates call
+    // this through the `ctx` receiver (`base.html` and friends)
+    #[allow(clippy::unused_self)]
     pub fn deploy_stamp(&self) -> u64 {
         static STAMP: std::sync::LazyLock<u64> = std::sync::LazyLock::new(|| {
             // build timestamp set by the release build profile; 0 when absent

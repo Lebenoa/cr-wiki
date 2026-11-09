@@ -9,6 +9,9 @@ use parking_lot::Mutex;
 use super::Ctx;
 impl Ctx {
     /// Serialize breadcrumb tuples for safe embedding in a JSON-LD script.
+    // an associated function would be cleaner, but askama templates call
+    // this through the `ctx` receiver (`title.html`)
+    #[allow(clippy::unused_self)]
     pub fn breadcrumb_json(&self, items: &[(String, Option<String>)]) -> String {
         let item_list = items
             .iter()
@@ -168,7 +171,7 @@ fn measure(path: &str) -> Option<(u32, u32)> {
 /// and only successful reads are stored — an upload that later fills a
 /// path must show real dimensions, not a cached banner.
 mod dims {
-    use super::*;
+    use super::{HashMap, LazyLock, Mutex};
 
     static CACHE: LazyLock<Mutex<HashMap<String, (u32, u32)>>> =
         LazyLock::new(|| Mutex::new(HashMap::new()));

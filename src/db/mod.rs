@@ -68,6 +68,7 @@ pub async fn connect_url(
     ensure_app_tables(&db).await?;
     sessions::ensure_schema(&db).await?;
     stamp::ensure(&db).await?;
+    ensure_verified_backfill(&db).await?;
     Ok(db)
 }
 
@@ -80,6 +81,67 @@ pub async fn warm_pool(db: &Db) -> Result<()> {
     let _: Option<i64> = res.take(0)?;
     Ok(())
 }
+
+/// The tables the search schema covers, each with the translation fields its
+/// full-text indexes serve.
+const SEARCH_TABLES: [(&str, &[&str]); 6] = [
+    (
+        "cookie",
+        &[
+            "tr.en.name",
+            "tr.th.name",
+            "tr.en.abilities",
+            "tr.th.abilities",
+            "tr.en.description",
+            "tr.th.description",
+        ],
+    ),
+    (
+        "pet",
+        &[
+            "tr.en.name",
+            "tr.th.name",
+            "tr.en.description",
+            "tr.th.description",
+        ],
+    ),
+    (
+        "treasure",
+        &[
+            "tr.en.name",
+            "tr.th.name",
+            "tr.en.description",
+            "tr.th.description",
+        ],
+    ),
+    (
+        "relic",
+        &[
+            "tr.en.name",
+            "tr.th.name",
+            "tr.en.description",
+            "tr.th.description",
+        ],
+    ),
+    (
+        "episode",
+        &[
+            "tr.en.name",
+            "tr.th.name",
+            "tr.en.description",
+            "tr.th.description",
+        ],
+    ),
+    (
+        "ingredient",
+        &[
+            "tr.en.name",
+            "tr.th.name",
+            "tr.en.description",
+            "tr.th.description",
+        ],
+    ),
+];
 
 /// Ensures the indexes needed by search exist for seeded and upgraded databases.
 /// The application authenticates with the deployment's configured root user.
@@ -99,71 +161,7 @@ async fn ensure_search_schema(db: &Db) -> Result<()> {
     db.query("DEFINE ANALYZER IF NOT EXISTS cookie_search_th TOKENIZERS class FILTERS lowercase, ngram(1,3);")
         .await?
         .check()?;
-    let indexes = [
-        (
-            "cookie",
-            [
-                "tr.en.name",
-                "tr.th.name",
-                "tr.en.abilities",
-                "tr.th.abilities",
-                "tr.en.description",
-                "tr.th.description",
-            ]
-            .as_slice(),
-        ),
-        (
-            "pet",
-            [
-                "tr.en.name",
-                "tr.th.name",
-                "tr.en.description",
-                "tr.th.description",
-            ]
-            .as_slice(),
-        ),
-        (
-            "treasure",
-            [
-                "tr.en.name",
-                "tr.th.name",
-                "tr.en.description",
-                "tr.th.description",
-            ]
-            .as_slice(),
-        ),
-        (
-            "relic",
-            [
-                "tr.en.name",
-                "tr.th.name",
-                "tr.en.description",
-                "tr.th.description",
-            ]
-            .as_slice(),
-        ),
-        (
-            "episode",
-            [
-                "tr.en.name",
-                "tr.th.name",
-                "tr.en.description",
-                "tr.th.description",
-            ]
-            .as_slice(),
-        ),
-        (
-            "ingredient",
-            [
-                "tr.en.name",
-                "tr.th.name",
-                "tr.en.description",
-                "tr.th.description",
-            ]
-            .as_slice(),
-        ),
-    ];
-    for (table, fields) in indexes {
+    for (table, fields) in SEARCH_TABLES {
         for (index, field) in fields.iter().enumerate() {
             let analyzer = if field.contains(".th.") {
                 "cookie_search_th"
@@ -176,12 +174,16 @@ async fn ensure_search_schema(db: &Db) -> Result<()> {
             db.query(sql).await?.check()?;
         }
     }
-    // the name-gram ingest events. The guard accepts any event that leaves
-    // an en name behind — CREATE-with-tr and write_translation's UPDATE —
-    // and the body first deletes the entity's existing gram rows, so a
-    // rename cannot leave stale grams behind. seed.surql defines the same
-    // statements for fresh imports.
-    for (table, _) in indexes {
+    ensure_gram_events(db).await
+}
+
+/// The name-gram ingest events. The guard accepts any event that leaves
+/// an en name behind — CREATE-with-tr and `write_translation`'s UPDATE —
+/// and the body first deletes the entity's existing gram rows, so a
+/// rename cannot leave stale grams behind. seed.surql defines the same
+/// statements for fresh imports.
+async fn ensure_gram_events(db: &Db) -> Result<()> {
+    for (table, _) in SEARCH_TABLES {
         let sql = format!(
             "DEFINE EVENT IF NOT EXISTS {table}_gram ON TABLE {table} \
              WHEN ($after.tr.en.name ?? '') != '' THEN {{ \
@@ -226,11 +228,68 @@ async fn ensure_sequences(db: &Db) -> Result<()> {
 /// SELECT against an undefined table is an error (`The table 'x' does not
 /// exist`) where 3.x answered an empty list — an empty deployment must still
 /// render the build list.
+///
+/// The `verified_count` column is the sort=verified key: one vote moved per
+/// review event (the `review_verified` event defined below), maintained by
+/// the database, so
+/// the list page can `ORDER BY verified_count DESC` server-side and let the
+/// index answer the sort. A live `SurrealDB` 3.3 answer would have needed to
+/// fetch every build and count reviews per row (a `$parent`-correlated
+/// subquery re-planned per row); on 4.0 the correlated aggregate still plans
+/// a per-row table scan, so a maintained counter remains the only shape that
+/// sorts server-side. `ensure_verified_backfill` fills the column on
+/// databases whose builds predate the event.
 async fn ensure_app_tables(db: &Db) -> Result<()> {
     db.query(
         "DEFINE TABLE IF NOT EXISTS news SCHEMALESS; \
          DEFINE TABLE IF NOT EXISTS build SCHEMALESS; \
          DEFINE TABLE IF NOT EXISTS review SCHEMALESS;",
+    )
+    .await?
+    .check()?;
+    db.query(
+        "DEFINE FIELD IF NOT EXISTS verified_count ON build TYPE int DEFAULT 0; \
+         DEFINE INDEX IF NOT EXISTS build_verified_count ON build FIELDS verified_count; \
+         DEFINE EVENT IF NOT EXISTS review_verified ON TABLE review \
+         WHEN $event = 'CREATE' \
+            OR $event = 'DELETE' \
+            OR ($event = 'UPDATE' AND $before.verified != $after.verified) \
+         THEN { \
+           IF $event = 'DELETE' { \
+             UPDATE $before.build_id SET verified_count -= \
+               (IF $before.verified THEN 1 ELSE 0 END); \
+           } ELSE IF $event = 'UPDATE' { \
+             UPDATE $after.build_id SET verified_count += \
+               (IF $after.verified THEN 1 ELSE -1 END); \
+           } ELSE { \
+             UPDATE $after.build_id SET verified_count += \
+               (IF $after.verified THEN 1 ELSE 0 END); \
+           }; \
+         };",
+    )
+    .await?
+    .check()?;
+    Ok(())
+}
+
+/// One-time backfill of `verified_count` for a database upgraded from before
+/// the counter existed. Cheap on a database that already carries the marker
+/// row (one indexed read); the rewrite itself recomputes every count from
+/// the review rows, so it runs once per database.
+async fn ensure_verified_backfill(db: &Db) -> Result<()> {
+    // the marker: absent on databases that predate the counter. The record
+    // fetch reads by key and answers an empty list for a missing record.
+    let stamped: Vec<surrealdb::types::RecordId> = db
+        .query("SELECT VALUE id FROM change_stamp:verified_backfill;")
+        .await?
+        .take(0)?;
+    if !stamped.is_empty() {
+        return Ok(());
+    }
+    db.query(
+        "UPDATE build SET verified_count = \
+           count(array::filter(<~review.*.verified, |$v| $v = true)); \
+         UPSERT change_stamp:verified_backfill SET changed_at = 0;",
     )
     .await?
     .check()?;

@@ -74,7 +74,7 @@ impl BuildDetail {
             .t("build_detail_meta_title")
             .replace("{episode}", &episode)
             .replace("{subject}", &subject)
-            .replace("{id}", &self.build.id.to_string())
+            .replace("{id}", &self.build.id)
     }
 
     fn description(&self) -> String {
@@ -93,7 +93,7 @@ impl BuildDetail {
         self.ctx
             .l
             .t("build_detail_meta_description")
-            .replace("{id}", &self.build.id.to_string())
+            .replace("{id}", &self.build.id)
             .replace("{loadout}", &names.join(", "))
             .replace("{episode}", &episode)
     }

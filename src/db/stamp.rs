@@ -19,11 +19,12 @@
 //!   modified" for a document that had in fact changed — and a row being
 //!   deleted is exactly the case where every row-derived date moves backwards.
 //!
-//! One event, one statement, one record: `THEN { … }` blocks lose every
-//! statement after the first on this server (verified against 3.3.4), so a
-//! body that needs to touch two records is a shape to avoid — which is why the
-//! records are per TABLE and each document reads the tables it is built from,
-//! rather than each document carrying its own record.
+//! One event, one statement, one record. On the 3.3 server this replaced, a
+//! `THEN { … }` block lost every statement after the first (verified against
+//! 3.3.4), so the body stays a single statement even though `SurrealDB` 4 runs
+//! multi-statement blocks correctly — the shape costs nothing and keeps the
+//! records per TABLE, which is what lets each document read the tables it is
+//! built from rather than carrying its own record.
 //!
 //! What the events do NOT see is `surreal import` (the caveat `ensure_search_schema`
 //! documents): a freshly seeded database has no stamp rows until its first app

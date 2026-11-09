@@ -395,6 +395,9 @@ mod tests {
     /// handler writes verifies against the stored hash. Cleans up after
     /// itself, so a scratch namespace stays scratch.
     #[tokio::test]
+    // single-use/expiry/reissue/throttle interplay needs one continuous
+    // timeline against one account; splitting it would fake the order
+    #[allow(clippy::too_many_lines)]
     async fn reset_tokens_are_single_use_and_expire() {
         let Some(pool) = live_db().await else {
             eprintln!("skip: CR_SURREAL_URL not set");

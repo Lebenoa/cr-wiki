@@ -1,4 +1,4 @@
-//! `Config.toml`: host/port, external SurrealDB, Turnstile, rate limiting,
+//! `Config.toml`: host/port, external `SurrealDB`, Turnstile, rate limiting,
 //! and authenticated SMTP email settings.
 
 use serde::Deserialize;
@@ -192,11 +192,18 @@ impl Config {
         if self.port == 0 {
             errors.push("port must be between 1 and 65535".to_string());
         }
-        // ±14:00 is the real range of civil offsets (UTC-12:00 .. UTC+14:00);
-        // anything wider would silently date documents in no zone at all
-        if !(-14 * 60..=14 * 60).contains(&self.site.utc_offset_minutes) {
-            errors.push("[site] utc_offset_minutes must be within ±14 hours of UTC".to_string());
+        self.validate_surreal(&mut errors);
+        self.validate_site_turnstile_ratelimit(&mut errors);
+        self.validate_email(&mut errors);
+        self.validate_images_google(&mut errors);
+        if errors.is_empty() {
+            Ok(())
+        } else {
+            Err(errors)
         }
+    }
+
+    fn validate_surreal(&self, errors: &mut Vec<String>) {
         let surreal_url = self.surreal.url.trim();
         if !(surreal_url.starts_with("ws://")
             || surreal_url.starts_with("wss://")
@@ -207,6 +214,14 @@ impl Config {
         }
         if self.surreal.namespace.trim().is_empty() || self.surreal.database.trim().is_empty() {
             errors.push("[surreal] namespace and database are required".to_string());
+        }
+    }
+
+    fn validate_site_turnstile_ratelimit(&self, errors: &mut Vec<String>) {
+        // ±14:00 is the real range of civil offsets (UTC-12:00 .. UTC+14:00);
+        // anything wider would silently date documents in no zone at all
+        if !(-14 * 60..=14 * 60).contains(&self.site.utc_offset_minutes) {
+            errors.push("[site] utc_offset_minutes must be within ±14 hours of UTC".to_string());
         }
         if self
             .turnstile
@@ -226,6 +241,9 @@ impl Config {
             errors
                 .push("[ratelimit] idle_ttl and sweep_above must be greater than zero".to_string());
         }
+    }
+
+    fn validate_email(&self, errors: &mut Vec<String>) {
         let email = &self.email;
         let smtp_fields_set = !email.smtp_host.is_empty()
             || !email.smtp_username.is_empty()
@@ -255,6 +273,9 @@ impl Config {
         {
             errors.push("[email] site_url must be an absolute http:// or https:// URL".to_string());
         }
+    }
+
+    fn validate_images_google(&self, errors: &mut Vec<String>) {
         if !self.images.base_url.is_empty()
             && self
                 .images
@@ -291,11 +312,6 @@ impl Config {
             errors.push(
                 "[google] redirect_uri must be an absolute http:// or https:// URL".to_string(),
             );
-        }
-        if errors.is_empty() {
-            Ok(())
-        } else {
-            Err(errors)
         }
     }
 }

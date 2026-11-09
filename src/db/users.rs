@@ -8,7 +8,7 @@ use super::{Db, Result};
 /// A user row, for the session layer.
 #[derive(Debug, Clone)]
 pub struct User {
-    /// the random record id SurrealDB minted at creation — opaque, so the
+    /// the random record id `SurrealDB` minted at creation — opaque, so the
     /// public profile URL cannot be enumerated
     pub id: String,
     pub username: String,
@@ -80,8 +80,14 @@ pub async fn create_user(
 ) -> Result<Option<User>> {
     // no explicit id: SurrealDB mints a random record id, which is the point
     // — account ids must not be enumerable (the profile page is public)
-    // `RETURN AFTER`: SurrealDB 4 does not parse a standalone RETURN clause
-    // on CREATE (it did on 3.x); AFTER answers the whole row
+    // `RETURN AFTER` answers the whole row; a bare `RETURN <field>` also
+    // parses on SurrealDB 4 but AFTER keeps the insert-and-read shape one
+    // statement wide across versions
+    #[derive(Debug, Default, surrealdb::types::SurrealValue)]
+    #[surreal(default)]
+    struct IdRow {
+        id: Option<surrealdb::types::RecordId>,
+    }
     let mut res = db
         .query(
             "CREATE user SET username = $u, password = $p, email = $e, \
@@ -103,11 +109,6 @@ pub async fn create_user(
     }
     // the `RETURN AFTER` row's id is the raw record id; its key is the
     // account id string the rest of the app carries
-    #[derive(Debug, Default, surrealdb::types::SurrealValue)]
-    #[surreal(default)]
-    struct IdRow {
-        id: Option<surrealdb::types::RecordId>,
-    }
     let rows: Vec<IdRow> = res.take(0)?;
     let id = rows
         .into_iter()

@@ -1126,10 +1126,7 @@ fn verified_actions() -> Vec<String> {
             // the action is the last quoted literal on the call: the config and
             // the submitted token come before it
             let quoted: Vec<&str> = line.split('"').skip(1).step_by(2).collect();
-            let action = quoted
-                .into_iter()
-                .filter(|span| is_action(span))
-                .next_back();
+            let action = quoted.into_iter().rfind(|span| is_action(span));
             assert!(
                 action.is_some(),
                 "no action literal in this Turnstile check: {line}"
