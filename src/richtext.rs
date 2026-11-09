@@ -5,6 +5,9 @@
 //!       stable and language-independent; the name resolves per request.
 //!   `![alt](https://…)`
 //!       an image; http(s) sources only, both parts required.
+//!   `[text](https://…)`
+//!       a link; http(s) targets only, both parts required, and the label
+//!       renders its own inline markup (entity links, bold, colour).
 //!   `{color:red}text{/color}`
 //!       a coloured span, the value restricted to characters that cannot
 //!       break out of the attribute.
@@ -132,7 +135,11 @@ async fn render_inline_body(
     self_ref: Option<(&'static str, i64)>,
 ) -> String {
     // the overwhelming majority of fields carry no markup at all
-    if !raw.contains("[[") && !raw.contains("{color:") && !raw.contains('*') && !raw.contains("![")
+    if !raw.contains("[[")
+        && !raw.contains("{color:")
+        && !raw.contains('*')
+        && !raw.contains("![")
+        && !raw.contains("](")
     {
         return escape(raw);
     }
@@ -202,6 +209,22 @@ async fn render_inline_body(
                 out.push_str(
                     "\" loading=\"lazy\" class=\"mt-4 rounded-2xl border border-border\" />",
                 );
+                i = close;
+                continue;
+            }
+        }
+        if chars.get(i) == Some(&'[') {
+            // a plain link never starts `[[` (that is the entity form, tried
+            // above and fallen through when it does not resolve); the label
+            // renders recursively, so entity links, bold and colour nest in it
+            if let Some((close, href, label)) = link_at(&chars, i) {
+                out.push_str("<a href=\"");
+                out.push_str(&escape(&href));
+                out.push_str(
+                    "\" class=\"text-primary underline decoration-primary decoration-2 underline-offset-4 hover:text-accent transition-colors\" target=\"_blank\" rel=\"noopener noreferrer\">",
+                );
+                out.push_str(&render_inline(db, lang, &label, cache, self_ref).await);
+                out.push_str("</a>");
                 i = close;
                 continue;
             }
@@ -460,16 +483,53 @@ fn image_at(chars: &[char], at: usize) -> Option<(usize, String, String)> {
         return None;
     }
     let lower = src.to_ascii_lowercase();
-    if !(lower.starts_with("http://") || lower.starts_with("https://")) {
+    let scheme = if lower.starts_with("https://") {
+        8
+    } else if lower.starts_with("http://") {
+        7
+    } else {
         return None;
-    }
-    if src.len() > 500 || src.bytes().any(|b| b < 0x20 || b == 0x7f) {
+    };
+    // "https://" alone has no host: nothing to load
+    if src.len() <= scheme || src.bytes().any(|b| b < 0x20 || b == 0x7f) {
         return None;
     }
     if alt.len() > 300 || alt.bytes().any(|b| b < 0x20 || b == 0x7f) {
         return None;
     }
     Some((close.saturating_add(1), src, alt))
+}
+
+/// A plain link, `[text](https://...)`: the image form without the leading
+/// `!`. Guards mirror the build form's video-link validation: http(s)
+/// targets only (HTML escaping does not neutralise a `javascript:` href, so
+/// the scheme check is the whole defense), ≤200 chars, no control bytes,
+/// and a non-empty label. Returns the index past the closing `)`, the
+/// target, and the label.
+fn link_at(chars: &[char], at: usize) -> Option<(usize, String, String)> {
+    let label_end = find(chars, at.saturating_add(1), "]")?;
+    if chars.get(label_end.saturating_add(1)) != Some(&'(') {
+        return None;
+    }
+    let close = find(chars, label_end.saturating_add(2), ")")?;
+    let label = slice(chars, at.saturating_add(1), label_end);
+    let href = slice(chars, label_end.saturating_add(2), close);
+    if label.is_empty() || href.is_empty() {
+        return None;
+    }
+    let lower = href.to_ascii_lowercase();
+    let scheme = if lower.starts_with("https://") {
+        8
+    } else if lower.starts_with("http://") {
+        7
+    } else {
+        return None;
+    };
+    // "https://" alone has no host: nowhere to link
+    if href.len() > 200 || href.len() <= scheme || href.bytes().any(|b| b < 0x20 || b == 0x7f) {
+        return None;
+    }
+    Some((close.saturating_add(1), href, label))
 }
 
 fn find(chars: &[char], from: usize, needle: &str) -> Option<usize> {
@@ -663,6 +723,81 @@ mod tests {
         .await;
         assert!(
             sneaky.contains("alt=\"a&quot; onerror=&quot;x\""),
+            "{sneaky}"
+        );
+    }
+
+    /// `[text](href)` renders an anchor; scheme and near-miss guards reject
+    /// everything that is not an http(s) target, a rejected shape stays
+    /// literal text (escaped), and the label renders its own markup.
+    #[tokio::test]
+    async fn links_render_and_reject_unsafe_targets() {
+        let Some(db) = scratch().await else {
+            eprintln!("skip: set CR_SURREAL_URL to run the link tests");
+            return;
+        };
+        let db = &db;
+        let mut cache = LinkCache::new();
+        let ok = render_inline(
+            db,
+            "en",
+            "[the wiki](https://lebenoa.com)",
+            &mut cache,
+            None,
+        )
+        .await;
+        assert_eq!(
+            ok,
+            "<a href=\"https://lebenoa.com\" class=\"text-primary underline decoration-primary decoration-2 underline-offset-4 hover:text-accent transition-colors\" target=\"_blank\" rel=\"noopener noreferrer\">the wiki</a>"
+        );
+
+        // the label renders its own inline markup: emphasis and colour nest
+        let nested = render_inline(
+            db,
+            "en",
+            "[**bold** and {color:red}red{/color}](https://e.com)",
+            &mut cache,
+            None,
+        )
+        .await;
+        assert!(nested.contains("<strong>bold</strong>"), "{nested}");
+        assert!(
+            nested.contains("<span style=\"color:red\">red</span>"),
+            "{nested}"
+        );
+
+        let cases: &[(&str, bool)] = &[
+            // a rejected shape stays literal text
+            ("[text](javascript:alert(1))", false),
+            ("[text](data:text/html,x)", false),
+            ("[text](/relative)", false),
+            ("[text](ftp://e.com)", false),
+            ("[text]() empty href", false),
+            ("[](https://e.com) empty label", false),
+            ("[text](https://)", false),
+            // near-misses: unbalanced brackets
+            ("[text(https://e.com)", false),
+            ("text](https://e.com)", false),
+            // a link inside bold, and vice versa
+            ("**[l](https://e.com)**", true),
+        ];
+        for (src, renders) in cases {
+            let html = render_inline(db, "en", src, &mut cache, None).await;
+            assert_eq!(html.contains("<a href="), *renders, "{src:?} -> {html}");
+        }
+
+        // the target is escaped into the attribute: a quote in the href
+        // cannot break out
+        let sneaky = render_inline(
+            db,
+            "en",
+            "[x](https://e.com/\" onmouseover=\"y)",
+            &mut cache,
+            None,
+        )
+        .await;
+        assert!(
+            sneaky.contains("href=\"https://e.com/&quot; onmouseover=&quot;y\""),
             "{sneaky}"
         );
     }

@@ -334,6 +334,32 @@
                     continue;
                 }
             }
+            // plain link: [text](https://...) — the image form without the
+            // leading '!'; the label renders recursively, so entity links,
+            // bold and colour nest in it (mirrors link_at + its scanner
+            // branch: http(s) targets only, both parts required)
+            if (s[i] === '[' && s[i + 1] !== '[') {
+                var labelEnd = s.indexOf(']', i + 1);
+                if (labelEnd !== -1 && s[labelEnd + 1] === '(') {
+                    var hrefClose = s.indexOf(')', labelEnd + 2);
+                    if (hrefClose !== -1) {
+                        var label = s.slice(i + 1, labelEnd);
+                        var href = s.slice(labelEnd + 2, hrefClose);
+                        var lowHref = href.toLowerCase();
+                        // "https://" alone has no host: the scheme length is
+                        // the minimum, mirroring link_at
+                        if (label !== '' && href !== '' &&
+                            (lowHref.indexOf('http://') === 0 || lowHref.indexOf('https://') === 0) &&
+                            href.length <= 200 && href.length > (lowHref.indexOf('https://') === 0 ? 8 : 7)) {
+                            out += '<a href="' + href +
+                                '" class="text-primary underline decoration-primary decoration-2 underline-offset-4 hover:text-accent transition-colors" target="_blank" rel="noopener noreferrer">' +
+                                renderInline(label) + '</a>';
+                            i = hrefClose + 1;
+                            continue;
+                        }
+                    }
+                }
+            }
             // color span: {color:VAL}...{/color}
             if (s[i] === '{' && s.slice(i, i + 7) === '{color:') {
                 var close = s.indexOf('}', i + 7);
