@@ -317,8 +317,13 @@ pub async fn render_article_with(db: &Db, lang: &str, raw: &str, cache: &mut Lin
                 out.push_str(&render_items(db, lang, &items, cache, "ol", "list-decimal").await);
             }
             Block::Paragraph(text) => {
+                // single newlines inside a paragraph arrive as real \n (the
+                // block splitter keeps them); the inline renderer passes
+                // them through, so they must become breaks here — a <br>
+                // wraps tight, nothing like a paragraph's own mt-4 gap
+                let html = render_inline(db, lang, &text, cache, None).await;
                 out.push_str("<p class=\"mt-4 leading-relaxed text-foreground\">");
-                out.push_str(&render_inline(db, lang, &text, cache, None).await);
+                out.push_str(&html.replace('\n', "<br />"));
                 out.push_str("</p>");
             }
         }
@@ -356,9 +361,10 @@ async fn render_items(
 /// Splits an article body into blocks on blank lines. Consecutive non-blank
 /// lines are one block; within it the first line's shape decides: a single
 /// `#`/`##`/`###` line is a heading, a run of `- `/`* ` lines a bullet list,
-/// a run of `1. ` lines a numbered one, anything else a soft-wrapped
-/// paragraph (its lines joined with spaces, so hard wraps in the textarea do
-/// not become hard breaks on the page).
+/// a run of `1. ` lines a numbered one, anything else a paragraph. A
+/// paragraph keeps its newlines (the renderer turns them into `<br>`), so a
+/// hard wrap in the textarea is a narrow line break on the page while a
+/// blank line still means a full paragraph.
 fn split_blocks(raw: &str) -> Vec<Block> {
     let mut blocks = Vec::new();
     let mut chunk: Vec<String> = Vec::new();
@@ -393,7 +399,7 @@ fn flush_block(chunk: &mut Vec<String>, blocks: &mut Vec<Block>) {
             chunk.iter().filter_map(|l| number_of(l)).collect(),
         ));
     } else {
-        blocks.push(Block::Paragraph(chunk.join(" ")));
+        blocks.push(Block::Paragraph(chunk.join("\n")));
     }
     chunk.clear();
 }
@@ -489,7 +495,7 @@ mod tests {
     }
 
     /// Paragraphs, headings and both list shapes split on blank lines, and a
-    /// multi-line paragraph soft-wraps into one block.
+    /// multi-line paragraph stays one block that keeps its newlines.
     #[test]
     fn blocks_split_on_blank_lines() {
         let raw = "# Title\n\nFirst line\nsecond line\n\n- a\n- b\n\n1. one\n2. two\n\nTail";
@@ -499,7 +505,10 @@ mod tests {
             vec!["h", "p", "ul", "ol", "p"]
         );
         assert!(matches!(&blocks[0], Block::Heading(2, t) if t == "Title"));
-        assert!(matches!(&blocks[1], Block::Paragraph(t) if t == "First line second line"));
+        assert!(matches!(
+            &blocks[1],
+            Block::Paragraph(t) if t == "First line\nsecond line"
+        ));
         assert!(matches!(&blocks[2], Block::Bullets(v) if v == &["a", "b"]));
         assert!(matches!(&blocks[3], Block::Numbers(v) if v == &["one", "two"]));
     }
