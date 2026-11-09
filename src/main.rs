@@ -108,7 +108,6 @@ async fn main() {
     let state = AppState {
         db: pool,
         limiter: ratelimit::Limiter::new(cfg.ratelimit.clone()),
-        sessions: session::Sessions::new(),
         oauth_states: oauth::States::new(),
         cfg: cfg.clone(),
     };

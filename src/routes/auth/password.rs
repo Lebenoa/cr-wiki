@@ -263,7 +263,7 @@ pub async fn reset(ctx: Ctx, Form(form): Form<ResetForm>) -> Result<Response, Ap
     }
     // a reset is the moment to assume the old password is known to somebody
     // else, so every session it opened ends here
-    state.sessions.end_all_for(&user_id);
+    db::sessions::end_all_for(&state.db, &user_id).await?;
     tracing::info!(user_id, "password reset completed");
     Ok(navigation_response(&ctx, RESET_DONE_PATH))
 }

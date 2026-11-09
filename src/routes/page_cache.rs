@@ -248,20 +248,20 @@ mod tests {
         ctx.lang = "fr".into();
         assert_ne!(base, Key::new(&ctx, "/a"));
         ctx.lang = crate::i18n::DEFAULT_LANG.to_string();
-        ctx.user = Some(crate::session::SessionUser {
+        ctx.user = Some(crate::db::sessions::SessionUser {
             id: "41".into(),
             username: "alice".into(),
             is_admin: false,
         });
         let signed_in = Key::new(&ctx, "/a");
         assert_ne!(base, signed_in);
-        ctx.user = Some(crate::session::SessionUser {
+        ctx.user = Some(crate::db::sessions::SessionUser {
             id: "42".into(),
             username: "alice".into(),
             is_admin: false,
         });
         assert_ne!(signed_in, Key::new(&ctx, "/a"));
-        ctx.user = Some(crate::session::SessionUser {
+        ctx.user = Some(crate::db::sessions::SessionUser {
             id: "41".into(),
             username: "alice".into(),
             is_admin: true,

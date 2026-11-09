@@ -4,7 +4,6 @@ use crate::config::Config;
 use crate::db::Db;
 use crate::oauth::States;
 use crate::ratelimit::Limiter;
-use crate::session::Sessions;
 
 /// The shared server state, owned by [`STATE`]. Handlers and middleware read
 /// it through [`state()`] instead of an axum `State` extractor, so serving a
@@ -13,15 +12,14 @@ use crate::session::Sessions;
 /// measured — the once-we-rebought perf regression this shape prevents).
 ///
 /// No `Arc` wrappers: [`STATE`] is the single owner and nothing clones it;
-/// `Sessions` and `Limiter` keep their own interior mutexes.
+/// `Limiter` keeps its own interior mutex.
 pub struct AppState {
     pub db: Db,
     /// read by the Turnstile check and the rate limiter's proxy whitelist
     pub cfg: Config,
     pub limiter: Limiter,
-    pub sessions: Sessions,
-    /// the Google sign-in flows waiting on a callback, in memory like the
-    /// sessions: a restart drops the flows in flight and the visitor retries
+    /// the Google sign-in flows waiting on a callback, in memory: a restart
+    /// drops the flows in flight and the visitor retries
     pub oauth_states: States,
 }
 

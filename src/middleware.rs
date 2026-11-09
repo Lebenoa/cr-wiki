@@ -9,6 +9,7 @@ use axum::response::{IntoResponse, Response};
 use std::net::SocketAddr;
 
 use crate::ctx::{self, LANG_COOKIE};
+use crate::db;
 use crate::ratelimit::Decision;
 use crate::session::SESSION_COOKIE;
 
@@ -18,7 +19,9 @@ use crate::session::SESSION_COOKIE;
 pub async fn context(mut req: Request, next: Next) -> Response {
     let state = crate::state::state();
     if let Some(key) = ctx::cookie(req.headers(), SESSION_COOKIE) {
-        if let Some(user) = state.sessions.get(&key) {
+        // one record fetch per request carrying a session cookie; a store
+        // error renders signed-out rather than failing the page
+        if let Some(user) = db::sessions::get(&state.db, &key).await {
             req.extensions_mut().insert(user);
         }
     }

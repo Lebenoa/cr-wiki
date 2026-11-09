@@ -24,9 +24,9 @@ use axum::http::HeaderMap;
 use std::convert::Infallible;
 use std::net::SocketAddr;
 
+use crate::db::sessions::SessionUser;
 use crate::i18n::{Loc, DEFAULT_LANG};
 use crate::section::Section;
-use crate::session::SessionUser;
 
 mod labels;
 mod lang;

@@ -66,6 +66,7 @@ pub async fn connect_url(
     ensure_sequences(&db).await?;
     ensure_reset_schema(&db).await?;
     ensure_news_schema(&db).await?;
+    sessions::ensure_schema(&db).await?;
     stamp::ensure(&db).await?;
     Ok(db)
 }
@@ -251,6 +252,7 @@ pub mod detail;
 pub mod episodes;
 pub mod gacha;
 pub mod search;
+pub mod sessions;
 pub mod stamp;
 pub mod types;
 pub mod users;

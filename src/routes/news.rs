@@ -1025,7 +1025,6 @@ mod tests {
         crate::state::init(crate::state::AppState {
             db: surrealdb::Surreal::init(),
             limiter: crate::ratelimit::Limiter::new(crate::config::RateLimit::default()),
-            sessions: crate::session::Sessions::new(),
             oauth_states: crate::oauth::States::new(),
             cfg,
         });

@@ -23,7 +23,8 @@ use serde::Deserialize;
 
 use crate::ctx::Ctx;
 use crate::db;
-use crate::session::{self, SessionUser, SESSION_COOKIE};
+use crate::db::sessions::{self, SessionUser};
+use crate::session::{hash_password, verify_password, waste_time, SESSION_COOKIE};
 
 use super::errors::AppError;
 
@@ -398,7 +399,7 @@ pub async fn login(ctx: Ctx, Form(form): Form<LoginForm>) -> Result<Response, Ap
     let Some(user) = found else {
         // no such user: still pay for a hash, so the answer takes as long as
         // a real check and cannot be told apart by timing
-        session::waste_time(&state.db, &form.password).await;
+        waste_time(&state.db, &form.password).await;
         return Ok(auth_error(
             &ctx,
             StatusCode::NOT_FOUND,
@@ -406,7 +407,7 @@ pub async fn login(ctx: Ctx, Form(form): Form<LoginForm>) -> Result<Response, Ap
             "invalid_credentials",
         ));
     };
-    if !session::verify_password(&state.db, &form.password, &user.password).await {
+    if !verify_password(&state.db, &form.password, &user.password).await {
         return Ok(auth_error(
             &ctx,
             StatusCode::NOT_FOUND,
@@ -415,11 +416,15 @@ pub async fn login(ctx: Ctx, Form(form): Form<LoginForm>) -> Result<Response, Ap
         ));
     }
 
-    let key = state.sessions.start(SessionUser {
-        id: user.id,
-        username: user.username,
-        is_admin: user.is_admin,
-    });
+    let key = sessions::start(
+        &state.db,
+        &SessionUser {
+            id: user.id.clone(),
+            username: user.username.clone(),
+            is_admin: user.is_admin,
+        },
+    )
+    .await?;
     let mut res = home_response(&ctx);
     set_session_cookie(res.headers_mut(), &key);
     Ok(res)
@@ -459,7 +464,7 @@ pub async fn register(ctx: Ctx, Form(form): Form<RegisterForm>) -> Result<Respon
             "turnstile_form_failed",
         ));
     }
-    let hash = match session::hash_password(&state.db, &form.password).await {
+    let hash = match hash_password(&state.db, &form.password).await {
         Ok(h) => h,
         Err(e) => {
             tracing::error!("password hash failed: {e}");
@@ -482,11 +487,15 @@ pub async fn register(ctx: Ctx, Form(form): Form<RegisterForm>) -> Result<Respon
             "register_taken",
         ));
     };
-    let key = state.sessions.start(SessionUser {
-        id: user.id,
-        username: user.username,
-        is_admin: user.is_admin,
-    });
+    let key = sessions::start(
+        &state.db,
+        &SessionUser {
+            id: user.id.clone(),
+            username: user.username.clone(),
+            is_admin: user.is_admin,
+        },
+    )
+    .await?;
     let mut res = home_response(&ctx);
     set_session_cookie(res.headers_mut(), &key);
     Ok(res)
@@ -495,7 +504,7 @@ pub async fn register(ctx: Ctx, Form(form): Form<RegisterForm>) -> Result<Respon
 pub async fn logout(headers: HeaderMap) -> Response {
     let state = crate::state::state();
     if let Some(key) = crate::ctx::cookie(&headers, SESSION_COOKIE) {
-        state.sessions.end(&key);
+        sessions::end(&state.db, &key).await;
     }
     let mut res = Redirect::to("/").into_response();
     // an empty value with Max-Age=0 clears it in every browser
@@ -512,8 +521,8 @@ pub async fn logout(headers: HeaderMap) -> Response {
 pub async fn revoke_sessions(headers: HeaderMap) -> Response {
     let state = crate::state::state();
     if let Some(key) = crate::ctx::cookie(&headers, SESSION_COOKIE) {
-        if let Some(user) = state.sessions.get(&key) {
-            state.sessions.end_all_for(&user.id);
+        if let Some(user) = sessions::get(&state.db, &key).await {
+            let _ = sessions::end_all_for(&state.db, &user.id).await;
         }
     }
     let mut res = Redirect::to("/").into_response();
@@ -616,9 +625,7 @@ mod tests {
             eprintln!("skip: CR_SURREAL_URL not set");
             return;
         };
-        let hash = session::hash_password(&pool, "probe password")
-            .await
-            .expect("hash");
+        let hash = hash_password(&pool, "probe password").await.expect("hash");
 
         // the address is this test's own: the reset-token test below matches
         // on `probe@example.com`, and these two run at the same time against

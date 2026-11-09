@@ -215,7 +215,7 @@ mod tests {
     fn google_hint_appears_only_for_a_google_account() {
         let account = |google: bool| {
             let mut ctx = crate::testutil::test_ctx("en");
-            ctx.user = Some(crate::session::SessionUser {
+            ctx.user = Some(crate::db::sessions::SessionUser {
                 id: "1".into(),
                 username: "tester".into(),
                 is_admin: false,

@@ -22,9 +22,10 @@ use serde::Deserialize;
 
 use crate::ctx::Ctx;
 use crate::db;
+use crate::db::sessions::{self, SessionUser};
 use crate::oauth::{self, Identity};
 use crate::routes::errors::{self, AppError};
-use crate::session::{self, SessionUser};
+use crate::session;
 
 use super::{home_response, navigation_response, public_base, random_hex_256, set_session_cookie};
 
@@ -138,11 +139,15 @@ pub async fn google_callback(
         GoogleOutcome::Refused(reason) => return Ok(google_failure(&ctx, reason)),
     };
     tracing::info!(user_id = user.id, "google: signed in");
-    let key = state.sessions.start(SessionUser {
-        id: user.id,
-        username: user.username,
-        is_admin: user.is_admin,
-    });
+    let key = sessions::start(
+        &state.db,
+        &SessionUser {
+            id: user.id.clone(),
+            username: user.username.clone(),
+            is_admin: user.is_admin,
+        },
+    )
+    .await?;
     let mut res = home_response(&ctx);
     set_session_cookie(res.headers_mut(), &key);
     clear_state_cookie(res.headers_mut());

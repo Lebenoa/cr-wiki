@@ -1,7 +1,6 @@
 use super::*;
 
 use crate::ratelimit::Limiter;
-use crate::session::Sessions;
 use crate::state::AppState;
 use axum::body::Body;
 use axum::http::{Request, StatusCode};
@@ -24,7 +23,6 @@ fn state() -> &'static AppState {
     crate::state::init(AppState {
         db: surrealdb::Surreal::init(),
         limiter: Limiter::new(crate::config::RateLimit::default()),
-        sessions: Sessions::new(),
         oauth_states: crate::oauth::States::new(),
         cfg,
     });
