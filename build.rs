@@ -29,8 +29,22 @@ fn main() {
         println!("cargo:rerun-if-changed=.git/refs/heads");
     }
 
+    // The build moment, second precision: the cache-buster `styles.css` links
+    // carry (`Ctx::deploy_stamp`). A new binary advertises a new URL, which
+    // walks old content out of day-TTL edge caches without a purge.
+    let built = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_secs())
+        .unwrap_or(0);
+    println!("cargo:rustc-env=BUILD_TS={built}");
+
     let out = Command::new("git")
-        .args(["log", "--no-color", "--date=short", &format!("--max-count={LIMIT}")])
+        .args([
+            "log",
+            "--no-color",
+            "--date=short",
+            &format!("--max-count={LIMIT}"),
+        ])
         .output();
     let text = match out {
         // lossy here, not at parse time: include_str! needs valid UTF-8 and

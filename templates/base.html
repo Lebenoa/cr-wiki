@@ -4,12 +4,11 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <link rel="stylesheet" href="/static/styles.css" />
+    <link rel="stylesheet" href="/static/styles.css?v={{ ctx.deploy_stamp() }}" />
     <link rel="shortcut icon" href="/static/favicon.avif" type="image/x-icon" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="{{ ctx.font_css_url() }}" rel="stylesheet"
-        media="print" onload="this.media='all'" />
+    <link href="{{ ctx.font_css_url() }}" rel="stylesheet" media="print" onload="this.media='all'" />
     <noscript>
         <link href="{{ ctx.font_css_url() }}" rel="stylesheet" />
     </noscript>
@@ -28,7 +27,8 @@
     <link rel="alternate" hreflang="x-default" href="{{ ctx.default_lang_url() }}" />
     <link rel="alternate" type="application/rss+xml" title="{{ ctx.l.t("news_feed_title") }}"
         href="{{ ctx.news_feed_url() }}" />
-    {% block robots %}<meta name="robots" content="index, follow" />{% endblock %}
+    {% block robots %}
+    <meta name="robots" content="index, follow" />{% endblock %}
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="{{ ctx.l.t("site_name") }}" />
     <meta property="og:url" content="{{ ctx.canonical_url() }}" />

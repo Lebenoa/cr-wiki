@@ -162,6 +162,19 @@ impl Ctx {
             "https://fonts.googleapis.com/css2?family=Hanken+Grotesk:ital,wght@0,400..800;1,400..800&family=JetBrains+Mono:ital,wght@0,400..800;1,400..800&family=Sora:wght@400..800&display=swap"
         }
     }
+
+    /// A cache-busting query for ride-deploy assets (`styles.css`): the
+    /// binary's build moment. A fresh deploy answers with a new value, so
+    /// edge caches that hold the old asset for its day-long TTL are bypassed
+    /// by every page the new binary renders — no cache purge needed.
+    pub fn deploy_stamp(&self) -> u64 {
+        static STAMP: std::sync::LazyLock<u64> = std::sync::LazyLock::new(|| {
+            // build timestamp set by the release build profile; 0 when absent
+            const BUILT: &str = env!("BUILD_TS");
+            BUILT.parse().unwrap_or(0)
+        });
+        *STAMP
+    }
 }
 
 /// `?lang=` wins over the cookie: the language has to live in the URL or the
