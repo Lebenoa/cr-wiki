@@ -23,6 +23,10 @@ pub fn section_dir(section: Section) -> Option<PathBuf> {
 /// Content the catalog actually serves, verified by magic bytes rather than
 /// the client's declared Content-Type, which an attacker controls. Each
 /// signature is the file-format anchor; anything else is rejected.
+///
+/// AVIF is an ISOBMFF container: bytes 4-8 are `ftyp`, the major brand at
+/// 8-12. `avif`/`avis` cover stills and sequences; `mif1` is the generic
+/// HEIF brand an AVIF muxer may also declare.
 pub fn sniff_image(bytes: &[u8]) -> Option<&'static str> {
     if bytes.starts_with(b"\x89PNG\r\n\x1a\n") {
         return Some("png");
@@ -39,6 +43,15 @@ pub fn sniff_image(bytes: &[u8]) -> Option<&'static str> {
     if bytes.starts_with(b"GIF87a") || bytes.starts_with(b"GIF89a") {
         return Some("gif");
     }
+    if bytes.len() >= 12
+        && bytes.get(4..8) == Some(b"ftyp".as_slice())
+        && matches!(
+            bytes.get(8..12),
+            Some(b"avif") | Some(b"avis") | Some(b"mif1")
+        )
+    {
+        return Some("avif");
+    }
     None
 }
 
@@ -51,6 +64,7 @@ pub fn extension_for(content_type: &str) -> Option<&'static str> {
         "image/jpeg" => Some("jpg"),
         "image/webp" => Some("webp"),
         "image/gif" => Some("gif"),
+        "image/avif" => Some("avif"),
         _ => None,
     }
 }
@@ -152,9 +166,26 @@ mod tests {
 
         assert_eq!(extension_for("image/png"), Some("png"));
         assert_eq!(extension_for("image/jpeg"), Some("jpg"));
+        assert_eq!(extension_for("image/avif"), Some("avif"));
         // markup and scripts are not images, whatever the filename says
         assert_eq!(extension_for("text/html"), None);
         assert_eq!(extension_for("application/octet-stream"), None);
+
+        // AVIF sniffing: a real ftyp box with the avif brand decodes to
+        // "avif"; lookalikes (mp4 video, a plain mif1-brand HEIF still, and
+        // ftyp in the wrong place) do not
+        let mut avif = vec![0u8, 0, 0, 24];
+        avif.extend_from_slice(b"ftypavif");
+        avif.extend_from_slice(b"\0\0\0\0");
+        assert_eq!(sniff_image(&avif), Some("avif"));
+        let mut avis = avif.clone();
+        avis.splice(8..12, b"avis".iter().cloned());
+        assert_eq!(sniff_image(&avis), Some("avif"));
+        let mut mp4 = vec![0u8, 0, 0, 24];
+        mp4.extend_from_slice(b"ftypisom");
+        mp4.extend_from_slice(b"\0\0\0\0");
+        assert_eq!(sniff_image(&mp4), None);
+        assert_eq!(sniff_image(b"not ftyp at all"), None);
 
         assert!(section_dir(Section::Cookies).is_some());
         assert!(section_dir(Section::Treasures).is_some());

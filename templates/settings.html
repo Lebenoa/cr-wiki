@@ -96,7 +96,7 @@
                     {% endif %}
                     <div class="flex min-w-0 flex-col gap-1">
                         <label class="sr-only" for="avatar-file">{{ ctx.l.t("avatar_upload") }}</label>
-                        <input id="avatar-file" type="file" accept="image/png,image/jpeg,image/webp,image/gif"
+                        <input id="avatar-file" type="file" accept="image/png,image/jpeg,image/webp,image/gif,image/avif"
                             data-avatar-upload class="text-xs" {% if !ctx.google_login && !ctx.signed_in() %}disabled{%
                             endif %} />
                         <span data-avatar-status class="normal-case text-xs text-foreground-muted" aria-live="polite">{{
