@@ -256,6 +256,7 @@ mod tests {
             id: "41".into(),
             username: "alice".into(),
             is_admin: false,
+            avatar: None,
         });
         let signed_in = Key::new(&ctx, "/a");
         assert_ne!(base, signed_in);
@@ -263,12 +264,14 @@ mod tests {
             id: "42".into(),
             username: "alice".into(),
             is_admin: false,
+            avatar: None,
         });
         assert_ne!(signed_in, Key::new(&ctx, "/a"));
         ctx.user = Some(crate::db::sessions::SessionUser {
             id: "41".into(),
             username: "alice".into(),
             is_admin: true,
+            avatar: None,
         });
         assert_ne!(signed_in, Key::new(&ctx, "/a"));
     }

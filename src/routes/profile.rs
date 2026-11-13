@@ -48,6 +48,9 @@ struct ProfilePage {
     builds: Vec<BuildCard>,
     initial: String,
     joined: Option<String>,
+    /// resolved URL of the account's avatar; `None` renders the initial
+    /// circle the page has always shown
+    avatar_src: Option<String>,
 }
 
 #[derive(Debug, Clone)]
@@ -103,6 +106,7 @@ async fn profile(ctx: Ctx, id: &str) -> Response {
     };
     let initial = initial(&row.username);
     let joined = joined_day(row.created_at, ctx.tz_offset);
+    let avatar_src = crate::imagehost::resolve_avatar(row.avatar.as_deref().unwrap_or(""));
     let page = ProfilePage {
         user: ProfileUser {
             username: row.username,
@@ -112,6 +116,7 @@ async fn profile(ctx: Ctx, id: &str) -> Response {
         ctx,
         initial,
         joined,
+        avatar_src,
     };
     match page.render() {
         Ok(html) => Html(html).into_response(),

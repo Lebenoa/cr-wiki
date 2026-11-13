@@ -85,6 +85,29 @@
                         class="block text-xs font-label uppercase tracking-wider text-foreground-muted">{{
                         ctx.l.t("username") }}</span><span class="mt-1 block font-semibold text-foreground">{{
                         ctx.username() }}</span></div>
+                <div class="mb-7 flex items-center gap-4">
+                    {% if let Some(avatar_src) = avatar_src %}
+                    <img src="{{ avatar_src }}" alt="" aria-hidden="true"
+                        class="size-16 shrink-0 rounded-full object-cover border border-primary/20" />
+                    {% else %}
+                    <span aria-hidden="true"
+                        class="flex size-16 shrink-0 items-center justify-center rounded-full bg-primary text-2xl font-bold text-background">{{
+                        ctx.username().chars().next().unwrap_or('?') }}</span>
+                    {% endif %}
+                    <div class="flex min-w-0 flex-col gap-1">
+                        <label class="sr-only" for="avatar-file">{{ ctx.l.t("avatar_upload") }}</label>
+                        <input id="avatar-file" type="file" accept="image/png,image/jpeg,image/webp,image/gif"
+                            data-avatar-upload class="text-xs" {% if !ctx.google_login && !ctx.signed_in() %}disabled{%
+                            endif %} />
+                        <span data-avatar-status class="normal-case text-xs text-foreground-muted" aria-live="polite">{{
+                            ctx.l.t("avatar_hint") }}</span>
+                    </div>
+                    {% if avatar_src.is_some() %}
+                    <form method="post" action="/settings/avatar/remove"><button type="submit"
+                            class="settings-action text-error border-error/30 hover:bg-error/10">{{
+                            ctx.l.t("avatar_remove") }}</button></form>
+                    {% endif %}
+                </div>
                 <form class="space-y-5" method="post" action="/settings" hx-post="/settings" hx-target="#form-error"
                     hx-swap="innerHTML" hx-disable="find button[type=submit]">
                     <div id="form-error" aria-live="polite">
@@ -109,6 +132,7 @@
                         class="btn-primary rounded-xl px-6 py-3 font-semibold focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-60">{{
                         ctx.l.t("account_email_save") }}</button>
                 </form>
+                <script src="/static/js/avatar_upload.js?v={{ ctx.deploy_stamp() }}" defer></script>
                 <div
                     class="mt-8 flex flex-col gap-3 border-t border-error/20 pt-6 sm:flex-row sm:items-center sm:justify-between">
                     <form method="post" action="/logout"><button type="submit" class="settings-action">{{

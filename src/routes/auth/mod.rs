@@ -13,7 +13,7 @@
 //! `auth::login`, `auth::reset`, `auth::google_start`, and so on.
 
 use askama::Template;
-use axum::extract::Query;
+use axum::extract::{DefaultBodyLimit, Query};
 use axum::http::{header, HeaderMap, HeaderValue, StatusCode};
 use axum::response::{Html, IntoResponse, Redirect, Response};
 use axum::routing::{get, post};
@@ -53,6 +53,16 @@ pub fn routes() -> Router {
         // detail page
         .route("/forgot-password", get(forgot_form).post(forgot))
         .route("/settings", get(settings_form).post(update_account_email))
+        .route(
+            "/settings/avatar",
+            post(crate::routes::auth::account::upload_avatar).layer(DefaultBodyLimit::max(
+                crate::routes::auth::account::AVATAR_MAX_BYTES.saturating_add(64 * 1024),
+            )),
+        )
+        .route(
+            "/settings/avatar/remove",
+            post(crate::routes::auth::account::remove_avatar),
+        )
         .route("/reset-password", get(reset_form).post(reset))
         // GET logout with the SameSite=Lax session cookie lets any
         // cross-site link end the session: Lax still rides a top-level GET
@@ -422,6 +432,7 @@ pub async fn login(ctx: Ctx, Form(form): Form<LoginForm>) -> Result<Response, Ap
             id: user.id.clone(),
             username: user.username.clone(),
             is_admin: user.is_admin,
+            avatar: user.avatar.clone(),
         },
     )
     .await?;
@@ -493,6 +504,7 @@ pub async fn register(ctx: Ctx, Form(form): Form<RegisterForm>) -> Result<Respon
             id: user.id.clone(),
             username: user.username.clone(),
             is_admin: user.is_admin,
+            avatar: user.avatar.clone(),
         },
     )
     .await?;

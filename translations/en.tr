@@ -1432,3 +1432,15 @@ A future date and time keeps the post hidden until that moment in the site's tim
 news_timezone_label
 Site timezone
 -----
+-----
+avatar_upload
+Upload avatar
+-----
+avatar_hint
+PNG, JPEG, WebP or GIF, up to 2 MB. Shown on your profile and in the navbar.
+-----
+avatar_remove
+Remove
+-----
+avatar_failed
+Upload failed

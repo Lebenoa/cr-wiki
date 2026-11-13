@@ -156,6 +156,15 @@ impl Ctx {
             .unwrap_or_default()
     }
 
+    /// The resolved avatar URL for the signed-in account, from the session's
+    /// snapshot; `None` — signed out, no avatar, or the image host
+    /// unconfigured — renders the initial circle instead. Askama calls it
+    /// from the navbar.
+    pub fn avatar_src(&self) -> Option<String> {
+        let vanity = self.user.as_ref().and_then(|u| u.avatar.clone())?;
+        crate::imagehost::resolve_avatar(&vanity)
+    }
+
     /// Whether the admin editor has a form for this section — the catalog
     /// page's new-entity button links nowhere else.
     #[allow(clippy::unused_self)]

@@ -145,6 +145,7 @@ pub async fn google_callback(
             id: user.id.clone(),
             username: user.username.clone(),
             is_admin: user.is_admin,
+            avatar: user.avatar.clone(),
         },
     )
     .await?;

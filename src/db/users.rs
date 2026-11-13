@@ -22,12 +22,17 @@ pub struct User {
     /// `time::unix()` seconds stamped at insert; 0 when the row predates the
     /// column, which the profile page renders as "no joined line".
     pub created_at: i64,
+    /// bare vanity filename on the image host (`avatar-<record id>.png`),
+    /// `None` when the account shows the initial circle. The host stores it;
+    /// no local copy exists, so `None` is also what an unconfigured host
+    /// means in practice.
+    pub avatar: Option<String>,
 }
 
 /// The columns every user lookup reads, so the three finders cannot drift
 /// apart and hand out a half-populated row.
 const USER_COLUMNS: &str =
-    "record::id(id) AS id, username, password, is_admin, email, google_sub, created_at";
+    "record::id(id) AS id, username, password, is_admin, email, google_sub, created_at, avatar";
 
 fn user_from_row(r: UserRow) -> User {
     User {
@@ -38,6 +43,7 @@ fn user_from_row(r: UserRow) -> User {
         email: r.email,
         google_sub: r.google_sub,
         created_at: r.created_at.unwrap_or(0),
+        avatar: r.avatar.filter(|a| !a.trim().is_empty()),
     }
 }
 
@@ -51,6 +57,7 @@ struct UserRow {
     email: Option<String>,
     google_sub: Option<String>,
     created_at: Option<i64>,
+    avatar: Option<String>,
 }
 
 pub async fn find_user(db: &Db, username: &str) -> Result<Option<User>> {
@@ -132,6 +139,7 @@ pub async fn create_user(
         email: email.map(str::to_string),
         google_sub: google_sub.map(str::to_string),
         created_at: crate::time::now_unix(),
+        avatar: None,
     }))
 }
 
@@ -220,6 +228,19 @@ pub async fn set_user_email(db: &Db, user_id: &str, email: Option<&str>) -> Resu
     db.query("UPDATE type::record('user', $u) SET email = $e")
         .bind(("u", user_id.to_string()))
         .bind(("e", email.map(str::to_string)))
+        .await?
+        .check()?;
+    Ok(())
+}
+
+/// Replaces or clears the account's avatar vanity. `None` removes the field
+/// entirely — the schemaless row then renders the initial circle again, and
+/// no stale filename survives on the row. The column is read as
+/// `Option<String>` everywhere for the same reason `email` is.
+pub async fn set_user_avatar(db: &Db, user_id: &str, avatar: Option<&str>) -> Result<()> {
+    db.query("UPDATE type::record('user', $u) SET avatar = $a")
+        .bind(("u", user_id.to_string()))
+        .bind(("a", avatar.map(str::to_string)))
         .await?
         .check()?;
     Ok(())

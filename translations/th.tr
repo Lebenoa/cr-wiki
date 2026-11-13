@@ -1432,3 +1432,15 @@ news_schedule_hint
 news_timezone_label
 เขตเวลาของเว็บไซต์
 -----
+-----
+avatar_upload
+อัปโหลดรูปโปรไฟล์
+-----
+avatar_hint
+PNG, JPEG, WebP หรือ GIF ไม่เกิน 2 MB แสดงบนหน้าโปรไฟล์และแถบนำทางของคุณ
+-----
+avatar_remove
+ลบรูป
+-----
+avatar_failed
+อัปโหลดไม่สำเร็จ

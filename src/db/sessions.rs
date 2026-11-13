@@ -34,6 +34,11 @@ pub struct SessionUser {
     pub id: String,
     pub username: String,
     pub is_admin: bool,
+    /// snapshot of the account's avatar vanity taken when the session row
+    /// was last (re)written; `None` renders the initial circle. A new
+    /// upload rewrites the account's open sessions (see `refresh_avatars`),
+    /// so a live user read per request stays unnecessary.
+    pub avatar: Option<String>,
 }
 
 /// Creates the session table and its user lookup index. Called on connect,
@@ -56,7 +61,7 @@ pub async fn start(db: &Db, user: &SessionUser) -> Result<String> {
     let key = uuid::Uuid::new_v4().to_string();
     db.query(
         "CREATE type::record('session', $k) SET \
-                 user_id = $u, username = $n, is_admin = $a, issued = time::unix(); \
+                 user_id = $u, username = $n, is_admin = $a, avatar = $v, issued = time::unix(); \
              DELETE session WHERE issued < time::unix() - $ttl; \
              RETURN NONE;",
     )
@@ -64,6 +69,7 @@ pub async fn start(db: &Db, user: &SessionUser) -> Result<String> {
     .bind(("u", user.id.clone()))
     .bind(("n", user.username.clone()))
     .bind(("a", user.is_admin))
+    .bind(("v", user.avatar.clone()))
     .bind(("ttl", SESSION_TTL_SECS))
     .await?
     .check()?;
@@ -87,6 +93,8 @@ struct Row {
     is_admin: Option<bool>,
     #[surreal(default)]
     issued: Option<i64>,
+    #[surreal(default)]
+    avatar: Option<Option<String>>,
 }
 
 pub async fn get(db: &Db, key: &str) -> Option<SessionUser> {
@@ -95,7 +103,7 @@ pub async fn get(db: &Db, key: &str) -> Option<SessionUser> {
     }
     let mut res = db
         .query(
-            "SELECT user_id, username, is_admin, issued \
+            "SELECT user_id, username, is_admin, issued, avatar \
                  FROM session WHERE id = type::record('session', $k);",
         )
         .bind(("k", key.to_string()))
@@ -114,7 +122,23 @@ pub async fn get(db: &Db, key: &str) -> Option<SessionUser> {
         id: row.user_id?,
         username: row.username?,
         is_admin: row.is_admin.unwrap_or(false),
+        avatar: row.avatar.unwrap_or(None).filter(|a| !a.trim().is_empty()),
     })
+}
+
+/// Rewrites the avatar snapshot on every open session of one account, so an
+/// upload or removal takes effect without waiting for the next sign-in.
+/// Fires right after `users::set_user_avatar` succeeds.
+pub async fn refresh_avatars(db: &Db, user_id: &str, avatar: Option<&str>) -> Result<()> {
+    if user_id.is_empty() {
+        return Ok(());
+    }
+    db.query("UPDATE session SET avatar = $v WHERE user_id = $u;")
+        .bind(("u", user_id.to_string()))
+        .bind(("v", avatar.map(str::to_string)))
+        .await?
+        .check()?;
+    Ok(())
 }
 
 /// Ends one session (logout). A table-scoped DELETE with an id equality
@@ -175,6 +199,7 @@ mod tests {
             id: "abc123".into(),
             username: "tester".into(),
             is_admin: true,
+            avatar: None,
         };
         let key = start(&db, &user).await.expect("start");
         let found = get(&db, &key).await.expect("session");

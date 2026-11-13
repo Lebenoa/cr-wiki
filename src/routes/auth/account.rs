@@ -8,10 +8,12 @@
 //! not go unnoticed.
 
 use askama::Template;
+use axum::extract::Multipart;
 use axum::http::StatusCode;
-use axum::response::{Html, IntoResponse, Response};
-use axum::Form;
+use axum::response::{Html, IntoResponse, Redirect, Response};
+use axum::{Form, Json};
 use serde::Deserialize;
+use serde_json::json;
 
 use crate::ctx::Ctx;
 use crate::db;
@@ -30,6 +32,9 @@ struct AccountEmailPage {
     /// a Google-linked account has no password its owner knows, so the page
     /// says how to set one instead of leaving the form a dead end
     google: bool,
+    /// resolved URL of the account's avatar, `None` renders the initial
+    /// circle
+    avatar_src: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -50,6 +55,7 @@ fn render_account_email(
     error: &str,
     notice: &str,
     google: bool,
+    avatar_src: Option<String>,
 ) -> Response {
     let html = AccountEmailPage {
         ctx,
@@ -57,6 +63,7 @@ fn render_account_email(
         error: error.to_string(),
         notice: notice.to_string(),
         google,
+        avatar_src,
     }
     .render()
     .unwrap_or_else(|e| format!("template error: {e}"));
@@ -73,7 +80,7 @@ fn account_email_error(ctx: &Ctx, email: &str, key: &str, google: bool) -> Respo
     } else {
         (
             StatusCode::BAD_REQUEST,
-            render_account_email(ctx.clone(), email, key, "", google),
+            render_account_email(ctx.clone(), email, key, "", google, None),
         )
             .into_response()
     }
@@ -81,7 +88,7 @@ fn account_email_error(ctx: &Ctx, email: &str, key: &str, google: bool) -> Respo
 
 pub async fn settings_form(ctx: Ctx) -> Result<Response, AppError> {
     let Some(user) = ctx.user.as_ref() else {
-        return Ok(render_account_email(ctx, "", "", "", false));
+        return Ok(render_account_email(ctx, "", "", "", false, None));
     };
     let state = crate::state::state();
     let Some(account) = db::find_user(&state.db, &user.username)
@@ -96,7 +103,136 @@ pub async fn settings_form(ctx: Ctx) -> Result<Response, AppError> {
         "",
         "",
         account.google_sub.is_some(),
+        crate::imagehost::resolve_avatar(account.avatar.as_deref().unwrap_or("")),
     ))
+}
+
+/// 2 MB: an avatar is a square thumbnail, not a banner; the image host's own
+/// 20 MB ceiling would let one account park a poster on every page render.
+pub const AVATAR_MAX_BYTES: usize = 2 * 1024 * 1024;
+
+/// The signed-in uploader behind the settings page's avatar file input.
+/// Answers JSON like the news thumbnail uploader (`static/js/avatar_upload.js`
+/// is its only caller): the vanity goes into the account row and the open
+/// sessions, the page reload shows it.
+///
+/// The vanity carries the record id and the upload instant — deterministic
+/// per account per upload, so a re-upload never trips the host's
+/// vanity-exists rejection and every URL the page already rendered goes
+/// stale-safe (the old file keeps its own name).
+pub async fn upload_avatar(ctx: Ctx, mut form: Multipart) -> Response {
+    let Some(user) = ctx.user.as_ref() else {
+        return (
+            StatusCode::NOT_FOUND,
+            Json(json!({ "error": "not found" })),
+        )
+            .into_response();
+    };
+    while let Ok(Some(field)) = form.next_field().await {
+        if field.name() != Some("image") {
+            continue;
+        }
+        let content_type = field.content_type().unwrap_or_default().to_string();
+        let Some(ext) = crate::upload::extension_for(&content_type) else {
+            return (
+                StatusCode::UNSUPPORTED_MEDIA_TYPE,
+                Json(json!({ "error": "unsupported image type" })),
+            )
+                .into_response();
+        };
+        let Ok(bytes) = field.bytes().await else {
+            return (
+                StatusCode::BAD_REQUEST,
+                Json(json!({ "error": "could not read upload" })),
+            )
+                .into_response();
+        };
+        if bytes.is_empty() || bytes.len() > AVATAR_MAX_BYTES {
+            return (
+                StatusCode::PAYLOAD_TOO_LARGE,
+                Json(json!({ "error": "image too large (2 MB max)" })),
+            )
+                .into_response();
+        }
+        // the declared Content-Type is client input: verify the bytes are
+        // actually the image format they claim before shipping them upstream
+        if crate::upload::sniff_image(&bytes) != Some(ext) {
+            return (
+                StatusCode::UNSUPPORTED_MEDIA_TYPE,
+                Json(json!({ "error": "file content does not match its type" })),
+            )
+                .into_response();
+        }
+
+        let vanity = format!("avatar-{}-{}", user.id, crate::time::now_unix());
+        match crate::imagehost::upload(&vanity, &content_type, &bytes).await {
+            Ok(_) => {
+                let state = crate::state::state();
+                if let Err(e) = db::set_user_avatar(&state.db, &user.id, Some(&vanity)).await {
+                    tracing::error!("avatar persist {id}: {e}", id = user.id);
+                    return (
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        Json(json!({ "error": "avatar stored but could not be saved" })),
+                    )
+                        .into_response();
+                }
+                // the session snapshots carry the old (or no) avatar; rewrite
+                // them so navbar/profile pick it up on the very next render
+                if let Err(e) = db::sessions::refresh_avatars(&state.db, &user.id, Some(&vanity))
+                    .await
+                {
+                    tracing::error!("avatar session refresh {id}: {e}", id = user.id);
+                }
+                return Json(json!({ "image": vanity })).into_response();
+            }
+            Err(crate::imagehost::UploadError::NotConfigured) => {
+                return (
+                    StatusCode::NOT_FOUND,
+                    Json(json!({ "error": "image host not configured" })),
+                )
+                    .into_response();
+            }
+            Err(crate::imagehost::UploadError::TooLarge) => {
+                return (
+                    StatusCode::PAYLOAD_TOO_LARGE,
+                    Json(json!({ "error": "image too large (2 MB max)" })),
+                )
+                    .into_response();
+            }
+            Err(e) => {
+                tracing::warn!("avatar upload: {e}");
+                return (
+                    StatusCode::BAD_GATEWAY,
+                    Json(json!({ "error": "image host refused the upload" })),
+                )
+                    .into_response();
+            }
+        }
+    }
+    (
+        StatusCode::BAD_REQUEST,
+        Json(json!({ "error": "no image field" })),
+    )
+        .into_response()
+}
+
+/// Removes the account's avatar: the row field goes, the sessions refresh,
+/// and the page reload renders the initial circle again. The image host has
+/// no delete endpoint, so the bytes stay there under their vanity — unreferenced,
+/// invisible unless someone guesses the name.
+pub async fn remove_avatar(ctx: Ctx) -> Response {
+    let Some(user) = ctx.user.as_ref() else {
+        return errors::not_found(ctx);
+    };
+    let state = crate::state::state();
+    if let Err(e) = db::set_user_avatar(&state.db, &user.id, None).await {
+        tracing::error!("avatar remove {id}: {e}", id = user.id);
+        return errors::server_error(ctx);
+    }
+    if let Err(e) = db::sessions::refresh_avatars(&state.db, &user.id, None).await {
+        tracing::error!("avatar session refresh {id}: {e}", id = user.id);
+    }
+    Redirect::to("/settings").into_response()
 }
 
 pub async fn update_account_email(
@@ -194,13 +330,14 @@ pub async fn update_account_email(
         .unwrap_or_else(|e| format!("template error: {e}"));
         return Ok(Html(notice).into_response());
     }
-    Ok(render_account_email(
-        ctx,
-        email.unwrap_or(""),
-        "",
-        "account_email_saved",
-        google,
-    ))
+    let avatar_src = crate::imagehost::resolve_avatar(
+        ctx.user
+            .as_ref()
+            .and_then(|u| u.avatar.clone())
+            .as_deref()
+            .unwrap_or(""),
+    );
+    Ok(render_account_email(ctx, email.unwrap_or(""), "", "account_email_saved", google, avatar_src))
 }
 
 #[cfg(test)]
@@ -219,6 +356,7 @@ mod tests {
                 id: "1".into(),
                 username: "tester".into(),
                 is_admin: false,
+                avatar: None,
             });
             AccountEmailPage {
                 ctx,
@@ -226,6 +364,7 @@ mod tests {
                 error: String::new(),
                 notice: String::new(),
                 google,
+                avatar_src: None,
             }
             .render()
             .expect("render")

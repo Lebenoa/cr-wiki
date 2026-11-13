@@ -7,9 +7,14 @@
     <header class="mb-10 border-b border-primary/20 pb-8">
         <div class="mb-4 h-1 w-16 rounded-full bg-primary"></div>
         <div class="flex items-center gap-5">
+            {% if let Some(avatar_src) = avatar_src %}
+            <img src="{{ avatar_src }}" alt="" aria-hidden="true"
+                class="size-16 shrink-0 rounded-full object-cover border border-primary/20" />
+            {% else %}
             <span
                 class="flex size-16 shrink-0 items-center justify-center rounded-full bg-primary text-2xl font-bold text-background"
                 aria-hidden="true">{{ initial }}</span>
+            {% endif %}
             <div class="min-w-0">
                 <h1 class="font-headline font-bold text-4xl text-foreground tracking-tight">{{ user.username }}</h1>
                 {% if let Some(joined_day) = joined %}<p class="mt-2 text-sm text-foreground-muted">{{

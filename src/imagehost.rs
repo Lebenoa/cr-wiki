@@ -77,6 +77,23 @@ pub fn resolve(name: &str) -> Option<String> {
     }
 }
 
+/// Resolves an account avatar vanity to the URL templates render. Avatars
+/// live only on the image host — there is no local fallback directory, so an
+/// unconfigured host means no avatar image, exactly like an empty name.
+/// Callers render the initial circle for `None`.
+pub fn resolve_avatar(vanity: &str) -> Option<String> {
+    let vanity = vanity.trim();
+    if vanity.is_empty() {
+        return None;
+    }
+    let state = crate::state::state();
+    state
+        .cfg
+        .images
+        .is_configured()
+        .then(|| served_url(state.cfg.images.origin(), vanity))
+}
+
 /// Uploads `bytes` to the image host under `vanity`. The vanity must already
 /// be a safe name — the caller sanitizes (the news thumbnail sanitizer); this
 /// function only transmits.

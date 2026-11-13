@@ -349,5 +349,5 @@ pub use types::{tr, Card, Detail, Kind};
 pub use users::{
     consume_reset_token, create_user, find_user, find_user_by_email, find_user_by_google_sub,
     find_user_by_id, issue_reset_token, link_user_google, reset_requested_within,
-    reset_token_pending, set_user_email, set_user_password, User,
+    reset_token_pending, set_user_avatar, set_user_email, set_user_password, User,
 };
