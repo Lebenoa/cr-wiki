@@ -1444,3 +1444,6 @@ avatar_remove
 -----
 avatar_failed
 อัปโหลดไม่สำเร็จ
+-----
+avatar_uploading
+กำลังอัปโหลด…

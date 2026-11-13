@@ -39,7 +39,8 @@ endblock %}
                 <input type="file" accept="image/png,image/jpeg,image/webp,image/gif,image/avif" data-thumbnail-upload
                     class="text-xs" />
             </div>
-            <span class="normal-case text-xs text-foreground-muted">{{ ctx.l.t("news_thumbnail_hint") }}</span>
+            <span class="normal-case text-xs text-foreground-muted" data-thumbnail-status aria-live="polite">{{
+                ctx.l.t("news_thumbnail_hint") }}</span>
         </label>
         <div class="flex flex-col gap-1">
             <span class="text-xs font-label uppercase text-foreground-muted">{{ ctx.l.t("news_body_label") }}</span>

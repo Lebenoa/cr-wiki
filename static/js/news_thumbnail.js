@@ -17,11 +17,14 @@
     var field = form ? form.querySelector('input[name="thumbnail"]') : null;
     var notice = form ? form.querySelector('[data-thumbnail-status]') : null;
 
-    function status(message) {
-      if (notice) notice.textContent = message;
+    function status(message, isError) {
+      if (!notice) return;
+      notice.textContent = message;
+      notice.classList.toggle('text-error', !!isError);
+      notice.classList.toggle('text-foreground-muted', !isError);
     }
 
-    status('…');
+    status('…', false);
     var body = new FormData();
     body.append('image', input.files[0]);
     try {
@@ -30,15 +33,15 @@
       // a newer selection superseded this upload: touch nothing
       if (token !== uploadToken) return;
       if (!res.ok || !data.image) {
-        status(data.error || res.status);
+        status(data.error || 'upload failed', true);
         return;
       }
       if (field) {
         field.value = data.image;
       }
-      status('');
+      status('', false);
     } catch (err) {
-      if (token === uploadToken) status('upload failed');
+      if (token === uploadToken) status('upload failed', true);
     }
   });
 })();
