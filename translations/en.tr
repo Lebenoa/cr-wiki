@@ -1447,3 +1447,36 @@ Upload failed
 -----
 avatar_uploading
 Uploading…
+-----
+avatar_url
+Or set it from a URL
+-----
+avatar_url_hint
+Paste a direct link to an image (PNG, JPEG, WebP, GIF or AVIF, up to 2 MB). It will be re-hosted here.
+-----
+avatar_url_set
+Set from URL
+-----
+avatar_url_invalid
+Enter a valid http(s) image URL
+-----
+avatar_url_internal
+That address points to a private or internal host
+-----
+avatar_url_fetch_failed
+Could not fetch that URL — check the link and try again
+-----
+avatar_url_not_image
+That URL does not serve an image (expected an image/* content type)
+-----
+avatar_url_too_large
+Image too large (2 MB max)
+-----
+avatar_url_bad_content
+The file at that URL is not an image type we support
+-----
+avatar_host_not_configured
+Avatar hosting is not configured
+-----
+avatar_save_failed
+The avatar could not be saved — please try again

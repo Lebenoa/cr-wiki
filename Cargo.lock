@@ -544,6 +544,7 @@ version = "0.1.0"
 dependencies = [
  "askama",
  "axum",
+ "futures-util",
  "imagesize",
  "lettre",
  "parking_lot 0.13.0",
@@ -558,6 +559,7 @@ dependencies = [
  "tower-http 0.7.1",
  "tracing",
  "tracing-subscriber",
+ "url",
  "uuid",
 ]
 

@@ -85,7 +85,7 @@
                         class="block text-xs font-label uppercase tracking-wider text-foreground-muted">{{
                         ctx.l.t("username") }}</span><span class="mt-1 block font-semibold text-foreground">{{
                         ctx.username() }}</span></div>
-                <div class="mb-7 flex items-center gap-4">
+                <div class="mb-7 flex items-start gap-4">
                     {% if let Some(avatar_src) = avatar_src %}
                     <img src="{{ avatar_src }}" alt="" aria-hidden="true"
                         class="size-16 shrink-0 rounded-full object-cover border border-primary/20" />
@@ -94,14 +94,33 @@
                         class="flex size-16 shrink-0 items-center justify-center rounded-full bg-primary text-2xl font-bold text-background">{{
                         ctx.username().chars().next().unwrap_or('?') }}</span>
                     {% endif %}
-                    <div class="flex min-w-0 flex-col gap-1">
-                        <label class="sr-only" for="avatar-file">{{ ctx.l.t("avatar_upload") }}</label>
-                        <input id="avatar-file" type="file" accept="image/png,image/jpeg,image/webp,image/gif,image/avif"
-                            data-avatar-upload data-text-uploading="{{ ctx.l.t("avatar_uploading") }}"
-                            data-text-failed="{{ ctx.l.t("avatar_failed") }}" class="text-xs" {% if
-                            !ctx.google_login && !ctx.signed_in() %}disabled{% endif %} />
-                        <span data-avatar-status aria-live="polite"
-                            class="normal-case text-xs text-foreground-muted">{{ ctx.l.t("avatar_hint") }}</span>
+                    <div class="flex min-w-0 flex-1 flex-col gap-3">
+                        <div class="flex min-w-0 flex-col gap-1">
+                            <label class="sr-only" for="avatar-file">{{ ctx.l.t("avatar_upload") }}</label>
+                            <input id="avatar-file" type="file"
+                                accept="image/png,image/jpeg,image/webp,image/gif,image/avif" data-avatar-upload
+                                data-text-uploading="{{ ctx.l.t(" avatar_uploading") }}" data-text-failed="{{ ctx.l.t("
+                                avatar_failed") }}" class="text-xs" {% if !ctx.google_login && !ctx.signed_in()
+                                %}disabled{% endif %} />
+                            <span data-avatar-status aria-live="polite"
+                                class="normal-case text-xs text-foreground-muted">{{ ctx.l.t("avatar_hint") }}</span>
+                        </div>
+                        <form class="flex min-w-0 flex-col gap-1" method="post" action="/settings/avatar/url"
+                            hx-post="/settings/avatar/url" hx-target="#avatar-url-error" hx-swap="innerHTML"
+                            hx-disable="find button[type=submit]">
+                            <label class="sr-only" for="avatar-url">{{ ctx.l.t("avatar_url") }}</label>
+                            <input id="avatar-url" class="settings-input text-xs" type="url" name="url"
+                                value="{{ avatar_url }}" placeholder="https://…" autocomplete="off" spellcheck="false"
+                                {% if !ctx.google_login && !ctx.signed_in() %}disabled{% endif %} />
+                            <div id="avatar-url-error" aria-live="polite">
+                                {% if !avatar_error.is_empty() %}<p class="text-error">{{ ctx.l.t(avatar_error.as_str())
+                                    }}</p>{% endif %}
+                            </div>
+                            <p class="text-xs leading-relaxed text-foreground-muted">{{ ctx.l.t("avatar_url_hint")
+                                }}</p>
+                            <div><button type="submit" class="settings-action">{{ ctx.l.t("avatar_url_set") }}</button>
+                            </div>
+                        </form>
                     </div>
                     {% if avatar_src.is_some() %}
                     <form method="post" action="/settings/avatar/remove"><button type="submit"

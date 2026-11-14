@@ -1447,3 +1447,36 @@ avatar_failed
 -----
 avatar_uploading
 กำลังอัปโหลด…
+-----
+avatar_url
+หรือตั้งค่าจาก URL
+-----
+avatar_url_hint
+วางลิงก์ตรงไปยังภาพ (PNG, JPEG, WebP, GIF หรือ AVIF ไม่เกิน 2 MB) ระบบจะเก็บภาพนี้ไว้บนเซิร์ฟเวอร์ของเรา
+-----
+avatar_url_set
+ใช้ URL นี้
+-----
+avatar_url_invalid
+ใส่ URL รูปภาพ http(s) ที่ถูกต้อง
+-----
+avatar_url_internal
+URL นั้นชี้ไปยังที่อยู่ส่วนตัวหรือภายใน
+-----
+avatar_url_fetch_failed
+ไม่สามารถดึงรูปจาก URL นั้นได้ — ตรวจสอบลิงก์แล้วลองอีกครั้ง
+-----
+avatar_url_not_image
+URL นั้นไม่ได้ให้บริการภาพ (คาดว่าจะเป็นชนิด image/*)
+-----
+avatar_url_too_large
+รูปใหญ่เกินไป (สูงสุด 2 MB)
+-----
+avatar_url_bad_content
+ไฟล์ที่ URL นั้นไม่ใช่รูปแบบภาพที่เรารองรับ
+-----
+avatar_host_not_configured
+ยังไม่ได้ตั้งค่าระบบเก็บภาพโปรไฟล์
+-----
+avatar_save_failed
+บันทึกรูปโปรไฟล์ไม่สำเร็จ — กรุณาลองอีกครั้ง

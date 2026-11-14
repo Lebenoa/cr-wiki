@@ -59,6 +59,7 @@ pub fn routes() -> Router {
                 crate::routes::auth::account::AVATAR_MAX_BYTES.saturating_add(64 * 1024),
             )),
         )
+        .route("/settings/avatar/url", post(set_avatar_url))
         .route(
             "/settings/avatar/remove",
             post(crate::routes::auth::account::remove_avatar),
@@ -73,7 +74,7 @@ pub fn routes() -> Router {
         .route("/revoke-sessions", post(revoke_sessions))
 }
 
-pub use self::account::{settings_form, update_account_email};
+pub use self::account::{set_avatar_url, settings_form, update_account_email};
 pub use self::google::{google_callback, google_start};
 pub use self::password::{forgot, forgot_form, reset, reset_form};
 
